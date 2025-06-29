@@ -56,14 +56,23 @@ const PeerChat = () => {
     }
   };
 
+  const handlePhoneCall = () => {
+    window.location.href = 'tel:+14327018678';
+  };
+
+  const handleVideoCall = () => {
+    // For video calls, we'll open a link to start a video call
+    window.open('https://meet.google.com/new', '_blank');
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gradient-industrial">
       {/* Header */}
       <div className="bg-midnight/90 backdrop-blur-sm border-b border-steel-dark p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-construction rounded-full flex items-center justify-center">
-              <User className="text-midnight" size={20} />
+            <div className="w-12 h-12 bg-steel rounded-full flex items-center justify-center">
+              <User className="text-white" size={20} />
             </div>
             <div>
               <h2 className="font-oswald font-semibold text-white">Mike Rodriguez</h2>
@@ -75,10 +84,20 @@ const PeerChat = () => {
           </div>
           
           <div className="flex space-x-2">
-            <Button size="sm" variant="outline" className="border-steel text-steel-light">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
+              onClick={handlePhoneCall}
+            >
               <Phone size={16} />
             </Button>
-            <Button size="sm" variant="outline" className="border-steel text-steel-light">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
+              onClick={handleVideoCall}
+            >
               <Video size={16} />
             </Button>
           </div>
@@ -86,8 +105,8 @@ const PeerChat = () => {
       </div>
 
       {/* Security Notice */}
-      <div className="bg-construction/10 border-b border-construction/20 p-3">
-        <div className="flex items-center space-x-2 text-construction">
+      <div className="bg-steel/10 border-b border-steel/20 p-3">
+        <div className="flex items-center space-x-2 text-steel-light">
           <Shield size={16} />
           <span className="text-sm font-oswald">Secure & Confidential Chat</span>
         </div>
@@ -102,12 +121,12 @@ const PeerChat = () => {
           >
             <div className={`max-w-[80%] ${
               msg.sender === 'user' 
-                ? 'bg-construction text-midnight' 
+                ? 'bg-steel text-white' 
                 : 'bg-white/10 backdrop-blur-sm text-white'
             } rounded-2xl p-4`}>
               <p className="text-sm leading-relaxed mb-1">{msg.text}</p>
               <p className={`text-xs ${
-                msg.sender === 'user' ? 'text-midnight/70' : 'text-steel-light'
+                msg.sender === 'user' ? 'text-white/70' : 'text-steel-light'
               }`}>
                 {msg.time}
               </p>
@@ -146,7 +165,7 @@ const PeerChat = () => {
           />
           <Button 
             onClick={handleSendMessage}
-            className="bg-construction hover:bg-construction-dark text-midnight px-6"
+            className="bg-steel hover:bg-steel-light text-white px-6"
           >
             <Send size={16} />
           </Button>
@@ -154,18 +173,18 @@ const PeerChat = () => {
       </div>
 
       {/* Scheduled Check-in Banner */}
-      <div className="absolute top-20 left-4 right-4 bg-construction/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+      <div className="absolute top-20 left-4 right-4 bg-steel/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
         <div className="flex items-center space-x-3">
-          <Calendar className="text-midnight" size={16} />
+          <Calendar className="text-white" size={16} />
           <div className="flex-1">
-            <p className="text-midnight font-oswald font-medium text-sm">
+            <p className="text-white font-oswald font-medium text-sm">
               Weekly Check-in Scheduled
             </p>
-            <p className="text-midnight/70 text-xs">
+            <p className="text-white/70 text-xs">
               Tomorrow at 2:00 PM
             </p>
           </div>
-          <Button size="sm" className="bg-midnight hover:bg-matte text-construction">
+          <Button size="sm" className="bg-midnight hover:bg-matte text-white">
             View
           </Button>
         </div>

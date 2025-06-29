@@ -30,8 +30,8 @@ const About = ({ onBack }: AboutProps) => {
         {/* Mission */}
         <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
           <div className="flex items-start space-x-3 mb-4">
-            <div className="bg-construction p-2 rounded-lg">
-              <Target className="text-midnight" size={20} />
+            <div className="bg-steel p-2 rounded-lg">
+              <Target className="text-white" size={20} />
             </div>
             <h3 className="font-oswald font-semibold text-white text-xl">Our Mission</h3>
           </div>
@@ -44,8 +44,8 @@ const About = ({ onBack }: AboutProps) => {
         {/* Privacy & Anonymity */}
         <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
           <div className="flex items-start space-x-3 mb-4">
-            <div className="bg-construction p-2 rounded-lg">
-              <Shield className="text-midnight" size={20} />
+            <div className="bg-steel p-2 rounded-lg">
+              <Shield className="text-white" size={20} />
             </div>
             <h3 className="font-oswald font-semibold text-white text-xl">Your Privacy Matters</h3>
           </div>
@@ -65,8 +65,8 @@ const About = ({ onBack }: AboutProps) => {
         {/* Community */}
         <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
           <div className="flex items-start space-x-3 mb-4">
-            <div className="bg-construction p-2 rounded-lg">
-              <Users className="text-midnight" size={20} />
+            <div className="bg-steel p-2 rounded-lg">
+              <Users className="text-white" size={20} />
             </div>
             <h3 className="font-oswald font-semibold text-white text-xl">Peer Support</h3>
           </div>
@@ -79,8 +79,8 @@ const About = ({ onBack }: AboutProps) => {
         {/* Values */}
         <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
           <div className="flex items-start space-x-3 mb-4">
-            <div className="bg-construction p-2 rounded-lg">
-              <Heart className="text-midnight" size={20} />
+            <div className="bg-steel p-2 rounded-lg">
+              <Heart className="text-white" size={20} />
             </div>
             <h3 className="font-oswald font-semibold text-white text-xl">Our Values</h3>
           </div>
@@ -115,7 +115,7 @@ const About = ({ onBack }: AboutProps) => {
         <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
           <div className="text-center">
             <img 
-              src="/lovable-uploads/d0fc56a3-44b5-42e1-8fbe-eb2156380255.png" 
+              src="/lovable-uploads/5a09c9b4-51a6-4dce-9f67-dd8de1db52dd.png" 
               alt="Thriving United" 
               className="h-16 w-auto mx-auto mb-4 opacity-90"
             />

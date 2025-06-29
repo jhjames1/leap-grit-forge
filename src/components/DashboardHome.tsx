@@ -47,8 +47,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         }}
       />
       
-      {/* Background Overlay */}
-      <div className="absolute inset-0 bg-gradient-industrial/75"></div>
+      {/* Darker Background Overlay */}
+      <div className="absolute inset-0 bg-midnight/85"></div>
       
       {/* Content */}
       <div className="relative z-10 p-4 pb-24">
@@ -81,8 +81,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         {/* Daily Quote Card */}
         <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
           <div className="flex items-start space-x-3">
-            <div className="bg-construction p-2 rounded-lg">
-              <Target className="text-midnight" size={20} />
+            <div className="bg-steel p-2 rounded-lg">
+              <Target className="text-white" size={20} />
             </div>
             <div className="flex-1">
               <h3 className="font-oswald font-semibold text-white mb-2">Today's Motivation</h3>
@@ -95,8 +95,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="bg-construction p-2 rounded-lg">
-                <Flame className="text-midnight" size={20} />
+              <div className="bg-steel p-2 rounded-lg">
+                <Flame className="text-white" size={20} />
               </div>
               <div>
                 <h3 className="font-oswald font-semibold text-white">Recovery Streak</h3>
@@ -104,7 +104,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-anton text-construction">{streakDays}</div>
+              <div className="text-2xl font-anton text-steel-light">{streakDays}</div>
               <div className="text-xs text-steel-light font-oswald">DAYS</div>
             </div>
           </div>
@@ -112,11 +112,11 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-steel-light">Next milestone</span>
-              <span className="text-construction font-oswald font-medium">{nextMilestone} days</span>
+              <span className="text-steel-light font-oswald font-medium">{nextMilestone} days</span>
             </div>
             <Progress value={progressPercentage} className="h-3 bg-steel-dark">
               <div 
-                className="h-full bg-gradient-to-r from-construction to-construction-light rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-steel to-steel-light rounded-full transition-all duration-500"
                 style={{ width: `${progressPercentage}%` }}
               />
             </Progress>
@@ -127,31 +127,34 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Button 
             onClick={() => onNavigate?.('calendar')}
-            className="bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold p-6 h-auto flex flex-col items-center space-y-2 rounded-xl industrial-shadow"
+            className="bg-steel hover:bg-steel-light text-white font-oswald font-semibold p-6 h-auto flex flex-col items-center space-y-2 rounded-xl industrial-shadow"
           >
             <Calendar size={24} />
             <span>Calendar</span>
           </Button>
           
-          <Button className="bg-steel hover:bg-steel-light text-white font-oswald font-semibold p-6 h-auto flex flex-col items-center space-y-2 rounded-xl industrial-shadow">
+          <Button 
+            onClick={() => onNavigate?.('chat')}
+            className="bg-steel hover:bg-steel-light text-white font-oswald font-semibold p-6 h-auto flex flex-col items-center space-y-2 rounded-xl industrial-shadow"
+          >
             <MessageCircle size={24} />
-            <span>Check-in</span>
+            <span>Chat Support</span>
           </Button>
         </div>
 
         {/* Recent Achievements */}
         <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="bg-construction p-2 rounded-lg">
-              <Trophy className="text-midnight" size={20} />
+            <div className="bg-steel p-2 rounded-lg">
+              <Trophy className="text-white" size={20} />
             </div>
             <h3 className="font-oswald font-semibold text-white">Recent Achievements</h3>
           </div>
           
           <div className="space-y-3">
-            <div className="flex items-center space-x-3 p-3 bg-construction/10 rounded-lg">
-              <div className="w-8 h-8 bg-construction rounded-full flex items-center justify-center">
-                <Calendar size={16} className="text-midnight" />
+            <div className="flex items-center space-x-3 p-3 bg-steel/10 rounded-lg">
+              <div className="w-8 h-8 bg-steel rounded-full flex items-center justify-center">
+                <Calendar size={16} className="text-white" />
               </div>
               <div>
                 <p className="text-white font-medium">3-Week Milestone</p>

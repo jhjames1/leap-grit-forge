@@ -17,6 +17,17 @@ import {
 const Toolbox = () => {
   const [urgeLevel, setUrgeLevel] = useState(0);
   const [showBreathing, setShowBreathing] = useState(false);
+  const [showUrgeTracker, setShowUrgeTracker] = useState(false);
+  const [showGratitudeLog, setShowGratitudeLog] = useState(false);
+  const [showJournal, setShowJournal] = useState(false);
+
+  const handleEmergencyCall = () => {
+    window.location.href = 'tel:+14327018678';
+  };
+
+  const handlePeerSupport = () => {
+    window.location.href = 'sms:+14327018678?body=I need support right now.';
+  };
 
   const tools = [
     {
@@ -33,9 +44,9 @@ const Toolbox = () => {
       title: 'Urge Tracker',
       description: 'Log and track cravings',
       icon: TrendingUp,
-      color: 'bg-construction hover:bg-construction-dark',
+      color: 'bg-steel hover:bg-steel-light',
       badge: 'Track',
-      badgeColor: 'bg-construction'
+      badgeColor: 'bg-steel'
     },
     {
       id: 'breathing',
@@ -51,41 +62,49 @@ const Toolbox = () => {
       title: 'Gratitude Log',
       description: 'Focus on the positive',
       icon: Heart,
-      color: 'bg-green-600 hover:bg-green-700',
+      color: 'bg-steel hover:bg-steel-light',
       badge: 'Mindset',
-      badgeColor: 'bg-green-500'
+      badgeColor: 'bg-steel'
     },
     {
       id: 'journal',
       title: 'Quick Journal',
       description: 'Voice or text entry',
       icon: BookOpen,
-      color: 'bg-blue-600 hover:bg-blue-700',
+      color: 'bg-steel hover:bg-steel-light',
       badge: 'Reflect',
-      badgeColor: 'bg-blue-500'
+      badgeColor: 'bg-steel'
     },
     {
       id: 'peer',
       title: 'Message Peer',
       description: 'Connect with your specialist',
       icon: MessageSquare,
-      color: 'bg-purple-600 hover:bg-purple-700',
+      color: 'bg-steel hover:bg-steel-light',
       badge: 'Support',
-      badgeColor: 'bg-purple-500'
+      badgeColor: 'bg-steel'
     }
   ];
 
   const handleToolClick = (toolId: string) => {
     switch (toolId) {
       case 'panic':
-        // Emergency help action
-        alert('Connecting you to emergency support...');
+        handleEmergencyCall();
         break;
       case 'breathing':
         setShowBreathing(true);
         break;
       case 'urge':
-        // Show urge tracker
+        setShowUrgeTracker(true);
+        break;
+      case 'gratitude':
+        setShowGratitudeLog(true);
+        break;
+      case 'journal':
+        setShowJournal(true);
+        break;
+      case 'peer':
+        handlePeerSupport();
         break;
       default:
         console.log(`Opening ${toolId} tool`);
@@ -104,15 +123,15 @@ const Toolbox = () => {
       <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-4">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-xl font-anton text-construction">7</div>
+            <div className="text-xl font-anton text-steel-light">7</div>
             <div className="text-xs text-steel-light font-oswald">Tools Used Today</div>
           </div>
           <div>
-            <div className="text-xl font-anton text-construction">23</div>
+            <div className="text-xl font-anton text-steel-light">23</div>
             <div className="text-xs text-steel-light font-oswald">Day Streak</div>
           </div>
           <div>
-            <div className="text-xl font-anton text-construction">142</div>
+            <div className="text-xl font-anton text-steel-light">142</div>
             <div className="text-xs text-steel-light font-oswald">Total Sessions</div>
           </div>
         </div>
@@ -165,21 +184,21 @@ const Toolbox = () => {
         <h3 className="font-oswald font-semibold text-white mb-4">Recent Activity</h3>
         <div className="space-y-3">
           <div className="flex items-center space-x-3 text-sm">
-            <div className="w-2 h-2 bg-construction rounded-full"></div>
+            <div className="w-2 h-2 bg-steel rounded-full"></div>
             <span className="text-steel-light">Breathing exercise - 2 hours ago</span>
           </div>
           <div className="flex items-center space-x-3 text-sm">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-steel rounded-full"></div>
             <span className="text-steel-light">Gratitude entry - 5 hours ago</span>
           </div>
           <div className="flex items-center space-x-3 text-sm">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-steel rounded-full"></div>
             <span className="text-steel-light">Journal entry - Yesterday</span>
           </div>
         </div>
       </Card>
 
-      {/* Breathing Exercise Modal */}
+      {/* Modals */}
       {showBreathing && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full">
@@ -188,8 +207,8 @@ const Toolbox = () => {
                 4-7-8 Breathing
               </h3>
               <div className="mb-6">
-                <div className="w-20 h-20 mx-auto bg-construction/20 rounded-full flex items-center justify-center mb-4">
-                  <Wind className="text-construction" size={32} />
+                <div className="w-20 h-20 mx-auto bg-steel/20 rounded-full flex items-center justify-center mb-4">
+                  <Wind className="text-steel" size={32} />
                 </div>
                 <p className="text-steel-light text-sm leading-relaxed">
                   Inhale for 4 counts, hold for 7, exhale for 8. 
@@ -197,12 +216,100 @@ const Toolbox = () => {
                 </p>
               </div>
               <div className="space-y-3">
-                <Button className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold">
+                <Button className="w-full bg-steel hover:bg-steel-light text-white font-oswald font-semibold">
                   Start Exercise
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => setShowBreathing(false)}
+                  className="w-full border-steel text-steel-light hover:bg-steel/10"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {showUrgeTracker && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full">
+            <div className="text-center">
+              <h3 className="font-oswald font-semibold text-white text-xl mb-4">Urge Tracker</h3>
+              <p className="text-steel-light text-sm mb-6">Rate your current urge level (1-10)</p>
+              <div className="flex justify-center space-x-2 mb-6">
+                {[1,2,3,4,5,6,7,8,9,10].map((level) => (
+                  <button
+                    key={level}
+                    onClick={() => setUrgeLevel(level)}
+                    className={`w-8 h-8 rounded ${
+                      urgeLevel === level ? 'bg-steel text-white' : 'bg-steel-dark text-steel-light'
+                    }`}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-3">
+                <Button className="w-full bg-steel hover:bg-steel-light text-white font-oswald font-semibold">
+                  Log Urge
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowUrgeTracker(false)}
+                  className="w-full border-steel text-steel-light hover:bg-steel/10"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {showGratitudeLog && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full">
+            <div className="text-center">
+              <h3 className="font-oswald font-semibold text-white text-xl mb-4">Gratitude Log</h3>
+              <textarea 
+                placeholder="What are you grateful for today?"
+                className="w-full h-32 p-3 bg-steel-dark border border-steel text-white placeholder:text-steel-light rounded mb-4"
+              />
+              <div className="space-y-3">
+                <Button className="w-full bg-steel hover:bg-steel-light text-white font-oswald font-semibold">
+                  Save Entry
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowGratitudeLog(false)}
+                  className="w-full border-steel text-steel-light hover:bg-steel/10"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {showJournal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full">
+            <div className="text-center">
+              <h3 className="font-oswald font-semibold text-white text-xl mb-4">Quick Journal</h3>
+              <textarea 
+                placeholder="How are you feeling right now? What's on your mind?"
+                className="w-full h-32 p-3 bg-steel-dark border border-steel text-white placeholder:text-steel-light rounded mb-4"
+              />
+              <div className="space-y-3">
+                <Button className="w-full bg-steel hover:bg-steel-light text-white font-oswald font-semibold">
+                  Save Entry
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowJournal(false)}
                   className="w-full border-steel text-steel-light hover:bg-steel/10"
                 >
                   Close
