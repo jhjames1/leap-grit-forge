@@ -19,7 +19,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `linear-gradient(rgba(11, 20, 38, 0.4), rgba(11, 20, 38, 0.6)), url('https://images.unsplash.com/photo-1487252665478-49b61b47f302?q=80&w=2000&auto=format&fit=crop')`
+          backgroundImage: `linear-gradient(rgba(11, 20, 38, 0.4), rgba(11, 20, 38, 0.6)), url('/lovable-uploads/c61510da-8bef-4d57-8fba-f87d453bd59e.png')`
         }}
       />
       
