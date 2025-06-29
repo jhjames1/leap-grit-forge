@@ -32,7 +32,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
             LEAP
           </h1>
           <p className="font-oswald text-xl md:text-2xl text-construction font-medium tracking-wide">
-            Your Recovery. Your Terms.
+            Don't Tough It Out. Talk It Out.
           </p>
         </div>
 
@@ -62,10 +62,12 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
 
         {/* Thriving United Logo */}
         <div className="absolute bottom-8 right-8">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
-            <p className="font-oswald text-white text-sm font-medium tracking-wide">
-              THRIVING UNITED
-            </p>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+            <img 
+              src="/lovable-uploads/d0fc56a3-44b5-42e1-8fbe-eb2156380255.png" 
+              alt="Thriving United" 
+              className="h-12 w-auto opacity-90"
+            />
           </div>
         </div>
       </div>
