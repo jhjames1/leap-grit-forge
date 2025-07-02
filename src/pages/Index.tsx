@@ -9,6 +9,7 @@ import PeerChat from '@/components/PeerChat';
 import UserProfile from '@/components/UserProfile';
 import About from '@/components/About';
 import RecoveryCalendar from '@/components/RecoveryCalendar';
+import ForemanChat from '@/components/ForemanChat';
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -38,7 +39,7 @@ const Index = () => {
       case 'journey':
         return <RecoveryJourney />;
       case 'toolbox':
-        return <Toolbox />;
+        return <Toolbox onNavigate={handleNavigation} />;
       case 'chat':
         return <PeerChat />;
       case 'profile':
@@ -47,13 +48,15 @@ const Index = () => {
         return <About onBack={handleBackToHome} />;
       case 'calendar':
         return <RecoveryCalendar onBack={handleBackToHome} />;
+      case 'foreman':
+        return <ForemanChat onBack={handleBackToHome} />;
       default:
         return <DashboardHome onNavigate={handleNavigation} />;
     }
   };
 
   // Hide bottom navigation for certain pages
-  const showBottomNav = !['about', 'calendar'].includes(currentPage);
+  const showBottomNav = !['about', 'calendar', 'foreman'].includes(currentPage);
 
   return (
     <div className="min-h-screen bg-gradient-industrial">

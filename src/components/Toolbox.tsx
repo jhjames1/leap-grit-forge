@@ -11,10 +11,15 @@ import {
   Phone, 
   TrendingUp,
   Timer,
-  MessageSquare
+  MessageSquare,
+  Bot
 } from 'lucide-react';
 
-const Toolbox = () => {
+interface ToolboxProps {
+  onNavigate?: (page: string) => void;
+}
+
+const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const [urgeLevel, setUrgeLevel] = useState(0);
   const [showBreathing, setShowBreathing] = useState(false);
   const [showUrgeTracker, setShowUrgeTracker] = useState(false);
@@ -38,6 +43,15 @@ const Toolbox = () => {
       color: 'bg-red-600 hover:bg-red-700',
       badge: 'Emergency',
       badgeColor: 'bg-red-500'
+    },
+    {
+      id: 'foreman',
+      title: 'The Foreman',
+      description: 'AI mentor & affirmations',
+      icon: Bot,
+      color: 'bg-construction hover:bg-construction-dark',
+      badge: 'AI Chat',
+      badgeColor: 'bg-construction'
     },
     {
       id: 'urge',
@@ -90,6 +104,9 @@ const Toolbox = () => {
     switch (toolId) {
       case 'panic':
         handleEmergencyCall();
+        break;
+      case 'foreman':
+        onNavigate?.('foreman');
         break;
       case 'breathing':
         setShowBreathing(true);
@@ -160,9 +177,9 @@ const Toolbox = () => {
               <div className="p-6">
                 <div className="flex items-start justify-between mb-3">
                   <div className={`p-3 rounded-lg ${tool.color.split(' ')[0]} ${tool.color.split(' ')[0].replace('bg-', '')}`}>
-                    <Icon className="text-white" size={20} />
+                    <Icon className={tool.id === 'foreman' ? 'text-midnight' : 'text-white'} size={20} />
                   </div>
-                  <Badge className={`${tool.badgeColor} text-white text-xs font-oswald`}>
+                  <Badge className={`${tool.badgeColor} ${tool.id === 'foreman' ? 'text-midnight' : 'text-white'} text-xs font-oswald`}>
                     {tool.badge}
                   </Badge>
                 </div>

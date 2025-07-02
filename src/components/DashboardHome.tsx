@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Flame, Target, MessageCircle, BookOpen, Trophy, Calendar, Info, Smartphone } from 'lucide-react';
+import { Flame, Target, MessageCircle, BookOpen, Trophy, Calendar, Info, Smartphone, Bot } from 'lucide-react';
 import SMSOptIn from './SMSOptIn';
 
 interface DashboardHomeProps {
@@ -43,7 +43,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('/lovable-uploads/c61510da-8bef-4d57-8fba-f87d453bd59e.png')`
+          backgroundImage: `url('/lovable-uploads/c61510da-8bef-4d57-8fba-f87d453bd59e.png')`,
+          filter: 'brightness(0.5)'
         }}
       />
       
@@ -121,6 +122,25 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               />
             </Progress>
           </div>
+        </Card>
+
+        {/* Chat with The Foreman */}
+        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="bg-construction p-2 rounded-lg">
+              <Bot className="text-midnight" size={20} />
+            </div>
+            <div>
+              <h3 className="font-oswald font-semibold text-white">The Foreman</h3>
+              <p className="text-steel-light text-sm">Your AI recovery mentor</p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => onNavigate?.('foreman')}
+            className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold"
+          >
+            Chat with The Foreman
+          </Button>
         </Card>
 
         {/* Quick Actions */}
