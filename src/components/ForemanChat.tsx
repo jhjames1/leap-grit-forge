@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -94,6 +93,11 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
       "You came back. That's step one. Now let's figure out what led you there so we don't repeat the same loop.",
       "One slip doesn't tear down the whole job. We assess, we adjust, we keep building.",
       "The fact you're here telling me means you're not giving up. That's what counts."
+    ],
+    neutral: [
+      "I hear you. What's the next right thing you can do?",
+      "Every job has tough moments. What matters is how you handle them.",
+      "You're talking to me instead of giving up. That's already a win."
     ]
   };
 
