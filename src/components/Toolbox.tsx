@@ -14,12 +14,14 @@ import {
   Bot
 } from 'lucide-react';
 
+import BreathingExercise from '@/components/BreathingExercise';
+import UrgeTracker from '@/components/UrgeTracker';
+
 interface ToolboxProps {
   onNavigate?: (page: string) => void;
 }
 
 const Toolbox = ({ onNavigate }: ToolboxProps) => {
-  const [urgeLevel, setUrgeLevel] = useState(0);
   const [showBreathing, setShowBreathing] = useState(false);
   const [showUrgeTracker, setShowUrgeTracker] = useState(false);
   const [showGratitudeLog, setShowGratitudeLog] = useState(false);
@@ -54,8 +56,8 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     },
     {
       id: 'urge',
-      title: 'Urge Tracker',
-      description: 'Log and track cravings',
+      title: 'Redline Recovery',
+      description: 'Track urges & get redirected',
       icon: TrendingUp,
       color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
       badge: 'Track',
@@ -63,8 +65,8 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     },
     {
       id: 'breathing',
-      title: 'Breathing Exercise',
-      description: '4-7-8 technique for calm',
+      title: 'SteadySteel',
+      description: 'Interactive breathing exercise',
       icon: Wind,
       color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
       badge: 'Calm',
@@ -207,11 +209,11 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         <div className="space-y-3">
           <div className="flex items-center space-x-3 text-sm">
             <div className="w-3 h-3 bg-construction rounded-full"></div>
-            <span className="text-steel-light">Breathing exercise - <span className="text-construction font-medium">2 hours ago</span></span>
+            <span className="text-steel-light">SteadySteel session - <span className="text-construction font-medium">2 hours ago</span></span>
           </div>
           <div className="flex items-center space-x-3 text-sm">
             <div className="w-3 h-3 bg-construction rounded-full"></div>
-            <span className="text-steel-light">Gratitude entry - <span className="text-construction font-medium">5 hours ago</span></span>
+            <span className="text-steel-light">Urge logged and redirected - <span className="text-construction font-medium">5 hours ago</span></span>
           </div>
           <div className="flex items-center space-x-3 text-sm">
             <div className="w-3 h-3 bg-steel rounded-full"></div>
@@ -220,74 +222,16 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         </div>
       </Card>
 
-      {/* Modals */}
+      {/* Enhanced Tool Modals */}
       {showBreathing && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full">
-            <div className="text-center">
-              <h3 className="font-oswald font-semibold text-white text-xl mb-4">
-                4-7-8 Breathing
-              </h3>
-              <div className="mb-6">
-                <div className="w-20 h-20 mx-auto bg-construction/20 rounded-full flex items-center justify-center mb-4">
-                  <Wind className="text-construction" size={32} />
-                </div>
-                <p className="text-steel-light text-sm leading-relaxed">
-                  Inhale for 4 counts, hold for 7, exhale for 8. 
-                  This helps activate your body's relaxation response.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <Button className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold">
-                  Start Exercise
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowBreathing(false)}
-                  className="w-full border-steel text-steel-light hover:bg-steel/10"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <BreathingExercise onClose={() => setShowBreathing(false)} />
       )}
 
       {showUrgeTracker && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full">
-            <div className="text-center">
-              <h3 className="font-oswald font-semibold text-white text-xl mb-4">Urge Tracker</h3>
-              <p className="text-steel-light text-sm mb-6">Rate your current urge level (1-10)</p>
-              <div className="flex justify-center space-x-2 mb-6">
-                {[1,2,3,4,5,6,7,8,9,10].map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => setUrgeLevel(level)}
-                    className={`w-8 h-8 rounded transition-all duration-200 ${
-                      urgeLevel === level ? 'bg-construction text-midnight' : 'bg-steel-dark text-steel-light hover:bg-construction/50'
-                    }`}
-                  >
-                    {level}
-                  </button>
-                ))}
-              </div>
-              <div className="space-y-3">
-                <Button className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold">
-                  Log Urge
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowUrgeTracker(false)}
-                  className="w-full border-steel text-steel-light hover:bg-steel/10"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <UrgeTracker 
+          onClose={() => setShowUrgeTracker(false)} 
+          onNavigate={onNavigate}
+        />
       )}
 
       {showGratitudeLog && (
