@@ -268,6 +268,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
                 </div>
               </div>
             )}
+          </div>
         ))}
 
         {/* Style Options */}
