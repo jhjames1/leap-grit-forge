@@ -75,14 +75,16 @@ const RecoveryJourney = () => {
           </div>
           <div>
             <h3 className="font-oswald font-semibold text-white">Overall Progress</h3>
-            <p className="text-steel-light text-sm">Day {currentDay} of {totalDays}</p>
+            <p className="text-steel-light text-sm">
+              Day <span className="text-construction font-bold text-lg">{currentDay}</span> of {totalDays}
+            </p>
           </div>
         </div>
         
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-steel-light">Journey Progress</span>
-            <span className="text-construction font-oswald font-medium">{Math.round(progress)}%</span>
+            <span className="text-construction font-oswald font-bold text-lg">{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} className="h-3 bg-steel-dark">
             <div 
@@ -102,23 +104,23 @@ const RecoveryJourney = () => {
               module.completed 
                 ? 'bg-construction/10 border-construction/30' 
                 : module.unlocked 
-                  ? 'bg-white/10 backdrop-blur-sm hover:bg-white/15' 
+                  ? 'bg-white/10 backdrop-blur-sm hover:bg-white/15 hover:border-construction/20' 
                   : 'bg-steel-dark/20 border-steel-dark/50'
             }`}
           >
             <div className="flex items-center space-x-4">
               {/* Status Icon */}
-              <div className={`p-2 rounded-lg flex-shrink-0 ${
+              <div className={`p-2 rounded-lg flex-shrink-0 transition-all duration-200 ${
                 module.completed 
                   ? 'bg-construction' 
                   : module.unlocked 
-                    ? 'bg-steel' 
+                    ? 'bg-construction' 
                     : 'bg-steel-dark'
               }`}>
                 {module.completed ? (
                   <CheckCircle2 className="text-midnight" size={20} />
                 ) : module.unlocked ? (
-                  <Play className="text-white" size={20} />
+                  <Play className="text-midnight" size={20} />
                 ) : (
                   <Lock className="text-steel-light" size={20} />
                 )}
@@ -127,7 +129,7 @@ const RecoveryJourney = () => {
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-1">
-                  <span className="font-oswald font-semibold text-construction text-sm">
+                  <span className="font-oswald font-bold text-construction text-sm">
                     DAY {module.day}
                   </span>
                   <span className="text-steel-light text-xs">•</span>
@@ -143,7 +145,7 @@ const RecoveryJourney = () => {
                 </h3>
                 
                 <div className="flex items-center space-x-2 text-xs text-steel-light">
-                  <Clock size={12} />
+                  <Clock size={12} className="text-construction" />
                   <span>{module.duration}</span>
                 </div>
               </div>
@@ -171,7 +173,7 @@ const RecoveryJourney = () => {
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-steel-light">Day 24: Weekend Recovery Strategies</span>
-            <span className="text-construction font-oswald">Tomorrow</span>
+            <span className="text-construction font-oswald font-bold">Tomorrow</span>
           </div>
           <div className="flex justify-between">
             <span className="text-steel-light">Day 25: Peer Communication</span>
@@ -179,7 +181,7 @@ const RecoveryJourney = () => {
           </div>
           <div className="flex justify-between">
             <span className="text-steel-light">Day 30: Month Milestone Review</span>
-            <span className="text-construction font-oswald">1 week</span>
+            <span className="text-construction font-oswald font-bold">1 week</span>
           </div>
         </div>
       </Card>

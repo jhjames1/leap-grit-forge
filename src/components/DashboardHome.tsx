@@ -64,7 +64,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               variant="ghost"
               size="icon"
               onClick={() => setShowSMSOptIn(true)}
-              className="text-steel-light hover:text-white"
+              className="text-steel-light hover:text-construction hover:bg-construction/10"
             >
               <Smartphone size={20} />
             </Button>
@@ -72,7 +72,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               variant="ghost"
               size="icon"
               onClick={() => onNavigate?.('about')}
-              className="text-steel-light hover:text-white"
+              className="text-steel-light hover:text-construction hover:bg-construction/10"
             >
               <Info size={20} />
             </Button>
@@ -82,8 +82,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         {/* Daily Quote Card */}
         <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
           <div className="flex items-start space-x-3">
-            <div className="bg-steel p-2 rounded-lg">
-              <Target className="text-white" size={20} />
+            <div className="bg-construction p-2 rounded-lg">
+              <Target className="text-midnight" size={20} />
             </div>
             <div className="flex-1">
               <h3 className="font-oswald font-semibold text-white mb-2">Today's Motivation</h3>
@@ -96,16 +96,18 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="bg-steel p-2 rounded-lg">
-                <Flame className="text-white" size={20} />
+              <div className="bg-gradient-to-r from-construction to-construction-light p-2 rounded-lg">
+                <Flame className="text-midnight" size={20} />
               </div>
               <div>
                 <h3 className="font-oswald font-semibold text-white">Recovery Streak</h3>
-                <p className="text-steel-light text-sm">{streakDays} days strong</p>
+                <p className="text-steel-light text-sm">
+                  <span className="text-construction font-bold text-lg">{streakDays}</span> days strong
+                </p>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-anton text-steel-light">{streakDays}</div>
+              <div className="text-3xl font-anton text-construction">{streakDays}</div>
               <div className="text-xs text-steel-light font-oswald">DAYS</div>
             </div>
           </div>
@@ -113,11 +115,11 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-steel-light">Next milestone</span>
-              <span className="text-steel-light font-oswald font-medium">{nextMilestone} days</span>
+              <span className="text-construction font-oswald font-medium">{nextMilestone} days</span>
             </div>
             <Progress value={progressPercentage} className="h-3 bg-steel-dark">
               <div 
-                className="h-full bg-gradient-to-r from-steel to-steel-light rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-construction to-construction-light rounded-full transition-all duration-500"
                 style={{ width: `${progressPercentage}%` }}
               />
             </Progress>
@@ -147,17 +149,17 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Button 
             onClick={() => onNavigate?.('calendar')}
-            className="bg-steel hover:bg-steel-light text-white font-oswald font-semibold p-6 h-auto flex flex-col items-center space-y-2 rounded-xl industrial-shadow"
+            className="bg-gradient-to-br from-steel to-steel-light hover:from-construction/20 hover:to-construction/30 hover:border-construction text-white font-oswald font-semibold p-6 h-auto flex flex-col items-center space-y-2 rounded-xl industrial-shadow border border-steel-dark transition-all duration-200"
           >
-            <Calendar size={24} />
+            <Calendar size={24} className="text-construction" />
             <span>Calendar</span>
           </Button>
           
           <Button 
             onClick={() => onNavigate?.('chat')}
-            className="bg-steel hover:bg-steel-light text-white font-oswald font-semibold p-6 h-auto flex flex-col items-center space-y-2 rounded-xl industrial-shadow"
+            className="bg-gradient-to-br from-steel to-steel-light hover:from-construction/20 hover:to-construction/30 hover:border-construction text-white font-oswald font-semibold p-6 h-auto flex flex-col items-center space-y-2 rounded-xl industrial-shadow border border-steel-dark transition-all duration-200"
           >
-            <MessageCircle size={24} />
+            <MessageCircle size={24} className="text-construction" />
             <span>Chat Support</span>
           </Button>
         </div>
@@ -165,26 +167,28 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         {/* Recent Achievements */}
         <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="bg-steel p-2 rounded-lg">
-              <Trophy className="text-white" size={20} />
+            <div className="bg-construction p-2 rounded-lg">
+              <Trophy className="text-midnight" size={20} />
             </div>
             <h3 className="font-oswald font-semibold text-white">Recent Achievements</h3>
           </div>
           
           <div className="space-y-3">
-            <div className="flex items-center space-x-3 p-3 bg-steel/10 rounded-lg">
-              <div className="w-8 h-8 bg-steel rounded-full flex items-center justify-center">
-                <Calendar size={16} className="text-white" />
+            <div className="flex items-center space-x-3 p-3 bg-construction/10 rounded-lg border border-construction/20">
+              <div className="w-8 h-8 bg-construction rounded-full flex items-center justify-center">
+                <Calendar size={16} className="text-midnight" />
               </div>
               <div>
-                <p className="text-white font-medium">3-Week Milestone</p>
+                <p className="text-white font-medium">
+                  <span className="text-construction font-bold">3</span>-Week Milestone
+                </p>
                 <p className="text-steel-light text-sm">Earned 2 days ago</p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-3 p-3 bg-steel/10 rounded-lg">
+            <div className="flex items-center space-x-3 p-3 bg-steel/10 rounded-lg border border-steel/20">
               <div className="w-8 h-8 bg-steel rounded-full flex items-center justify-center">
-                <Target size={16} className="text-white" />
+                <Target size={16} className="text-construction" />
               </div>
               <div>
                 <p className="text-white font-medium">First Check-in</p>

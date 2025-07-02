@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,45 +57,45 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       title: 'Urge Tracker',
       description: 'Log and track cravings',
       icon: TrendingUp,
-      color: 'bg-steel hover:bg-steel-light',
+      color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
       badge: 'Track',
-      badgeColor: 'bg-steel'
+      badgeColor: 'bg-construction'
     },
     {
       id: 'breathing',
       title: 'Breathing Exercise',
       description: '4-7-8 technique for calm',
       icon: Wind,
-      color: 'bg-steel hover:bg-steel-light',
+      color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
       badge: 'Calm',
-      badgeColor: 'bg-steel'
+      badgeColor: 'bg-construction'
     },
     {
       id: 'gratitude',
       title: 'Gratitude Log',
       description: 'Focus on the positive',
       icon: Heart,
-      color: 'bg-steel hover:bg-steel-light',
+      color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
       badge: 'Mindset',
-      badgeColor: 'bg-steel'
+      badgeColor: 'bg-construction'
     },
     {
       id: 'journal',
       title: 'Quick Journal',
       description: 'Voice or text entry',
       icon: BookOpen,
-      color: 'bg-steel hover:bg-steel-light',
+      color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
       badge: 'Reflect',
-      badgeColor: 'bg-steel'
+      badgeColor: 'bg-construction'
     },
     {
       id: 'peer',
       title: 'Message Peer',
       description: 'Connect with your specialist',
       icon: MessageSquare,
-      color: 'bg-steel hover:bg-steel-light',
+      color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
       badge: 'Support',
-      badgeColor: 'bg-steel'
+      badgeColor: 'bg-construction'
     }
   ];
 
@@ -140,15 +139,15 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-4">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-xl font-anton text-steel-light">7</div>
+            <div className="text-2xl font-anton text-construction">7</div>
             <div className="text-xs text-steel-light font-oswald">Tools Used Today</div>
           </div>
           <div>
-            <div className="text-xl font-anton text-steel-light">23</div>
+            <div className="text-2xl font-anton text-construction">23</div>
             <div className="text-xs text-steel-light font-oswald">Day Streak</div>
           </div>
           <div>
-            <div className="text-xl font-anton text-steel-light">142</div>
+            <div className="text-2xl font-anton text-construction">142</div>
             <div className="text-xs text-steel-light font-oswald">Total Sessions</div>
           </div>
         </div>
@@ -171,20 +170,26 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
           return (
             <Card 
               key={tool.id}
-              className="bg-white/10 backdrop-blur-sm border-steel-dark hover:bg-white/15 transition-all duration-200 cursor-pointer"
+              className="bg-white/10 backdrop-blur-sm border-steel-dark hover:bg-white/15 hover:border-construction/30 transition-all duration-200 cursor-pointer group"
               onClick={() => handleToolClick(tool.id)}
             >
               <div className="p-6">
                 <div className="flex items-start justify-between mb-3">
-                  <div className={`p-3 rounded-lg ${tool.color.split(' ')[0]} ${tool.color.split(' ')[0].replace('bg-', '')}`}>
-                    <Icon className={tool.id === 'foreman' ? 'text-midnight' : 'text-white'} size={20} />
+                  <div className={`p-3 rounded-lg transition-all duration-200 ${
+                    tool.id === 'foreman' 
+                      ? 'bg-construction group-hover:bg-construction-light' 
+                      : 'bg-steel group-hover:bg-construction'
+                  }`}>
+                    <Icon className={`transition-colors duration-200 ${
+                      tool.id === 'foreman' ? 'text-midnight' : 'text-white group-hover:text-midnight'
+                    }`} size={20} />
                   </div>
-                  <Badge className={`${tool.badgeColor} ${tool.id === 'foreman' ? 'text-midnight' : 'text-white'} text-xs font-oswald`}>
+                  <Badge className={`${tool.badgeColor} text-midnight text-xs font-oswald transition-all duration-200`}>
                     {tool.badge}
                   </Badge>
                 </div>
                 
-                <h3 className="font-oswald font-semibold text-white mb-2">
+                <h3 className="font-oswald font-semibold text-white mb-2 group-hover:text-construction transition-colors duration-200">
                   {tool.title}
                 </h3>
                 <p className="text-steel-light text-sm leading-relaxed">
@@ -201,16 +206,16 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         <h3 className="font-oswald font-semibold text-white mb-4">Recent Activity</h3>
         <div className="space-y-3">
           <div className="flex items-center space-x-3 text-sm">
-            <div className="w-2 h-2 bg-steel rounded-full"></div>
-            <span className="text-steel-light">Breathing exercise - 2 hours ago</span>
+            <div className="w-3 h-3 bg-construction rounded-full"></div>
+            <span className="text-steel-light">Breathing exercise - <span className="text-construction font-medium">2 hours ago</span></span>
           </div>
           <div className="flex items-center space-x-3 text-sm">
-            <div className="w-2 h-2 bg-steel rounded-full"></div>
-            <span className="text-steel-light">Gratitude entry - 5 hours ago</span>
+            <div className="w-3 h-3 bg-construction rounded-full"></div>
+            <span className="text-steel-light">Gratitude entry - <span className="text-construction font-medium">5 hours ago</span></span>
           </div>
           <div className="flex items-center space-x-3 text-sm">
-            <div className="w-2 h-2 bg-steel rounded-full"></div>
-            <span className="text-steel-light">Journal entry - Yesterday</span>
+            <div className="w-3 h-3 bg-steel rounded-full"></div>
+            <span className="text-steel-light">Journal entry - <span className="text-steel-light font-medium">Yesterday</span></span>
           </div>
         </div>
       </Card>
@@ -224,8 +229,8 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
                 4-7-8 Breathing
               </h3>
               <div className="mb-6">
-                <div className="w-20 h-20 mx-auto bg-steel/20 rounded-full flex items-center justify-center mb-4">
-                  <Wind className="text-steel" size={32} />
+                <div className="w-20 h-20 mx-auto bg-construction/20 rounded-full flex items-center justify-center mb-4">
+                  <Wind className="text-construction" size={32} />
                 </div>
                 <p className="text-steel-light text-sm leading-relaxed">
                   Inhale for 4 counts, hold for 7, exhale for 8. 
@@ -233,7 +238,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
                 </p>
               </div>
               <div className="space-y-3">
-                <Button className="w-full bg-steel hover:bg-steel-light text-white font-oswald font-semibold">
+                <Button className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold">
                   Start Exercise
                 </Button>
                 <Button 
@@ -260,8 +265,8 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
                   <button
                     key={level}
                     onClick={() => setUrgeLevel(level)}
-                    className={`w-8 h-8 rounded ${
-                      urgeLevel === level ? 'bg-steel text-white' : 'bg-steel-dark text-steel-light'
+                    className={`w-8 h-8 rounded transition-all duration-200 ${
+                      urgeLevel === level ? 'bg-construction text-midnight' : 'bg-steel-dark text-steel-light hover:bg-construction/50'
                     }`}
                   >
                     {level}
@@ -269,7 +274,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
                 ))}
               </div>
               <div className="space-y-3">
-                <Button className="w-full bg-steel hover:bg-steel-light text-white font-oswald font-semibold">
+                <Button className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold">
                   Log Urge
                 </Button>
                 <Button 
@@ -292,10 +297,10 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
               <h3 className="font-oswald font-semibold text-white text-xl mb-4">Gratitude Log</h3>
               <textarea 
                 placeholder="What are you grateful for today?"
-                className="w-full h-32 p-3 bg-steel-dark border border-steel text-white placeholder:text-steel-light rounded mb-4"
+                className="w-full h-32 p-3 bg-steel-dark border border-steel text-white placeholder:text-steel-light rounded mb-4 focus:border-construction focus:ring-1 focus:ring-construction"
               />
               <div className="space-y-3">
-                <Button className="w-full bg-steel hover:bg-steel-light text-white font-oswald font-semibold">
+                <Button className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold">
                   Save Entry
                 </Button>
                 <Button 
@@ -318,10 +323,10 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
               <h3 className="font-oswald font-semibold text-white text-xl mb-4">Quick Journal</h3>
               <textarea 
                 placeholder="How are you feeling right now? What's on your mind?"
-                className="w-full h-32 p-3 bg-steel-dark border border-steel text-white placeholder:text-steel-light rounded mb-4"
+                className="w-full h-32 p-3 bg-steel-dark border border-steel text-white placeholder:text-steel-light rounded mb-4 focus:border-construction focus:ring-1 focus:ring-construction"
               />
               <div className="space-y-3">
-                <Button className="w-full bg-steel hover:bg-steel-light text-white font-oswald font-semibold">
+                <Button className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold">
                   Save Entry
                 </Button>
                 <Button 
