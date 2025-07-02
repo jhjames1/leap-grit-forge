@@ -12,7 +12,8 @@ import {
   MessageCircle,
   Mic,
   MicOff,
-  Users
+  Users,
+  Star
 } from 'lucide-react';
 
 interface ForemanChatProps {
@@ -24,84 +25,142 @@ interface Message {
   sender: 'user' | 'foreman';
   text: string;
   time: string;
-  affirmationId?: number;
+  hasActions?: boolean;
   isSaved?: boolean;
+  context?: string;
+}
+
+interface ConversationContext {
+  lastUserMessage: string;
+  mood: 'struggling' | 'hopeful' | 'frustrated' | 'neutral';
+  topics: string[];
+  sessionLength: number;
 }
 
 const ForemanChat = ({ onBack }: ForemanChatProps) => {
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      sender: 'foreman',
-      text: "Hey there, partner. I'm The Foreman - think of me as that wise old-timer on the job site who's got your back. What's on your mind today?",
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [savedAffirmations, setSavedAffirmations] = useState<number[]>([]);
+  const [conversationContext, setConversationContext] = useState<ConversationContext>({
+    lastUserMessage: '',
+    mood: 'neutral',
+    topics: [],
+    sessionLength: 0
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Recovery-focused affirmations with mixed tone
-  const affirmations = [
-    "Recovery isn't about being perfect - it's about being present for your life.",
-    "Every day you choose sobriety, you're choosing strength over surrender.",
-    "Your past doesn't define you, but your next choice can redefine everything.",
-    "Healing happens one honest conversation at a time, starting with yourself.",
-    "You didn't come this far to only come this far - keep building.",
-    "The courage to get help is the same courage that will carry you through.",
-    "Your recovery story is someone else's hope for tomorrow.",
-    "Sobriety isn't what you give up - it's everything you gain back.",
-    "Every sunrise is proof that you can start again.",
-    "The hardest battles are fought in silence, but you don't have to fight alone.",
-    "Progress isn't perfect, but it's always worth celebrating.",
-    "Your willingness to change is the foundation everything else builds on.",
-    "Recovery is the daily practice of choosing yourself over your addiction.",
-    "You're not broken - you're breaking free.",
-    "The person you're becoming is worth every difficult day.",
-    "Strength isn't avoiding the struggle - it's walking through it with purpose.",
-    "Your recovery journey is sacred work, and you're exactly where you need to be.",
-    "Sobriety gives you back the gift of feeling everything, including joy.",
-    "Every meeting attended, every call made, every day sober is a victory.",
-    "You have survived 100% of your worst days - that's an undefeated record.",
-    "Recovery is like learning to walk again, and you're getting stronger with each step.",
-    "The same power that got you through yesterday lives inside you today.",
-    "Your commitment to sobriety is your commitment to your future self.",
-    "Healing isn't linear, but it's always moving you toward wholeness.",
-    "You're rewriting your story one sober day at a time.",
-    "The tools you're building in recovery will serve you for life.",
-    "Your recovery ripples out to touch everyone who loves you.",
-    "Addiction told you lies - recovery shows you the truth of who you are.",
-    "Every craving you overcome makes you stronger for the next one.",
-    "You're not just getting clean - you're getting your life back.",
-    "Recovery is the bridge between who you were and who you're meant to be.",
-    "Your vulnerability in asking for help is actually your greatest strength.",
-    "Sobriety isn't punishment - it's the key to your freedom.",
-    "The work you're doing today is planting seeds for tomorrow's harvest.",
-    "You have everything inside you that you need to stay sober today.",
-    "Recovery teaches you that rock bottom can become your foundation.",
-    "Your decision to get sober was the beginning of your best life.",
-    "Every day in recovery is a day your future self will thank you for.",
-    "You're not just surviving your addiction - you're transforming through it.",
-    "The path of recovery leads to places addiction never could.",
-    "Your sobriety is a gift you give yourself every single day.",
-    "Recovery is proof that second chances can become your greatest success.",
-    "You're building a life so good that you don't need to escape from it.",
-    "Every support meeting is a reminder that you're never fighting alone.",
-    "Your recovery is evidence that change is always possible.",
-    "Sobriety clears the fog so you can see how bright your light really shines.",
-    "The courage to face your addiction is the same courage that will heal you.",
-    "You're not going back to who you were - you're becoming who you're meant to be.",
-    "Recovery is your daily practice of loving yourself back to life.",
-    "Your commitment to sobriety is your commitment to hope."
+  // Initialize with time-sensitive greeting
+  useEffect(() => {
+    const hour = new Date().getHours();
+    let greeting = '';
+    
+    if (hour < 12) {
+      greeting = "Good morning. What's on your mind?";
+    } else if (hour < 17) {
+      greeting = "Good afternoon. What's on your mind?";
+    } else {
+      greeting = "Good evening. What's on your mind?";
+    }
+
+    const initialMessage: Message = {
+      id: 1,
+      sender: 'foreman',
+      text: greeting,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setMessages([initialMessage]);
+  }, []);
+
+  // Recovery-focused response templates
+  const responseTemplates = {
+    struggling: [
+      "I've seen concrete crack under pressure. Doesn't mean the whole foundation's gone. Let's figure out where it's weak and fix it.",
+      "Even the strongest steel bends before it breaks. You're still standing—that's what matters.",
+      "Bad days don't build bad lives. You're here, you're talking—that's step one."
+    ],
+    hopeful: [
+      "That's the spirit I like to hear. Keep that momentum going.",
+      "You're building something solid here. One good choice at a time.",
+      "Sounds like you're finding your footing. Stay with that feeling."
+    ],
+    frustrated: [
+      "Frustration means you care. Channel that energy into something that moves you forward.",
+      "Sometimes you gotta tear down the old framework to build something better.",
+      "I get it. But anger without action is just noise. What's your next move?"
+    ],
+    relapse: [
+      "You came back. That's step one. Now let's figure out what led you there so we don't repeat the same loop.",
+      "One slip doesn't tear down the whole job. We assess, we adjust, we keep building.",
+      "The fact you're here telling me means you're not giving up. That's what counts."
+    ]
+  };
+
+  const fieldStories = [
+    "One time we drilled 300 feet through the wrong strata. Cost us two days. We still finished the job—and did it cleaner the second time.",
+    "I once watched a guy rebuild an entire foundation after it failed inspection. Took twice as long, but it's still standing 20 years later.",
+    "Had a crew that kept making the same mistake. Finally had to stop, retrain, start over. Best decision we made that year."
   ];
 
-  const getRandomAffirmation = () => {
-    const randomIndex = Math.floor(Math.random() * affirmations.length);
-    return {
-      id: randomIndex,
-      text: affirmations[randomIndex]
-    };
+  const followUpPrompts = [
+    "Want to talk more about that?",
+    "Need a stronger push?",
+    "Want a field story for perspective?",
+    "Rather talk to a Peer?"
+  ];
+
+  const reflectiveQuestions = [
+    "What's been the hardest part of today?",
+    "When was the last time you felt proud of how you handled something?",
+    "Are you avoiding something—or facing it head on?",
+    "What's got you shut down? You trying to push through, or hide from it?"
+  ];
+
+  const analyzeMood = (text: string): 'struggling' | 'hopeful' | 'frustrated' | 'neutral' => {
+    const lowerText = text.toLowerCase();
+    
+    if (lowerText.includes('give up') || lowerText.includes('hopeless') || lowerText.includes('can\'t') || lowerText.includes('failed')) {
+      return 'struggling';
+    }
+    if (lowerText.includes('good') || lowerText.includes('better') || lowerText.includes('proud') || lowerText.includes('strong')) {
+      return 'hopeful';
+    }
+    if (lowerText.includes('angry') || lowerText.includes('frustrated') || lowerText.includes('mad') || lowerText.includes('pissed')) {
+      return 'frustrated';
+    }
+    
+    return 'neutral';
+  };
+
+  const generateContextualResponse = (userMessage: string, context: ConversationContext): string => {
+    const mood = analyzeMood(userMessage);
+    const lowerMessage = userMessage.toLowerCase();
+    
+    // Handle specific recovery-related topics
+    if (lowerMessage.includes('drank') || lowerMessage.includes('used') || lowerMessage.includes('relapsed')) {
+      const responses = responseTemplates.relapse;
+      return responses[Math.floor(Math.random() * responses.length)];
+    }
+    
+    // Handle tone adjustment requests
+    if (lowerMessage.includes('tougher') || lowerMessage.includes('stronger') || lowerMessage.includes('tough love')) {
+      return "Alright then. No excuses. You know what needs to be done—do it anyway.";
+    }
+    
+    // Handle feeling words
+    if (lowerMessage.includes('numb') || lowerMessage.includes('empty')) {
+      return "What's got you shut down? You trying to push through, or hide from it?";
+    }
+    
+    // Use mood-based responses
+    const moodResponses = responseTemplates[mood] || responseTemplates.neutral || [
+      "I hear you. What's the next right thing you can do?",
+      "Every job has tough moments. What matters is how you handle them.",
+      "You're talking to me instead of giving up. That's already a win."
+    ];
+    
+    return moodResponses[Math.floor(Math.random() * moodResponses.length)];
   };
 
   const scrollToBottom = () => {
@@ -122,33 +181,58 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
       };
 
       setMessages(prev => [...prev, userMessage]);
+      
+      // Update conversation context
+      const newContext: ConversationContext = {
+        lastUserMessage: message,
+        mood: analyzeMood(message),
+        topics: [...conversationContext.topics, message],
+        sessionLength: conversationContext.sessionLength + 1
+      };
+      setConversationContext(newContext);
+      
       setMessage('');
 
-      // Generate Foreman response
+      // Generate contextual response
       setTimeout(() => {
-        const affirmation = getRandomAffirmation();
+        const responseText = generateContextualResponse(message, newContext);
+        
         const foremanResponse: Message = {
           id: messages.length + 2,
           sender: 'foreman',
-          text: affirmation.text,
+          text: responseText,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          affirmationId: affirmation.id
+          hasActions: true
         };
 
         setMessages(prev => [...prev, foremanResponse]);
+        
+        // Sometimes ask follow-up questions
+        if (Math.random() < 0.3 && newContext.sessionLength > 2) {
+          setTimeout(() => {
+            const followUpQuestion = reflectiveQuestions[Math.floor(Math.random() * reflectiveQuestions.length)];
+            const followUpMessage: Message = {
+              id: messages.length + 3,
+              sender: 'foreman',
+              text: followUpQuestion,
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              hasActions: true
+            };
+            setMessages(prev => [...prev, followUpMessage]);
+          }, 2000);
+        }
       }, 1000);
     }
   };
 
-  const handleSaveAffirmation = (affirmationId: number) => {
-    if (!savedAffirmations.includes(affirmationId)) {
-      setSavedAffirmations(prev => [...prev, affirmationId]);
+  const handleSaveMessage = (messageId: number) => {
+    if (!savedAffirmations.includes(messageId)) {
+      setSavedAffirmations(prev => [...prev, messageId]);
       
-      // Add confirmation message
       const confirmMessage: Message = {
         id: messages.length + 1,
         sender: 'foreman',
-        text: "Added to your Tool Belt. Smart thinking, partner.",
+        text: "Added to your Tool Belt. Smart thinking.",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       
@@ -157,13 +241,23 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
   };
 
   const handlePeerEscalation = () => {
-    // In a real app, this would navigate to peer chat
     window.location.href = 'sms:+14327018678?body=I need to talk to a peer specialist.';
+  };
+
+  const handleFieldStory = () => {
+    const story = fieldStories[Math.floor(Math.random() * fieldStories.length)];
+    const storyMessage: Message = {
+      id: messages.length + 1,
+      sender: 'foreman',
+      text: story,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      hasActions: true
+    };
+    setMessages(prev => [...prev, storyMessage]);
   };
 
   const toggleListening = () => {
     setIsListening(!isListening);
-    // Voice recognition would be implemented here
   };
 
   return (
@@ -185,7 +279,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
             </div>
             <div>
               <h2 className="font-oswald font-semibold text-white">The Foreman</h2>
-              <p className="text-steel-light text-sm">Your AI Recovery Mentor</p>
+              <p className="text-steel-light text-sm">Your Recovery Mentor</p>
             </div>
           </div>
         </div>
@@ -210,20 +304,28 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
               </div>
             </div>
 
-            {/* Action buttons for Foreman messages with affirmations */}
-            {msg.sender === 'foreman' && msg.affirmationId !== undefined && (
+            {/* Action buttons for Foreman messages */}
+            {msg.sender === 'foreman' && msg.hasActions && (
               <div className="flex justify-start mt-2">
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleSaveAffirmation(msg.affirmationId!)}
+                    onClick={() => handleSaveMessage(msg.id)}
                     className={`border-steel text-steel-light hover:text-white hover:bg-steel/20 ${
-                      savedAffirmations.includes(msg.affirmationId!) ? 'bg-steel/20' : ''
+                      savedAffirmations.includes(msg.id) ? 'bg-steel/20' : ''
                     }`}
                   >
-                    <Bookmark size={14} />
+                    <Star size={14} />
                     <span className="text-xs">Tool Belt</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleFieldStory}
+                    className="border-steel text-steel-light hover:text-white hover:bg-steel/20 text-xs"
+                  >
+                    Field Story
                   </Button>
                   <Button
                     size="sm"
@@ -231,7 +333,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
                     className="bg-construction hover:bg-construction-dark text-midnight text-xs font-oswald"
                   >
                     <Users size={14} className="mr-1" />
-                    Talk to a Peer
+                    Talk to Peer
                   </Button>
                 </div>
               </div>
@@ -260,7 +362,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Tell The Foreman what's on your mind..."
+            placeholder="What's on your mind?"
             className="flex-1 bg-white/10 border-steel-dark text-white placeholder:text-steel-light"
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
           />
