@@ -39,92 +39,69 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
     }
   ]);
   const [isListening, setIsListening] = useState(false);
-  const [showStyleOptions, setShowStyleOptions] = useState(false);
-  const [currentAffirmationId, setCurrentAffirmationId] = useState<number | null>(null);
   const [savedAffirmations, setSavedAffirmations] = useState<number[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Preloaded affirmations
-  const affirmations = {
-    toughLove: [
-      "Even steel breaks under pressure. What matters is how you weld it back.",
-      "You don't quit on a tough job. You double down and finish it clean.",
-      "Stop making excuses and start making progress. You're tougher than this.",
-      "Pain is temporary, but quitting lasts forever. Keep pushing.",
-      "You've survived 100% of your worst days so far. Today won't be different.",
-      "Real strength isn't avoiding the fall - it's getting back up every damn time.",
-      "The only way out is through. So suit up and get moving.",
-      "You're not built to break. You're built to bend and bounce back stronger.",
-      "Every champion has scars. Yours are proof you're still fighting.",
-      "Comfort zones are for quitters. Step outside and claim your ground.",
-      "You didn't come this far to only come this far. Finish what you started.",
-      "The weight you're carrying will either crush you or build you. Choose wisely.",
-      "Stop waiting for perfect conditions. Good enough conditions are enough.",
-      "Your excuses expire today. Your potential doesn't.",
-      "Pressure makes diamonds. You're under pressure for a reason."
-    ],
-    spiritual: [
-      "Grace doesn't make you weak. It makes you dangerous to your demons.",
-      "Even the strongest oak was once just an acorn that held its ground.",
-      "Your journey isn't about perfection - it's about purpose.",
-      "Every sunset promises a new dawn. Today's struggles end with today.",
-      "The same God who calms storms lives inside you.",
-      "You're not walking this path alone. There's strength in surrender.",
-      "Faith isn't the absence of fear - it's courage in spite of it.",
-      "Your scars tell a story of survival, not defeat.",
-      "Sometimes the bravest thing you can do is ask for help.",
-      "You are more than your mistakes. You are beloved, period.",
-      "Healing happens one breath, one choice, one day at a time.",
-      "The light inside you is stronger than any darkness around you.",
-      "Forgiveness isn't weakness - it's the ultimate power move.",
-      "You were created for more than just surviving. You were made to thrive.",
-      "Trust the process, even when you can't see the whole staircase."
-    ],
-    shortSharp: [
-      "One right choice is enough to shift the whole day.",
-      "Breathe. Stand. Move forward. That's winning today.",
-      "Progress over perfection. Always.",
-      "You've got this. Period.",
-      "Small steps still move mountains.",
-      "Today you choose strength.",
-      "Setbacks are setups for comebacks.",
-      "Your comeback starts now.",
-      "Tough times don't last. Tough people do.",
-      "Rise up. Show up. Never give up."
-    ],
-    general: [
-      "Every professional started as an amateur. You're learning, not failing.",
-      "The tools in your belt are only as good as the hands that use them.",
-      "Consistency beats intensity every single time.",
-      "You don't have to be perfect. You just have to be present.",
-      "Recovery is a job site - you show up every day and do the work.",
-      "Your past doesn't define your future. Your choices today do.",
-      "Strength isn't measured by what you can lift, but by what you can overcome.",
-      "Every master craftsman was once a disaster. Keep building.",
-      "The foundation you're laying today will support tomorrow's victories.",
-      "You're not behind in life. You're exactly where you need to be."
-    ]
-  };
+  // Recovery-focused affirmations with mixed tone
+  const affirmations = [
+    "Recovery isn't about being perfect - it's about being present for your life.",
+    "Every day you choose sobriety, you're choosing strength over surrender.",
+    "Your past doesn't define you, but your next choice can redefine everything.",
+    "Healing happens one honest conversation at a time, starting with yourself.",
+    "You didn't come this far to only come this far - keep building.",
+    "The courage to get help is the same courage that will carry you through.",
+    "Your recovery story is someone else's hope for tomorrow.",
+    "Sobriety isn't what you give up - it's everything you gain back.",
+    "Every sunrise is proof that you can start again.",
+    "The hardest battles are fought in silence, but you don't have to fight alone.",
+    "Progress isn't perfect, but it's always worth celebrating.",
+    "Your willingness to change is the foundation everything else builds on.",
+    "Recovery is the daily practice of choosing yourself over your addiction.",
+    "You're not broken - you're breaking free.",
+    "The person you're becoming is worth every difficult day.",
+    "Strength isn't avoiding the struggle - it's walking through it with purpose.",
+    "Your recovery journey is sacred work, and you're exactly where you need to be.",
+    "Sobriety gives you back the gift of feeling everything, including joy.",
+    "Every meeting attended, every call made, every day sober is a victory.",
+    "You have survived 100% of your worst days - that's an undefeated record.",
+    "Recovery is like learning to walk again, and you're getting stronger with each step.",
+    "The same power that got you through yesterday lives inside you today.",
+    "Your commitment to sobriety is your commitment to your future self.",
+    "Healing isn't linear, but it's always moving you toward wholeness.",
+    "You're rewriting your story one sober day at a time.",
+    "The tools you're building in recovery will serve you for life.",
+    "Your recovery ripples out to touch everyone who loves you.",
+    "Addiction told you lies - recovery shows you the truth of who you are.",
+    "Every craving you overcome makes you stronger for the next one.",
+    "You're not just getting clean - you're getting your life back.",
+    "Recovery is the bridge between who you were and who you're meant to be.",
+    "Your vulnerability in asking for help is actually your greatest strength.",
+    "Sobriety isn't punishment - it's the key to your freedom.",
+    "The work you're doing today is planting seeds for tomorrow's harvest.",
+    "You have everything inside you that you need to stay sober today.",
+    "Recovery teaches you that rock bottom can become your foundation.",
+    "Your decision to get sober was the beginning of your best life.",
+    "Every day in recovery is a day your future self will thank you for.",
+    "You're not just surviving your addiction - you're transforming through it.",
+    "The path of recovery leads to places addiction never could.",
+    "Your sobriety is a gift you give yourself every single day.",
+    "Recovery is proof that second chances can become your greatest success.",
+    "You're building a life so good that you don't need to escape from it.",
+    "Every support meeting is a reminder that you're never fighting alone.",
+    "Your recovery is evidence that change is always possible.",
+    "Sobriety clears the fog so you can see how bright your light really shines.",
+    "The courage to face your addiction is the same courage that will heal you.",
+    "You're not going back to who you were - you're becoming who you're meant to be.",
+    "Recovery is your daily practice of loving yourself back to life.",
+    "Your commitment to sobriety is your commitment to hope."
+  ];
 
-  const getAllAffirmations = () => {
-    return [
-      ...affirmations.toughLove.map((text, index) => ({ id: index, text, type: 'toughLove' })),
-      ...affirmations.spiritual.map((text, index) => ({ id: index + 15, text, type: 'spiritual' })),
-      ...affirmations.shortSharp.map((text, index) => ({ id: index + 30, text, type: 'shortSharp' })),
-      ...affirmations.general.map((text, index) => ({ id: index + 40, text, type: 'general' }))
-    ];
-  };
-
-  const getRandomAffirmation = (style?: string) => {
-    const allAffirmations = getAllAffirmations();
-    let pool = allAffirmations;
-    
-    if (style && style !== 'general') {
-      pool = allAffirmations.filter(aff => aff.type === style);
-    }
-    
-    const randomAffirmation = pool[Math.floor(Math.random() * pool.length)];
-    return randomAffirmation;
+  const getRandomAffirmation = () => {
+    const randomIndex = Math.floor(Math.random() * affirmations.length);
+    return {
+      id: randomIndex,
+      text: affirmations[randomIndex]
+    };
   };
 
   const scrollToBottom = () => {
@@ -159,25 +136,8 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
         };
 
         setMessages(prev => [...prev, foremanResponse]);
-        setCurrentAffirmationId(affirmation.id);
-        setShowStyleOptions(true);
       }, 1000);
     }
-  };
-
-  const handleStyleRequest = (style: string) => {
-    const affirmation = getRandomAffirmation(style);
-    const styleResponse: Message = {
-      id: messages.length + 1,
-      sender: 'foreman',
-      text: affirmation.text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      affirmationId: affirmation.id
-    };
-
-    setMessages(prev => [...prev, styleResponse]);
-    setCurrentAffirmationId(affirmation.id);
-    setShowStyleOptions(false);
   };
 
   const handleSaveAffirmation = (affirmationId: number) => {
@@ -251,7 +211,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
             </div>
 
             {/* Action buttons for Foreman messages with affirmations */}
-            {msg.sender === 'foreman' && msg.affirmationId && (
+            {msg.sender === 'foreman' && msg.affirmationId !== undefined && (
               <div className="flex justify-start mt-2">
                 <div className="flex space-x-2">
                   <Button
@@ -265,53 +225,19 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
                     <Bookmark size={14} />
                     <span className="text-xs">Tool Belt</span>
                   </Button>
+                  <Button
+                    size="sm"
+                    onClick={handlePeerEscalation}
+                    className="bg-construction hover:bg-construction-dark text-midnight text-xs font-oswald"
+                  >
+                    <Users size={14} className="mr-1" />
+                    Talk to a Peer
+                  </Button>
                 </div>
               </div>
             )}
           </div>
         ))}
-
-        {/* Style Options */}
-        {showStyleOptions && (
-          <div className="flex justify-start">
-            <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-4 max-w-[85%]">
-              <p className="text-white text-sm mb-3">Want a different style?</p>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => handleStyleRequest('toughLove')}
-                  className="bg-steel hover:bg-steel-light text-white text-xs"
-                >
-                  Tough Love
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleStyleRequest('spiritual')}
-                  className="bg-steel hover:bg-steel-light text-white text-xs"
-                >
-                  Spiritual
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleStyleRequest('shortSharp')}
-                  className="bg-steel hover:bg-steel-light text-white text-xs"
-                >
-                  Short & Sharp
-                </Button>
-              </div>
-              <div className="mt-3 pt-3 border-t border-steel-dark">
-                <Button
-                  size="sm"
-                  onClick={handlePeerEscalation}
-                  className="bg-construction hover:bg-construction-dark text-midnight text-xs font-oswald"
-                >
-                  <Users size={14} className="mr-1" />
-                  Talk to a Peer Instead
-                </Button>
-              </div>
-            </Card>
-          </div>
-        )}
 
         <div ref={messagesEndRef} />
       </div>
