@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,16 +7,14 @@ import {
   AlertTriangle, 
   Wind, 
   Heart, 
-  BookOpen, 
-  Phone, 
   TrendingUp,
-  Timer,
-  MessageSquare,
   Bot
 } from 'lucide-react';
 
 import BreathingExercise from '@/components/BreathingExercise';
 import UrgeTracker from '@/components/UrgeTracker';
+import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
+import { useUserData } from '@/hooks/useUserData';
 
 interface ToolboxProps {
   onNavigate?: (page: string) => void;
@@ -25,14 +24,11 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const [showBreathing, setShowBreathing] = useState(false);
   const [showUrgeTracker, setShowUrgeTracker] = useState(false);
   const [showGratitudeLog, setShowGratitudeLog] = useState(false);
-  const [showJournal, setShowJournal] = useState(false);
+  const { userData, logActivity, updateToolboxStats } = useUserData();
 
   const handleEmergencyCall = () => {
     window.location.href = 'tel:+14327018678';
-  };
-
-  const handlePeerSupport = () => {
-    window.location.href = 'sms:+14327018678?body=I need support right now.';
+    logActivity('Emergency Call', 'Called emergency support line');
   };
 
   const tools = [
@@ -80,24 +76,6 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
       badge: 'Mindset',
       badgeColor: 'bg-construction'
-    },
-    {
-      id: 'journal',
-      title: 'Quick Journal',
-      description: 'Voice or text entry',
-      icon: BookOpen,
-      color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
-      badge: 'Reflect',
-      badgeColor: 'bg-construction'
-    },
-    {
-      id: 'peer',
-      title: 'Message Peer',
-      description: 'Connect with your specialist',
-      icon: MessageSquare,
-      color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
-      badge: 'Support',
-      badgeColor: 'bg-construction'
     }
   ];
 
@@ -107,6 +85,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         handleEmergencyCall();
         break;
       case 'foreman':
+        logActivity('The Foreman', 'Started AI mentor session');
         onNavigate?.('foreman');
         break;
       case 'breathing':
@@ -118,14 +97,30 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       case 'gratitude':
         setShowGratitudeLog(true);
         break;
-      case 'journal':
-        setShowJournal(true);
-        break;
-      case 'peer':
-        handlePeerSupport();
-        break;
       default:
         console.log(`Opening ${toolId} tool`);
+    }
+  };
+
+  const handleBreathingComplete = () => {
+    setShowBreathing(false);
+    logActivity('SteadySteel', 'Completed breathing exercise');
+    if (userData) {
+      updateToolboxStats({
+        toolsToday: userData.toolboxStats.toolsToday + 1,
+        totalSessions: userData.toolboxStats.totalSessions + 1
+      });
+    }
+  };
+
+  const handleUrgeTracked = () => {
+    setShowUrgeTracker(false);
+    logActivity('Redline Recovery', 'Tracked and redirected urge');
+    if (userData) {
+      updateToolboxStats({
+        toolsToday: userData.toolboxStats.toolsToday + 1,
+        urgesThisWeek: userData.toolboxStats.urgesThisWeek + 1
+      });
     }
   };
 
@@ -137,19 +132,25 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         <p className="text-steel-light font-oswald">Your support tools, always ready</p>
       </div>
 
-      {/* Quick Stats */}
+      {/* Live Stats */}
       <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-4">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-anton text-construction">7</div>
+            <div className="text-2xl font-anton text-construction">
+              {userData?.toolboxStats.toolsToday || 0}
+            </div>
             <div className="text-xs text-steel-light font-oswald">Tools Used Today</div>
           </div>
           <div>
-            <div className="text-2xl font-anton text-construction">23</div>
+            <div className="text-2xl font-anton text-construction">
+              {userData?.toolboxStats.streak || 1}
+            </div>
             <div className="text-xs text-steel-light font-oswald">Day Streak</div>
           </div>
           <div>
-            <div className="text-2xl font-anton text-construction">142</div>
+            <div className="text-2xl font-anton text-construction">
+              {userData?.toolboxStats.totalSessions || 0}
+            </div>
             <div className="text-xs text-steel-light font-oswald">Total Sessions</div>
           </div>
         </div>
@@ -203,87 +204,45 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         })}
       </div>
 
-      {/* Recent Activity */}
+      {/* Live Recent Activity */}
       <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mt-6 p-6">
         <h3 className="font-oswald font-semibold text-white mb-4">Recent Activity</h3>
         <div className="space-y-3">
-          <div className="flex items-center space-x-3 text-sm">
-            <div className="w-3 h-3 bg-construction rounded-full"></div>
-            <span className="text-steel-light">SteadySteel session - <span className="text-construction font-medium">2 hours ago</span></span>
-          </div>
-          <div className="flex items-center space-x-3 text-sm">
-            <div className="w-3 h-3 bg-construction rounded-full"></div>
-            <span className="text-steel-light">Urge logged and redirected - <span className="text-construction font-medium">5 hours ago</span></span>
-          </div>
-          <div className="flex items-center space-x-3 text-sm">
-            <div className="w-3 h-3 bg-steel rounded-full"></div>
-            <span className="text-steel-light">Journal entry - <span className="text-steel-light font-medium">Yesterday</span></span>
-          </div>
+          {userData?.activityLog.length ? (
+            userData.activityLog.slice(0, 3).map((activity, index) => (
+              <div key={activity.id} className="flex items-center space-x-3 text-sm">
+                <div className={`w-3 h-3 rounded-full ${
+                  index === 0 ? 'bg-construction' : 'bg-steel'
+                }`}></div>
+                <span className="text-steel-light">
+                  {activity.action} - <span className={`font-medium ${
+                    index === 0 ? 'text-construction' : 'text-steel-light'
+                  }`}>{activity.timestamp}</span>
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className="text-steel-light text-sm">
+              Your activity will appear here as you use the tools.
+            </div>
+          )}
         </div>
       </Card>
 
-      {/* Enhanced Tool Modals */}
+      {/* Tool Modals */}
       {showBreathing && (
-        <BreathingExercise onClose={() => setShowBreathing(false)} />
+        <BreathingExercise onClose={handleBreathingComplete} />
       )}
 
       {showUrgeTracker && (
         <UrgeTracker 
-          onClose={() => setShowUrgeTracker(false)} 
+          onClose={handleUrgeTracked} 
           onNavigate={onNavigate}
         />
       )}
 
       {showGratitudeLog && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full">
-            <div className="text-center">
-              <h3 className="font-oswald font-semibold text-white text-xl mb-4">Gratitude Log</h3>
-              <textarea 
-                placeholder="What are you grateful for today?"
-                className="w-full h-32 p-3 bg-steel-dark border border-steel text-white placeholder:text-steel-light rounded mb-4 focus:border-construction focus:ring-1 focus:ring-construction"
-              />
-              <div className="space-y-3">
-                <Button className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold">
-                  Save Entry
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowGratitudeLog(false)}
-                  className="w-full border-steel text-steel-light hover:bg-steel/10"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {showJournal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full">
-            <div className="text-center">
-              <h3 className="font-oswald font-semibold text-white text-xl mb-4">Quick Journal</h3>
-              <textarea 
-                placeholder="How are you feeling right now? What's on your mind?"
-                className="w-full h-32 p-3 bg-steel-dark border border-steel text-white placeholder:text-steel-light rounded mb-4 focus:border-construction focus:ring-1 focus:ring-construction"
-              />
-              <div className="space-y-3">
-                <Button className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold">
-                  Save Entry
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowJournal(false)}
-                  className="w-full border-steel text-steel-light hover:bg-steel/10"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <GratitudeLogEnhanced onClose={() => setShowGratitudeLog(false)} />
       )}
     </div>
   );

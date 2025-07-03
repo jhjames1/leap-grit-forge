@@ -26,7 +26,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
       {/* Content Overlay */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 text-center">
         
-        {/* LEAP Logo - removed background shading */}
+        {/* LEAP Logo */}
         <div className="mb-8 animate-fade-in">
           <h1 className="font-anton text-6xl md:text-8xl text-white text-shadow mb-2 tracking-wider transform -skew-x-6">
             LEAP

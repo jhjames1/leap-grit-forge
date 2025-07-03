@@ -1,6 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SplashScreen from '@/components/SplashScreen';
+import UserAuth from '@/components/UserAuth';
+import PersonalizedGreeting from '@/components/PersonalizedGreeting';
 import BottomNavigation from '@/components/BottomNavigation';
 import DashboardHome from '@/components/DashboardHome';
 import RecoveryJourney from '@/components/RecoveryJourney';
@@ -15,13 +17,57 @@ import AdminDashboard from '@/components/AdminDashboard';
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showGreeting, setShowGreeting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [currentPage, setCurrentPage] = useState('home');
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
 
+  useEffect(() => {
+    // Check if user is already logged in
+    const existingUser = localStorage.getItem('currentUser');
+    if (existingUser) {
+      setCurrentUser(existingUser);
+    }
+  }, []);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    if (!currentUser) {
+      setShowAuth(true);
+    } else {
+      setShowGreeting(true);
+    }
+  };
+
+  const handleLogin = (userData: { firstName: string; isNewUser: boolean }) => {
+    setCurrentUser(userData.firstName);
+    localStorage.setItem('currentUser', userData.firstName);
+    setShowAuth(false);
+    setShowGreeting(true);
+  };
+
+  const handleGreetingComplete = () => {
+    setShowGreeting(false);
+  };
+
   if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
+  if (showAuth) {
+    return <UserAuth onLogin={handleLogin} />;
+  }
+
+  if (showGreeting) {
+    return (
+      <PersonalizedGreeting 
+        firstName={currentUser || undefined}
+        onContinue={handleGreetingComplete}
+      />
+    );
   }
 
   if (showAdminLogin && !isAdminLoggedIn) {

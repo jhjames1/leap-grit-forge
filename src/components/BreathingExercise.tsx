@@ -39,10 +39,10 @@ const BreathingExercise = ({ onClose }: BreathingExerciseProps) => {
   };
 
   const voicePrompts = {
-    inhale: "Inhale slow and steady...",
-    hold: "Hold it... stay with me...",
-    exhale: "Now exhale... let that tension drain...",
-    rest: "You're steady. You're solid."
+    inhale: "Inhale slow and steady",
+    hold: "Hold it, stay with me",
+    exhale: "Now exhale, let that tension drain",
+    rest: "You're steady, you're solid"
   };
 
   const startSession = () => {
@@ -111,10 +111,29 @@ const BreathingExercise = ({ onClose }: BreathingExerciseProps) => {
 
   const speakText = (text: string) => {
     if ('speechSynthesis' in window) {
+      // Cancel any existing speech
+      speechSynthesis.cancel();
+      
       const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Configure for British female voice
+      const voices = speechSynthesis.getVoices();
+      const britishFemale = voices.find(voice => 
+        voice.lang.includes('en-GB') && voice.name.toLowerCase().includes('female')
+      ) || voices.find(voice => 
+        voice.lang.includes('en-GB')
+      ) || voices.find(voice => 
+        voice.name.toLowerCase().includes('karen') || voice.name.toLowerCase().includes('amy')
+      );
+      
+      if (britishFemale) {
+        utterance.voice = britishFemale;
+      }
+      
       utterance.rate = 0.8;
-      utterance.pitch = 0.8;
+      utterance.pitch = 0.9;
       utterance.volume = 0.7;
+      
       speechSynthesis.speak(utterance);
     }
   };
@@ -147,7 +166,7 @@ const BreathingExercise = ({ onClose }: BreathingExerciseProps) => {
       clearInterval(timerRef.current);
     }
     
-    // Show completion message
+    // Show completion message with British female voice
     const completionMessages = [
       "That's what slowing down feels like. Solid work.",
       "Good move. You just reset your system.",
@@ -155,7 +174,10 @@ const BreathingExercise = ({ onClose }: BreathingExerciseProps) => {
     ];
     
     const message = completionMessages[Math.floor(Math.random() * completionMessages.length)];
-    alert(message); // Replace with toast notification
+    
+    if (voiceGuideEnabled) {
+      speakText(message);
+    }
     
     setTimeout(() => {
       onClose();
@@ -178,6 +200,7 @@ const BreathingExercise = ({ onClose }: BreathingExerciseProps) => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      speechSynthesis.cancel();
     };
   }, []);
 
@@ -240,7 +263,7 @@ const BreathingExercise = ({ onClose }: BreathingExerciseProps) => {
 
             {/* Voice Guide */}
             <div className="flex items-center justify-between mb-8">
-              <span className="text-white font-oswald font-medium">Voice Guide</span>
+              <span className="text-white font-oswald font-medium">Voice Guide (British Female)</span>
               <div className="flex items-center space-x-2">
                 {voiceGuideEnabled ? <Volume2 size={16} className="text-construction" /> : <VolumeX size={16} className="text-steel" />}
                 <Switch
