@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -36,7 +35,6 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     "Your past doesn't define your future.",
     "Courage isn't the absence of fear, it's moving forward despite it.",
     "Every small step forward is a victory.",
-    // Add more quotes up to 90 unique ones
     "Recovery is a journey of self-discovery.",
     "You have the power to change your story.",
     "Healing happens one breath at a time.",
@@ -50,38 +48,37 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
   useEffect(() => {
     // Load daily motivation based on user's day count
-    const today = new Date().toDateString();
+    const currentDate = new Date();
+    const todayString = currentDate.toDateString();
     const savedMotivationDate = localStorage.getItem('motivationDate');
     const savedMotivation = localStorage.getItem('dailyMotivation');
-    const userStartDate = localStorage.getItem('userStartDate') || today;
+    const userStartDate = localStorage.getItem('userStartDate') || todayString;
     
-    if (savedMotivationDate === today && savedMotivation) {
+    if (savedMotivationDate === todayString && savedMotivation) {
       setDailyMotivation(savedMotivation);
     } else {
       // Calculate days since user started
       const startDate = new Date(userStartDate);
-      const currentDate = new Date();
       const daysSinceStart = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       const quoteIndex = daysSinceStart % dailyQuotes.length;
       
       const newMotivation = dailyQuotes[quoteIndex];
       setDailyMotivation(newMotivation);
-      localStorage.setItem('motivationDate', today);
+      localStorage.setItem('motivationDate', todayString);
       localStorage.setItem('dailyMotivation', newMotivation);
       
       if (!localStorage.getItem('userStartDate')) {
-        localStorage.setItem('userStartDate', today);
+        localStorage.setItem('userStartDate', todayString);
       }
     }
 
     // Calculate recovery streak
     const activityLog = userData?.activityLog || [];
-    const today = new Date();
     let currentStreak = 0;
     
     for (let i = 0; i < 365; i++) { // Check up to 365 days back
-      const checkDate = new Date(today);
-      checkDate.setDate(today.getDate() - i);
+      const checkDate = new Date(currentDate);
+      checkDate.setDate(currentDate.getDate() - i);
       const dateString = checkDate.toDateString();
       
       const hasActivity = activityLog.some(entry => 
@@ -108,10 +105,10 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       const hoursUntilMidnight = (midnight.getTime() - now.getTime()) / (1000 * 60 * 60);
       
       const hasActivityToday = activityLog.some(entry => 
-        new Date(entry.timestamp).toDateString() === today.toDateString()
+        new Date(entry.timestamp).toDateString() === currentDate.toDateString()
       );
       
-      const reminderShownToday = localStorage.getItem('streakReminderShown') === today.toDateString();
+      const reminderShownToday = localStorage.getItem('streakReminderShown') === currentDate.toDateString();
       
       if (hoursUntilMidnight <= 3 && !hasActivityToday && !reminderShownToday) {
         setShowStreakReminder(true);
