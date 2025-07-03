@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 
 const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
   const [loading, setLoading] = useState(true);
@@ -8,10 +7,14 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 3000);
+      // Auto-transition after splash animation
+      setTimeout(() => {
+        onComplete();
+      }, 500); // Small delay for smooth transition
+    }, 2500); // 2.5 seconds total
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [onComplete]);
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
@@ -37,28 +40,19 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
         </div>
 
         {/* Loading Animation */}
-        {loading ? (
-          <div className="mb-12 animate-scale-in">
-            <div className="relative w-20 h-20">
-              {/* Gauge Background */}
-              <div className="absolute inset-0 border-4 border-steel-light rounded-full opacity-30"></div>
-              {/* Animated Gauge */}
-              <div className="absolute inset-0 border-4 border-construction rounded-full border-t-transparent animate-gauge-spin"></div>
-              {/* Center Dot */}
-              <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-construction rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
-            </div>
-            <p className="text-white font-oswald mt-4 text-sm tracking-wide">
-              Loading your tools...
-            </p>
+        <div className="mb-12 animate-scale-in">
+          <div className="relative w-20 h-20">
+            {/* Gauge Background */}
+            <div className="absolute inset-0 border-4 border-steel-light rounded-full opacity-30"></div>
+            {/* Animated Gauge */}
+            <div className="absolute inset-0 border-4 border-construction rounded-full border-t-transparent animate-gauge-spin"></div>
+            {/* Center Dot */}
+            <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-construction rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
           </div>
-        ) : (
-          <Button 
-            onClick={onComplete}
-            className="bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold px-8 py-3 rounded-lg text-lg tracking-wide transition-all duration-200 transform hover:scale-105 industrial-shadow"
-          >
-            Get Started
-          </Button>
-        )}
+          <p className="text-white font-oswald mt-4 text-sm tracking-wide">
+            Loading your tools...
+          </p>
+        </div>
 
         {/* Thriving United Logo */}
         <div className="absolute bottom-8 right-8">

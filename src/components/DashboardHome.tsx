@@ -172,8 +172,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         }}
       />
       
-      {/* Enhanced Dark Overlay for Better Text Legibility */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-midnight/60 to-black/70"></div>
+      {/* Enhanced Dark Overlay for Better Text Legibility - Updated to 50% opacity */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-midnight/50 to-black/50"></div>
       
       {/* Content */}
       <div className="relative z-10 p-4 pb-24">
@@ -206,8 +206,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         {/* Recovery Strength Meter */}
         <RecoveryStrengthMeter data={strengthData} />
 
-        {/* Daily Quote Card */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6 mt-6">
+        {/* Daily Quote Card - Updated styling */}
+        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] mb-6 p-6 mt-6 rounded-lg">
           <div className="flex items-start space-x-3">
             <div className="bg-construction p-2 rounded-lg">
               <Target className="text-midnight" size={20} />
@@ -219,8 +219,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </Card>
 
-        {/* Progress Streak */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
+        {/* Progress Streak - Updated styling */}
+        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] mb-6 p-6 rounded-lg">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div className="bg-gradient-to-r from-construction to-construction-light p-2 rounded-lg">
@@ -246,15 +246,15 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             </div>
             <Progress value={progressPercentage} className="h-3 bg-steel-dark">
               <div 
-                className="h-full bg-gradient-to-r from-construction to-construction-light rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-[#F9D058] to-[#FBE89D] rounded-full transition-all duration-500"
                 style={{ width: `${progressPercentage}%` }}
               />
             </Progress>
           </div>
         </Card>
 
-        {/* Recent Achievements */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
+        {/* Recent Achievements - Updated styling */}
+        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] p-6 rounded-lg">
           <div className="flex items-center space-x-3 mb-4">
             <div className="bg-construction p-2 rounded-lg">
               <Trophy className="text-midnight" size={20} />

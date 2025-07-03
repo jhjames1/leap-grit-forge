@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +9,6 @@ import {
   Video, 
   Calendar, 
   ArrowLeft,
-  MessageCircle,
   User,
   Shield
 } from 'lucide-react';
@@ -24,53 +22,48 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   const [currentView, setCurrentView] = useState<'selection' | 'chat'>('selection');
   const [selectedPeer, setSelectedPeer] = useState<any>(null);
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'peer',
-      text: "Hey there! How are you doing today? I saw you completed your day 23 module - that's awesome progress!",
-      time: '10:30 AM',
-      isRead: true
-    },
-    {
-      id: 2,
-      sender: 'user',
-      text: "Thanks! It was tough this morning but I'm feeling better now. Work stress was getting to me.",
-      time: '10:45 AM',
-      isRead: true
-    },
-    {
-      id: 3,
-      sender: 'peer',
-      text: "I totally get that. Work stress is one of the biggest triggers for a lot of guys. Have you tried the breathing technique we talked about?",
-      time: '10:47 AM',
-      isRead: true
-    },
-    {
-      id: 4,
-      sender: 'user',
-      text: "Yeah, actually used it twice today. Really helps center me.",
-      time: '11:15 AM',
-      isRead: true
-    }
-  ]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+
+  // Load user-specific chat history when peer is selected
+  useEffect(() => {
+    if (selectedPeer && currentView === 'chat') {
+      const currentUser = localStorage.getItem('currentUser') || 'User';
+      const chatKey = `chat_${currentUser}_${selectedPeer.id}`;
+      const savedMessages = localStorage.getItem(chatKey);
+      
+      if (savedMessages) {
+        setMessages(JSON.parse(savedMessages));
+      } else {
+        // Start with a clean slate for new conversations
+        setMessages([]);
+        
+        if (selectedPeer.isOfflineMessage) {
+          const offlineMessage = {
+            id: Date.now(),
+            sender: 'system',
+            text: `${selectedPeer.name} is currently offline. Your message will be delivered when they're available.`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isRead: false
+          };
+          setMessages([offlineMessage]);
+        }
+      }
+    }
+  }, [selectedPeer, currentView]);
+
+  // Save messages when they change
+  useEffect(() => {
+    if (selectedPeer && messages.length > 0) {
+      const currentUser = localStorage.getItem('currentUser') || 'User';
+      const chatKey = `chat_${currentUser}_${selectedPeer.id}`;
+      localStorage.setItem(chatKey, JSON.stringify(messages));
+    }
+  }, [messages, selectedPeer]);
 
   const handleSelectPeer = (peer: any) => {
     setSelectedPeer(peer);
     setCurrentView('chat');
-    
-    if (peer.isOfflineMessage) {
-      // Add system message for offline peer
-      const offlineMessage = {
-        id: Date.now(),
-        sender: 'system',
-        text: `${peer.name} is currently offline. Your message will be delivered when they're available.`,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isRead: false
-      };
-      setMessages(prev => [...prev, offlineMessage]);
-    }
   };
 
   const handleSendMessage = () => {
@@ -91,7 +84,6 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         setIsTyping(true);
         setTimeout(() => {
           setIsTyping(false);
-          // Could add automatic peer response here
         }, 2000);
       }
     }

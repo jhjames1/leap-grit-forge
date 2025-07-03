@@ -43,8 +43,8 @@ const PersonalizedGreeting = ({ firstName, onContinue }: PersonalizedGreetingPro
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full animate-fade-in">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full animate-scale-in">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto bg-construction/20 rounded-full flex items-center justify-center mb-6">
             {getIcon()}
@@ -54,19 +54,16 @@ const PersonalizedGreeting = ({ firstName, onContinue }: PersonalizedGreetingPro
             <h2 className="font-oswald font-bold text-white text-2xl mb-3">
               Good {timeOfDay}{firstName ? `, ${firstName}` : ''}.
             </h2>
-            <p className="text-steel-light text-lg mb-2">
+            <p className="text-steel-light text-lg mb-6">
               I'm glad you're here.
-            </p>
-            <p className="text-construction font-oswald font-semibold text-xl">
-              Let's take a LEAP today.
             </p>
           </div>
 
           <Button 
             onClick={handleContinue}
-            className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-bold py-3 text-lg"
+            className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-bold py-3 text-lg transition-all duration-200 transform hover:scale-105"
           >
-            Let's Go
+            Let's LEAP
           </Button>
         </div>
       </Card>

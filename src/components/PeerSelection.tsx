@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, User, Circle, MessageCircle, Video, Phone } from 'lucide-react';
+import { ArrowLeft, User, MessageCircle, Video, Phone } from 'lucide-react';
 
 interface PeerSelectionProps {
   onBack: () => void;
@@ -16,36 +16,28 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
       id: 1,
       name: 'Mike Rodriguez',
       status: 'online',
-      specialty: 'Work Stress & Recovery',
-      experience: '5 years',
-      rating: 4.9,
+      yearsInRecovery: 5,
       availability: 'Available now'
     },
     {
       id: 2,
       name: 'David Chen',
       status: 'away',
-      specialty: 'Family & Relationships',
-      experience: '3 years',
-      rating: 4.8,
+      yearsInRecovery: 3,
       availability: 'Back in 15 mins'
     },
     {
       id: 3,
       name: 'Marcus Thompson',
       status: 'offline',
-      specialty: 'Addiction Recovery',
-      experience: '8 years',
-      rating: 5.0,
+      yearsInRecovery: 8,
       availability: 'Available at 2:00 PM'
     },
     {
       id: 4,
       name: 'James Wilson',
       status: 'online',
-      specialty: 'Mindfulness & Coping',
-      experience: '4 years',
-      rating: 4.7,
+      yearsInRecovery: 4,
       availability: 'Available now'
     }
   ]);
@@ -70,7 +62,6 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
 
   const handleSelectPeer = (peer: any) => {
     if (peer.status === 'offline') {
-      // Show offline message option
       const leaveMessage = confirm(`${peer.name} is currently offline. Would you like to leave a message?`);
       if (leaveMessage) {
         onSelectPeer({ ...peer, isOfflineMessage: true });
@@ -118,8 +109,7 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
                   </Badge>
                 </div>
                 
-                <p className="text-construction text-sm font-medium mb-1">{peer.specialty}</p>
-                <p className="text-steel-light text-sm mb-2">{peer.experience} experience • ⭐ {peer.rating}</p>
+                <p className="text-steel-light text-sm mb-2">Years in Recovery: {peer.yearsInRecovery}</p>
                 <p className="text-steel-light text-xs mb-3">{peer.availability}</p>
                 
                 <div className="flex space-x-2">
