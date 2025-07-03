@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -168,19 +169,18 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: `url('/lovable-uploads/c61510da-8bef-4d57-8fba-f87d453bd59e.png')`,
-          filter: 'brightness(0.5)'
         }}
       />
       
-      {/* Darker Background Overlay */}
-      <div className="absolute inset-0 bg-midnight/85"></div>
+      {/* Enhanced Dark Overlay for Better Text Legibility */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-midnight/60 to-black/70"></div>
       
       {/* Content */}
       <div className="relative z-10 p-4 pb-24">
         {/* Header */}
         <div className="mb-6 flex justify-between items-start">
           <div>
-            <h1 className="font-anton text-3xl text-white mb-2">Daily LEAP</h1>
+            <h1 className="font-anton text-3xl text-white mb-2 text-shadow">Daily LEAP</h1>
             <p className="text-steel-light font-oswald">Your recovery journey continues</p>
           </div>
           <div className="flex space-x-2">

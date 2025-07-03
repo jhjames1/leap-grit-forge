@@ -30,6 +30,8 @@ const Index = () => {
     const existingUser = localStorage.getItem('currentUser');
     if (existingUser) {
       setCurrentUser(existingUser);
+      // Update last login timestamp
+      localStorage.setItem('lastLogin', new Date().toDateString());
     }
   }, []);
 
@@ -110,7 +112,7 @@ const Index = () => {
       case 'toolbox':
         return <Toolbox onNavigate={handleNavigation} />;
       case 'chat':
-        return <PeerChat />;
+        return <PeerChat onBack={handleBackToHome} />;
       case 'profile':
         return <UserProfile onNavigate={handleNavigation} />;
       case 'about':

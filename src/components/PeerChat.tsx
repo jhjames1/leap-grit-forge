@@ -9,15 +9,22 @@ import {
   Phone, 
   Video, 
   Calendar, 
-  Clock, 
+  ArrowLeft,
   MessageCircle,
   User,
   Shield
 } from 'lucide-react';
+import PeerSelection from './PeerSelection';
 
-const PeerChat = () => {
+interface PeerChatProps {
+  onBack?: () => void;
+}
+
+const PeerChat = ({ onBack }: PeerChatProps) => {
+  const [currentView, setCurrentView] = useState<'selection' | 'chat'>('selection');
+  const [selectedPeer, setSelectedPeer] = useState<any>(null);
   const [message, setMessage] = useState('');
-  const [messages] = useState([
+  const [messages, setMessages] = useState([
     {
       id: 1,
       sender: 'peer',
@@ -47,23 +54,73 @@ const PeerChat = () => {
       isRead: true
     }
   ]);
+  const [isTyping, setIsTyping] = useState(false);
+
+  const handleSelectPeer = (peer: any) => {
+    setSelectedPeer(peer);
+    setCurrentView('chat');
+    
+    if (peer.isOfflineMessage) {
+      // Add system message for offline peer
+      const offlineMessage = {
+        id: Date.now(),
+        sender: 'system',
+        text: `${peer.name} is currently offline. Your message will be delivered when they're available.`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isRead: false
+      };
+      setMessages(prev => [...prev, offlineMessage]);
+    }
+  };
 
   const handleSendMessage = () => {
     if (message.trim()) {
-      // Handle sending message
-      console.log('Sending message:', message);
+      const newMessage = {
+        id: Date.now(),
+        sender: 'user',
+        text: message,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isRead: false
+      };
+      
+      setMessages(prev => [...prev, newMessage]);
       setMessage('');
+      
+      // Simulate typing indicator for peer response
+      if (selectedPeer?.status === 'online') {
+        setIsTyping(true);
+        setTimeout(() => {
+          setIsTyping(false);
+          // Could add automatic peer response here
+        }, 2000);
+      }
     }
   };
 
   const handlePhoneCall = () => {
-    window.location.href = 'tel:+14327018678';
+    if (selectedPeer?.status === 'online') {
+      window.location.href = 'tel:+14327018678';
+    } else {
+      alert('This specialist is not available for calls right now.');
+    }
   };
 
   const handleVideoCall = () => {
-    // For video calls, we'll open a link to start a video call
-    window.open('https://meet.google.com/new', '_blank');
+    if (selectedPeer?.status === 'online') {
+      window.open('https://meet.google.com/new', '_blank');
+    } else {
+      alert('This specialist is not available for video calls right now.');
+    }
   };
+
+  if (currentView === 'selection') {
+    return (
+      <PeerSelection 
+        onBack={onBack || (() => {})} 
+        onSelectPeer={handleSelectPeer} 
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gradient-industrial">
@@ -71,14 +128,24 @@ const PeerChat = () => {
       <div className="bg-midnight/90 backdrop-blur-sm border-b border-steel-dark p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-steel rounded-full flex items-center justify-center">
-              <User className="text-white" size={20} />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCurrentView('selection')}
+              className="text-steel-light hover:text-white"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <div className="w-10 h-10 bg-steel rounded-full flex items-center justify-center">
+              <User className="text-white" size={16} />
             </div>
             <div>
-              <h2 className="font-oswald font-semibold text-white">Mike Rodriguez</h2>
+              <h2 className="font-oswald font-semibold text-white">{selectedPeer?.name || 'Peer Specialist'}</h2>
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <p className="text-steel-light text-sm">Certified Peer Specialist</p>
+                <div className={`w-2 h-2 rounded-full ${selectedPeer?.status === 'online' ? 'bg-green-500' : selectedPeer?.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'}`}></div>
+                <p className="text-steel-light text-sm">
+                  {selectedPeer?.status === 'online' ? 'Online' : selectedPeer?.status === 'away' ? 'Away' : 'Offline'}
+                </p>
               </div>
             </div>
           </div>
@@ -89,6 +156,7 @@ const PeerChat = () => {
               variant="outline" 
               className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
               onClick={handlePhoneCall}
+              disabled={selectedPeer?.status !== 'online'}
             >
               <Phone size={16} />
             </Button>
@@ -97,6 +165,7 @@ const PeerChat = () => {
               variant="outline" 
               className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
               onClick={handleVideoCall}
+              disabled={selectedPeer?.status !== 'online'}
             >
               <Video size={16} />
             </Button>
@@ -117,22 +186,32 @@ const PeerChat = () => {
         {messages.map((msg) => (
           <div 
             key={msg.id}
-            className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${msg.sender === 'user' ? 'justify-end' : msg.sender === 'system' ? 'justify-center' : 'justify-start'}`}
           >
             <div className={`max-w-[80%] ${
               msg.sender === 'user' 
                 ? 'bg-steel text-white' 
+                : msg.sender === 'system'
+                ? 'bg-construction/20 text-construction border border-construction/30'
                 : 'bg-white/10 backdrop-blur-sm text-white'
             } rounded-2xl p-4`}>
               <p className="text-sm leading-relaxed mb-1">{msg.text}</p>
               <p className={`text-xs ${
-                msg.sender === 'user' ? 'text-white/70' : 'text-steel-light'
+                msg.sender === 'user' ? 'text-white/70' : msg.sender === 'system' ? 'text-construction/70' : 'text-steel-light'
               }`}>
                 {msg.time}
               </p>
             </div>
           </div>
         ))}
+        
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="bg-white/10 backdrop-blur-sm text-white rounded-2xl p-4">
+              <p className="text-sm text-steel-light italic">{selectedPeer?.name} is typing...</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Quick Actions */}
@@ -173,22 +252,24 @@ const PeerChat = () => {
       </div>
 
       {/* Scheduled Check-in Banner */}
-      <div className="absolute top-20 left-4 right-4 bg-steel/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
-        <div className="flex items-center space-x-3">
-          <Calendar className="text-white" size={16} />
-          <div className="flex-1">
-            <p className="text-white font-oswald font-medium text-sm">
-              Weekly Check-in Scheduled
-            </p>
-            <p className="text-white/70 text-xs">
-              Tomorrow at 2:00 PM
-            </p>
+      {selectedPeer?.status === 'online' && (
+        <div className="absolute top-20 left-4 right-4 bg-steel/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+          <div className="flex items-center space-x-3">
+            <Calendar className="text-white" size={16} />
+            <div className="flex-1">
+              <p className="text-white font-oswald font-medium text-sm">
+                Weekly Check-in Available
+              </p>
+              <p className="text-white/70 text-xs">
+                Schedule with {selectedPeer.name}
+              </p>
+            </div>
+            <Button size="sm" className="bg-midnight hover:bg-matte text-white">
+              Schedule
+            </Button>
           </div>
-          <Button size="sm" className="bg-midnight hover:bg-matte text-white">
-            View
-          </Button>
         </div>
-      </div>
+      )}
     </div>
   );
 };
