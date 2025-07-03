@@ -38,8 +38,52 @@ export const useUserData = () => {
     const userKey = `user_${username.toLowerCase()}`;
     const data = localStorage.getItem(userKey);
     if (data) {
-      setUserData(JSON.parse(data));
+      const parsed = JSON.parse(data);
+      // Update daily stats
+      updateDailyStats(parsed);
+      setUserData(parsed);
     }
+  };
+
+  const updateDailyStats = (data: UserData) => {
+    const today = new Date().toDateString();
+    const todayActivities = data.activityLog.filter(entry => 
+      new Date(entry.timestamp).toDateString() === today
+    );
+
+    // Update toolbox stats
+    const updatedStats = {
+      ...data.toolboxStats,
+      toolsToday: todayActivities.length,
+      streak: calculateStreak(data.activityLog)
+    };
+
+    if (updatedStats.toolsToday !== data.toolboxStats.toolsToday) {
+      updateUserData({ toolboxStats: updatedStats });
+    }
+  };
+
+  const calculateStreak = (activityLog: ActivityLogEntry[]): number => {
+    const today = new Date();
+    let currentStreak = 0;
+    
+    for (let i = 0; i < 365; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() - i);
+      const dateString = checkDate.toDateString();
+      
+      const hasActivity = activityLog.some(entry => 
+        new Date(entry.timestamp).toDateString() === dateString
+      );
+      
+      if (hasActivity) {
+        currentStreak++;
+      } else if (i > 0) {
+        break;
+      }
+    }
+    
+    return currentStreak;
   };
 
   const updateUserData = (updates: Partial<UserData>) => {
@@ -61,17 +105,11 @@ export const useUserData = () => {
     const newActivity: ActivityLogEntry = {
       id: Date.now().toString(),
       action,
-      timestamp: new Date().toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      }),
+      timestamp: new Date().toISOString(),
       details
     };
 
-    const updatedLog = [newActivity, ...userData.activityLog].slice(0, 10); // Keep last 10 activities
+    const updatedLog = [newActivity, ...userData.activityLog].slice(0, 50); // Keep last 50 activities
     updateUserData({ activityLog: updatedLog });
   };
 

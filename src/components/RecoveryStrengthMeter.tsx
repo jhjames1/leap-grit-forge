@@ -30,7 +30,7 @@ const RecoveryStrengthMeter = ({ data }: RecoveryStrengthMeterProps) => {
   const getIconColor = (percentage: number) => {
     if (percentage >= 80) return 'text-construction';
     if (percentage >= 60) return 'text-construction/80';
-    return 'text-steel-light';
+    return 'text-construction'; // Changed to use consistent construction yellow
   };
 
   return (
