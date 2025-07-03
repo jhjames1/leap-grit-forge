@@ -5,6 +5,8 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Flame, Target, MessageCircle, BookOpen, Trophy, Calendar, Info, Smartphone, Bot } from 'lucide-react';
 import SMSOptIn from './SMSOptIn';
+import RecoveryStrengthMeter from './RecoveryStrengthMeter';
+import { useRecoveryStrength } from '@/hooks/useRecoveryStrength';
 
 interface DashboardHomeProps {
   onNavigate?: (page: string) => void;
@@ -14,6 +16,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   const [streakDays] = useState(23);
   const [nextMilestone] = useState(30);
   const [showSMSOptIn, setShowSMSOptIn] = useState(false);
+  const { strengthData, logAction } = useRecoveryStrength();
   const progressPercentage = (streakDays / nextMilestone) * 100;
 
   useEffect(() => {
@@ -36,6 +39,11 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   ];
 
   const [currentQuote] = useState(dailyQuotes[Math.floor(Math.random() * dailyQuotes.length)]);
+
+  const handleToolClick = (tool: string) => {
+    logAction('tool_used');
+    onNavigate?.(tool);
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -79,8 +87,11 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </div>
 
+        {/* Recovery Strength Meter */}
+        <RecoveryStrengthMeter data={strengthData} />
+
         {/* Daily Quote Card */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
+        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6 mt-6">
           <div className="flex items-start space-x-3">
             <div className="bg-construction p-2 rounded-lg">
               <Target className="text-midnight" size={20} />
@@ -138,7 +149,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             </div>
           </div>
           <Button 
-            onClick={() => onNavigate?.('foreman')}
+            onClick={() => handleToolClick('foreman')}
             className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold"
           >
             Chat with The Foreman
@@ -148,7 +159,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Button 
-            onClick={() => onNavigate?.('calendar')}
+            onClick={() => handleToolClick('calendar')}
             className="bg-gradient-to-br from-steel to-steel-light hover:from-construction/20 hover:to-construction/30 hover:border-construction text-white font-oswald font-semibold p-6 h-auto flex flex-col items-center space-y-2 rounded-xl industrial-shadow border border-steel-dark transition-all duration-200"
           >
             <Calendar size={24} className="text-construction" />
@@ -156,7 +167,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </Button>
           
           <Button 
-            onClick={() => onNavigate?.('chat')}
+            onClick={() => handleToolClick('chat')}
             className="bg-gradient-to-br from-steel to-steel-light hover:from-construction/20 hover:to-construction/30 hover:border-construction text-white font-oswald font-semibold p-6 h-auto flex flex-col items-center space-y-2 rounded-xl industrial-shadow border border-steel-dark transition-all duration-200"
           >
             <MessageCircle size={24} className="text-construction" />
