@@ -162,6 +162,27 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     localStorage.setItem('streakReminderShown', new Date().toDateString());
   };
 
+  // Convert RecoveryStrengthData to RecoveryData format
+  const convertToRecoveryData = () => {
+    const recentChanges = strengthData.recentChanges || [];
+    const hasPositiveChange = recentChanges.some(change => change.change > 0);
+    const hasNegativeChange = recentChanges.some(change => change.change < 0);
+    
+    let trend: 'up' | 'down' | 'stable' = 'stable';
+    if (hasPositiveChange && !hasNegativeChange) {
+      trend = 'up';
+    } else if (hasNegativeChange && !hasPositiveChange) {
+      trend = 'down';
+    }
+
+    return {
+      currentStrength: strengthData.overall,
+      dailyActions: userData?.toolboxStats?.toolsToday || 0,
+      weeklyGoal: 7, // Default weekly goal
+      trend
+    };
+  };
+
   return (
     <div className="relative min-h-screen">
       {/* Background Image */}
@@ -204,7 +225,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         </div>
 
         {/* Recovery Strength Meter */}
-        <RecoveryStrengthMeter data={strengthData} />
+        <RecoveryStrengthMeter data={convertToRecoveryData()} />
 
         {/* Daily Quote Card - Updated styling */}
         <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] mb-6 p-6 mt-6 rounded-lg">
