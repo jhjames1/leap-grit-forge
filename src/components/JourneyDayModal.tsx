@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { X, Play, CheckCircle2, Clock, Target, Pause, RotateCcw } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
 import { useToast } from '@/hooks/use-toast';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 interface JourneyDayModalProps {
   day: number;
@@ -33,6 +32,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
   const [audioProgress, setAudioProgress] = useState(0);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const { updateUserData, userData } = useUserData();
   const { toast } = useToast();
 
@@ -231,7 +231,20 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
             <p className="text-steel-light text-sm mb-4">Swipe through these 3 slides about recovery</p>
             
             <div className="mb-4">
-              <Carousel className="w-full max-w-md mx-auto">
+              <Carousel 
+                className="w-full max-w-md mx-auto"
+                opts={{
+                  align: "start",
+                  loop: false,
+                }}
+                setApi={(api) => {
+                  if (api) {
+                    api.on('select', () => {
+                      setCarouselIndex(api.selectedScrollSnap());
+                    });
+                  }
+                }}
+              >
                 <CarouselContent>
                   <CarouselItem>
                     <div className="p-1">
@@ -261,9 +274,19 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                     </div>
                   </CarouselItem>
                 </CarouselContent>
-                <CarouselPrevious className="bg-construction hover:bg-construction-dark text-midnight" />
-                <CarouselNext className="bg-construction hover:bg-construction-dark text-midnight" />
               </Carousel>
+              
+              {/* Pagination dots */}
+              <div className="flex justify-center space-x-2 mt-4">
+                {[0, 1, 2].map((dotIndex) => (
+                  <div
+                    key={dotIndex}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      dotIndex === carouselIndex ? 'bg-construction' : 'bg-steel-dark'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
             
             {!isCompleted ? (
