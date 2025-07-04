@@ -1,9 +1,11 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, Play, CheckCircle2, Clock, Target } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { X, Play, CheckCircle2, Clock, Target, Pause, RotateCcw } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
+import { useToast } from '@/hooks/use-toast';
 
 interface JourneyDayModalProps {
   day: number;
@@ -18,26 +20,337 @@ interface JourneyDayModalProps {
   onComplete: () => void;
 }
 
-const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: JourneyDayModalProps) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [userResponses, setUserResponses] = useState<Record<string, string>>({});
-  const { updateUserData } = useUserData();
+interface ActivityState {
+  [key: string]: {
+    completed: boolean;
+    data?: any;
+  };
+}
 
-  const handleResponseSave = (key: string, value: string) => {
-    const newResponses = { ...userResponses, [key]: value };
-    setUserResponses(newResponses);
+const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: JourneyDayModalProps) => {
+  const [activityStates, setActivityStates] = useState<ActivityState>({});
+  const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const { updateUserData, userData } = useUserData();
+  const { toast } = useToast();
+
+  // Load saved activity states
+  useEffect(() => {
+    const savedStates = userData?.journeyResponses || {};
+    const dayStates: ActivityState = {};
+    
+    Object.keys(savedStates).forEach(key => {
+      if (key.startsWith(`day_${day}_`)) {
+        const activityKey = key.replace(`day_${day}_`, '');
+        dayStates[activityKey] = {
+          completed: true,
+          data: savedStates[key]
+        };
+      }
+    });
+    
+    setActivityStates(dayStates);
+    
+    // Set current activity index based on completed activities
+    const completedCount = Object.keys(dayStates).length;
+    setCurrentActivityIndex(completedCount);
+  }, [day, userData]);
+
+  const markActivityComplete = (activityKey: string, data?: any) => {
+    const newStates = {
+      ...activityStates,
+      [activityKey]: { completed: true, data }
+    };
+    setActivityStates(newStates);
     
     // Save to user data
     updateUserData({
       journeyResponses: {
-        ...userResponses,
-        [`day_${day}_${key}`]: value
+        ...userData?.journeyResponses,
+        [`day_${day}_${activityKey}`]: data || true
       }
+    });
+    
+    // Move to next activity
+    setCurrentActivityIndex(prev => prev + 1);
+    
+    toast({
+      title: "Activity Complete!",
+      description: "Great progress! Moving to the next activity.",
     });
   };
 
-  const handleComplete = () => {
-    // Update completed days
+  const simulateAudioPlay = (activityKey: string) => {
+    if (isAudioPlaying) return;
+    
+    setIsAudioPlaying(true);
+    setAudioProgress(0);
+    
+    const interval = setInterval(() => {
+      setAudioProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setIsAudioPlaying(false);
+          markActivityComplete(activityKey);
+          return 100;
+        }
+        return prev + 2; // 2% every 100ms = 5 seconds total
+      });
+    }, 100);
+  };
+
+  const openBreathingExercise = () => {
+    // In a real app, this would open the breathing component
+    toast({
+      title: "Breathing Exercise Started",
+      description: "Take deep breaths and focus on your recovery journey.",
+    });
+    
+    // Simulate completion after 3 seconds
+    setTimeout(() => {
+      markActivityComplete('breathing_exercise');
+    }, 3000);
+  };
+
+  const getAllActivitiesForDay = (dayNum: number) => {
+    switch (dayNum) {
+      case 1:
+        return [
+          { key: 'welcome_audio', title: 'Welcome Audio', type: 'audio' },
+          { key: 'how_recovery_works', title: 'How Recovery Works', type: 'slides' },
+          { key: 'why_here', title: 'Your Why', type: 'text_input' }
+        ];
+      case 2:
+        return [
+          { key: 'trigger_audio', title: 'Understanding Triggers', type: 'audio' },
+          { key: 'trigger_education', title: 'Trigger Education', type: 'slides' },
+          { key: 'breathing_exercise', title: 'Pause & Breathe', type: 'interactive' },
+          { key: 'top_triggers', title: 'Your Top Triggers', type: 'form' }
+        ];
+      default:
+        return [
+          { key: 'content', title: dayData.title, type: 'placeholder' }
+        ];
+    }
+  };
+
+  const activities = getAllActivitiesForDay(day);
+  const completedActivities = Object.keys(activityStates).length;
+  const allActivitiesComplete = completedActivities >= activities.length;
+  const dayProgress = (completedActivities / activities.length) * 100;
+
+  const renderActivity = (activity: any, index: number) => {
+    const isActive = index <= currentActivityIndex;
+    const isCompleted = activityStates[activity.key]?.completed || false;
+    
+    if (!isActive && !isCompleted) {
+      return (
+        <Card key={activity.key} className="bg-steel-dark/30 border-steel-dark p-4 opacity-50">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-steel-dark rounded-full flex items-center justify-center">
+              <span className="text-steel-light text-sm">{index + 1}</span>
+            </div>
+            <div>
+              <h4 className="font-oswald font-semibold text-steel-light">{activity.title}</h4>
+              <p className="text-steel-light text-sm">Complete previous activity to unlock</p>
+            </div>
+          </div>
+        </Card>
+      );
+    }
+
+    switch (activity.type) {
+      case 'audio':
+        return (
+          <Card key={activity.key} className={`border-steel-dark p-4 ${isCompleted ? 'bg-construction/10 border-construction/20' : 'bg-white/10'}`}>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-construction' : 'bg-construction'}`}>
+                {isCompleted ? <CheckCircle2 className="text-midnight" size={16} /> : <Play className="text-midnight" size={16} />}
+              </div>
+              <h4 className="font-oswald font-semibold text-white">{activity.title}</h4>
+            </div>
+            
+            {activity.key === 'welcome_audio' && (
+              <p className="text-steel-light text-sm mb-3">AI-generated welcome message (2 minutes)</p>
+            )}
+            
+            {activity.key === 'trigger_audio' && (
+              <p className="text-steel-light text-sm mb-3">AI-narrated walkthrough of trigger types (1 minute)</p>
+            )}
+            
+            {isAudioPlaying && activity.key === 'welcome_audio' && (
+              <div className="mb-3">
+                <Progress value={audioProgress} className="h-2" />
+                <p className="text-steel-light text-xs mt-1">Playing... {Math.round(audioProgress)}%</p>
+              </div>
+            )}
+            
+            <div className="flex space-x-2">
+              {!isCompleted ? (
+                <Button 
+                  onClick={() => simulateAudioPlay(activity.key)}
+                  disabled={isAudioPlaying}
+                  className="bg-construction hover:bg-construction-dark text-midnight font-oswald"
+                >
+                  {isAudioPlaying ? (
+                    <>
+                      <Pause size={16} className="mr-2" />
+                      Playing...
+                    </>
+                  ) : (
+                    <>
+                      <Play size={16} className="mr-2" />
+                      Play Message
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => simulateAudioPlay(activity.key)}
+                  className="bg-construction/20 hover:bg-construction/30 text-construction border border-construction font-oswald"
+                >
+                  <RotateCcw size={16} className="mr-2" />
+                  Replay
+                </Button>
+              )}
+            </div>
+          </Card>
+        );
+
+      case 'interactive':
+        return (
+          <Card key={activity.key} className={`border-steel-dark p-4 ${isCompleted ? 'bg-construction/10 border-construction/20' : 'bg-white/10'}`}>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-construction' : 'bg-construction'}`}>
+                {isCompleted ? <CheckCircle2 className="text-midnight" size={16} /> : <span className="text-midnight text-sm">{index + 1}</span>}
+              </div>
+              <h4 className="font-oswald font-semibold text-white">{activity.title}</h4>
+            </div>
+            <p className="text-steel-light text-sm mb-3">Interactive breathing exercise when triggered</p>
+            
+            {!isCompleted ? (
+              <Button 
+                onClick={openBreathingExercise}
+                className="bg-construction hover:bg-construction-dark text-midnight font-oswald"
+              >
+                Start Breathing Exercise
+              </Button>
+            ) : (
+              <div className="flex items-center space-x-2 text-construction">
+                <CheckCircle2 size={16} />
+                <span className="font-oswald">Exercise Complete</span>
+              </div>
+            )}
+          </Card>
+        );
+
+      case 'text_input':
+        return (
+          <Card key={activity.key} className={`border-steel-dark p-4 ${isCompleted ? 'bg-construction/10 border-construction/20' : 'bg-white/10'}`}>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-construction' : 'bg-construction'}`}>
+                {isCompleted ? <CheckCircle2 className="text-midnight" size={16} /> : <span className="text-midnight text-sm">{index + 1}</span>}
+              </div>
+              <h4 className="font-oswald font-semibold text-white">{activity.title}</h4>
+            </div>
+            <p className="text-steel-light text-sm mb-3">Complete this sentence: "I'm here because ______."</p>
+            
+            <div className="space-y-3">
+              <textarea
+                className="w-full bg-steel-dark text-white p-3 rounded-lg border border-steel resize-none"
+                rows={3}
+                placeholder="I'm here because..."
+                defaultValue={activityStates[activity.key]?.data || ''}
+                disabled={isCompleted}
+              />
+              
+              {!isCompleted && (
+                <Button 
+                  onClick={() => {
+                    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+                    if (textarea?.value.trim()) {
+                      markActivityComplete(activity.key, textarea.value);
+                    }
+                  }}
+                  className="bg-construction hover:bg-construction-dark text-midnight font-oswald"
+                >
+                  Save Response
+                </Button>
+              )}
+            </div>
+          </Card>
+        );
+
+      case 'form':
+        return (
+          <Card key={activity.key} className={`border-steel-dark p-4 ${isCompleted ? 'bg-construction/10 border-construction/20' : 'bg-white/10'}`}>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-construction' : 'bg-construction'}`}>
+                {isCompleted ? <CheckCircle2 className="text-midnight" size={16} /> : <span className="text-midnight text-sm">{index + 1}</span>}
+              </div>
+              <h4 className="font-oswald font-semibold text-white">{activity.title}</h4>
+            </div>
+            <p className="text-steel-light text-sm mb-3">What are your top 2 triggers?</p>
+            
+            <div className="space-y-3">
+              <input
+                type="text"
+                className="w-full bg-steel-dark text-white p-3 rounded-lg border border-steel"
+                placeholder="Trigger #1"
+                disabled={isCompleted}
+                defaultValue={activityStates[activity.key]?.data?.trigger1 || ''}
+              />
+              <input
+                type="text"
+                className="w-full bg-steel-dark text-white p-3 rounded-lg border border-steel"
+                placeholder="Trigger #2"
+                disabled={isCompleted}
+                defaultValue={activityStates[activity.key]?.data?.trigger2 || ''}
+              />
+              
+              {!isCompleted && (
+                <Button 
+                  onClick={() => {
+                    const inputs = document.querySelectorAll('input[type="text"]') as NodeListOf<HTMLInputElement>;
+                    const trigger1 = inputs[inputs.length - 2]?.value || '';
+                    const trigger2 = inputs[inputs.length - 1]?.value || '';
+                    
+                    if (trigger1.trim() && trigger2.trim()) {
+                      markActivityComplete(activity.key, { trigger1, trigger2 });
+                    }
+                  }}
+                  className="bg-construction hover:bg-construction-dark text-midnight font-oswald"
+                >
+                  Save Triggers
+                </Button>
+              )}
+            </div>
+          </Card>
+        );
+
+      default:
+        return (
+          <Card key={activity.key} className="bg-white/10 border-steel-dark p-4">
+            <h4 className="font-oswald font-semibold text-white mb-3">{activity.title}</h4>
+            <p className="text-steel-light">Day {day} content will be implemented with specific interactive elements.</p>
+            
+            {!isCompleted && (
+              <Button 
+                onClick={() => markActivityComplete(activity.key)}
+                className="bg-construction hover:bg-construction-dark text-midnight font-oswald mt-3"
+              >
+                Mark Complete
+              </Button>
+            )}
+          </Card>
+        );
+    }
+  };
+
+  const handleCompleteDay = () => {
+    if (!allActivitiesComplete) return;
+    
     const existingProgress = JSON.parse(localStorage.getItem('journeyProgress') || '{}');
     const completedDays = existingProgress.completedDays || [];
     
@@ -48,144 +361,12 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
       };
       localStorage.setItem('journeyProgress', JSON.stringify(updatedProgress));
       
-      // Update user data
       updateUserData({
         journeyProgress: updatedProgress
       });
     }
     
     onComplete();
-  };
-
-  const renderDayContent = () => {
-    switch (day) {
-      case 1:
-        return (
-          <div className="space-y-6">
-            {/* Welcome Audio */}
-            <Card className="bg-construction/10 border-construction/20 p-4">
-              <div className="flex items-center space-x-3 mb-3">
-                <Play className="text-construction" size={20} />
-                <h4 className="font-oswald font-semibold text-white">Welcome Audio</h4>
-              </div>
-              <p className="text-steel-light text-sm mb-3">
-                AI-generated welcome message (2 minutes)
-              </p>
-              <Button className="bg-construction hover:bg-construction-dark text-midnight font-oswald">
-                Play Welcome Message
-              </Button>
-            </Card>
-
-            {/* How Recovery Works Slides */}
-            <Card className="bg-white/10 border-steel-dark p-4">
-              <h4 className="font-oswald font-semibold text-white mb-3">How Recovery Works</h4>
-              <div className="bg-steel-dark/50 rounded-lg p-4 mb-3">
-                <p className="text-steel-light text-sm">
-                  Swipe through 3 educational slides about the recovery process
-                </p>
-              </div>
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-construction rounded-full"></div>
-                <div className="w-2 h-2 bg-steel-dark rounded-full"></div>
-                <div className="w-2 h-2 bg-steel-dark rounded-full"></div>
-              </div>
-            </Card>
-
-            {/* Text Prompt */}
-            <Card className="bg-white/10 border-steel-dark p-4">
-              <h4 className="font-oswald font-semibold text-white mb-3">Your Why</h4>
-              <p className="text-steel-light text-sm mb-3">
-                Complete this sentence: "I'm here because ______."
-              </p>
-              <textarea
-                className="w-full bg-steel-dark text-white p-3 rounded-lg border border-steel resize-none"
-                rows={3}
-                placeholder="I'm here because..."
-                onChange={(e) => handleResponseSave('why_here', e.target.value)}
-              />
-            </Card>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6">
-            {/* Trigger Types Audio */}
-            <Card className="bg-construction/10 border-construction/20 p-4">
-              <div className="flex items-center space-x-3 mb-3">
-                <Play className="text-construction" size={20} />
-                <h4 className="font-oswald font-semibold text-white">Understanding Triggers</h4>
-              </div>
-              <p className="text-steel-light text-sm mb-3">
-                AI-narrated walkthrough of trigger types (1 minute)
-              </p>
-              <Button className="bg-construction hover:bg-construction-dark text-midnight font-oswald">
-                Play Audio Guide
-              </Button>
-            </Card>
-
-            {/* Educational Carousel */}
-            <Card className="bg-white/10 border-steel-dark p-4">
-              <h4 className="font-oswald font-semibold text-white mb-3">Trigger Education</h4>
-              <div className="space-y-3">
-                <div className="bg-steel-dark/50 rounded-lg p-3">
-                  <h5 className="text-construction font-medium">Internal Triggers</h5>
-                  <p className="text-steel-light text-sm">Emotions, thoughts, physical sensations</p>
-                </div>
-                <div className="bg-steel-dark/50 rounded-lg p-3">
-                  <h5 className="text-construction font-medium">External Triggers</h5>
-                  <p className="text-steel-light text-sm">People, places, situations, objects</p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Breathing Integration */}
-            <Card className="bg-white/10 border-steel-dark p-4">
-              <h4 className="font-oswald font-semibold text-white mb-3">Pause & Breathe</h4>
-              <p className="text-steel-light text-sm mb-3">
-                Interactive breathing exercise when triggered
-              </p>
-              <Button className="bg-construction hover:bg-construction-dark text-midnight font-oswald">
-                Start Breathing Exercise
-              </Button>
-            </Card>
-
-            {/* Top Triggers Form */}
-            <Card className="bg-white/10 border-steel-dark p-4">
-              <h4 className="font-oswald font-semibold text-white mb-3">Your Top Triggers</h4>
-              <p className="text-steel-light text-sm mb-3">
-                What are your top 2 triggers?
-              </p>
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  className="w-full bg-steel-dark text-white p-3 rounded-lg border border-steel"
-                  placeholder="Trigger #1"
-                  onChange={(e) => handleResponseSave('trigger_1', e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="w-full bg-steel-dark text-white p-3 rounded-lg border border-steel"
-                  placeholder="Trigger #2"
-                  onChange={(e) => handleResponseSave('trigger_2', e.target.value)}
-                />
-              </div>
-            </Card>
-          </div>
-        );
-
-      default:
-        return (
-          <div className="space-y-6">
-            <Card className="bg-white/10 border-steel-dark p-4">
-              <h4 className="font-oswald font-semibold text-white mb-3">{dayData.title}</h4>
-              <p className="text-steel-light">
-                Day {day} content will be implemented with specific interactive elements.
-              </p>
-            </Card>
-          </div>
-        );
-    }
   };
 
   return (
@@ -212,13 +393,45 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
           </Button>
         </div>
 
+        {/* Progress Indicator */}
+        <div className="p-6 border-b border-steel-dark">
+          <div className="flex justify-between text-sm mb-2">
+            <span className="text-steel-light">Progress</span>
+            <span className="text-construction font-oswald font-bold">{completedActivities}/{activities.length}</span>
+          </div>
+          <Progress value={dayProgress} className="h-2 bg-steel-dark">
+            <div 
+              className="h-full bg-gradient-to-r from-[#F9D058] to-[#FBE89D] rounded-full transition-all duration-500"
+              style={{ width: `${dayProgress}%` }}
+            />
+          </Progress>
+          
+          {/* Activity dots */}
+          <div className="flex justify-center space-x-2 mt-3">
+            {activities.map((_, index) => (
+              <div
+                key={index}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index < completedActivities
+                    ? 'bg-construction'
+                    : index === currentActivityIndex
+                      ? 'bg-construction/50'
+                      : 'bg-steel-dark'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
         {/* Content */}
         <div className="p-6">
           <h3 className="font-oswald font-semibold text-white text-xl mb-4">
             {dayData.title}
           </h3>
           
-          {renderDayContent()}
+          <div className="space-y-4">
+            {activities.map((activity, index) => renderActivity(activity, index))}
+          </div>
         </div>
 
         {/* Footer */}
@@ -236,13 +449,19 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
             >
               Close
             </Button>
+            
             {!isCompleted && (
               <Button
-                onClick={handleComplete}
-                className="bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold"
+                onClick={handleCompleteDay}
+                disabled={!allActivitiesComplete}
+                className={`font-oswald font-semibold ${
+                  allActivitiesComplete
+                    ? 'bg-construction hover:bg-construction-dark text-midnight'
+                    : 'bg-steel-dark text-steel-light cursor-not-allowed'
+                }`}
               >
                 <CheckCircle2 size={16} className="mr-2" />
-                Complete Day
+                {allActivitiesComplete ? 'Complete Day' : `Complete ${activities.length - completedActivities} more`}
               </Button>
             )}
           </div>

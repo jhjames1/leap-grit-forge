@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,8 +13,11 @@ const RecoveryJourney = () => {
   const { userData, logActivity } = useUserData();
   const { toast } = useToast();
   const totalDays = 90;
-  const progress = (currentDay / totalDays) * 100;
-
+  
+  // Calculate current day based on completed days
+  const completedDays = userData?.journeyProgress?.completedDays || [];
+  const actualCurrentDay = Math.min(Math.max(...completedDays, 0) + 1, totalDays);
+  
   // Check for time-sensitive reminders
   useEffect(() => {
     const checkDayReminders = () => {
@@ -145,14 +147,17 @@ const RecoveryJourney = () => {
     }
   ];
 
-  const completedDays = userData?.journeyProgress?.completedDays || [];
-
   const handleDayClick = (day: number) => {
-    // Check if day is unlocked (current day or previous days completed)
-    const isUnlocked = day === 1 || completedDays.includes(day - 1) || completedDays.includes(day);
+    const isUnlocked = day === 1 || completedDays.includes(day - 1) || completedDays.includes(day) || day <= actualCurrentDay;
     
     if (isUnlocked) {
       setSelectedDay(day);
+      logActivity(`Opened Day ${day}: ${week1Days[day - 1]?.title}`);
+    } else {
+      toast({
+        title: "Day Locked",
+        description: `Complete Day ${day - 1} first to unlock this day.`,
+      });
     }
   };
 
@@ -160,7 +165,7 @@ const RecoveryJourney = () => {
     logActivity(`Completed Day ${day}: ${week1Days[day - 1]?.title}`);
     
     // Update current day if this was the active day
-    if (day === currentDay && day < 7) {
+    if (day === actualCurrentDay && day < totalDays) {
       setCurrentDay(day + 1);
     }
     
@@ -171,15 +176,28 @@ const RecoveryJourney = () => {
         title: "Week 1 Complete! 🏆",
         description: "You've unlocked your Week 1 Badge. Amazing progress!",
       });
+    } else {
+      toast({
+        title: `Day ${day} Complete! ✅`,
+        description: "Great work! You're building strong recovery foundations.",
+      });
     }
   };
 
   const getDayStatus = (day: number) => {
     if (completedDays.includes(day)) return 'completed';
-    if (day === currentDay || (day === 1 && currentDay === 1)) return 'current';
-    if (day === 1 || completedDays.includes(day - 1)) return 'unlocked';
+    if (day === actualCurrentDay) return 'current';
+    if (day === 1 || completedDays.includes(day - 1) || day <= actualCurrentDay) return 'unlocked';
     return 'locked';
   };
+
+  const getButtonText = (day: number, status: string) => {
+    if (status === 'completed') return 'Review';
+    if (status === 'current' || status === 'unlocked') return 'Start';
+    return 'Locked';
+  };
+
+  const progress = (actualCurrentDay / totalDays) * 100;
 
   return (
     <div className="p-4 pb-24 bg-gradient-industrial min-h-screen">
@@ -198,7 +216,7 @@ const RecoveryJourney = () => {
           <div>
             <h3 className="font-oswald font-semibold text-white">Overall Progress</h3>
             <p className="text-steel-light text-sm">
-              Day <span className="text-construction font-bold text-lg">{currentDay}</span> of {totalDays}
+              Day <span className="text-construction font-bold text-lg">{actualCurrentDay}</span> of {totalDays}
             </p>
           </div>
         </div>
@@ -231,17 +249,20 @@ const RecoveryJourney = () => {
             const status = getDayStatus(dayModule.day);
             const isCompleted = status === 'completed';
             const isUnlocked = status === 'current' || status === 'unlocked' || isCompleted;
+            const buttonText = getButtonText(dayModule.day, status);
             
             return (
               <Card
                 key={dayModule.day}
-                onClick={() => handleDayClick(dayModule.day)}
-                className={`border-steel-dark p-4 transition-all duration-200 cursor-pointer ${
+                onClick={() => isUnlocked && handleDayClick(dayModule.day)}
+                className={`border-steel-dark p-4 transition-all duration-200 ${
+                  isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'
+                } ${
                   isCompleted
                     ? 'bg-construction/10 border-construction/30'
                     : isUnlocked
                       ? 'bg-white/10 backdrop-blur-sm hover:bg-white/15 hover:border-construction/20'
-                      : 'bg-steel-dark/20 border-steel-dark/50 cursor-not-allowed opacity-60'
+                      : 'bg-steel-dark/20 border-steel-dark/50 opacity-60'
                 }`}
               >
                 <div className="flex items-center space-x-4">
@@ -287,21 +308,24 @@ const RecoveryJourney = () => {
                   </div>
 
                   {/* Action Button */}
-                  {isUnlocked && (
-                    <Button 
-                      className={`font-oswald font-semibold px-4 py-2 rounded-lg ${
-                        isCompleted 
+                  <Button 
+                    className={`font-oswald font-semibold px-4 py-2 rounded-lg transition-all duration-200 ${
+                      !isUnlocked
+                        ? 'bg-steel-dark text-steel-light cursor-not-allowed border border-steel-dark'
+                        : isCompleted 
                           ? 'border-construction text-construction hover:bg-construction/10 bg-transparent border'
-                          : 'bg-construction hover:bg-construction-dark text-midnight'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
+                          : 'bg-construction hover:bg-construction-dark text-midnight shadow-lg hover:shadow-construction/20'
+                    }`}
+                    disabled={!isUnlocked}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isUnlocked) {
                         handleDayClick(dayModule.day);
-                      }}
-                    >
-                      {isCompleted ? 'Review' : 'Start'}
-                    </Button>
-                  )}
+                      }
+                    }}
+                  >
+                    {buttonText}
+                  </Button>
                 </div>
               </Card>
             );
