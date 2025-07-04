@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { X, Play, CheckCircle2, Clock, Target, Pause, RotateCcw } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
 import { useToast } from '@/hooks/use-toast';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 interface JourneyDayModalProps {
   day: number;
@@ -95,7 +96,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
           markActivityComplete(activityKey);
           return 100;
         }
-        return prev + 2; // 2% every 100ms = 5 seconds total
+        return prev + 1.67; // 1.67% every 100ms = 60 seconds (2 min) total
       });
     }, 100);
   };
@@ -117,8 +118,8 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
     switch (dayNum) {
       case 1:
         return [
-          { key: 'welcome_audio', title: 'Welcome Audio', type: 'audio' },
-          { key: 'how_recovery_works', title: 'How Recovery Works', type: 'slides' },
+          { key: 'welcome_audio', title: 'Welcome Message (2 min.)', type: 'audio' },
+          { key: 'how_recovery_works', title: 'How Recovery Works', type: 'carousel' },
           { key: 'why_here', title: 'Your Why', type: 'text_input' }
         ];
       case 2:
@@ -172,14 +173,14 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
             </div>
             
             {activity.key === 'welcome_audio' && (
-              <p className="text-steel-light text-sm mb-3">AI-generated welcome message (2 minutes)</p>
+              <p className="text-steel-light text-sm mb-3">Welcome to LEAP - Your recovery journey starts here</p>
             )}
             
             {activity.key === 'trigger_audio' && (
               <p className="text-steel-light text-sm mb-3">AI-narrated walkthrough of trigger types (1 minute)</p>
             )}
             
-            {isAudioPlaying && activity.key === 'welcome_audio' && (
+            {isAudioPlaying && (
               <div className="mb-3">
                 <Progress value={audioProgress} className="h-2" />
                 <p className="text-steel-light text-xs mt-1">Playing... {Math.round(audioProgress)}%</p>
@@ -201,7 +202,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                   ) : (
                     <>
                       <Play size={16} className="mr-2" />
-                      Play Message
+                      Play Welcome Message
                     </>
                   )}
                 </Button>
@@ -215,6 +216,69 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                 </Button>
               )}
             </div>
+          </Card>
+        );
+
+      case 'carousel':
+        return (
+          <Card key={activity.key} className={`border-steel-dark p-4 ${isCompleted ? 'bg-construction/10 border-construction/20' : 'bg-white/10'}`}>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-construction' : 'bg-construction'}`}>
+                {isCompleted ? <CheckCircle2 className="text-midnight" size={16} /> : <span className="text-midnight text-sm">{index + 1}</span>}
+              </div>
+              <h4 className="font-oswald font-semibold text-white">{activity.title}</h4>
+            </div>
+            <p className="text-steel-light text-sm mb-4">Swipe through these 3 slides about recovery</p>
+            
+            <div className="mb-4">
+              <Carousel className="w-full max-w-md mx-auto">
+                <CarouselContent>
+                  <CarouselItem>
+                    <div className="p-1">
+                      <img 
+                        src="/lovable-uploads/119b2322-45f6-44de-b789-4c906de98f49.png" 
+                        alt="Recovery Isn't Linear" 
+                        className="w-full h-auto rounded-lg"
+                      />
+                    </div>
+                  </CarouselItem>
+                  <CarouselItem>
+                    <div className="p-1">
+                      <img 
+                        src="/lovable-uploads/94dda5cd-ec41-4605-a800-00f362310a18.png" 
+                        alt="Recovery Requires Rebuilding" 
+                        className="w-full h-auto rounded-lg"
+                      />
+                    </div>
+                  </CarouselItem>
+                  <CarouselItem>
+                    <div className="p-1">
+                      <img 
+                        src="/lovable-uploads/cffae2dd-2b00-4023-8687-7ad85f03f749.png" 
+                        alt="Recovery Is Personal—and Possible" 
+                        className="w-full h-auto rounded-lg"
+                      />
+                    </div>
+                  </CarouselItem>
+                </CarouselContent>
+                <CarouselPrevious className="bg-construction hover:bg-construction-dark text-midnight" />
+                <CarouselNext className="bg-construction hover:bg-construction-dark text-midnight" />
+              </Carousel>
+            </div>
+            
+            {!isCompleted ? (
+              <Button 
+                onClick={() => markActivityComplete(activity.key)}
+                className="bg-construction hover:bg-construction-dark text-midnight font-oswald w-full"
+              >
+                Continue to Next Activity
+              </Button>
+            ) : (
+              <div className="flex items-center space-x-2 text-construction justify-center">
+                <CheckCircle2 size={16} />
+                <span className="font-oswald">Slides Complete</span>
+              </div>
+            )}
           </Card>
         );
 
