@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 
 interface ActivityLogEntry {
@@ -15,11 +14,19 @@ interface ToolboxStats {
   urgesThisWeek: number;
 }
 
+interface JourneyProgress {
+  completedDays: number[];
+  currentWeek: number;
+  badges: string[];
+}
+
 interface UserData {
   firstName: string;
   gratitudeEntries: any[];
   activityLog: ActivityLogEntry[];
   toolboxStats: ToolboxStats;
+  journeyProgress?: JourneyProgress;
+  journeyResponses?: Record<string, string>;
 }
 
 export const useUserData = () => {
