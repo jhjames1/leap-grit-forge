@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Flame, Target, Info, Smartphone, Trophy, Calendar, X } from 'lucide-react';
+import { Flame, Target, Info, Smartphone, Trophy, Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import SMSOptIn from './SMSOptIn';
 import RecoveryStrengthMeter from './RecoveryStrengthMeter';
 import { useRecoveryStrength } from '@/hooks/useRecoveryStrength';
 import { useUserData } from '@/hooks/useUserData';
 import PhoneNumberPrompt from './PhoneNumberPrompt';
 import StreakReminder from './StreakReminder';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 interface DashboardHomeProps {
   onNavigate?: (page: string) => void;
@@ -19,6 +18,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   const [showSMSOptIn, setShowSMSOptIn] = useState(false);
   const [showPhonePrompt, setShowPhonePrompt] = useState(false);
   const [showStreakReminder, setShowStreakReminder] = useState(false);
+  const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const { strengthData, logAction } = useRecoveryStrength();
   const { userData, updateUserData, logActivity } = useUserData();
 
@@ -177,8 +177,28 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     localStorage.setItem('streakReminderShown', new Date().toDateString());
   };
 
-  // Convert RecoveryStrengthData to RecoveryData format
+  // Calculate today's Journey activities completion
+  const getTodayJourneyCompletion = () => {
+    const today = new Date().toDateString();
+    const completedDays = userData?.journeyProgress?.completedDays || [];
+    const todayCompleted = completedDays.some(day => {
+      // Check if any Journey day was completed today
+      const journeyActivity = userData?.activityLog?.find(entry => 
+        entry.action.includes('Completed Day') && 
+        new Date(entry.timestamp).toDateString() === today
+      );
+      return journeyActivity !== undefined;
+    });
+    
+    return todayCompleted ? 1 : 0;
+  };
+
+  // Convert RecoveryStrengthData to RecoveryData format with updated logic
   const convertToRecoveryData = () => {
+    const todayJourneyActions = getTodayJourneyCompletion();
+    const currentStrength = todayJourneyActions > 0 ? 100 : 0;
+    const wellnessLevel = todayJourneyActions > 0 ? "Good" : "Building";
+    
     const recentChanges = strengthData.recentChanges || [];
     const hasPositiveChange = recentChanges.some(change => change.change > 0);
     const hasNegativeChange = recentChanges.some(change => change.change < 0);
@@ -191,31 +211,45 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     }
 
     return {
-      currentStrength: strengthData.overall,
-      dailyActions: userData?.toolboxStats?.toolsToday || 0,
-      weeklyGoal: 7, // Default weekly goal
+      currentStrength,
+      dailyActions: todayJourneyActions,
+      weeklyGoal: 7,
       trend,
-      yesterdayStrength
+      yesterdayStrength,
+      wellnessLevel
     };
   };
 
-  // Generate calendar data for streak tracking
+  // Generate calendar data for current month
   const generateCalendarData = () => {
-    const today = new Date();
-    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    
     const calendarDays = [];
     
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      calendarDays.push(null);
+    }
+    
+    // Add all days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(today.getFullYear(), today.getMonth(), day);
+      const date = new Date(year, month, day);
       const dateString = date.toDateString();
-      const hasActivity = userData?.activityLog?.some(entry => 
+      const hasJourneyActivity = userData?.activityLog?.some(entry => 
+        entry.action.includes('Completed Day') && 
         new Date(entry.timestamp).toDateString() === dateString
       );
       
       calendarDays.push({
         day,
-        hasActivity,
-        date: dateString
+        hasActivity: hasJourneyActivity,
+        date: dateString,
+        isToday: dateString === new Date().toDateString()
       });
     }
     
@@ -223,6 +257,20 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   };
 
   const calendarData = generateCalendarData();
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+
+  const navigateCalendar = (direction: 'prev' | 'next') => {
+    setCurrentCalendarDate(prev => {
+      const newDate = new Date(prev);
+      if (direction === 'prev') {
+        newDate.setMonth(prev.getMonth() - 1);
+      } else {
+        newDate.setMonth(prev.getMonth() + 1);
+      }
+      return newDate;
+    });
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -260,11 +308,13 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </div>
 
-        {/* Recovery Strength Meter - No yellow border */}
-        <RecoveryStrengthMeter data={convertToRecoveryData()} />
+        {/* Recovery Strength Meter - With yellow border */}
+        <div className="mb-6">
+          <RecoveryStrengthMeter data={convertToRecoveryData()} />
+        </div>
 
-        {/* Daily Quote Card - No yellow border */}
-        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-steel-dark mb-6 p-6 mt-6 rounded-lg">
+        {/* Daily Quote Card - With yellow border */}
+        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] mb-6 p-6 rounded-lg">
           <div className="flex items-start space-x-3">
             <div className="bg-construction p-2 rounded-lg">
               <Target className="text-midnight" size={20} />
@@ -276,8 +326,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </Card>
 
-        {/* Progress Streak with Calendar - No yellow border */}
-        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-steel-dark mb-6 p-6 rounded-lg">
+        {/* Progress Streak with Real-time Calendar - With yellow border */}
+        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] mb-6 p-6 rounded-lg">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div className="bg-gradient-to-r from-construction to-construction-light p-2 rounded-lg">
@@ -296,8 +346,32 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             </div>
           </div>
           
-          {/* Calendar Integration */}
+          {/* Real-time Calendar Integration */}
           <div className="mb-4">
+            {/* Calendar Header */}
+            <div className="flex items-center justify-between mb-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigateCalendar('prev')}
+                className="text-steel-light hover:text-construction"
+              >
+                <ChevronLeft size={20} />
+              </Button>
+              <h4 className="font-oswald font-semibold text-white">
+                {monthNames[currentCalendarDate.getMonth()]} {currentCalendarDate.getFullYear()}
+              </h4>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigateCalendar('next')}
+                className="text-steel-light hover:text-construction"
+              >
+                <ChevronRight size={20} />
+              </Button>
+            </div>
+            
+            {/* Calendar Grid */}
             <div className="grid grid-cols-7 gap-1 mb-3">
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
                 <div key={index} className="text-center text-xs text-steel-light font-oswald p-1">
@@ -306,16 +380,26 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               ))}
               {calendarData.map((dayData, index) => (
                 <div key={index} className="flex items-center justify-center p-1 relative">
-                  <div className="w-8 h-8 flex items-center justify-center rounded-full text-xs text-white">
-                    {dayData.day}
-                  </div>
-                  <div className="absolute -bottom-1">
-                    {dayData.hasActivity ? (
-                      <Flame size={10} className="text-construction" />
-                    ) : dayData.day < new Date().getDate() ? (
-                      <X size={8} className="text-red-500" />
-                    ) : null}
-                  </div>
+                  {dayData ? (
+                    <>
+                      <div className={`w-8 h-8 flex items-center justify-center rounded-full text-xs ${
+                        dayData.isToday ? 'bg-construction text-midnight font-bold' : 'text-white'
+                      }`}>
+                        {dayData.day}
+                      </div>
+                      <div className="absolute -bottom-1">
+                        {dayData.hasActivity ? (
+                          <Flame size={10} className="text-construction" />
+                        ) : dayData.day < new Date().getDate() && 
+                          currentCalendarDate.getMonth() === new Date().getMonth() &&
+                          currentCalendarDate.getFullYear() === new Date().getFullYear() ? (
+                          <X size={8} className="text-red-500" />
+                        ) : null}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-8 h-8"></div>
+                  )}
                 </div>
               ))}
             </div>
@@ -342,8 +426,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </Card>
 
-        {/* Recent Achievements - No yellow border */}
-        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-steel-dark p-6 rounded-lg">
+        {/* Recent Achievements - With yellow border */}
+        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] p-6 rounded-lg">
           <div className="flex items-center space-x-3 mb-4">
             <div className="bg-construction p-2 rounded-lg">
               <Trophy className="text-midnight" size={20} />
@@ -369,7 +453,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <Target size={16} className="text-construction" />
               </div>
               <div>
-                <p className="text-white font-medium">{userData?.toolboxStats?.toolsToday || 0} Tools Used Today</p>
+                <p className="text-white font-medium">{getTodayJourneyCompletion()} Journey Activities Today</p>
                 <p className="text-steel-light text-sm">Stay engaged with your recovery</p>
               </div>
             </div>

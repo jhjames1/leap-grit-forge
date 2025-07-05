@@ -18,12 +18,12 @@ const RecoveryJourney = () => {
   const completedDays = userData?.journeyProgress?.completedDays || [];
   const actualCurrentDay = Math.min(Math.max(...completedDays, 0) + 1, totalDays);
 
-  // Check if it's past midnight (12:01 AM)
-  const isPastMidnight = () => {
+  // Check if it's past 12:01 AM
+  const isPast1201AM = () => {
     const now = new Date();
-    const midnight = new Date();
-    midnight.setHours(0, 1, 0, 0); // 12:01 AM
-    return now >= midnight;
+    const threshold = new Date();
+    threshold.setHours(0, 1, 0, 0); // 12:01 AM
+    return now >= threshold;
   };
   
   // Check for time-sensitive reminders
@@ -156,18 +156,22 @@ const RecoveryJourney = () => {
   ];
 
   const handleDayClick = (day: number) => {
-    // Updated unlocking logic: must be past midnight AND previous day completed
+    // Updated unlocking logic: must be past 12:01 AM AND previous day completed
     const isPreviousDayCompleted = day === 1 || completedDays.includes(day - 1);
-    const isUnlocked = isPastMidnight() && isPreviousDayCompleted;
+    const isUnlocked = isPast1201AM() && isPreviousDayCompleted;
     const isCompleted = completedDays.includes(day);
     
     if (isUnlocked || isCompleted) {
       setSelectedDay(day);
       logActivity(`Opened Day ${day}: ${week1Days[day - 1]?.title}`);
     } else {
-      const reason = !isPastMidnight() 
-        ? "Days unlock at 12:01 AM each day"
-        : `Complete Day ${day - 1} first to unlock this day`;
+      let reason = "";
+      if (!isPast1201AM()) {
+        reason = "Days unlock at 12:01 AM each day";
+      } else if (!isPreviousDayCompleted) {
+        reason = `Complete Day ${day - 1} first to unlock this day`;
+      }
+      
       toast({
         title: "Day Locked",
         description: reason,
@@ -201,7 +205,7 @@ const RecoveryJourney = () => {
   const getDayStatus = (day: number) => {
     if (completedDays.includes(day)) return 'completed';
     const isPreviousDayCompleted = day === 1 || completedDays.includes(day - 1);
-    if (isPastMidnight() && isPreviousDayCompleted) return 'unlocked';
+    if (isPast1201AM() && isPreviousDayCompleted) return 'unlocked';
     return 'locked';
   };
 

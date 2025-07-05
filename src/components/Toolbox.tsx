@@ -66,10 +66,10 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       const hasToolUsage = userData.activityLog.some(entry => {
         const entryDate = new Date(entry.timestamp);
         return entryDate.toDateString() === dateString && 
-               (entry.action.includes('SteadySteel') || 
-                entry.action.includes('Redline Recovery') || 
-                entry.action.includes('Gratitude') ||
-                entry.action.includes('The Foreman'));
+               (entry.action.includes('Completed') && 
+                (entry.action.includes('SteadySteel') || 
+                 entry.action.includes('Redline Recovery') || 
+                 entry.action.includes('Gratitude')));
       });
       
       if (hasToolUsage) {
@@ -80,6 +80,24 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     }
     
     return streak;
+  };
+
+  // Get today's completed tools count
+  const getTodayToolsCount = () => {
+    if (!userData?.activityLog) return 0;
+    
+    const today = new Date().toDateString();
+    const completedToolsToday = userData.activityLog.filter(entry => {
+      const entryDate = new Date(entry.timestamp);
+      return entryDate.toDateString() === today && 
+             entry.action.includes('Completed') &&
+             (entry.action.includes('SteadySteel') || 
+              entry.action.includes('Redline Recovery') || 
+              entry.action.includes('Gratitude') ||
+              entry.action.includes('The Foreman'));
+    });
+    
+    return completedToolsToday.length;
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -115,11 +133,11 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     {
       id: 'foreman',
       title: 'The Foreman',
-      description: 'Mentor and Affirmations', // Updated description
+      description: 'Mentor and Affirmations',
       icon: Bot,
-      color: 'bg-steel hover:bg-steel-light', // Updated to default grey state
+      color: 'bg-steel hover:bg-steel-light',
       badge: 'AI Chat',
-      badgeColor: 'bg-steel' // Updated badge color
+      badgeColor: 'bg-steel'
     },
     {
       id: 'urge',
@@ -156,14 +174,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         handleEmergencyCall();
         break;
       case 'foreman':
-        logActivity('The Foreman', 'Started AI mentor session');
-        // Update total sessions for real-time tracking
-        if (userData) {
-          updateToolboxStats({
-            toolsToday: userData.toolboxStats.toolsToday + 1,
-            totalSessions: userData.toolboxStats.totalSessions + 1
-          });
-        }
+        logActivity('Started The Foreman', 'Opened AI mentor session');
         onNavigate?.('foreman');
         break;
       case 'breathing':
@@ -182,28 +193,52 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
 
   const handleBreathingComplete = () => {
     setShowBreathing(false);
-    logActivity('SteadySteel', 'Completed breathing exercise');
+    logActivity('Completed SteadySteel', 'Finished breathing exercise');
     if (userData) {
       updateToolboxStats({
-        toolsToday: userData.toolboxStats.toolsToday + 1,
         totalSessions: userData.toolboxStats.totalSessions + 1
       });
     }
   };
 
+  const handleBreathingClose = () => {
+    setShowBreathing(false);
+    // Don't log completion if closed without finishing
+  };
+
   const handleUrgeTracked = () => {
     setShowUrgeTracker(false);
-    logActivity('Redline Recovery', 'Tracked and redirected urge');
+    logActivity('Completed Redline Recovery', 'Tracked and redirected urge');
     if (userData) {
       updateToolboxStats({
-        toolsToday: userData.toolboxStats.toolsToday + 1,
         urgesThisWeek: userData.toolboxStats.urgesThisWeek + 1,
         totalSessions: userData.toolboxStats.totalSessions + 1
       });
     }
   };
 
+  const handleUrgeClose = () => {
+    setShowUrgeTracker(false);
+    // Don't log completion if closed without finishing
+  };
+
+  const handleGratitudeComplete = () => {
+    setShowGratitudeLog(false);
+    logActivity('Completed Gratitude Log', 'Added gratitude entry');
+    if (userData) {
+      updateToolboxStats({
+        totalSessions: userData.toolboxStats.totalSessions + 1
+      });
+    }
+  };
+
+  const handleGratitudeClose = () => {
+    setShowGratitudeLog(false);
+    // Don't log completion if closed without finishing
+  };
+
   const dayStreak = calculateDayStreak();
+  const todayToolsCount = getTodayToolsCount();
 
   return (
     <div className="p-4 pb-24 bg-gradient-industrial min-h-screen">
@@ -218,7 +253,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <div className="text-2xl font-anton text-construction">
-              {userData?.toolboxStats.toolsToday || 0}
+              {todayToolsCount}
             </div>
             <div className="text-xs text-steel-light font-oswald">Tools Used Today</div>
           </div>
@@ -261,7 +296,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
                 <div className="flex items-start justify-between mb-3">
                   <div className={`p-3 rounded-lg transition-all duration-200 ${
                     tool.id === 'foreman' 
-                      ? 'bg-steel group-hover:bg-construction' // Updated to grey default, yellow on hover
+                      ? 'bg-steel group-hover:bg-construction'
                       : 'bg-steel group-hover:bg-construction'
                   }`}>
                     <Icon className={`transition-colors duration-200 ${
@@ -290,40 +325,50 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         <h3 className="font-oswald font-semibold text-white mb-4">Recent Activity</h3>
         <div className="space-y-3">
           {userData?.activityLog.length ? (
-            userData.activityLog.slice(0, 3).map((activity, index) => (
-              <div key={activity.id} className="flex items-center space-x-3 text-sm">
-                <div className={`w-3 h-3 rounded-full ${
-                  index === 0 ? 'bg-construction' : 'bg-steel'
-                }`}></div>
-                <span className="text-steel-light">
-                  {activity.action} - <span className={`font-medium ${
-                    index === 0 ? 'text-construction' : 'text-steel-light'
-                  }`}>{formatTimestamp(activity.timestamp)}</span>
-                </span>
-              </div>
-            ))
+            userData.activityLog
+              .filter(activity => activity.action.includes('Completed'))
+              .slice(0, 3)
+              .map((activity, index) => (
+                <div key={activity.id} className="flex items-center space-x-3 text-sm">
+                  <div className={`w-3 h-3 rounded-full ${
+                    index === 0 ? 'bg-construction' : 'bg-steel'
+                  }`}></div>
+                  <span className="text-steel-light">
+                    {activity.action} - <span className={`font-medium ${
+                      index === 0 ? 'text-construction' : 'text-steel-light'
+                    }`}>{formatTimestamp(activity.timestamp)}</span>
+                  </span>
+                </div>
+              ))
           ) : (
             <div className="text-steel-light text-sm">
-              Your activity will appear here as you use the tools.
+              Your completed activities will appear here as you use the tools.
             </div>
           )}
         </div>
       </Card>
 
-      {/* Tool Modals */}
+      {/* Tool Modals with completion tracking */}
       {showBreathing && (
-        <BreathingExercise onClose={handleBreathingComplete} />
+        <BreathingExercise 
+          onClose={handleBreathingComplete} 
+          onCancel={handleBreathingClose}
+        />
       )}
 
       {showUrgeTracker && (
         <UrgeTracker 
           onClose={handleUrgeTracked} 
+          onCancel={handleUrgeClose}
           onNavigate={onNavigate}
         />
       )}
 
       {showGratitudeLog && (
-        <GratitudeLogEnhanced onClose={() => setShowGratitudeLog(false)} />
+        <GratitudeLogEnhanced 
+          onClose={handleGratitudeComplete}
+          onCancel={handleGratitudeClose}
+        />
       )}
     </div>
   );
