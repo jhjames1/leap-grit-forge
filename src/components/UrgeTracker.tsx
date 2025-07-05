@@ -155,7 +155,11 @@ const UrgeTracker = ({ onClose, onCancel, onNavigate }: UrgeTrackerProps) => {
   };
 
   const handleCancel = () => {
-    onCancel?.() || onClose();
+    if (onCancel) {
+      onCancel();
+    } else {
+      onClose();
+    }
   };
 
   if (showReflection) {

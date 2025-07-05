@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,7 +33,11 @@ const GratitudeLogEnhanced = ({ onClose, onCancel }: GratitudeLogEnhancedProps) 
   }, []);
 
   const handleCancel = () => {
-    onCancel?.() || onClose();
+    if (onCancel) {
+      onCancel();
+    } else {
+      onClose();
+    }
   };
 
   const handleSaveEntry = () => {

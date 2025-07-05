@@ -200,7 +200,11 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
       clearInterval(timerRef.current);
     }
     speechSynthesis.cancel();
-    onCancel?.() || onClose();
+    if (onCancel) {
+      onCancel();
+    } else {
+      onClose();
+    }
   };
 
   useEffect(() => {
