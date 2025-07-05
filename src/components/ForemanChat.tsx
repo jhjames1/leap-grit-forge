@@ -278,8 +278,9 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
             >
               <ArrowLeft size={20} />
             </Button>
-            <div className="w-12 h-12 bg-steel rounded-full flex items-center justify-center">
-              <MessageCircle className="text-white" size={20} />
+            {/* Icon shows in construction yellow when active */}
+            <div className="w-12 h-12 bg-construction rounded-full flex items-center justify-center">
+              <MessageCircle className="text-midnight" size={20} />
             </div>
             <div>
               <h2 className="font-oswald font-semibold text-white">The Foreman</h2>

@@ -1,15 +1,15 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Flame, Target, Info, Smartphone, Trophy } from 'lucide-react';
+import { Flame, Target, Info, Smartphone, Trophy, Calendar, X } from 'lucide-react';
 import SMSOptIn from './SMSOptIn';
 import RecoveryStrengthMeter from './RecoveryStrengthMeter';
 import { useRecoveryStrength } from '@/hooks/useRecoveryStrength';
 import { useUserData } from '@/hooks/useUserData';
 import PhoneNumberPrompt from './PhoneNumberPrompt';
 import StreakReminder from './StreakReminder';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 interface DashboardHomeProps {
   onNavigate?: (page: string) => void;
@@ -21,6 +21,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   const [showStreakReminder, setShowStreakReminder] = useState(false);
   const { strengthData, logAction } = useRecoveryStrength();
   const { userData, updateUserData, logActivity } = useUserData();
+
+  // Check if user has phone number
+  const hasPhoneNumber = Boolean(localStorage.getItem('phoneNumber'));
 
   // Daily motivation logic - no repeats, no resets
   const [dailyMotivation, setDailyMotivation] = useState('');
@@ -46,6 +49,18 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   // Calculate recovery streak based on daily activity
   const [recoveryStreak, setRecoveryStreak] = useState(0);
   const [nextMilestone] = useState(30);
+  const [yesterdayStrength, setYesterdayStrength] = useState(0);
+
+  // Get yesterday's strength
+  useEffect(() => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = `strength_${yesterday.toDateString()}`;
+    const savedYesterdayStrength = localStorage.getItem(yesterdayKey);
+    if (savedYesterdayStrength) {
+      setYesterdayStrength(parseInt(savedYesterdayStrength));
+    }
+  }, []);
 
   useEffect(() => {
     // Load daily motivation based on user's day count
@@ -179,22 +194,40 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       currentStrength: strengthData.overall,
       dailyActions: userData?.toolboxStats?.toolsToday || 0,
       weeklyGoal: 7, // Default weekly goal
-      trend
+      trend,
+      yesterdayStrength
     };
   };
 
+  // Generate calendar data for streak tracking
+  const generateCalendarData = () => {
+    const today = new Date();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const calendarDays = [];
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(today.getFullYear(), today.getMonth(), day);
+      const dateString = date.toDateString();
+      const hasActivity = userData?.activityLog?.some(entry => 
+        new Date(entry.timestamp).toDateString() === dateString
+      );
+      
+      calendarDays.push({
+        day,
+        hasActivity,
+        date: dateString
+      });
+    }
+    
+    return calendarDays;
+  };
+
+  const calendarData = generateCalendarData();
+
   return (
     <div className="relative min-h-screen">
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('/lovable-uploads/c61510da-8bef-4d57-8fba-f87d453bd59e.png')`,
-        }}
-      />
-      
-      {/* Enhanced Dark Overlay for Better Text Legibility - Updated to 50% opacity */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-midnight/50 to-black/50"></div>
+      {/* Updated Background - Journey Page Style */}
+      <div className="absolute inset-0 bg-gradient-to-b from-midnight via-steel-dark to-midnight"></div>
       
       {/* Content */}
       <div className="relative z-10 p-4 pb-24">
@@ -205,14 +238,17 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             <p className="text-steel-light font-oswald">Your recovery journey continues</p>
           </div>
           <div className="flex space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowSMSOptIn(true)}
-              className="text-steel-light hover:text-construction hover:bg-construction/10"
-            >
-              <Smartphone size={20} />
-            </Button>
+            {/* Mobile/SMS icon only shows if no phone number */}
+            {!hasPhoneNumber && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowSMSOptIn(true)}
+                className="text-steel-light hover:text-construction hover:bg-construction/10"
+              >
+                <Smartphone size={20} />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -224,11 +260,11 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </div>
 
-        {/* Recovery Strength Meter */}
+        {/* Recovery Strength Meter - No yellow border */}
         <RecoveryStrengthMeter data={convertToRecoveryData()} />
 
-        {/* Daily Quote Card - Updated styling */}
-        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] mb-6 p-6 mt-6 rounded-lg">
+        {/* Daily Quote Card - No yellow border */}
+        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-steel-dark mb-6 p-6 mt-6 rounded-lg">
           <div className="flex items-start space-x-3">
             <div className="bg-construction p-2 rounded-lg">
               <Target className="text-midnight" size={20} />
@@ -240,8 +276,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </Card>
 
-        {/* Progress Streak - Updated styling */}
-        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] mb-6 p-6 rounded-lg">
+        {/* Progress Streak with Calendar - No yellow border */}
+        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-steel-dark mb-6 p-6 rounded-lg">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div className="bg-gradient-to-r from-construction to-construction-light p-2 rounded-lg">
@@ -260,6 +296,38 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             </div>
           </div>
           
+          {/* Calendar Integration */}
+          <div className="mb-4">
+            <div className="grid grid-cols-7 gap-1 mb-3">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                <div key={index} className="text-center text-xs text-steel-light font-oswald p-1">
+                  {day}
+                </div>
+              ))}
+              {calendarData.map((dayData, index) => (
+                <div key={index} className="flex items-center justify-center p-1 relative">
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full text-xs text-white">
+                    {dayData.day}
+                  </div>
+                  <div className="absolute -bottom-1">
+                    {dayData.hasActivity ? (
+                      <Flame size={10} className="text-construction" />
+                    ) : dayData.day < new Date().getDate() ? (
+                      <X size={8} className="text-red-500" />
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <Button 
+              onClick={() => onNavigate?.('journey')}
+              className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold py-3 rounded-lg"
+            >
+              Take the next LEAP today
+            </Button>
+          </div>
+          
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-steel-light">Next milestone</span>
@@ -274,8 +342,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </Card>
 
-        {/* Recent Achievements - Updated styling */}
-        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] p-6 rounded-lg">
+        {/* Recent Achievements - No yellow border */}
+        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-steel-dark p-6 rounded-lg">
           <div className="flex items-center space-x-3 mb-4">
             <div className="bg-construction p-2 rounded-lg">
               <Trophy className="text-midnight" size={20} />

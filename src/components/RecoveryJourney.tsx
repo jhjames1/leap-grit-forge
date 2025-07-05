@@ -17,6 +17,14 @@ const RecoveryJourney = () => {
   // Calculate current day based on completed days
   const completedDays = userData?.journeyProgress?.completedDays || [];
   const actualCurrentDay = Math.min(Math.max(...completedDays, 0) + 1, totalDays);
+
+  // Check if it's past midnight (12:01 AM)
+  const isPastMidnight = () => {
+    const now = new Date();
+    const midnight = new Date();
+    midnight.setHours(0, 1, 0, 0); // 12:01 AM
+    return now >= midnight;
+  };
   
   // Check for time-sensitive reminders
   useEffect(() => {
@@ -148,15 +156,21 @@ const RecoveryJourney = () => {
   ];
 
   const handleDayClick = (day: number) => {
-    const isUnlocked = day === 1 || completedDays.includes(day - 1) || completedDays.includes(day) || day <= actualCurrentDay;
+    // Updated unlocking logic: must be past midnight AND previous day completed
+    const isPreviousDayCompleted = day === 1 || completedDays.includes(day - 1);
+    const isUnlocked = isPastMidnight() && isPreviousDayCompleted;
+    const isCompleted = completedDays.includes(day);
     
-    if (isUnlocked) {
+    if (isUnlocked || isCompleted) {
       setSelectedDay(day);
       logActivity(`Opened Day ${day}: ${week1Days[day - 1]?.title}`);
     } else {
+      const reason = !isPastMidnight() 
+        ? "Days unlock at 12:01 AM each day"
+        : `Complete Day ${day - 1} first to unlock this day`;
       toast({
         title: "Day Locked",
-        description: `Complete Day ${day - 1} first to unlock this day.`,
+        description: reason,
       });
     }
   };
@@ -186,21 +200,21 @@ const RecoveryJourney = () => {
 
   const getDayStatus = (day: number) => {
     if (completedDays.includes(day)) return 'completed';
-    if (day === actualCurrentDay) return 'current';
-    if (day === 1 || completedDays.includes(day - 1) || day <= actualCurrentDay) return 'unlocked';
+    const isPreviousDayCompleted = day === 1 || completedDays.includes(day - 1);
+    if (isPastMidnight() && isPreviousDayCompleted) return 'unlocked';
     return 'locked';
   };
 
   const getButtonText = (day: number, status: string) => {
     if (status === 'completed') return 'Review';
-    if (status === 'current' || status === 'unlocked') return 'Start';
+    if (status === 'unlocked') return 'Start';
     return 'Locked';
   };
 
   const progress = (actualCurrentDay / totalDays) * 100;
 
   return (
-    <div className="p-4 pb-24 bg-gradient-industrial min-h-screen">
+    <div className="p-4 pb-24 bg-gradient-to-b from-midnight via-steel-dark to-midnight min-h-screen">
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-anton text-3xl text-white mb-2">Recovery Journey</h1>
@@ -248,7 +262,7 @@ const RecoveryJourney = () => {
           {week1Days.map((dayModule) => {
             const status = getDayStatus(dayModule.day);
             const isCompleted = status === 'completed';
-            const isUnlocked = status === 'current' || status === 'unlocked' || isCompleted;
+            const isUnlocked = status === 'unlocked' || isCompleted;
             const buttonText = getButtonText(dayModule.day, status);
             
             return (

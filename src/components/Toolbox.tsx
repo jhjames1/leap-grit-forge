@@ -26,6 +26,77 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const [showGratitudeLog, setShowGratitudeLog] = useState(false);
   const { userData, logActivity, updateToolboxStats } = useUserData();
 
+  // Calculate daily reset at midnight
+  useEffect(() => {
+    const checkMidnightReset = () => {
+      const now = new Date();
+      const lastReset = localStorage.getItem('lastMidnightReset');
+      const todayString = now.toDateString();
+      
+      if (lastReset !== todayString) {
+        // Reset daily counters
+        if (userData) {
+          updateToolboxStats({
+            toolsToday: 0
+          });
+        }
+        localStorage.setItem('lastMidnightReset', todayString);
+      }
+    };
+
+    checkMidnightReset();
+    
+    // Check every minute for midnight reset
+    const interval = setInterval(checkMidnightReset, 60000);
+    return () => clearInterval(interval);
+  }, [userData, updateToolboxStats]);
+
+  // Calculate streak based on consecutive days with tool usage
+  const calculateDayStreak = () => {
+    if (!userData?.activityLog) return 0;
+    
+    const today = new Date();
+    let streak = 0;
+    
+    for (let i = 0; i < 365; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() - i);
+      const dateString = checkDate.toDateString();
+      
+      const hasToolUsage = userData.activityLog.some(entry => {
+        const entryDate = new Date(entry.timestamp);
+        return entryDate.toDateString() === dateString && 
+               (entry.action.includes('SteadySteel') || 
+                entry.action.includes('Redline Recovery') || 
+                entry.action.includes('Gratitude') ||
+                entry.action.includes('The Foreman'));
+      });
+      
+      if (hasToolUsage) {
+        streak++;
+      } else if (i > 0) {
+        break;
+      }
+    }
+    
+    return streak;
+  };
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 should be 12
+    
+    return `${month}-${day}-${year}, ${hours}:${minutes} ${ampm}`;
+  };
+
   const handleEmergencyCall = () => {
     window.location.href = 'tel:+14327018678';
     logActivity('Emergency Call', 'Called emergency support line');
@@ -44,11 +115,11 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     {
       id: 'foreman',
       title: 'The Foreman',
-      description: 'AI mentor & affirmations',
+      description: 'Mentor and Affirmations', // Updated description
       icon: Bot,
-      color: 'bg-construction hover:bg-construction-dark',
+      color: 'bg-steel hover:bg-steel-light', // Updated to default grey state
       badge: 'AI Chat',
-      badgeColor: 'bg-construction'
+      badgeColor: 'bg-steel' // Updated badge color
     },
     {
       id: 'urge',
@@ -86,6 +157,13 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         break;
       case 'foreman':
         logActivity('The Foreman', 'Started AI mentor session');
+        // Update total sessions for real-time tracking
+        if (userData) {
+          updateToolboxStats({
+            toolsToday: userData.toolboxStats.toolsToday + 1,
+            totalSessions: userData.toolboxStats.totalSessions + 1
+          });
+        }
         onNavigate?.('foreman');
         break;
       case 'breathing':
@@ -119,10 +197,13 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     if (userData) {
       updateToolboxStats({
         toolsToday: userData.toolboxStats.toolsToday + 1,
-        urgesThisWeek: userData.toolboxStats.urgesThisWeek + 1
+        urgesThisWeek: userData.toolboxStats.urgesThisWeek + 1,
+        totalSessions: userData.toolboxStats.totalSessions + 1
       });
     }
   };
+
+  const dayStreak = calculateDayStreak();
 
   return (
     <div className="p-4 pb-24 bg-gradient-industrial min-h-screen">
@@ -132,7 +213,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         <p className="text-steel-light font-oswald">Your support tools, always ready</p>
       </div>
 
-      {/* Live Stats */}
+      {/* Live Stats with updated tracking */}
       <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-4">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
@@ -143,7 +224,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
           </div>
           <div>
             <div className="text-2xl font-anton text-construction">
-              {userData?.toolboxStats.streak || 1}
+              {dayStreak}
             </div>
             <div className="text-xs text-steel-light font-oswald">Day Streak</div>
           </div>
@@ -180,11 +261,11 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
                 <div className="flex items-start justify-between mb-3">
                   <div className={`p-3 rounded-lg transition-all duration-200 ${
                     tool.id === 'foreman' 
-                      ? 'bg-construction group-hover:bg-construction-light' 
+                      ? 'bg-steel group-hover:bg-construction' // Updated to grey default, yellow on hover
                       : 'bg-steel group-hover:bg-construction'
                   }`}>
                     <Icon className={`transition-colors duration-200 ${
-                      tool.id === 'foreman' ? 'text-midnight' : 'text-white group-hover:text-midnight'
+                      tool.id === 'foreman' ? 'text-white group-hover:text-midnight' : 'text-white group-hover:text-midnight'
                     }`} size={20} />
                   </div>
                   <Badge className={`${tool.badgeColor} text-midnight text-xs font-oswald transition-all duration-200`}>
@@ -204,7 +285,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         })}
       </div>
 
-      {/* Live Recent Activity */}
+      {/* Live Recent Activity with updated timestamp format */}
       <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mt-6 p-6">
         <h3 className="font-oswald font-semibold text-white mb-4">Recent Activity</h3>
         <div className="space-y-3">
@@ -217,7 +298,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
                 <span className="text-steel-light">
                   {activity.action} - <span className={`font-medium ${
                     index === 0 ? 'text-construction' : 'text-steel-light'
-                  }`}>{activity.timestamp}</span>
+                  }`}>{formatTimestamp(activity.timestamp)}</span>
                 </span>
               </div>
             ))

@@ -8,6 +8,7 @@ interface RecoveryData {
   dailyActions: number;
   weeklyGoal: number;
   trend: 'up' | 'down' | 'stable';
+  yesterdayStrength?: number;
 }
 
 interface RecoveryStrengthMeterProps {
@@ -15,7 +16,7 @@ interface RecoveryStrengthMeterProps {
 }
 
 const RecoveryStrengthMeter = ({ data }: RecoveryStrengthMeterProps) => {
-  const { currentStrength, dailyActions, weeklyGoal, trend } = data;
+  const { currentStrength, dailyActions, weeklyGoal, trend, yesterdayStrength } = data;
   const progressPercentage = Math.min((currentStrength / 100) * 100, 100);
 
   const getTrendColor = () => {
@@ -37,7 +38,7 @@ const RecoveryStrengthMeter = ({ data }: RecoveryStrengthMeterProps) => {
   };
 
   return (
-    <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] p-6 rounded-lg">
+    <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-steel-dark p-6 rounded-lg">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
           <div className="bg-construction p-2 rounded-lg">
@@ -68,6 +69,12 @@ const RecoveryStrengthMeter = ({ data }: RecoveryStrengthMeterProps) => {
           <span className="text-steel-light">Actions today:</span>
           <span className="text-construction font-oswald font-medium">{dailyActions}/{weeklyGoal}</span>
         </div>
+        
+        {yesterdayStrength !== undefined && (
+          <div className="text-xs text-steel-light/70 mt-2">
+            Yesterday's strength: {yesterdayStrength}%
+          </div>
+        )}
       </div>
     </Card>
   );
