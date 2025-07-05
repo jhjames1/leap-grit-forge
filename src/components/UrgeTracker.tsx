@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,7 @@ import {
 
 interface UrgeTrackerProps {
   onClose: () => void;
+  onCancel?: () => void;
   onNavigate?: (page: string) => void;
 }
 
@@ -34,7 +34,7 @@ interface UrgeLog {
   whatHelped?: string;
 }
 
-const UrgeTracker = ({ onClose, onNavigate }: UrgeTrackerProps) => {
+const UrgeTracker = ({ onClose, onCancel, onNavigate }: UrgeTrackerProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedUrge, setSelectedUrge] = useState('');
   const [intensity, setIntensity] = useState([5]);
@@ -154,6 +154,10 @@ const UrgeTracker = ({ onClose, onNavigate }: UrgeTrackerProps) => {
     onClose();
   };
 
+  const handleCancel = () => {
+    onCancel?.() || onClose();
+  };
+
   if (showReflection) {
     return (
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -258,6 +262,13 @@ const UrgeTracker = ({ onClose, onNavigate }: UrgeTrackerProps) => {
                 </Button>
               ))}
             </div>
+            <Button 
+              variant="outline" 
+              onClick={handleCancel}
+              className="w-full mt-6 border-steel text-steel-light hover:bg-steel/10"
+            >
+              Close for Now
+            </Button>
           </div>
         )}
 
@@ -364,7 +375,7 @@ const UrgeTracker = ({ onClose, onNavigate }: UrgeTrackerProps) => {
             
             <Button 
               variant="outline" 
-              onClick={onClose}
+              onClick={handleCancel}
               className="w-full mt-6 border-steel text-steel-light hover:bg-steel/10"
             >
               Close for Now

@@ -13,9 +13,10 @@ interface GratitudeEntry {
 
 interface GratitudeLogEnhancedProps {
   onClose: () => void;
+  onCancel?: () => void;
 }
 
-const GratitudeLogEnhanced = ({ onClose }: GratitudeLogEnhancedProps) => {
+const GratitudeLogEnhanced = ({ onClose, onCancel }: GratitudeLogEnhancedProps) => {
   const [newEntry, setNewEntry] = useState('');
   const [entries, setEntries] = useState<GratitudeEntry[]>([]);
 
@@ -31,6 +32,10 @@ const GratitudeLogEnhanced = ({ onClose }: GratitudeLogEnhancedProps) => {
       }
     }
   }, []);
+
+  const handleCancel = () => {
+    onCancel?.() || onClose();
+  };
 
   const handleSaveEntry = () => {
     if (!newEntry.trim()) return;
@@ -66,6 +71,8 @@ const GratitudeLogEnhanced = ({ onClose }: GratitudeLogEnhancedProps) => {
     }
 
     setNewEntry('');
+    // Call onClose when entry is successfully saved (completion)
+    onClose();
   };
 
   return (
@@ -98,7 +105,7 @@ const GratitudeLogEnhanced = ({ onClose }: GratitudeLogEnhancedProps) => {
             </Button>
             <Button 
               variant="outline" 
-              onClick={onClose}
+              onClick={handleCancel}
               className="border-steel text-steel-light hover:bg-steel/10"
             >
               Close

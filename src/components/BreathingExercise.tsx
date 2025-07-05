@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +7,10 @@ import { Wind, Volume2, VolumeX, Play, Pause, RotateCcw } from 'lucide-react';
 
 interface BreathingExerciseProps {
   onClose: () => void;
+  onCancel?: () => void;
 }
 
-const BreathingExercise = ({ onClose }: BreathingExerciseProps) => {
+const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
   const [isStarted, setIsStarted] = useState(false);
   const [sessionLength, setSessionLength] = useState(90);
   const [backgroundSound, setBackgroundSound] = useState('Workshop Hum');
@@ -195,6 +195,14 @@ const BreathingExercise = ({ onClose }: BreathingExerciseProps) => {
     }
   };
 
+  const handleCancel = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    speechSynthesis.cancel();
+    onCancel?.() || onClose();
+  };
+
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -283,7 +291,7 @@ const BreathingExercise = ({ onClose }: BreathingExerciseProps) => {
               </Button>
               <Button 
                 variant="outline" 
-                onClick={onClose}
+                onClick={handleCancel}
                 className="w-full border-steel text-steel-light hover:bg-steel/10"
               >
                 Close
