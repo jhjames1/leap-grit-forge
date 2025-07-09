@@ -222,7 +222,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
           <div className="flex flex-col items-center text-center mb-4">
             <div className="bg-primary p-3 rounded-lg mb-3">
-              <Bot className="text-primary-foreground" size={24} />
+              <Bot className="text-primary-foreground" size={20} />
             </div>
             <div>
               <h3 className="font-fjalla font-bold text-card-foreground text-2xl tracking-wide">
@@ -247,7 +247,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           >
             <div className="flex flex-col items-center space-y-2">
               <div className="bg-primary p-3 rounded-lg">
-                <Calendar className="text-primary-foreground" size={18} />
+                <Calendar className="text-primary-foreground" size={20} />
               </div>
               <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">CALENDAR</h3>
             </div>
@@ -258,7 +258,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           >
             <div className="flex flex-col items-center space-y-2">
               <div className="bg-primary p-3 rounded-lg">
-                <MessageCircle className="text-primary-foreground" size={18} />
+                <MessageCircle className="text-primary-foreground" size={20} />
               </div>
               <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">CHAT SUPPORT</h3>
             </div>
