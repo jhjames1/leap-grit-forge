@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { SecureStorage } from '@/utils/secureStorage';
+import { getSecureSession, clearSession, logSecurityEvent } from '@/utils/security';
 
 interface ActivityLogEntry {
   id: string;
@@ -34,21 +36,39 @@ export const useUserData = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
 
   useEffect(() => {
-    const user = localStorage.getItem('currentUser');
-    if (user) {
-      setCurrentUser(user);
-      loadUserData(user);
+    // Check for secure session first
+    const session = getSecureSession();
+    if (session) {
+      setCurrentUser(session.username);
+      loadUserData(session.username);
+    } else {
+      // Fallback to localStorage for backwards compatibility
+      const user = localStorage.getItem('currentUser');
+      if (user) {
+        setCurrentUser(user);
+        loadUserData(user);
+      }
     }
+    
+    // Cleanup old data on app start
+    SecureStorage.cleanupOldData();
   }, []);
 
   const loadUserData = (username: string) => {
-    const userKey = `user_${username.toLowerCase()}`;
-    const data = localStorage.getItem(userKey);
-    if (data) {
-      const parsed = JSON.parse(data);
-      // Update daily stats
-      updateDailyStats(parsed);
-      setUserData(parsed);
+    try {
+      const data = SecureStorage.getUserData(username);
+      if (data) {
+        // Update daily stats
+        updateDailyStats(data);
+        setUserData(data);
+        
+        // Update last access
+        SecureStorage.updateLastAccess(username);
+        logSecurityEvent('user_data_accessed', { username });
+      }
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+      logSecurityEvent('user_data_error', { username, error: error instanceof Error ? error.message : 'Unknown error' });
     }
   };
 
@@ -96,13 +116,17 @@ export const useUserData = () => {
   const updateUserData = (updates: Partial<UserData>) => {
     if (!currentUser) return;
     
-    const userKey = `user_${currentUser.toLowerCase()}`;
-    const existing = localStorage.getItem(userKey);
-    if (existing) {
-      const parsed = JSON.parse(existing);
-      const updated = { ...parsed, ...updates };
-      localStorage.setItem(userKey, JSON.stringify(updated));
-      setUserData(updated);
+    try {
+      const existing = SecureStorage.getUserData(currentUser);
+      if (existing) {
+        const updated = { ...existing, ...updates, lastAccess: Date.now() };
+        SecureStorage.setUserData(currentUser, updated);
+        setUserData(updated);
+        logSecurityEvent('user_data_updated', { username: currentUser });
+      }
+    } catch (error) {
+      console.error('Failed to update user data:', error);
+      logSecurityEvent('user_data_update_error', { username: currentUser, error: error instanceof Error ? error.message : 'Unknown error' });
     }
   };
 
@@ -127,12 +151,22 @@ export const useUserData = () => {
     updateUserData({ toolboxStats: updatedStats });
   };
 
+  const logout = () => {
+    if (currentUser) {
+      logSecurityEvent('user_logout', { username: currentUser });
+    }
+    clearSession();
+    setCurrentUser(null);
+    setUserData(null);
+  };
+
   return {
     userData,
     currentUser,
     updateUserData,
     logActivity,
     updateToolboxStats,
-    loadUserData
+    loadUserData,
+    logout
   };
 };

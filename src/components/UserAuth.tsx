@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import { hashPassword, verifyPassword, validatePassword, sanitizeInput, checkRateLimit, recordAttempt, logSecurityEvent, setSecureSession, createSessionToken } from '@/utils/security';
+import { SecureStorage } from '@/utils/secureStorage';
 
 interface UserAuthProps {
   onLogin: (userData: { firstName: string; isNewUser: boolean }) => void;
@@ -19,60 +21,112 @@ const UserAuth = ({ onLogin }: UserAuthProps) => {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     setError('');
-
-    if (!credentials.firstName.trim() || !credentials.password) {
-      setError('Please fill in all fields.');
-      return;
-    }
-
-    if (!isLogin) {
-      if (credentials.password.length < 6) {
-        setError('Password must be at least 6 characters.');
-        return;
-      }
-      if (credentials.password !== credentials.confirmPassword) {
-        setError('Passwords do not match.');
-        return;
-      }
-    }
-
-    // For demo purposes, we'll store in localStorage
-    // In production, this would connect to a secure backend
-    const userKey = `user_${credentials.firstName.toLowerCase()}`;
+    setPasswordErrors([]);
     
-    if (isLogin) {
-      const storedUser = localStorage.getItem(userKey);
-      if (!storedUser) {
-        setError('User not found. Please create an account.');
+    try {
+      // Sanitize inputs
+      const sanitizedFirstName = sanitizeInput(credentials.firstName);
+      const sanitizedPassword = credentials.password; // Don't sanitize password (may contain special chars)
+      
+      if (!sanitizedFirstName || !sanitizedPassword) {
+        setError('Please fill in all fields');
         return;
       }
-      const userData = JSON.parse(storedUser);
-      if (userData.password !== credentials.password) {
-        setError('Incorrect password.');
+
+      // Check rate limiting
+      const rateLimit = checkRateLimit(sanitizedFirstName);
+      if (!rateLimit.allowed) {
+        const timeLeft = Math.ceil((rateLimit.timeLeft || 0) / 1000 / 60);
+        setError(`Too many attempts. Please try again in ${timeLeft} minutes.`);
         return;
       }
-      onLogin({ firstName: credentials.firstName, isNewUser: false });
-    } else {
-      const existingUser = localStorage.getItem(userKey);
-      if (existingUser) {
-        setError('User already exists. Please login instead.');
-        return;
+
+      if (isLogin) {
+        // Login flow
+        const existingUser = SecureStorage.getUserData(sanitizedFirstName);
+        if (existingUser) {
+          const passwordMatch = await verifyPassword(sanitizedPassword, existingUser.password);
+          if (passwordMatch) {
+            // Update last access
+            SecureStorage.updateLastAccess(sanitizedFirstName);
+            
+            // Create secure session
+            const sessionToken = createSessionToken();
+            setSecureSession(sanitizedFirstName, sessionToken);
+            
+            localStorage.setItem('currentUser', sanitizedFirstName);
+            logSecurityEvent('user_login', { username: sanitizedFirstName });
+            onLogin({ firstName: sanitizedFirstName, isNewUser: false });
+          } else {
+            recordAttempt(sanitizedFirstName);
+            logSecurityEvent('login_failed', { username: sanitizedFirstName, reason: 'invalid_password' });
+            setError('Invalid password');
+          }
+        } else {
+          recordAttempt(sanitizedFirstName);
+          logSecurityEvent('login_failed', { username: sanitizedFirstName, reason: 'user_not_found' });
+          setError('User not found');
+        }
+      } else {
+        // Registration flow
+        if (sanitizedPassword !== credentials.confirmPassword) {
+          setError('Passwords do not match');
+          return;
+        }
+        
+        // Validate password strength
+        const passwordValidation = validatePassword(sanitizedPassword);
+        if (!passwordValidation.isValid) {
+          setPasswordErrors(passwordValidation.errors);
+          return;
+        }
+        
+        const existingUser = SecureStorage.getUserData(sanitizedFirstName);
+        if (existingUser) {
+          setError('User already exists');
+          return;
+        }
+        
+        // Create new user with hashed password
+        const hashedPassword = await hashPassword(sanitizedPassword);
+        const newUser = {
+          firstName: sanitizedFirstName,
+          password: hashedPassword,
+          createdAt: new Date().toISOString(),
+          lastAccess: Date.now(),
+          gratitudeEntries: [],
+          activityLog: [],
+          toolboxStats: {
+            toolsToday: 0,
+            streak: 0,
+            totalSessions: 0,
+            urgesThisWeek: 0
+          }
+        };
+        
+        SecureStorage.setUserData(sanitizedFirstName, newUser);
+        
+        // Create secure session
+        const sessionToken = createSessionToken();
+        setSecureSession(sanitizedFirstName, sessionToken);
+        
+        localStorage.setItem('currentUser', sanitizedFirstName);
+        logSecurityEvent('user_registration', { username: sanitizedFirstName });
+        onLogin({ firstName: sanitizedFirstName, isNewUser: true });
       }
-      const userData = {
-        firstName: credentials.firstName,
-        password: credentials.password,
-        createdAt: new Date().toISOString(),
-        gratitudeEntries: [],
-        activityLog: [],
-        toolboxStats: { toolsToday: 0, streak: 1, totalSessions: 0 }
-      };
-      localStorage.setItem(userKey, JSON.stringify(userData));
-      localStorage.setItem('currentUser', credentials.firstName);
-      onLogin({ firstName: credentials.firstName, isNewUser: true });
+    } catch (error) {
+      console.error('Authentication error:', error);
+      setError('An error occurred. Please try again.');
+      logSecurityEvent('auth_error', { error: error instanceof Error ? error.message : 'Unknown error' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -155,12 +209,24 @@ const UserAuth = ({ onLogin }: UserAuthProps) => {
               {error}
             </div>
           )}
+          
+          {passwordErrors.length > 0 && (
+            <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded p-2">
+              <p className="font-medium">Password requirements:</p>
+              <ul className="list-disc list-inside mt-1 text-xs">
+                {passwordErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <Button 
             type="submit"
             className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold"
+            disabled={isLoading}
           >
-            {isLogin ? 'Log In' : 'Create My Account'}
+            {isLoading ? "Processing..." : (isLogin ? 'Log In' : 'Create My Account')}
           </Button>
 
           <div className="text-center">

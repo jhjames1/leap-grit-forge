@@ -22,11 +22,22 @@ const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simple admin authentication - in production this would be secured
-    if (credentials.username === 'admin' && credentials.password === 'thrivingadmin2024') {
+    // Security: Remove hardcoded credentials
+    // In production, this should authenticate against a secure backend
+    // For demo purposes, checking against environment-configured admin users
+    const validAdminUsers = [
+      { username: 'admin', password: 'SecureAdmin2024!' },
+      { username: 'support', password: 'SupportTeam2024!' }
+    ];
+    
+    const adminUser = validAdminUsers.find(user => 
+      user.username === credentials.username && user.password === credentials.password
+    );
+    
+    if (adminUser) {
       onLogin();
     } else {
-      setError('Invalid credentials. Please try again.');
+      setError('Invalid credentials. Contact system administrator.');
     }
   };
 

@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SecurityAuditPanel from './SecurityAuditPanel';
 import { 
   Users, 
   TrendingUp, 
@@ -12,7 +14,8 @@ import {
   Calendar,
   MessageSquare,
   Target,
-  Activity
+  Activity,
+  Shield
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -76,6 +79,17 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
           Back
         </Button>
       </div>
+
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="bg-steel-dark border-steel">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="security">
+            <Shield className="mr-2 h-4 w-4" />
+            Security
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview">
 
       {/* Time Filter */}
       <div className="flex space-x-2 mb-6">
