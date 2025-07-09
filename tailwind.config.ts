@@ -78,8 +78,8 @@ export default {
 				}
 			},
 			fontFamily: {
-				'zuume': ['Zuume', 'sans-serif'],
-				'acumin': ['Acumin Pro', 'sans-serif'],
+				'fjalla': ['Fjalla One', 'sans-serif'],
+				'source': ['Source Sans 3', 'sans-serif'],
 				'inter': ['Inter', 'sans-serif']
 			},
 			borderRadius: {

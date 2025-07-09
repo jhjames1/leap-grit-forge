@@ -121,10 +121,10 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         {/* Header */}
         <div className="mb-6 flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-zuume font-bold text-foreground mb-1 tracking-wide">
+            <h1 className="text-3xl font-fjalla font-bold text-foreground mb-1 tracking-wide">
               DAILY <span className="font-black">LEAP</span>
             </h1>
-            <p className="text-foreground font-acumin font-medium tracking-wide mb-1">
+            <p className="text-foreground font-source font-medium tracking-wide mb-1">
               WELCOME BACK, <span className="font-bold">{currentUser.toUpperCase()}</span>
             </p>
             <p className="text-muted-foreground text-sm">Your recovery journey continues</p>
@@ -144,8 +144,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <Target className="text-primary-foreground" size={20} />
             </div>
             <div className="flex-1">
-              <h3 className="font-zuume font-bold text-foreground mb-2 tracking-wide">TODAY'S MOTIVATION</h3>
-              <p className="text-foreground text-sm font-acumin italic leading-relaxed">"{dailyMotivation}"</p>
+              <h3 className="font-fjalla font-bold text-foreground mb-2 tracking-wide">TODAY'S MOTIVATION</h3>
+              <p className="text-foreground text-sm font-source italic leading-relaxed">"{dailyMotivation}"</p>
             </div>
           </div>
         </Card>
@@ -158,8 +158,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <Flame className="text-primary-foreground" size={20} />
               </div>
               <div>
-                <h3 className="font-zuume font-bold text-foreground tracking-wide">RECOVERY STREAK</h3>
-                <p className="text-muted-foreground text-sm font-acumin">days strong</p>
+                <h3 className="font-fjalla font-bold text-foreground tracking-wide">RECOVERY STREAK</h3>
+                <p className="text-muted-foreground text-sm font-source">days strong</p>
               </div>
             </div>
             <div className="text-right">
@@ -170,19 +170,19 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
         {/* Coming Up This Week */}
         <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-lg">
-          <h3 className="font-zuume font-bold text-foreground mb-4 tracking-wide">COMING UP THIS WEEK</h3>
+          <h3 className="font-fjalla font-bold text-foreground mb-4 tracking-wide">COMING UP THIS WEEK</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-foreground font-acumin">Day 20: Weekend Recovery Strategies</span>
-              <span className="text-primary font-acumin font-bold text-sm">TOMORROW</span>
+              <span className="text-foreground font-source">Day 20: Weekend Recovery Strategies</span>
+              <span className="text-primary font-source font-bold text-sm">TOMORROW</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-foreground font-acumin">Day 25: Peer Communication</span>
-              <span className="text-primary font-acumin font-bold text-sm">2 DAYS</span>
+              <span className="text-foreground font-source">Day 25: Peer Communication</span>
+              <span className="text-primary font-source font-bold text-sm">2 DAYS</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-foreground font-acumin">Day 30: Month Milestone Review</span>
-              <span className="text-primary font-acumin font-bold text-sm">1 WEEK</span>
+              <span className="text-foreground font-source">Day 30: Month Milestone Review</span>
+              <span className="text-primary font-source font-bold text-sm">1 WEEK</span>
             </div>
           </div>
         </Card>
@@ -194,13 +194,13 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <Bot className="text-gray-800" size={24} />
             </div>
             <div>
-              <h3 className="font-zuume font-bold text-foreground text-lg tracking-wide">THE FOREMAN</h3>
-              <p className="text-muted-foreground text-sm font-acumin">Your AI recovery mentor</p>
+              <h3 className="font-fjalla font-bold text-foreground text-lg tracking-wide">THE FOREMAN</h3>
+              <p className="text-muted-foreground text-sm font-source">Your AI recovery mentor</p>
             </div>
           </div>
           <Button 
             onClick={() => onNavigate?.('foreman')}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-acumin font-bold py-3 rounded-lg tracking-wide"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-source font-bold py-3 rounded-lg tracking-wide"
           >
             CHAT WITH THE FOREMAN
           </Button>
@@ -216,7 +216,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <div className="bg-primary p-3 rounded-lg">
                 <Calendar className="text-primary-foreground" size={24} />
               </div>
-               <h3 className="font-zuume font-bold text-foreground text-sm tracking-wide">CALENDAR</h3>
+               <h3 className="font-fjalla font-bold text-foreground text-sm tracking-wide">CALENDAR</h3>
              </div>
            </Card>
            <Card 
@@ -227,7 +227,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                <div className="bg-primary p-3 rounded-lg">
                  <MessageCircle className="text-primary-foreground" size={24} />
                </div>
-               <h3 className="font-zuume font-bold text-foreground text-sm tracking-wide">CHAT SUPPORT</h3>
+               <h3 className="font-fjalla font-bold text-foreground text-sm tracking-wide">CHAT SUPPORT</h3>
             </div>
           </Card>
         </div>
