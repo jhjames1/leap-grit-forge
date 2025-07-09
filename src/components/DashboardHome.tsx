@@ -186,7 +186,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         </div>
 
         {/* Start Your Day Card */}
-        <Card className="bg-black/5 p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
+        <Card className="bg-black/[7.5%] p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
           <h3 className="font-fjalla font-bold text-card-foreground mb-2 tracking-wide">
             START YOUR DAY
           </h3>
