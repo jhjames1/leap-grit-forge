@@ -121,7 +121,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       <div className="p-4 pb-24">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex justify-between items-start mb-6">
+          <div className="flex justify-between items-end mb-6">
             {/* Left column: Title and welcome text */}
             <div className="flex-1">
               <h1 className="text-5xl font-fjalla font-bold text-foreground mb-1 tracking-wide">
@@ -134,15 +134,15 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <p className="text-muted-foreground text-sm">Your recovery journey continues</p>
             </div>
             
-            {/* Right column: Trophy and Theme toggle */}
+            {/* Right column: Theme toggle and Trophy */}
             <div className="flex flex-col items-end space-y-3">
+              <ThemeToggle />
               <div className="flex items-center space-x-2">
                 <div className="bg-primary p-2 rounded-lg">
                   <Trophy className="text-primary-foreground" size={20} />
                 </div>
                 <span className="text-3xl font-bold text-foreground">8</span>
               </div>
-              <ThemeToggle />
             </div>
           </div>
         </div>
