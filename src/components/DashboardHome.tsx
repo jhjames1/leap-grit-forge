@@ -137,10 +137,10 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </div>
 
-        {/* Motivation and Recovery Streak Cards - 78/22 Split */}
-        <div className="grid grid-cols-[78fr_22fr] gap-[10px] mb-4">
+        {/* Motivation and Recovery Streak Cards - 75/25 Split */}
+        <div className="grid grid-cols-[75fr_25fr] gap-[10px] mb-4">
           {/* Today's Motivation Card */}
-          <Card className="bg-white p-4 rounded-lg">
+          <Card className="bg-white p-4 rounded-lg border-0 shadow-none">
             <div className="flex items-start space-x-3">
               <div className="bg-yellow-400 p-2 rounded-sm">
                 <Target className="text-black" size={16} />
@@ -155,7 +155,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </Card>
 
           {/* Recovery Streak Card */}
-          <Card className="bg-white p-4 rounded-lg">
+          <Card className="bg-white p-4 rounded-lg border-0 shadow-none">
             <h3 className="font-fjalla font-bold text-black text-sm uppercase tracking-wide mb-2">
               RECOVERY STREAK
             </h3>
@@ -170,9 +170,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         </div>
 
         {/* Coming Up This Week */}
-        <Card className="bg-white p-4 rounded-lg mb-4">
+        <Card className="bg-white p-4 rounded-lg mb-4 border-0 shadow-none">
           <h3 className="font-fjalla font-bold text-foreground mb-4 tracking-wide">
-            <span className="font-thin italic">COMING</span> UP THIS WEEK
+            COMING UP THIS WEEK
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -191,14 +191,14 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         </Card>
 
         {/* The Foreman Card */}
-        <Card className="bg-white p-4 rounded-lg mb-4">
+        <Card className="bg-white p-4 rounded-lg mb-4 border-0 shadow-none">
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-300">
               <Bot className="text-gray-800" size={24} />
             </div>
             <div>
               <h3 className="font-fjalla font-bold text-foreground text-lg tracking-wide">
-                <span className="font-thin italic">THE</span> FOREMAN
+                THE FOREMAN
               </h3>
               <p className="text-muted-foreground text-sm font-source">Your AI recovery mentor</p>
             </div>
@@ -214,7 +214,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         {/* Bottom Action Cards */}
         <div className="grid grid-cols-2 gap-4">
           <Card 
-            className="bg-white p-4 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+            className="bg-white p-4 rounded-lg cursor-pointer hover:shadow-md transition-shadow border-0 shadow-none"
             onClick={() => onNavigate?.('calendar')}
           >
             <div className="flex flex-col items-center space-y-2">
@@ -225,7 +225,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
              </div>
            </Card>
            <Card 
-             className="bg-white p-4 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+             className="bg-white p-4 rounded-lg cursor-pointer hover:shadow-md transition-shadow border-0 shadow-none"
              onClick={() => onNavigate?.('chat')}
            >
              <div className="flex flex-col items-center space-y-2">
