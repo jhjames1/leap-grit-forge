@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Bell, Clock, Flame, MessageSquare, Calendar } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Flame, MessageSquare, Calendar, Smartphone } from 'lucide-react';
 
 interface NotificationSettingsProps {
   onBack: () => void;
@@ -58,146 +57,154 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
   return (
     <div className="min-h-screen bg-background">
       <div className="p-4 pb-24">
-      {/* Header */}
-      <div className="flex items-center mb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
-          className="text-steel-light hover:text-white mr-3"
-        >
-          <ArrowLeft size={20} />
-        </Button>
-        <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-          <span className="font-oswald font-extralight tracking-tight">NOTIFICATION</span><span className="font-fjalla font-extrabold italic">SETTINGS</span>
-        </h1>
-      </div>
+        {/* Header */}
+        <div className="flex items-center mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            className="text-muted-foreground hover:text-foreground mr-3"
+          >
+            <ArrowLeft size={20} />
+          </Button>
+          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+            <span className="font-oswald font-extralight tracking-tight">NOTIFICATION</span><span className="font-fjalla font-extrabold italic">SETTINGS</span>
+          </h1>
+        </div>
 
-      <div className="space-y-4 max-w-md mx-auto">
-        {/* Daily Motivation */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-3">
-              <div className="bg-construction/20 p-2 rounded-lg">
-                <Bell className="text-construction" size={16} />
-              </div>
-              <div>
-                <Label className="text-white font-oswald font-medium">Daily Motivation</Label>
-                <p className="text-steel-light text-sm">Receive daily motivational quotes</p>
-              </div>
-            </div>
-            <Switch
-              checked={preferences.dailyMotivation}
-              onCheckedChange={(checked) => updatePreference('dailyMotivation', checked)}
-            />
-          </div>
-          
-          {preferences.dailyMotivation && (
-            <div className="ml-11 space-y-2">
-              <Label className="text-steel-light text-sm flex items-center space-x-2">
-                <Clock size={14} />
-                <span>Reminder Time</span>
-              </Label>
-              <Select value={preferences.motivationTime} onValueChange={(value) => updatePreference('motivationTime', value)}>
-                <SelectTrigger className="bg-steel-dark/50 border-steel text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </Card>
-
-        {/* Streak Alerts */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="bg-construction/20 p-2 rounded-lg">
-                <Flame className="text-construction" size={16} />
-              </div>
-              <div>
-                <Label className="text-white font-oswald font-medium">Streak Alerts</Label>
-                <p className="text-steel-light text-sm">Get notified before losing your streak</p>
-              </div>
-            </div>
-            <Switch
-              checked={preferences.streakAlerts}
-              onCheckedChange={(checked) => updatePreference('streakAlerts', checked)}
-            />
-          </div>
-        </Card>
-
-        {/* Weekly Check-in */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="bg-construction/20 p-2 rounded-lg">
-                <Calendar className="text-construction" size={16} />
-              </div>
-              <div>
-                <Label className="text-white font-oswald font-medium">Weekly Check-in Reminders</Label>
-                <p className="text-steel-light text-sm">Reminders for scheduled peer check-ins</p>
-              </div>
-            </div>
-            <Switch
-              checked={preferences.weeklyCheckIn}
-              onCheckedChange={(checked) => updatePreference('weeklyCheckIn', checked)}
-            />
-          </div>
-        </Card>
-
-        {/* Notification Method */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
-          <h3 className="text-white font-oswald font-medium mb-4">Notification Method</h3>
-          
-          <div className="space-y-4">
+        <div className="space-y-4 max-w-md mx-auto">
+          {/* Daily Motivation */}
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+            <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">Daily Check-ins</h3>
+            
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="bg-steel/20 p-2 rounded-lg">
-                  <Bell className="text-steel-light" size={16} />
+                <div className="bg-primary p-2 rounded-sm">
+                  <Bell className="text-primary-foreground" size={16} />
                 </div>
                 <div>
-                  <Label className="text-white font-medium">Push Notifications</Label>
-                  <p className="text-steel-light text-sm">In-app notifications</p>
+                  <Label className="text-card-foreground font-medium">Morning Check-in</Label>
+                  <p className="text-muted-foreground text-sm">Get reminded to start your day right</p>
                 </div>
               </div>
               <Switch
-                checked={preferences.pushNotifications}
-                onCheckedChange={(checked) => updatePreference('pushNotifications', checked)}
+                checked={preferences.dailyMotivation}
+                onCheckedChange={(checked) => updatePreference('dailyMotivation', checked)}
               />
             </div>
+            
+            {preferences.dailyMotivation && (
+              <div className="mt-4 ml-11 space-y-2">
+                <Label className="text-muted-foreground text-sm flex items-center space-x-2">
+                  <Clock size={14} />
+                  <span>Reminder Time</span>
+                </Label>
+                <Select value={preferences.motivationTime} onValueChange={(value) => updatePreference('motivationTime', value)}>
+                  <SelectTrigger className="bg-card border border-border text-card-foreground">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </Card>
 
+          {/* Recovery Support */}
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+            <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">Recovery Support</h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-primary p-2 rounded-sm">
+                    <MessageSquare className="text-primary-foreground" size={16} />
+                  </div>
+                  <div>
+                    <Label className="text-card-foreground font-medium">Peer Messages</Label>
+                    <p className="text-muted-foreground text-sm">Notifications from peer specialists</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={preferences.streakAlerts}
+                  onCheckedChange={(checked) => updatePreference('streakAlerts', checked)}
+                />
+              </div>
+            </div>
+          </Card>
+
+          {/* Weekly Progress */}
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+            <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">Weekly Progress</h3>
+            
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="bg-steel/20 p-2 rounded-lg">
-                  <MessageSquare className="text-steel-light" size={16} />
+                <div className="bg-primary p-2 rounded-sm">
+                  <Calendar className="text-primary-foreground" size={16} />
                 </div>
                 <div>
-                  <Label className="text-white font-medium">SMS Notifications</Label>
-                  <p className="text-steel-light text-sm">Text message alerts</p>
+                  <Label className="text-card-foreground font-medium">Weekly Check-in</Label>
+                  <p className="text-muted-foreground text-sm">Review your progress and set goals</p>
                 </div>
               </div>
               <Switch
-                checked={preferences.smsNotifications}
-                onCheckedChange={(checked) => updatePreference('smsNotifications', checked)}
+                checked={preferences.weeklyCheckIn}
+                onCheckedChange={(checked) => updatePreference('weeklyCheckIn', checked)}
               />
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Button 
-          onClick={onBack}
-          className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold"
-        >
-          Save Settings
-        </Button>
-      </div>
+          {/* Notification Method */}
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+            <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">Notification Method</h3>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-primary p-2 rounded-sm">
+                    <Bell className="text-primary-foreground" size={16} />
+                  </div>
+                  <div>
+                    <Label className="text-card-foreground font-medium">Push Notifications</Label>
+                    <p className="text-muted-foreground text-sm">Receive notifications on this device</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={preferences.pushNotifications}
+                  onCheckedChange={(checked) => updatePreference('pushNotifications', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-primary p-2 rounded-sm">
+                    <Smartphone className="text-primary-foreground" size={16} />
+                  </div>
+                  <div>
+                    <Label className="text-card-foreground font-medium">SMS Notifications</Label>
+                    <p className="text-muted-foreground text-sm">Text message alerts and reminders</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={preferences.smsNotifications}
+                  onCheckedChange={(checked) => updatePreference('smsNotifications', checked)}
+                />
+              </div>
+            </div>
+          </Card>
+
+          <Button 
+            onClick={onBack}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-fjalla font-bold"
+          >
+            Save Settings
+          </Button>
+        </div>
       </div>
     </div>
   );

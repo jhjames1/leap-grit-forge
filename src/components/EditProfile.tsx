@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -95,70 +94,70 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
   return (
     <div className="min-h-screen bg-background">
       <div className="p-4 pb-24">
-      {/* Header */}
-      <div className="flex items-center mb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
-          className="text-steel-light hover:text-white mr-3"
-        >
-          <ArrowLeft size={20} />
-        </Button>
-        <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-          <span className="font-oswald font-extralight tracking-tight">EDIT</span><span className="font-fjalla font-extrabold italic">PROFILE</span>
-        </h1>
-      </div>
-
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6 max-w-md mx-auto">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* First Name */}
-          <div className="space-y-2">
-            <Label className="text-white font-oswald flex items-center space-x-2">
-              <User size={16} />
-              <span>First Name</span>
-            </Label>
-            <Input
-              type="text"
-              value={formData.firstName}
-              onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-              className="bg-steel-dark/50 border-steel text-white placeholder:text-steel-light"
-              placeholder="Enter your first name"
-            />
-            {errors.firstName && <p className="text-red-400 text-sm">{errors.firstName}</p>}
-          </div>
-
-          {/* Phone Number */}
-          <div className="space-y-2">
-            <Label className="text-white font-oswald flex items-center space-x-2">
-              <Phone size={16} />
-              <span>Phone Number</span>
-            </Label>
-            <Input
-              type="tel"
-              value={formData.phoneNumber}
-              onChange={handlePhoneChange}
-              className="bg-steel-dark/50 border-steel text-white placeholder:text-steel-light"
-              placeholder="(555) 123-4567"
-            />
-            {errors.phoneNumber && <p className="text-red-400 text-sm">{errors.phoneNumber}</p>}
-          </div>
-
-          {errors.general && (
-            <div className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded p-2">
-              {errors.general}
-            </div>
-          )}
-
-          <Button 
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold"
+        {/* Header */}
+        <div className="flex items-center mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            className="text-muted-foreground hover:text-foreground mr-3"
           >
-            {isSubmitting ? 'Updating...' : 'Update Profile'}
+            <ArrowLeft size={20} />
           </Button>
-        </form>
-      </Card>
+          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+            <span className="font-oswald font-extralight tracking-tight">EDIT</span><span className="font-fjalla font-extrabold italic">PROFILE</span>
+          </h1>
+        </div>
+
+        <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300 max-w-md mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* First Name */}
+            <div className="space-y-2">
+              <Label className="text-card-foreground font-fjalla flex items-center space-x-2">
+                <User size={16} />
+                <span>First Name</span>
+              </Label>
+              <Input
+                type="text"
+                value={formData.firstName}
+                onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                className="bg-card border border-border text-card-foreground placeholder:text-muted-foreground"
+                placeholder="Enter your first name"
+              />
+              {errors.firstName && <p className="text-red-500 text-sm">{errors.firstName}</p>}
+            </div>
+
+            {/* Phone Number */}
+            <div className="space-y-2">
+              <Label className="text-card-foreground font-fjalla flex items-center space-x-2">
+                <Phone size={16} />
+                <span>Phone Number</span>
+              </Label>
+              <Input
+                type="tel"
+                value={formData.phoneNumber}
+                onChange={handlePhoneChange}
+                className="bg-card border border-border text-card-foreground placeholder:text-muted-foreground"
+                placeholder="(555) 123-4567"
+              />
+              {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
+            </div>
+
+            {errors.general && (
+              <div className="text-red-500 text-sm text-center bg-red-500/10 border border-red-500/20 rounded p-2">
+                {errors.general}
+              </div>
+            )}
+
+            <Button 
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-fjalla font-bold"
+            >
+              {isSubmitting ? 'Updating...' : 'Update Profile'}
+            </Button>
+          </form>
+        </Card>
       </div>
     </div>
   );

@@ -30,76 +30,76 @@ const About = ({ onBack }: AboutProps) => {
 
       <div className="space-y-6">
         {/* Mission */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
-          <div className="flex items-start space-x-3 mb-4">
-            <div className="bg-steel p-2 rounded-lg">
-              <Target className="text-white" size={20} />
+        <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <div className="flex items-center mb-4">
+            <div className="bg-primary p-2 rounded-sm mr-3">
+              <Target className="text-primary-foreground" size={20} />
             </div>
-            <h3 className="font-oswald font-semibold text-white text-xl">
-              <span className="font-thin italic">Our</span> Mission
+            <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">
+              Our Mission
             </h3>
           </div>
-          <p className="text-steel-light leading-relaxed">
+          <p className="text-card-foreground text-sm leading-relaxed">
             LEAP is designed specifically for men in labor-intensive fields who are navigating their recovery journey. 
             We understand the unique challenges you face and provide practical, no-nonsense tools to support your progress.
           </p>
         </Card>
 
         {/* Privacy & Anonymity */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
-          <div className="flex items-start space-x-3 mb-4">
-            <div className="bg-steel p-2 rounded-lg">
-              <Shield className="text-white" size={20} />
+        <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <div className="flex items-center mb-4">
+            <div className="bg-primary p-2 rounded-sm mr-3">
+              <Shield className="text-primary-foreground" size={20} />
             </div>
-            <h3 className="font-oswald font-semibold text-white text-xl">Your Privacy Matters</h3>
+            <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">Your Privacy Matters</h3>
           </div>
-          <div className="space-y-3 text-steel-light">
+          <div className="space-y-3 text-card-foreground text-sm">
             <p>
-              <strong className="text-white">Complete Anonymity:</strong> Your identity is protected. You can use the app without revealing personal information.
+              <strong className="text-card-foreground">Complete Anonymity:</strong> Your identity is protected. You can use the app without revealing personal information.
             </p>
             <p>
-              <strong className="text-white">Secure Communication:</strong> All peer chats and check-ins are encrypted and confidential.
+              <strong className="text-card-foreground">Secure Communication:</strong> All peer chats and check-ins are encrypted and confidential.
             </p>
             <p>
-              <strong className="text-white">No Judgment Zone:</strong> This is your safe space to be honest about your struggles and victories.
+              <strong className="text-card-foreground">No Judgment Zone:</strong> This is your safe space to be honest about your struggles and victories.
             </p>
           </div>
         </Card>
 
         {/* Community */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
-          <div className="flex items-start space-x-3 mb-4">
-            <div className="bg-steel p-2 rounded-lg">
-              <Users className="text-white" size={20} />
+        <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <div className="flex items-center mb-4">
+            <div className="bg-primary p-2 rounded-sm mr-3">
+              <Users className="text-primary-foreground" size={20} />
             </div>
-            <h3 className="font-oswald font-semibold text-white text-xl">Peer Support</h3>
+            <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">Peer Support</h3>
           </div>
-          <p className="text-steel-light leading-relaxed">
+          <p className="text-card-foreground text-sm leading-relaxed">
             Connect with certified peer specialists who understand your industry and challenges. 
             They've walked this path and are here to support you without judgment.
           </p>
         </Card>
 
         {/* Values */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
-          <div className="flex items-start space-x-3 mb-4">
-            <div className="bg-steel p-2 rounded-lg">
-              <Heart className="text-white" size={20} />
+        <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <div className="flex items-center mb-4">
+            <div className="bg-primary p-2 rounded-sm mr-3">
+              <Heart className="text-primary-foreground" size={20} />
             </div>
-            <h3 className="font-oswald font-semibold text-white text-xl">Our Values</h3>
+            <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">Our Values</h3>
           </div>
-          <div className="space-y-2 text-steel-light">
-            <p>• <strong className="text-white">Respect:</strong> Your journey, your pace, your choices</p>
-            <p>• <strong className="text-white">Strength:</strong> Building on the resilience you already have</p>
-            <p>• <strong className="text-white">Connection:</strong> You don't have to do this alone</p>
-            <p>• <strong className="text-white">Progress:</strong> Every step forward counts</p>
+          <div className="space-y-2 text-card-foreground text-sm">
+            <p>• <strong className="text-card-foreground">Respect:</strong> Your journey, your pace, your choices</p>
+            <p>• <strong className="text-card-foreground">Strength:</strong> Building on the resilience you already have</p>
+            <p>• <strong className="text-card-foreground">Connection:</strong> You don't have to do this alone</p>
+            <p>• <strong className="text-card-foreground">Progress:</strong> Every step forward counts</p>
           </div>
         </Card>
 
         {/* Terms */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
-          <h3 className="font-oswald font-semibold text-white text-xl mb-4">Terms & Conditions</h3>
-          <div className="space-y-3 text-steel-light text-sm">
+        <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <h3 className="font-fjalla font-bold text-card-foreground text-xl mb-4 tracking-wide">Terms & Conditions</h3>
+          <div className="space-y-3 text-card-foreground text-sm">
             <p>
               By using LEAP, you agree to use the app responsibly and respect the privacy of other users.
             </p>
@@ -116,14 +116,14 @@ const About = ({ onBack }: AboutProps) => {
         </Card>
 
         {/* Thriving United */}
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
+        <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
           <div className="text-center">
             <img 
               src="/lovable-uploads/5a09c9b4-51a6-4dce-9f67-dd8de1db52dd.png" 
               alt="Thriving United" 
               className="h-16 w-auto mx-auto mb-4 opacity-90"
             />
-            <p className="text-steel-light text-sm">
+            <p className="text-muted-foreground text-sm">
               LEAP is proudly developed by Thriving United, dedicated to supporting recovery in working communities.
             </p>
           </div>
