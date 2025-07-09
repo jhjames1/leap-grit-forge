@@ -121,10 +121,11 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         {/* Header */}
         <div className="mb-6 flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-fjalla font-bold text-foreground mb-1 tracking-wide">
+            <h1 className="text-4xl font-fjalla font-bold text-foreground mb-1 tracking-wide">
               <span className="font-thin italic">DAILY</span> <span className="font-black">LEAP</span>
             </h1>
-            <p className="text-foreground font-source font-medium tracking-wide mb-1">
+            <div className="mt-1"></div>
+            <p className="text-foreground font-source font-medium tracking-wide mb-0.5">
               WELCOME BACK, <span className="font-bold">{currentUser.toUpperCase()}</span>
             </p>
             <p className="text-muted-foreground text-sm">Your recovery journey continues</p>
@@ -156,8 +157,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
           {/* Recovery Streak Card */}
           <Card className="bg-white p-4 rounded-lg border-0 shadow-none">
-            <h3 className="font-fjalla font-bold text-black text-xs uppercase tracking-wide mb-2">
-              RECOVERY STREAK
+            <h3 className="font-fjalla font-bold text-black text-sm uppercase tracking-wide mb-2">
+              STREAK
             </h3>
             <div className="flex items-center space-x-2 mb-1">
               <div className="bg-yellow-400 p-2 rounded-sm">
@@ -165,7 +166,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               </div>
               <div className="text-[28px] font-bold text-black">{recoveryStreak}</div>
             </div>
-            <p className="text-gray-500 text-xs lowercase">days strong</p>
+            <p className="text-gray-500 text-xs lowercase italic">days strong</p>
           </Card>
         </div>
 
@@ -176,15 +177,15 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-foreground font-source">Day 20: Weekend Recovery Strategies</span>
+              <span className="text-foreground font-source text-xs">Day 20: Weekend Recovery Strategies</span>
               <span className="text-primary font-source font-bold text-sm">TOMORROW</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-foreground font-source">Day 25: Peer Communication</span>
+              <span className="text-foreground font-source text-xs">Day 25: Peer Communication</span>
               <span className="text-primary font-source font-bold text-sm">2 DAYS</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-foreground font-source">Day 30: Month Milestone Review</span>
+              <span className="text-foreground font-source text-xs">Day 30: Month Milestone Review</span>
               <span className="text-primary font-source font-bold text-sm">1 WEEK</span>
             </div>
           </div>
@@ -192,15 +193,15 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
         {/* The Foreman Card */}
         <Card className="bg-white p-4 rounded-lg mb-4 border-0 shadow-none">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-300">
+          <div className="flex flex-col items-center text-center mb-4">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-300 mb-3">
               <Bot className="text-gray-800" size={24} />
             </div>
             <div>
-              <h3 className="font-fjalla font-bold text-foreground text-lg tracking-wide">
+              <h3 className="font-fjalla font-bold text-foreground text-2xl tracking-wide">
                 THE FOREMAN
               </h3>
-              <p className="text-muted-foreground text-sm font-source">Your AI recovery mentor</p>
+              <p className="text-muted-foreground text-sm font-source">Your Recovery Partner</p>
             </div>
           </div>
           <Button 
