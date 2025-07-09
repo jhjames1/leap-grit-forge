@@ -240,8 +240,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           {/* Content */}
           <div className="relative z-10 p-4">
             <div className="flex flex-col items-center text-center mb-4">
-              <div className="bg-white/20 backdrop-blur-sm p-3 rounded-lg mb-3 border border-white/30">
-                <Bot className="text-white" size={20} />
+              <div className="bg-yellow-400 p-3 rounded-lg mb-3">
+                <Bot className="text-black" size={20} />
               </div>
               <div>
                 <h3 className="font-fjalla font-bold text-white text-2xl tracking-wide">
@@ -252,7 +252,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             </div>
             <Button 
               onClick={() => onNavigate?.('foreman')}
-              className="w-full bg-white/20 hover:bg-white/30 text-white font-source font-bold py-3 rounded-lg tracking-wide transition-colors duration-300 border border-white/30 backdrop-blur-sm"
+              className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold py-3 rounded-lg tracking-wide transition-colors duration-300"
             >
               CHAT WITH THE FOREMAN
             </Button>
