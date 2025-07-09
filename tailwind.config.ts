@@ -78,8 +78,8 @@ export default {
 				}
 			},
 			fontFamily: {
-				'anton': ['Anton', 'sans-serif'],
-				'oswald': ['Oswald', 'sans-serif'],
+				'zuume': ['Zuume', 'sans-serif'],
+				'acumin': ['Acumin Pro', 'sans-serif'],
 				'inter': ['Inter', 'sans-serif']
 			},
 			borderRadius: {

@@ -5,65 +5,67 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 0 0% 0%;
+    /* Brand Colors - Light Mode */
+    --background: 0 0% 95%; /* Warm White #F1F1F1 */
+    --foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card: 0 0% 95%; /* Warm White #F1F1F1 */
+    --card-foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover: 0 0% 95%; /* Warm White #F1F1F1 */
+    --popover-foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
-    --primary: 45 95% 66%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 48 100% 50%; /* Safety Yellow #FFD000 */
+    --primary-foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 225 8% 31%; /* Slate Gray #4C4E53 */
+    --secondary-foreground: 0 0% 95%; /* Warm White #F1F1F1 */
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 14% 55%;
+    --muted: 0 0% 90%; /* Lighter warm white */
+    --muted-foreground: 225 8% 31%; /* Slate Gray #4C4E53 */
 
-    --accent: 45 95% 66%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 48 100% 50%; /* Safety Yellow #FFD000 */
+    --accent-foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 45 95% 66%;
+    --border: 0 0% 85%; /* Subtle border */
+    --input: 0 0% 85%; /* Input border */
+    --ring: 48 100% 50%; /* Safety Yellow #FFD000 */
 
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 0 0% 100%;
+    /* Brand Colors - Dark Mode */
+    --background: 221 11% 12%; /* Midnight Black #1D1E20 */
+    --foreground: 0 0% 95%; /* Warm White #F1F1F1 */
 
-    --card: 217 33% 17%;
-    --card-foreground: 0 0% 100%;
+    --card: 225 13% 20%; /* Gunmetal Gray #333539 */
+    --card-foreground: 0 0% 95%; /* Warm White #F1F1F1 */
 
-    --popover: 217 33% 17%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 225 13% 20%; /* Gunmetal Gray #333539 */
+    --popover-foreground: 0 0% 95%; /* Warm White #F1F1F1 */
 
-    --primary: 45 86% 56%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 48 100% 50%; /* Safety Yellow #FFD000 */
+    --primary-foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
-    --secondary: 215 28% 35%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 225 8% 31%; /* Slate Gray #4C4E53 */
+    --secondary-foreground: 0 0% 95%; /* Warm White #F1F1F1 */
 
-    --muted: 215 28% 23%;
-    --muted-foreground: 210 22% 84%;
+    --muted: 225 13% 25%; /* Darker muted */
+    --muted-foreground: 0 0% 70%; /* Lighter muted foreground */
 
-    --accent: 45 86% 56%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 48 100% 50%; /* Safety Yellow #FFD000 */
+    --accent-foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 28% 23%;
-    --input: 215 28% 23%;
-    --ring: 45 86% 56%;
+    --border: 225 13% 25%; /* Darker border */
+    --input: 225 13% 25%; /* Darker input */
+    --ring: 48 100% 50%; /* Safety Yellow #FFD000 */
   }
 }
 
@@ -73,7 +75,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-inter;
+    @apply bg-background text-foreground font-acumin;
   }
 
   /* Mobile-first responsive design */
