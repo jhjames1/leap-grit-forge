@@ -185,23 +185,26 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </Card>
         </div>
 
-        {/* Coming Up This Week */}
-        <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
-          <h3 className="font-fjalla font-bold text-card-foreground mb-2 tracking-wide">
+        {/* Start Your Day Card */}
+        <Card className="bg-yellow-400 p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
+          <h3 className="font-fjalla font-bold text-black mb-2 tracking-wide">
             START YOUR DAY
           </h3>
-          <div className="mb-4 cursor-pointer" onClick={() => onNavigate?.('journey')}>
+          <div className="cursor-pointer" onClick={() => onNavigate?.('journey')}>
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="bg-primary p-1 rounded-sm">
-                  <Play className="text-primary-foreground" size={12} />
+              <div className="flex items-center space-x-3">
+                <div className="bg-white p-2 rounded-sm">
+                  <Play className="text-black" size={16} />
                 </div>
-                <span className="text-card-foreground font-source text-xs">Day {currentJourneyDay}: Building Daily Habits</span>
+                <span className="text-black font-source text-sm">Day {currentJourneyDay}: Building Daily Habits</span>
               </div>
-              <ChevronRight className="text-primary" size={16} />
+              <ChevronRight className="text-black" size={16} />
             </div>
           </div>
-          
+        </Card>
+
+        {/* Coming Up This Week */}
+        <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
           <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">
             COMING UP THIS WEEK
           </h3>
