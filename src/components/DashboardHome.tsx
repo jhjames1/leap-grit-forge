@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Flame, Target, Info, Smartphone, Trophy, Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Flame, Target, Trophy, Calendar, MessageCircle, Bot } from 'lucide-react';
 import SMSOptIn from './SMSOptIn';
-import RecoveryStrengthMeter from './RecoveryStrengthMeter';
-import { useRecoveryStrength } from '@/hooks/useRecoveryStrength';
 import { useUserData } from '@/hooks/useUserData';
 import PhoneNumberPrompt from './PhoneNumberPrompt';
 import StreakReminder from './StreakReminder';
@@ -18,14 +15,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   const [showSMSOptIn, setShowSMSOptIn] = useState(false);
   const [showPhonePrompt, setShowPhonePrompt] = useState(false);
   const [showStreakReminder, setShowStreakReminder] = useState(false);
-  const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
-  const { strengthData, logAction } = useRecoveryStrength();
-  const { userData, updateUserData, logActivity } = useUserData();
+  const { userData, logActivity } = useUserData();
 
-  // Check if user has phone number
-  const hasPhoneNumber = Boolean(localStorage.getItem('phoneNumber'));
-
-  // Daily motivation logic - no repeats, no resets
+  // Daily motivation logic
   const [dailyMotivation, setDailyMotivation] = useState('');
 
   const dailyQuotes = [
@@ -47,20 +39,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   ];
 
   // Calculate recovery streak based on daily activity
-  const [recoveryStreak, setRecoveryStreak] = useState(0);
-  const [nextMilestone] = useState(30);
-  const [yesterdayStrength, setYesterdayStrength] = useState(0);
-
-  // Get yesterday's strength
-  useEffect(() => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayKey = `strength_${yesterday.toDateString()}`;
-    const savedYesterdayStrength = localStorage.getItem(yesterdayKey);
-    if (savedYesterdayStrength) {
-      setYesterdayStrength(parseInt(savedYesterdayStrength));
-    }
-  }, []);
+  const [recoveryStreak, setRecoveryStreak] = useState(23);
 
   useEffect(() => {
     // Load daily motivation based on user's day count
@@ -92,7 +71,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     const activityLog = userData?.activityLog || [];
     let currentStreak = 0;
     
-    for (let i = 0; i < 365; i++) { // Check up to 365 days back
+    for (let i = 0; i < 365; i++) {
       const checkDate = new Date(currentDate);
       checkDate.setDate(currentDate.getDate() - i);
       const dateString = checkDate.toDateString();
@@ -104,7 +83,6 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       if (hasActivity) {
         currentStreak++;
       } else if (i === 0) {
-        // Today has no activity, but don't break streak yet
         continue;
       } else {
         break;
@@ -112,52 +90,13 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     }
     
     setRecoveryStreak(currentStreak);
-
-    // Check for streak reminder (3 hours before midnight)
-    const checkStreakReminder = () => {
-      const now = new Date();
-      const midnight = new Date();
-      midnight.setHours(24, 0, 0, 0);
-      const hoursUntilMidnight = (midnight.getTime() - now.getTime()) / (1000 * 60 * 60);
-      
-      const hasActivityToday = activityLog.some(entry => 
-        new Date(entry.timestamp).toDateString() === currentDate.toDateString()
-      );
-      
-      const reminderShownToday = localStorage.getItem('streakReminderShown') === currentDate.toDateString();
-      
-      if (hoursUntilMidnight <= 3 && !hasActivityToday && !reminderShownToday) {
-        setShowStreakReminder(true);
-      }
-    };
-
-    checkStreakReminder();
-    
-    // Check if user has already seen SMS opt-in
-    const hasSeenSMSOptIn = localStorage.getItem('smsOptIn');
-    if (!hasSeenSMSOptIn) {
-      const timer = setTimeout(() => {
-        setShowSMSOptIn(true);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
   }, [userData]);
 
-  const progressPercentage = (recoveryStreak / nextMilestone) * 100;
+  const currentUser = localStorage.getItem('currentUser') || 'JOSEPH';
 
   const handleToolClick = (tool: string) => {
-    logAction('tool_used');
     logActivity('Used ' + tool);
     onNavigate?.(tool);
-  };
-
-  const handlePeerChatClick = () => {
-    const phoneNumber = localStorage.getItem('phoneNumber');
-    if (!phoneNumber) {
-      setShowPhonePrompt(true);
-    } else {
-      handleToolClick('chat');
-    }
   };
 
   const handlePhoneNumberSaved = () => {
@@ -168,7 +107,6 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   const handleStreakReminderAction = () => {
     setShowStreakReminder(false);
     localStorage.setItem('streakReminderShown', new Date().toDateString());
-    // User took action, log activity
     logActivity('Streak reminder check-in');
   };
 
@@ -177,306 +115,142 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     localStorage.setItem('streakReminderShown', new Date().toDateString());
   };
 
-  // Calculate today's Journey activities completion
-  const getTodayJourneyCompletion = () => {
-    const today = new Date().toDateString();
-    const completedDays = userData?.journeyProgress?.completedDays || [];
-    const todayCompleted = completedDays.some(day => {
-      // Check if any Journey day was completed today
-      const journeyActivity = userData?.activityLog?.find(entry => 
-        entry.action.includes('Completed Day') && 
-        new Date(entry.timestamp).toDateString() === today
-      );
-      return journeyActivity !== undefined;
-    });
-    
-    return todayCompleted ? 1 : 0;
-  };
-
-  // Convert RecoveryStrengthData to RecoveryData format with updated logic
-  const convertToRecoveryData = () => {
-    const todayJourneyActions = getTodayJourneyCompletion();
-    const currentStrength = todayJourneyActions > 0 ? 100 : 0;
-    const wellnessLevel = todayJourneyActions > 0 ? "Good" : "Building";
-    
-    const recentChanges = strengthData.recentChanges || [];
-    const hasPositiveChange = recentChanges.some(change => change.change > 0);
-    const hasNegativeChange = recentChanges.some(change => change.change < 0);
-    
-    let trend: 'up' | 'down' | 'stable' = 'stable';
-    if (hasPositiveChange && !hasNegativeChange) {
-      trend = 'up';
-    } else if (hasNegativeChange && !hasPositiveChange) {
-      trend = 'down';
-    }
-
-    return {
-      currentStrength,
-      dailyActions: todayJourneyActions,
-      weeklyGoal: 7,
-      trend,
-      yesterdayStrength,
-      wellnessLevel
-    };
-  };
-
-  // Generate calendar data for current month
-  const generateCalendarData = () => {
-    const year = currentCalendarDate.getFullYear();
-    const month = currentCalendarDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-    
-    const calendarDays = [];
-    
-    // Add empty cells for days before the first day of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      calendarDays.push(null);
-    }
-    
-    // Add all days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const dateString = date.toDateString();
-      const hasJourneyActivity = userData?.activityLog?.some(entry => 
-        entry.action.includes('Completed Day') && 
-        new Date(entry.timestamp).toDateString() === dateString
-      );
-      
-      calendarDays.push({
-        day,
-        hasActivity: hasJourneyActivity,
-        date: dateString,
-        isToday: dateString === new Date().toDateString()
-      });
-    }
-    
-    return calendarDays;
-  };
-
-  const calendarData = generateCalendarData();
-  const monthNames = ["January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"];
-
-  const navigateCalendar = (direction: 'prev' | 'next') => {
-    setCurrentCalendarDate(prev => {
-      const newDate = new Date(prev);
-      if (direction === 'prev') {
-        newDate.setMonth(prev.getMonth() - 1);
-      } else {
-        newDate.setMonth(prev.getMonth() + 1);
-      }
-      return newDate;
-    });
-  };
-
   return (
-    <div className="relative min-h-screen">
-      {/* Updated Background - Journey Page Style */}
-      <div className="absolute inset-0 bg-gradient-to-b from-midnight via-steel-dark to-midnight"></div>
-      
-      {/* Content */}
-      <div className="relative z-10 p-4 pb-24">
+    <div className="min-h-screen bg-background">
+      <div className="p-4 pb-24">
         {/* Header */}
         <div className="mb-6 flex justify-between items-start">
           <div>
-            <h1 className="font-anton text-3xl text-white mb-2 text-shadow">Daily LEAP</h1>
-            <p className="text-steel-light font-oswald">Your recovery journey continues</p>
+            <h1 className="text-3xl font-bold text-foreground mb-1 tracking-wide">
+              DAILY <span className="font-black">LEAP</span>
+            </h1>
+            <p className="text-foreground font-medium tracking-wide mb-1">
+              WELCOME BACK, <span className="font-bold">{currentUser.toUpperCase()}</span>
+            </p>
+            <p className="text-muted-foreground text-sm">Your recovery journey continues</p>
           </div>
-          <div className="flex space-x-2">
-            {/* Mobile/SMS icon only shows if no phone number */}
-            {!hasPhoneNumber && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowSMSOptIn(true)}
-                className="text-steel-light hover:text-construction hover:bg-construction/10"
-              >
-                <Smartphone size={20} />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onNavigate?.('about')}
-              className="text-steel-light hover:text-construction hover:bg-construction/10"
-            >
-              <Info size={20} />
-            </Button>
+          <div className="flex items-center space-x-2">
+            <div className="bg-primary p-2 rounded-lg">
+              <Trophy className="text-primary-foreground" size={20} />
+            </div>
+            <span className="text-3xl font-bold text-foreground">8</span>
           </div>
         </div>
 
-        {/* Recovery Strength Meter - With yellow border */}
-        <div className="mb-6">
-          <RecoveryStrengthMeter data={convertToRecoveryData()} />
-        </div>
-
-        {/* Daily Quote Card - With yellow border */}
-        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] mb-6 p-6 rounded-lg">
+        {/* Today's Motivation Card */}
+        <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-lg">
           <div className="flex items-start space-x-3">
-            <div className="bg-construction p-2 rounded-lg">
-              <Target className="text-midnight" size={20} />
+            <div className="bg-primary p-2 rounded-lg">
+              <Target className="text-primary-foreground" size={20} />
             </div>
             <div className="flex-1">
-              <h3 className="font-oswald font-semibold text-white mb-2">Today's Motivation</h3>
-              <p className="text-steel-light italic leading-relaxed">"{dailyMotivation}"</p>
+              <h3 className="font-bold text-foreground mb-2 tracking-wide">TODAY'S MOTIVATION</h3>
+              <p className="text-foreground text-sm italic leading-relaxed">"{dailyMotivation}"</p>
             </div>
           </div>
         </Card>
 
-        {/* Progress Streak with Real-time Calendar - With yellow border */}
-        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] mb-6 p-6 rounded-lg">
-          <div className="flex items-center justify-between mb-4">
+        {/* Recovery Streak Card */}
+        <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-lg">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-r from-construction to-construction-light p-2 rounded-lg">
-                <Flame className="text-midnight" size={20} />
+              <div className="bg-primary p-2 rounded-lg">
+                <Flame className="text-primary-foreground" size={20} />
               </div>
               <div>
-                <h3 className="font-oswald font-semibold text-white">Recovery Streak</h3>
-                <p className="text-steel-light text-sm">
-                  <span className="text-construction font-bold text-lg">{recoveryStreak}</span> days strong
-                </p>
+                <h3 className="font-bold text-foreground tracking-wide">RECOVERY STREAK</h3>
+                <p className="text-muted-foreground text-sm">days strong</p>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-anton text-construction">{recoveryStreak}</div>
-              <div className="text-xs text-steel-light font-oswald">DAYS</div>
+              <div className="text-4xl font-bold text-foreground">{recoveryStreak}</div>
             </div>
-          </div>
-          
-          {/* Real-time Calendar Integration */}
-          <div className="mb-4">
-            {/* Calendar Header */}
-            <div className="flex items-center justify-between mb-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigateCalendar('prev')}
-                className="text-steel-light hover:text-construction"
-              >
-                <ChevronLeft size={20} />
-              </Button>
-              <h4 className="font-oswald font-semibold text-white">
-                {monthNames[currentCalendarDate.getMonth()]} {currentCalendarDate.getFullYear()}
-              </h4>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigateCalendar('next')}
-                className="text-steel-light hover:text-construction"
-              >
-                <ChevronRight size={20} />
-              </Button>
-            </div>
-            
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-1 mb-3">
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                <div key={index} className="text-center text-xs text-steel-light font-oswald p-1">
-                  {day}
-                </div>
-              ))}
-              {calendarData.map((dayData, index) => (
-                <div key={index} className="flex items-center justify-center p-1 relative">
-                  {dayData ? (
-                    <>
-                      <div className={`w-8 h-8 flex items-center justify-center rounded-full text-xs ${
-                        dayData.isToday ? 'bg-construction text-midnight font-bold' : 'text-white'
-                      }`}>
-                        {dayData.day}
-                      </div>
-                      <div className="absolute -bottom-1">
-                        {dayData.hasActivity ? (
-                          <Flame size={10} className="text-construction" />
-                        ) : dayData.day < new Date().getDate() && 
-                          currentCalendarDate.getMonth() === new Date().getMonth() &&
-                          currentCalendarDate.getFullYear() === new Date().getFullYear() ? (
-                          <X size={8} className="text-red-500" />
-                        ) : null}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="w-8 h-8"></div>
-                  )}
-                </div>
-              ))}
-            </div>
-            
-            <Button 
-              onClick={() => onNavigate?.('journey')}
-              className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold py-3 rounded-lg"
-            >
-              Take the next LEAP today
-            </Button>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-steel-light">Next milestone</span>
-              <span className="text-construction font-oswald font-medium">{nextMilestone} days</span>
-            </div>
-            <Progress value={progressPercentage} className="h-3 bg-steel-dark">
-              <div 
-                className="h-full bg-gradient-to-r from-[#F9D058] to-[#FBE89D] rounded-full transition-all duration-500"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </Progress>
           </div>
         </Card>
 
-        {/* Recent Achievements - With yellow border */}
-        <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] p-6 rounded-lg">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="bg-construction p-2 rounded-lg">
-              <Trophy className="text-midnight" size={20} />
-            </div>
-            <h3 className="font-oswald font-semibold text-white">Recent Achievements</h3>
-          </div>
-          
+        {/* Coming Up This Week */}
+        <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-lg">
+          <h3 className="font-bold text-foreground mb-4 tracking-wide">COMING UP THIS WEEK</h3>
           <div className="space-y-3">
-            <div className="flex items-center space-x-3 p-3 bg-construction/10 rounded-lg border border-construction/20">
-              <div className="w-8 h-8 bg-construction rounded-full flex items-center justify-center">
-                <Flame size={16} className="text-midnight" />
-              </div>
-              <div>
-                <p className="text-white font-medium">
-                  <span className="text-construction font-bold">{Math.floor(recoveryStreak / 7)}</span>-Week Milestone
-                </p>
-                <p className="text-steel-light text-sm">Keep building momentum</p>
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="text-foreground">Day 20: Weekend Recovery Strategies</span>
+              <span className="text-primary font-bold text-sm">TOMORROW</span>
             </div>
-            
-            <div className="flex items-center space-x-3 p-3 bg-steel/10 rounded-lg border border-steel/20">
-              <div className="w-8 h-8 bg-steel rounded-full flex items-center justify-center">
-                <Target size={16} className="text-construction" />
-              </div>
-              <div>
-                <p className="text-white font-medium">{getTodayJourneyCompletion()} Journey Activities Today</p>
-                <p className="text-steel-light text-sm">Stay engaged with your recovery</p>
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="text-foreground">Day 25: Peer Communication</span>
+              <span className="text-primary font-bold text-sm">2 DAYS</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-foreground">Day 30: Month Milestone Review</span>
+              <span className="text-primary font-bold text-sm">1 WEEK</span>
             </div>
           </div>
         </Card>
+
+        {/* The Foreman Card */}
+        <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-lg">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-300">
+              <Bot className="text-gray-800" size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-foreground text-lg tracking-wide">THE FOREMAN</h3>
+              <p className="text-muted-foreground text-sm">Your AI recovery mentor</p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => onNavigate?.('foreman')}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-lg tracking-wide"
+          >
+            CHAT WITH THE FOREMAN
+          </Button>
+        </Card>
+
+        {/* Bottom Action Cards */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card 
+            className="bg-card border border-border shadow-sm p-4 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => onNavigate?.('calendar')}
+          >
+            <div className="flex flex-col items-center space-y-2">
+              <div className="bg-primary p-3 rounded-lg">
+                <Calendar className="text-primary-foreground" size={24} />
+              </div>
+              <h3 className="font-bold text-foreground text-sm tracking-wide">CALENDAR</h3>
+            </div>
+          </Card>
+          <Card 
+            className="bg-card border border-border shadow-sm p-4 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => onNavigate?.('chat')}
+          >
+            <div className="flex flex-col items-center space-y-2">
+              <div className="bg-primary p-3 rounded-lg">
+                <MessageCircle className="text-primary-foreground" size={24} />
+              </div>
+              <h3 className="font-bold text-foreground text-sm tracking-wide">CHAT SUPPORT</h3>
+            </div>
+          </Card>
+        </div>
       </div>
 
-      {/* Modals */}
+      {/* SMS Opt-in Modal */}
       {showSMSOptIn && (
         <SMSOptIn onClose={() => setShowSMSOptIn(false)} />
       )}
 
+      {/* Phone Number Prompt */}
       {showPhonePrompt && (
-        <PhoneNumberPrompt 
+        <PhoneNumberPrompt
           onClose={() => setShowPhonePrompt(false)}
           onSave={handlePhoneNumberSaved}
         />
       )}
 
+      {/* Streak Reminder */}
       {showStreakReminder && (
-        <StreakReminder 
-          onAction={handleStreakReminderAction}
+        <StreakReminder
           onClose={handleStreakReminderClose}
+          onAction={handleStreakReminderAction}
         />
       )}
     </div>
