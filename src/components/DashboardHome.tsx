@@ -152,8 +152,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         </div>
 
         {/* Today's Motivation and Streak Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+        <div className="flex gap-4 mb-4">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[70%]">
             <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-2 rounded-sm">
                 <Target className="text-primary-foreground" size={20} />
@@ -165,7 +165,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             <p className="text-card-foreground text-sm italic leading-tight">"{dailyMotivation}"</p>
           </Card>
 
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[30%]">
             <div className="text-center">
               <h3 className="font-fjalla font-bold text-card-foreground text-sm uppercase tracking-wide mb-2">
                 STREAK
