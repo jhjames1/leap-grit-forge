@@ -218,6 +218,12 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
           ))}
         </div>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="security">
+          <SecurityAuditPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
