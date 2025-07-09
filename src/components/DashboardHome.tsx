@@ -158,7 +158,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <div className="bg-primary p-2 rounded-sm">
                 <Target className="text-primary-foreground" size={20} />
               </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-sm uppercase tracking-wide">
+              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
                 TODAY'S MOTIVATION
               </h3>
             </div>
@@ -167,7 +167,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
           <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[30%]">
             <div className="text-center">
-              <h3 className="font-fjalla font-bold text-card-foreground text-sm uppercase tracking-wide mb-2">
+              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide mb-2">
                 STREAK
               </h3>
               <div className="flex items-center justify-center space-x-2 mb-1">
