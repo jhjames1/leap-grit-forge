@@ -139,9 +139,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             </div>
             
             {/* Right column: Theme toggle and Trophy */}
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col items-end justify-between h-full">
               <ThemeToggle />
-              <div className="flex items-center space-x-2 mt-[4.5rem]">
+              <div className="flex items-center space-x-2">
                 <div className="bg-primary p-2 rounded-lg">
                   <Trophy className="text-primary-foreground" size={20} />
                 </div>
