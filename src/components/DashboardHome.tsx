@@ -137,8 +137,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </div>
 
-        {/* Motivation and Recovery Streak Cards - 78/22 Split */}
-        <div className="grid grid-cols-[78fr_22fr] gap-[10px] mb-4">
+        {/* Motivation and Recovery Streak Cards - 80/20 Split */}
+        <div className="grid grid-cols-[80fr_20fr] gap-[10px] mb-4">
           {/* Today's Motivation Card */}
           <Card className="bg-white p-4 rounded-lg">
             <div className="flex items-start space-x-3">
@@ -146,7 +146,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <Target className="text-black" size={16} />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-black mb-2 text-xs uppercase tracking-wide">
+                <h3 className="font-fjalla font-bold text-black mb-2 text-sm uppercase tracking-wide">
                   TODAY'S MOTIVATION
                 </h3>
                 <p className="text-black text-[10px] italic leading-relaxed">"{dailyMotivation}"</p>
@@ -156,16 +156,16 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
           {/* Recovery Streak Card */}
           <Card className="bg-white p-4 rounded-lg">
+            <h3 className="font-fjalla font-bold text-black text-sm uppercase tracking-wide mb-2">
+              RECOVERY STREAK
+            </h3>
             <div className="flex items-center space-x-2 mb-1">
               <div className="bg-yellow-400 p-2 rounded-sm">
                 <Flame className="text-black" size={16} />
               </div>
-              <h3 className="font-bold text-black text-xs uppercase tracking-wide">
-                RECOVERY STREAK
-              </h3>
+              <div className="text-[28px] font-bold text-black">{recoveryStreak}</div>
             </div>
-            <div className="text-xl font-bold text-black">{recoveryStreak}</div>
-            <p className="text-gray-500 text-[10px] lowercase">days strong</p>
+            <p className="text-gray-500 text-xs lowercase">days strong</p>
           </Card>
         </div>
 
