@@ -218,7 +218,8 @@ const RecoveryJourney = () => {
   const progress = (actualCurrentDay / totalDays) * 100;
 
   return (
-    <div className="p-4 pb-24 bg-gradient-to-b from-midnight via-steel-dark to-midnight min-h-screen">
+    <div className="min-h-screen bg-background">
+      <div className="p-4 pb-24">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
@@ -382,6 +383,7 @@ const RecoveryJourney = () => {
           onComplete={() => handleCompleteDay(selectedDay)}
         />
       )}
+      </div>
     </div>
   );
 };

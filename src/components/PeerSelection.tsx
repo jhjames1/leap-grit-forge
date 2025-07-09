@@ -72,7 +72,8 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background">
+      <div className="p-4 pb-24">
       {/* Header */}
       <div className="flex items-center mb-6">
         <Button
@@ -163,6 +164,7 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
           </Button>
         </div>
       </Card>
+      </div>
     </div>
   );
 };
