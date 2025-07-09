@@ -31,7 +31,7 @@ const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-industrial flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full">
         <div className="text-center mb-6">
           <div className="w-16 h-16 mx-auto bg-construction/20 rounded-full flex items-center justify-center mb-4">

@@ -56,7 +56,7 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-industrial p-4">
+    <div className="min-h-screen bg-background p-4">
       {/* Header */}
       <div className="flex items-center mb-6">
         <Button

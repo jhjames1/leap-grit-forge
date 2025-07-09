@@ -115,7 +115,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-industrial">
+    <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <div className="bg-midnight/90 backdrop-blur-sm border-b border-steel-dark p-4">
         <div className="flex items-center justify-between">

@@ -61,7 +61,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
   };
 
   return (
-    <div className="p-4 pb-24 bg-gradient-industrial min-h-screen">
+    <div className="p-4 pb-24 bg-background min-h-screen">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>

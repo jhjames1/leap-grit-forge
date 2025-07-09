@@ -308,7 +308,7 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-industrial flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-background flex items-center justify-center z-50 p-4">
       <Card className="bg-midnight/50 backdrop-blur-sm border-steel-dark p-8 max-w-md w-full">
         <div className="text-center">
           {/* Header */}

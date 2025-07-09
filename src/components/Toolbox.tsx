@@ -241,7 +241,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const todayToolsCount = getTodayToolsCount();
 
   return (
-    <div className="p-4 pb-24 bg-gradient-industrial min-h-screen">
+    <div className="p-4 pb-24 bg-background min-h-screen">
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-anton text-3xl text-white mb-2">Recovery Toolbox</h1>

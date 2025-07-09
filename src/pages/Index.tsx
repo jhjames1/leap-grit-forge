@@ -132,7 +132,7 @@ const Index = () => {
   const showBottomNav = !['about', 'calendar', 'foreman', 'admin'].includes(currentPage);
 
   return (
-    <div className="min-h-screen bg-gradient-industrial">
+    <div className="min-h-screen bg-background">
       {renderActivePage()}
       {showBottomNav && (
         <BottomNavigation activeTab={activeTab} onTabChange={handleNavigation} />

@@ -9,7 +9,7 @@ interface AboutProps {
 
 const About = ({ onBack }: AboutProps) => {
   return (
-    <div className="p-4 pb-24 bg-gradient-industrial min-h-screen">
+    <div className="p-4 pb-24 bg-background min-h-screen">
       {/* Header */}
       <div className="flex items-center mb-6">
         <Button
