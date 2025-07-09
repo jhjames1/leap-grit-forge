@@ -39,8 +39,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     "Today is a new chance to choose recovery."
   ];
 
-  // Calculate recovery streak based on daily activity
-  const [recoveryStreak, setRecoveryStreak] = useState(23);
+  // Calculate recovery streak and badges based on daily activity
+  const [recoveryStreak, setRecoveryStreak] = useState(0);
+  const [badgeCount, setBadgeCount] = useState(0);
   const [currentJourneyDay, setCurrentJourneyDay] = useState(1);
 
   useEffect(() => {
@@ -95,6 +96,10 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     }
     
     setRecoveryStreak(currentStreak);
+    
+    // Calculate badge count based on activities completed
+    const uniqueActivities = new Set(activityLog.map(entry => entry.action));
+    setBadgeCount(uniqueActivities.size);
   }, [userData]);
 
   const currentUser = localStorage.getItem('currentUser') || 'JOSEPH';
@@ -139,13 +144,13 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             </div>
             
             {/* Right column: Theme toggle and Trophy */}
-            <div className="flex flex-col items-end justify-between h-full">
+            <div className="flex flex-col items-end justify-between min-h-[120px]">
               <ThemeToggle />
               <div className="flex items-center space-x-2">
                 <div className="bg-primary p-2 rounded-lg">
                   <Trophy className="text-primary-foreground" size={20} />
                 </div>
-                <span className="text-3xl font-bold text-foreground">8</span>
+                <span className="text-3xl font-bold text-foreground">{badgeCount}</span>
               </div>
             </div>
           </div>
