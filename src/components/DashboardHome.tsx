@@ -124,7 +124,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           <div className="flex justify-between items-start mb-6">
             <div>
               <h1 className="text-5xl font-fjalla font-bold text-foreground mb-1 tracking-wide">
-                <span className="font-thin">DAILY</span> <span className="font-black italic">LEAP</span>
+                <span className="font-poppins font-thin">DAILY</span> <span className="font-black italic">LEAP</span>
               </h1>
               <div className="mt-5"></div>
               <p className="text-foreground font-source font-medium tracking-wide mb-0">

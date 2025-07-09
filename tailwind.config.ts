@@ -80,7 +80,8 @@ export default {
 			fontFamily: {
 				'fjalla': ['Fjalla One', 'sans-serif'],
 				'source': ['Source Sans 3', 'sans-serif'],
-				'inter': ['Inter', 'sans-serif']
+				'inter': ['Inter', 'sans-serif'],
+				'poppins': ['Poppins', 'sans-serif']
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
