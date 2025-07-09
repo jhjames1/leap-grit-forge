@@ -6,6 +6,7 @@ import SMSOptIn from './SMSOptIn';
 import { useUserData } from '@/hooks/useUserData';
 import PhoneNumberPrompt from './PhoneNumberPrompt';
 import StreakReminder from './StreakReminder';
+import { ThemeToggle } from './ThemeToggle';
 
 interface DashboardHomeProps {
   onNavigate?: (page: string) => void;
@@ -119,18 +120,21 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     <div className="min-h-screen bg-background">
       <div className="p-4 pb-24">
         {/* Header */}
-        <div className="mb-6 flex justify-between items-start">
-          <div>
-            <h1 className="text-4xl font-fjalla font-bold text-foreground mb-1 tracking-wide">
-              <span className="font-thin italic">DAILY</span> <span className="font-black">LEAP</span>
-            </h1>
-            <div className="mt-1"></div>
-            <p className="text-foreground font-source font-medium tracking-wide mb-0.5">
-              WELCOME BACK, <span className="font-bold">{currentUser.toUpperCase()}</span>
-            </p>
-            <p className="text-muted-foreground text-sm">Your recovery journey continues</p>
+        <div className="mb-6">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h1 className="text-5xl font-fjalla font-bold text-foreground mb-1 tracking-wide">
+                <span className="font-thin italic">DAILY</span> <span className="font-black">LEAP</span>
+              </h1>
+              <div className="mt-5"></div>
+              <p className="text-foreground font-source font-medium tracking-wide mb-0.5">
+                WELCOME BACK, <span className="font-bold">{currentUser.toUpperCase()}</span>
+              </p>
+              <p className="text-muted-foreground text-sm">Your recovery journey continues</p>
+            </div>
+            <ThemeToggle />
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 ml-0">
             <div className="bg-primary p-2 rounded-lg">
               <Trophy className="text-primary-foreground" size={20} />
             </div>
@@ -150,23 +154,25 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <h3 className="font-fjalla font-bold text-black mb-2 text-sm uppercase tracking-wide">
                   TODAY'S MOTIVATION
                 </h3>
-                <p className="text-black text-sm italic leading-relaxed">"{dailyMotivation}"</p>
+                <p className="text-black text-sm italic leading-tight">"{dailyMotivation}"</p>
               </div>
             </div>
           </Card>
 
           {/* Recovery Streak Card */}
           <Card className="bg-white p-4 rounded-lg border-0 shadow-none">
-            <h3 className="font-fjalla font-bold text-black text-sm uppercase tracking-wide mb-2">
-              STREAK
-            </h3>
-            <div className="flex items-center space-x-2 mb-1">
-              <div className="bg-yellow-400 p-2 rounded-sm">
-                <Flame className="text-black" size={16} />
+            <div className="text-center">
+              <h3 className="font-fjalla font-bold text-black text-sm uppercase tracking-wide mb-2">
+                STREAK
+              </h3>
+              <div className="flex items-center justify-center space-x-2 mb-1">
+                <div className="bg-yellow-400 p-2 rounded-sm">
+                  <Flame className="text-black" size={16} />
+                </div>
+                <div className="text-[28px] font-bold text-black">{recoveryStreak}</div>
               </div>
-              <div className="text-[28px] font-bold text-black">{recoveryStreak}</div>
+              <p className="text-gray-500 text-xs lowercase italic">days strong</p>
             </div>
-            <p className="text-gray-500 text-xs lowercase italic">days strong</p>
           </Card>
         </div>
 
@@ -193,8 +199,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
         {/* The Foreman Card */}
         <Card className="bg-white p-4 rounded-lg mb-4 border-0 shadow-none">
-          <div className="flex flex-col items-center text-center mb-4">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-300 mb-3">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-300">
               <Bot className="text-gray-800" size={24} />
             </div>
             <div>
