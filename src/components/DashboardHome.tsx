@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Flame, Target, Trophy, Calendar, MessageCircle, Bot } from 'lucide-react';
+import { Flame, Target, Trophy, Calendar, MessageCircle, Bot, ChevronRight } from 'lucide-react';
 import SMSOptIn from './SMSOptIn';
 import { useUserData } from '@/hooks/useUserData';
 import PhoneNumberPrompt from './PhoneNumberPrompt';
@@ -121,17 +121,17 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       <div className="p-4 pb-24">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex justify-between items-end mb-6">
+          <div className="flex justify-between items-start mb-6">
             {/* Left column: Title and welcome text */}
             <div className="flex-1">
               <h1 className="text-5xl font-fjalla font-bold text-foreground mb-1 tracking-wide">
-                <span className="font-oswald font-extralight tracking-tight">DAILY</span> <span className="font-black italic">LEAP</span>
+                <span className="font-oswald font-extralight tracking-tight">DAILYLEAP</span>
               </h1>
               <div className="mt-5"></div>
               <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
-                WELCOME BACK, <span className="font-bold">{currentUser.toUpperCase()}</span>
+                WELCOME BACK, <span className="font-bold italic">{currentUser.toUpperCase()}</span>
               </p>
-              <p className="text-muted-foreground text-sm">Your recovery journey continues</p>
+              <p className="text-muted-foreground text-sm">Your recovery journey continues.</p>
             </div>
             
             {/* Right column: Theme toggle and Trophy */}
@@ -183,6 +183,16 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
         {/* Coming Up This Week */}
         <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
+          <h3 className="font-fjalla font-bold text-card-foreground mb-2 tracking-wide">
+            START YOUR DAY
+          </h3>
+          <div className="mb-4 cursor-pointer" onClick={() => onNavigate?.('journey')}>
+            <div className="flex items-center justify-between">
+              <span className="text-card-foreground font-source text-xs">Day 19: Building Daily Habits</span>
+              <ChevronRight className="text-primary" size={16} />
+            </div>
+          </div>
+          
           <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">
             COMING UP THIS WEEK
           </h3>
@@ -205,8 +215,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         {/* The Foreman Card */}
         <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
           <div className="flex flex-col items-center text-center mb-4">
-            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center border-2 border-border mb-3">
-              <Bot className="text-card-foreground" size={24} />
+            <div className="bg-primary p-3 rounded-lg mb-3">
+              <Bot className="text-primary-foreground" size={24} />
             </div>
             <div>
               <h3 className="font-fjalla font-bold text-card-foreground text-2xl tracking-wide">
@@ -231,7 +241,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           >
             <div className="flex flex-col items-center space-y-2">
               <div className="bg-primary p-3 rounded-lg">
-                <Calendar className="text-primary-foreground" size={24} />
+                <Calendar className="text-primary-foreground" size={18} />
               </div>
               <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">CALENDAR</h3>
             </div>
@@ -242,7 +252,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           >
             <div className="flex flex-col items-center space-y-2">
               <div className="bg-primary p-3 rounded-lg">
-                <MessageCircle className="text-primary-foreground" size={24} />
+                <MessageCircle className="text-primary-foreground" size={18} />
               </div>
               <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">CHAT SUPPORT</h3>
             </div>
