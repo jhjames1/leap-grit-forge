@@ -156,7 +156,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
           {/* Recovery Streak Card */}
           <Card className="bg-white p-4 rounded-lg border-0 shadow-none">
-            <h3 className="font-fjalla font-bold text-black text-sm uppercase tracking-wide mb-2">
+            <h3 className="font-fjalla font-bold text-black text-xs uppercase tracking-wide mb-2">
               RECOVERY STREAK
             </h3>
             <div className="flex items-center space-x-2 mb-1">
