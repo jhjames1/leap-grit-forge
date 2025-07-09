@@ -75,7 +75,9 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     <div className="p-4 pb-24 bg-background min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="font-anton text-3xl text-white mb-2">Your Profile</h1>
+        <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+          <span className="font-oswald font-extralight tracking-tight">YOUR</span><span className="font-fjalla font-extrabold italic">PROFILE</span>
+        </h1>
         <p className="text-steel-light font-oswald">Track your progress and achievements</p>
       </div>
 

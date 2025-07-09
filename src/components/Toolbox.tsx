@@ -244,7 +244,9 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     <div className="p-4 pb-24 bg-background min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="font-anton text-3xl text-white mb-2">Recovery Toolbox</h1>
+        <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+          <span className="font-oswald font-extralight tracking-tight">RECOVERY</span><span className="font-fjalla font-extrabold italic">TOOLBOX</span>
+        </h1>
         <p className="text-steel-light font-oswald">Your support tools, always ready</p>
       </div>
 

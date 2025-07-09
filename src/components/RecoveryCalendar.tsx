@@ -60,8 +60,8 @@ const RecoveryCalendar = ({ onBack }: RecoveryCalendarProps) => {
           <ArrowLeft size={20} />
         </Button>
         <div>
-          <h1 className="font-anton text-3xl text-white">
-            <span className="font-thin italic">Recovery</span> Calendar
+          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+            <span className="font-oswald font-extralight tracking-tight">RECOVERY</span><span className="font-fjalla font-extrabold italic">CALENDAR</span>
           </h1>
           <p className="text-steel-light font-oswald">Track your progress</p>
         </div>

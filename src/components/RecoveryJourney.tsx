@@ -221,7 +221,9 @@ const RecoveryJourney = () => {
     <div className="p-4 pb-24 bg-gradient-to-b from-midnight via-steel-dark to-midnight min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="font-anton text-3xl text-white mb-2">Recovery Journey</h1>
+        <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+          <span className="font-oswald font-extralight tracking-tight">RECOVERY</span><span className="font-fjalla font-extrabold italic">JOURNEY</span>
+        </h1>
         <p className="text-steel-light font-oswald">90-day guided track</p>
       </div>
 

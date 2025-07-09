@@ -68,7 +68,9 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="font-anton text-3xl text-white mb-2">Admin Dashboard</h1>
+          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+            <span className="font-oswald font-extralight tracking-tight">ADMIN</span><span className="font-fjalla font-extrabold italic">DASHBOARD</span>
+          </h1>
           <p className="text-steel-light font-oswald">Recovery engagement analytics</p>
         </div>
         <Button 

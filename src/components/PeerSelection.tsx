@@ -84,7 +84,9 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
           <ArrowLeft size={20} />
         </Button>
         <div>
-          <h1 className="font-anton text-2xl text-white">Select Peer Specialist</h1>
+          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+            <span className="font-oswald font-extralight tracking-tight">PEER</span><span className="font-fjalla font-extrabold italic">SELECTION</span>
+          </h1>
           <p className="text-steel-light font-oswald">Choose someone to talk with</p>
         </div>
       </div>

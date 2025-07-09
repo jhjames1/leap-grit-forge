@@ -21,8 +21,8 @@ const About = ({ onBack }: AboutProps) => {
           <ArrowLeft size={20} />
         </Button>
         <div>
-          <h1 className="font-anton text-3xl text-white">
-            <span className="font-thin italic">About</span> LEAP
+          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+            <span className="font-oswald font-extralight tracking-tight">ABOUT</span><span className="font-fjalla font-extrabold italic">LEAP</span>
           </h1>
           <p className="text-steel-light font-oswald">Your recovery companion</p>
         </div>
