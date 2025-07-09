@@ -128,7 +128,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <span className="font-oswald font-extralight tracking-tight">DAILY</span> <span className="font-black italic">LEAP</span>
               </h1>
               <div className="mt-5"></div>
-              <p className="text-foreground font-source font-medium tracking-wide mb-0">
+              <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
                 WELCOME BACK, <span className="font-bold">{currentUser.toUpperCase()}</span>
               </p>
               <p className="text-muted-foreground text-sm">Your recovery journey continues</p>
@@ -204,8 +204,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
         {/* The Foreman Card */}
         <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center border-2 border-border">
+          <div className="flex flex-col items-center text-center mb-4">
+            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center border-2 border-border mb-3">
               <Bot className="text-card-foreground" size={24} />
             </div>
             <div>
