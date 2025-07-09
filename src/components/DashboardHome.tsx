@@ -151,34 +151,35 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </div>
 
-        {/* Today's Motivation Card */}
-        <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="bg-primary p-2 rounded-sm">
-              <Target className="text-primary-foreground" size={20} />
-            </div>
-            <h3 className="font-fjalla font-bold text-card-foreground text-sm uppercase tracking-wide">
-              TODAY'S MOTIVATION
-            </h3>
-          </div>
-          <p className="text-card-foreground text-sm italic leading-tight">"{dailyMotivation}"</p>
-        </Card>
-
-        {/* Recovery Streak Card */}
-        <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
-          <div className="text-center">
-            <h3 className="font-fjalla font-bold text-card-foreground text-sm uppercase tracking-wide mb-2">
-              STREAK
-            </h3>
-            <div className="flex items-center justify-center space-x-2 mb-1">
+        {/* Today's Motivation and Streak Cards */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+            <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-2 rounded-sm">
-                <Flame className="text-primary-foreground" size={20} />
+                <Target className="text-primary-foreground" size={20} />
               </div>
-              <div className="text-[28px] font-bold text-card-foreground">{recoveryStreak}</div>
+              <h3 className="font-fjalla font-bold text-card-foreground text-sm uppercase tracking-wide">
+                TODAY'S MOTIVATION
+              </h3>
             </div>
-            <p className="text-muted-foreground text-xs lowercase italic">days strong</p>
-          </div>
-        </Card>
+            <p className="text-card-foreground text-sm italic leading-tight">"{dailyMotivation}"</p>
+          </Card>
+
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+            <div className="text-center">
+              <h3 className="font-fjalla font-bold text-card-foreground text-sm uppercase tracking-wide mb-2">
+                STREAK
+              </h3>
+              <div className="flex items-center justify-center space-x-2 mb-1">
+                <div className="bg-primary p-2 rounded-sm">
+                  <Flame className="text-primary-foreground" size={20} />
+                </div>
+                <div className="text-[28px] font-bold text-card-foreground">{recoveryStreak}</div>
+              </div>
+              <p className="text-muted-foreground text-xs lowercase italic">days strong</p>
+            </div>
+          </Card>
+        </div>
 
         {/* Start Your Day Card */}
         <Card className="bg-black/[7.5%] p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
