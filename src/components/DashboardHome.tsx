@@ -117,121 +117,124 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="p-5 pb-24">
+      <div className="p-4 pb-24">
         {/* Header */}
         <div className="mb-6 flex justify-between items-start">
-          <div className="flex-1">
-            <div className="flex justify-between items-center mb-4">
-              <h1 className="text-3xl font-fjalla tracking-wide">
-                <span className="font-thin italic">DAILY</span> <span className="font-black italic">LEAP</span>
-              </h1>
-              <div className="flex items-center space-x-2">
-                <span className="text-lg font-medium">9:41</span>
-                <div className="flex space-x-1">
-                  <div className="w-4 h-4 bg-foreground rounded-sm opacity-60"></div>
-                </div>
-              </div>
-            </div>
-            <p className="text-foreground font-source font-medium tracking-wide mb-1 text-lg">
-              WELCOME BACK, <span className="font-bold italic">{currentUser.toUpperCase()}</span>
+          <div>
+            <h1 className="text-3xl font-fjalla font-bold text-foreground mb-1 tracking-wide">
+              <span className="font-thin italic">DAILY</span> <span className="font-black">LEAP</span>
+            </h1>
+            <p className="text-foreground font-source font-medium tracking-wide mb-1">
+              WELCOME BACK, <span className="font-bold">{currentUser.toUpperCase()}</span>
             </p>
             <p className="text-muted-foreground text-sm">Your recovery journey continues</p>
           </div>
+          <div className="flex items-center space-x-2">
+            <div className="bg-primary p-2 rounded-lg">
+              <Trophy className="text-primary-foreground" size={20} />
+            </div>
+            <span className="text-3xl font-bold text-foreground">8</span>
+          </div>
         </div>
 
-        {/* Row 1 - Horizontal Split Cards (72/28) */}
+        {/* Today's Motivation and Recovery Streak - Horizontal Layout */}
         <div className="flex gap-4 mb-4">
-          {/* Today's Motivation Card - 72% width */}
-          <Card className="bg-card border border-border shadow-sm p-4 rounded-xl flex-[72]">
+          {/* Today's Motivation Card - 2/3 width */}
+          <Card className="bg-card border border-border shadow-sm p-4 rounded-lg flex-1" style={{ flex: '2' }}>
             <div className="flex items-start space-x-3">
               <div className="bg-primary p-2 rounded-lg">
                 <Target className="text-primary-foreground" size={20} />
               </div>
               <div className="flex-1">
-                <h3 className="font-fjalla font-bold text-foreground mb-2 tracking-wide text-sm uppercase">
-                  TODAY'S MOTIVATION
+                <h3 className="font-fjalla font-bold text-foreground mb-2 tracking-wide">
+                  <span className="font-thin italic">TODAY'S</span> MOTIVATION
                 </h3>
-                <p className="text-foreground text-base font-source italic leading-relaxed">"{dailyMotivation}"</p>
+                <p className="text-foreground text-sm font-source italic leading-relaxed">"{dailyMotivation}"</p>
               </div>
             </div>
           </Card>
 
-          {/* Recovery Streak Card - 28% width */}
-          <Card className="bg-card border border-border shadow-sm p-4 rounded-xl flex-[28]">
-            <div className="flex flex-col items-center justify-center h-full text-center">
+          {/* Recovery Streak Card - 1/3 width */}
+          <Card className="bg-card border border-border shadow-sm p-4 rounded-lg flex-1" style={{ flex: '1' }}>
+            <div className="flex flex-col items-center justify-center h-full">
               <div className="bg-primary p-2 rounded-lg mb-2">
                 <Flame className="text-primary-foreground" size={20} />
               </div>
-              <div className="text-3xl font-bold text-foreground mb-1">{recoveryStreak}</div>
-              <p className="text-muted-foreground text-sm font-medium">days strong</p>
+              <h3 className="font-fjalla font-bold text-foreground tracking-wide text-center mb-1">
+                <span className="font-thin italic">RECOVERY</span> STREAK
+              </h3>
+              <div className="text-4xl font-bold text-foreground text-center">{recoveryStreak}</div>
+              <p className="text-foreground text-4xl font-bold font-source text-center">
+                <strong>D</strong>ay<strong>S</strong> strong
+              </p>
             </div>
           </Card>
         </div>
 
         {/* Coming Up This Week */}
-        <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-xl">
-          <h3 className="font-fjalla font-bold text-foreground mb-4 tracking-wide text-sm uppercase">
-            COMING UP THIS WEEK
+        <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-lg">
+          <h3 className="font-fjalla font-bold text-foreground mb-4 tracking-wide">
+            <span className="font-thin italic">COMING</span> UP THIS WEEK
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-foreground font-source font-normal">Day 20: Weekend Recovery Strategies</span>
-              <span className="text-primary font-source font-bold text-sm uppercase">TOMORROW</span>
+              <span className="text-foreground font-source">Day 20: Weekend Recovery Strategies</span>
+              <span className="text-primary font-source font-bold text-sm">TOMORROW</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-foreground font-source font-normal">Day 25: Peer Communication</span>
-              <span className="text-primary font-source font-bold text-sm uppercase">2 DAYS</span>
+              <span className="text-foreground font-source">Day 25: Peer Communication</span>
+              <span className="text-primary font-source font-bold text-sm">2 DAYS</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-foreground font-source font-normal">Day 30: Month Milestone Review</span>
-              <span className="text-primary font-source font-bold text-sm uppercase">1 WEEK</span>
+              <span className="text-foreground font-source">Day 30: Month Milestone Review</span>
+              <span className="text-primary font-source font-bold text-sm">1 WEEK</span>
             </div>
           </div>
         </Card>
 
         {/* The Foreman Card */}
-        <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-xl">
+        <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-lg">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center border-2 border-border">
-              <Bot className="text-foreground" size={24} />
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-300">
+              <Bot className="text-gray-800" size={24} />
             </div>
             <div>
-              <h3 className="font-fjalla font-bold text-foreground text-lg tracking-wide uppercase">
-                THE FOREMAN
+              <h3 className="font-fjalla font-bold text-foreground text-lg tracking-wide">
+                <span className="font-thin italic">THE</span> FOREMAN
               </h3>
-              <p className="text-muted-foreground text-sm font-source italic">Your AI recovery mentor</p>
+              <p className="text-muted-foreground text-sm font-source">Your AI recovery mentor</p>
             </div>
           </div>
           <Button 
             onClick={() => onNavigate?.('foreman')}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-source font-bold py-3 rounded-lg tracking-wide uppercase"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-source font-bold py-3 rounded-lg tracking-wide"
           >
             CHAT WITH THE FOREMAN
           </Button>
         </Card>
 
-        {/* Bottom Action Cards - 50/50 Split */}
+        {/* Bottom Action Cards */}
         <div className="grid grid-cols-2 gap-4">
           <Card 
-            className="bg-card border border-border shadow-sm p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow"
+            className="bg-card border border-border shadow-sm p-4 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => onNavigate?.('calendar')}
           >
-            <div className="flex flex-col items-center space-y-2 text-center">
+            <div className="flex flex-col items-center space-y-2">
               <div className="bg-primary p-3 rounded-lg">
                 <Calendar className="text-primary-foreground" size={24} />
               </div>
-              <h3 className="font-fjalla font-bold text-foreground text-sm tracking-wide uppercase">CALENDAR</h3>
-            </div>
-          </Card>
-          <Card 
-            className="bg-card border border-border shadow-sm p-4 rounded-xl cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => onNavigate?.('chat')}
-          >
-            <div className="flex flex-col items-center space-y-2 text-center">
-              <div className="bg-primary p-3 rounded-lg">
-                <MessageCircle className="text-primary-foreground" size={24} />
-              </div>
-              <h3 className="font-fjalla font-bold text-foreground text-sm tracking-wide uppercase">CHAT SUPPORT</h3>
+               <h3 className="font-fjalla font-bold text-foreground text-sm tracking-wide">CALENDAR</h3>
+             </div>
+           </Card>
+           <Card 
+             className="bg-card border border-border shadow-sm p-4 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+             onClick={() => onNavigate?.('chat')}
+           >
+             <div className="flex flex-col items-center space-y-2">
+               <div className="bg-primary p-3 rounded-lg">
+                 <MessageCircle className="text-primary-foreground" size={24} />
+               </div>
+               <h3 className="font-fjalla font-bold text-foreground text-sm tracking-wide">CHAT SUPPORT</h3>
             </div>
           </Card>
         </div>

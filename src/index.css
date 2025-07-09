@@ -6,7 +6,7 @@
 @layer base {
   :root {
     /* Brand Colors - Light Mode */
-    --background: 0 0% 96%; /* Soft neutral gray #F5F5F5 */
+    --background: 0 0% 95%; /* Warm White #F1F1F1 */
     --foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
     --card: 0 0% 100%; /* Pure White #FFFFFF */
@@ -15,16 +15,16 @@
     --popover: 0 0% 95%; /* Warm White #F1F1F1 */
     --popover-foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
-    --primary: 45 100% 51%; /* Yellow #FFCE00 */
+    --primary: 48 100% 50%; /* Safety Yellow #FFD000 */
     --primary-foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
     --secondary: 225 8% 31%; /* Slate Gray #4C4E53 */
     --secondary-foreground: 0 0% 95%; /* Warm White #F1F1F1 */
 
     --muted: 0 0% 90%; /* Lighter warm white */
-    --muted-foreground: 0 0% 48%; /* Medium gray #7A7A7A */
+    --muted-foreground: 225 8% 31%; /* Slate Gray #4C4E53 */
 
-    --accent: 45 100% 51%; /* Yellow #FFCE00 */
+    --accent: 48 100% 50%; /* Safety Yellow #FFD000 */
     --accent-foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
     --destructive: 0 84% 60%;
@@ -32,9 +32,9 @@
 
     --border: 0 0% 85%; /* Subtle border */
     --input: 0 0% 85%; /* Input border */
-    --ring: 45 100% 51%; /* Yellow #FFCE00 */
+    --ring: 48 100% 50%; /* Safety Yellow #FFD000 */
 
-    --radius: 0.75rem; /* 12px corner radius */
+    --radius: 0.75rem;
   }
 
   .dark {
