@@ -137,8 +137,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </div>
 
-        {/* Motivation and Recovery Streak Cards - 75/25 Split */}
-        <div className="grid grid-cols-[75fr_25fr] gap-[10px] mb-4">
+        {/* Motivation and Recovery Streak Cards - 70/30 Split */}
+        <div className="grid grid-cols-[70fr_30fr] gap-[10px] mb-4">
           {/* Today's Motivation Card */}
           <Card className="bg-white p-4 rounded-lg border-0 shadow-none">
             <div className="flex items-start space-x-3">
