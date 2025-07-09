@@ -186,19 +186,18 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         </div>
 
         {/* Start Your Day Card */}
-        <Card className="bg-black/20 p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
-          <h3 className="font-fjalla font-bold text-white mb-2 tracking-wide">
+        <Card className="bg-black/10 p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
+          <h3 className="font-fjalla font-bold text-card-foreground mb-2 tracking-wide">
             START YOUR DAY
           </h3>
           <div className="cursor-pointer" onClick={() => onNavigate?.('journey')}>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center">
               <div className="flex items-center space-x-3">
-                <div className="bg-white p-2 rounded-sm">
+                <div className="bg-yellow-400 p-2 rounded-sm">
                   <Play className="text-black" size={16} />
                 </div>
-                <span className="text-white font-source text-sm">Day {currentJourneyDay}: Building Daily Habits</span>
+                <span className="text-card-foreground font-source text-sm">Day {currentJourneyDay}: Building Daily Habits</span>
               </div>
-              <ChevronRight className="text-white" size={16} />
             </div>
           </div>
         </Card>
