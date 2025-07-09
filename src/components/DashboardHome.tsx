@@ -151,39 +151,34 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </div>
 
-        {/* Motivation and Recovery Streak Cards - 70/30 Split */}
-        <div className="grid grid-cols-[70fr_30fr] gap-[10px] mb-4">
-          {/* Today's Motivation Card */}
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-            <div className="flex items-start space-x-3">
-              <div className="bg-primary p-2 rounded-sm">
-                <Target className="text-primary-foreground" size={16} />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-fjalla font-bold text-card-foreground mb-2 text-sm uppercase tracking-wide">
-                  TODAY'S MOTIVATION
-                </h3>
-                <p className="text-card-foreground text-sm italic leading-tight">"{dailyMotivation}"</p>
-              </div>
+        {/* Today's Motivation Card */}
+        <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
+          <div className="flex items-center space-x-3 mb-2">
+            <div className="bg-primary p-2 rounded-sm">
+              <Target className="text-primary-foreground" size={20} />
             </div>
-          </Card>
+            <h3 className="font-fjalla font-bold text-card-foreground text-sm uppercase tracking-wide">
+              TODAY'S MOTIVATION
+            </h3>
+          </div>
+          <p className="text-card-foreground text-sm italic leading-tight">"{dailyMotivation}"</p>
+        </Card>
 
-          {/* Recovery Streak Card */}
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-            <div className="text-center">
-              <h3 className="font-fjalla font-bold text-card-foreground text-sm uppercase tracking-wide mb-2">
-                STREAK
-              </h3>
-              <div className="flex items-center justify-center space-x-2 mb-1">
-                <div className="bg-primary p-2 rounded-sm">
-                  <Flame className="text-primary-foreground" size={16} />
-                </div>
-                <div className="text-[28px] font-bold text-card-foreground">{recoveryStreak}</div>
+        {/* Recovery Streak Card */}
+        <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
+          <div className="text-center">
+            <h3 className="font-fjalla font-bold text-card-foreground text-sm uppercase tracking-wide mb-2">
+              STREAK
+            </h3>
+            <div className="flex items-center justify-center space-x-2 mb-1">
+              <div className="bg-primary p-2 rounded-sm">
+                <Flame className="text-primary-foreground" size={20} />
               </div>
-              <p className="text-muted-foreground text-xs lowercase italic">days strong</p>
+              <div className="text-[28px] font-bold text-card-foreground">{recoveryStreak}</div>
             </div>
-          </Card>
-        </div>
+            <p className="text-muted-foreground text-xs lowercase italic">days strong</p>
+          </div>
+        </Card>
 
         {/* Start Your Day Card */}
         <Card className="bg-black/[7.5%] p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
@@ -194,7 +189,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             <div className="flex items-center">
               <div className="flex items-center space-x-3">
                 <div className="bg-yellow-400 p-2 rounded-sm">
-                  <Play className="text-black" size={16} />
+                  <Play className="text-black" size={20} />
                 </div>
                 <span className="text-card-foreground font-source text-sm">Day {currentJourneyDay}: Building Daily Habits</span>
               </div>
@@ -209,15 +204,15 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-card-foreground font-source text-xs">Day 20: Weekend Recovery Strategies</span>
+              <span className="text-card-foreground font-source text-sm">Day 20: Weekend Recovery Strategies</span>
               <span className="text-primary font-source font-bold text-sm">TOMORROW</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-card-foreground font-source text-xs">Day 25: Peer Communication</span>
+              <span className="text-card-foreground font-source text-sm">Day 25: Peer Communication</span>
               <span className="text-primary font-source font-bold text-sm">2 DAYS</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-card-foreground font-source text-xs">Day 30: Month Milestone Review</span>
+              <span className="text-card-foreground font-source text-sm">Day 30: Month Milestone Review</span>
               <span className="text-primary font-source font-bold text-sm">1 WEEK</span>
             </div>
           </div>
