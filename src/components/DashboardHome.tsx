@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Flame, Target, Trophy, Calendar, MessageCircle, Bot, ChevronRight } from 'lucide-react';
+import { Flame, Target, Trophy, Calendar, MessageCircle, Bot, ChevronRight, Play } from 'lucide-react';
 import SMSOptIn from './SMSOptIn';
 import { useUserData } from '@/hooks/useUserData';
 import PhoneNumberPrompt from './PhoneNumberPrompt';
@@ -41,6 +41,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
   // Calculate recovery streak based on daily activity
   const [recoveryStreak, setRecoveryStreak] = useState(23);
+  const [currentJourneyDay, setCurrentJourneyDay] = useState(1);
 
   useEffect(() => {
     // Load daily motivation based on user's day count
@@ -53,10 +54,13 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     if (savedMotivationDate === todayString && savedMotivation) {
       setDailyMotivation(savedMotivation);
     } else {
-      // Calculate days since user started
+    // Calculate days since user started
       const startDate = new Date(userStartDate);
       const daysSinceStart = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       const quoteIndex = daysSinceStart % dailyQuotes.length;
+      
+      // Set current journey day (minimum 1, maximum 90 for the program)
+      setCurrentJourneyDay(Math.min(Math.max(1, daysSinceStart + 1), 90));
       
       const newMotivation = dailyQuotes[quoteIndex];
       setDailyMotivation(newMotivation);
@@ -124,8 +128,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           <div className="flex justify-between items-start mb-6">
             {/* Left column: Title and welcome text */}
             <div className="flex-1">
-              <h1 className="text-5xl font-fjalla font-bold text-foreground mb-1 tracking-wide">
-                <span className="font-oswald font-extralight tracking-tight">DAILYLEAP</span>
+              <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+                <span className="font-oswald font-extralight tracking-tight">DAILY</span><span className="font-fjalla font-extrabold italic">LEAP</span>
               </h1>
               <div className="mt-5"></div>
               <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
@@ -135,9 +139,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             </div>
             
             {/* Right column: Theme toggle and Trophy */}
-            <div className="flex flex-col items-end space-y-3">
+            <div className="flex flex-col items-end">
               <ThemeToggle />
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 mt-8">
                 <div className="bg-primary p-2 rounded-lg">
                   <Trophy className="text-primary-foreground" size={20} />
                 </div>
@@ -188,7 +192,12 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </h3>
           <div className="mb-4 cursor-pointer" onClick={() => onNavigate?.('journey')}>
             <div className="flex items-center justify-between">
-              <span className="text-card-foreground font-source text-xs">Day 19: Building Daily Habits</span>
+              <div className="flex items-center space-x-2">
+                <div className="bg-primary p-1 rounded-sm">
+                  <Play className="text-primary-foreground" size={12} />
+                </div>
+                <span className="text-card-foreground font-source text-xs">Day {currentJourneyDay}: Building Daily Habits</span>
+              </div>
               <ChevronRight className="text-primary" size={16} />
             </div>
           </div>
