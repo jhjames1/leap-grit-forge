@@ -130,9 +130,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <p className="text-foreground font-source font-medium tracking-wide mb-0">
                 WELCOME BACK, <span className="font-bold">{currentUser.toUpperCase()}</span>
               </p>
-              <div className="flex items-center justify-between w-full">
-                <p className="text-muted-foreground text-sm flex-shrink">Your recovery journey continues</p>
-                <div className="flex items-center space-x-2 flex-shrink-0 ml-auto">
+              <p className="text-muted-foreground text-sm">Your recovery journey continues</p>
+              <div className="w-full flex justify-end">
+                <div className="flex items-center space-x-2">
                   <div className="bg-primary p-2 rounded-lg">
                     <Trophy className="text-primary-foreground" size={20} />
                   </div>
