@@ -122,7 +122,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         <div className="mb-6 flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-fjalla font-bold text-foreground mb-1 tracking-wide">
-              DAILY <span className="font-black">LEAP</span>
+              <span className="font-thin italic">DAILY</span> <span className="font-black">LEAP</span>
             </h1>
             <p className="text-foreground font-source font-medium tracking-wide mb-1">
               WELCOME BACK, <span className="font-bold">{currentUser.toUpperCase()}</span>
@@ -137,40 +137,45 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </div>
 
-        {/* Today's Motivation Card */}
-        <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-lg">
-          <div className="flex items-start space-x-3">
-            <div className="bg-primary p-2 rounded-lg">
-              <Target className="text-primary-foreground" size={20} />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-fjalla font-bold text-foreground mb-2 tracking-wide">TODAY'S MOTIVATION</h3>
-              <p className="text-foreground text-sm font-source italic leading-relaxed">"{dailyMotivation}"</p>
-            </div>
-          </div>
-        </Card>
-
-        {/* Recovery Streak Card */}
-        <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+        {/* Today's Motivation and Recovery Streak - Horizontal Layout */}
+        <div className="flex gap-4 mb-4">
+          {/* Today's Motivation Card - 2/3 width */}
+          <Card className="bg-card border border-border shadow-sm p-4 rounded-lg flex-1" style={{ flex: '2' }}>
+            <div className="flex items-start space-x-3">
               <div className="bg-primary p-2 rounded-lg">
+                <Target className="text-primary-foreground" size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-fjalla font-bold text-foreground mb-2 tracking-wide">
+                  <span className="font-thin italic">TODAY'S</span> MOTIVATION
+                </h3>
+                <p className="text-foreground text-sm font-source italic leading-relaxed">"{dailyMotivation}"</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Recovery Streak Card - 1/3 width */}
+          <Card className="bg-card border border-border shadow-sm p-4 rounded-lg flex-1" style={{ flex: '1' }}>
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="bg-primary p-2 rounded-lg mb-2">
                 <Flame className="text-primary-foreground" size={20} />
               </div>
-              <div>
-                <h3 className="font-fjalla font-bold text-foreground tracking-wide">RECOVERY STREAK</h3>
-                <p className="text-muted-foreground text-sm font-source">days strong</p>
-              </div>
+              <h3 className="font-fjalla font-bold text-foreground tracking-wide text-center mb-1">
+                <span className="font-thin italic">RECOVERY</span> STREAK
+              </h3>
+              <div className="text-4xl font-bold text-foreground text-center">{recoveryStreak}</div>
+              <p className="text-foreground text-4xl font-bold font-source text-center">
+                <strong>D</strong>ay<strong>S</strong> strong
+              </p>
             </div>
-            <div className="text-right">
-              <div className="text-4xl font-bold text-foreground">{recoveryStreak}</div>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
 
         {/* Coming Up This Week */}
         <Card className="bg-card border border-border shadow-sm mb-4 p-4 rounded-lg">
-          <h3 className="font-fjalla font-bold text-foreground mb-4 tracking-wide">COMING UP THIS WEEK</h3>
+          <h3 className="font-fjalla font-bold text-foreground mb-4 tracking-wide">
+            <span className="font-thin italic">COMING</span> UP THIS WEEK
+          </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-foreground font-source">Day 20: Weekend Recovery Strategies</span>
@@ -194,7 +199,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <Bot className="text-gray-800" size={24} />
             </div>
             <div>
-              <h3 className="font-fjalla font-bold text-foreground text-lg tracking-wide">THE FOREMAN</h3>
+              <h3 className="font-fjalla font-bold text-foreground text-lg tracking-wide">
+                <span className="font-thin italic">THE</span> FOREMAN
+              </h3>
               <p className="text-muted-foreground text-sm font-source">Your AI recovery mentor</p>
             </div>
           </div>

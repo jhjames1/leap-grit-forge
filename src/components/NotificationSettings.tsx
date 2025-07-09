@@ -67,7 +67,9 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
         >
           <ArrowLeft size={20} />
         </Button>
-        <h1 className="font-anton text-2xl text-white">Notifications</h1>
+        <h1 className="font-anton text-2xl text-white">
+          <span className="font-thin italic">Notifications</span>
+        </h1>
       </div>
 
       <div className="space-y-4 max-w-md mx-auto">

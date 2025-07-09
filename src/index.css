@@ -9,7 +9,7 @@
     --background: 0 0% 95%; /* Warm White #F1F1F1 */
     --foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
-    --card: 0 0% 95%; /* Warm White #F1F1F1 */
+    --card: 0 0% 100%; /* Pure White #FFFFFF */
     --card-foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
     --popover: 0 0% 95%; /* Warm White #F1F1F1 */
@@ -42,8 +42,8 @@
     --background: 221 11% 12%; /* Midnight Black #1D1E20 */
     --foreground: 0 0% 95%; /* Warm White #F1F1F1 */
 
-    --card: 225 13% 20%; /* Gunmetal Gray #333539 */
-    --card-foreground: 0 0% 95%; /* Warm White #F1F1F1 */
+    --card: 0 0% 100%; /* Pure White #FFFFFF */
+    --card-foreground: 221 11% 12%; /* Midnight Black #1D1E20 */
 
     --popover: 225 13% 20%; /* Gunmetal Gray #333539 */
     --popover-foreground: 0 0% 95%; /* Warm White #F1F1F1 */

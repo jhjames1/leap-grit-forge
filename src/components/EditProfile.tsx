@@ -118,7 +118,9 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
         >
           <ArrowLeft size={20} />
         </Button>
-        <h1 className="font-anton text-2xl text-white">Edit Profile</h1>
+        <h1 className="font-anton text-2xl text-white">
+          <span className="font-thin italic">Edit</span> Profile
+        </h1>
       </div>
 
       <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6 max-w-md mx-auto">

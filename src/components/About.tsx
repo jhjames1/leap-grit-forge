@@ -21,7 +21,9 @@ const About = ({ onBack }: AboutProps) => {
           <ArrowLeft size={20} />
         </Button>
         <div>
-          <h1 className="font-anton text-3xl text-white">About LEAP</h1>
+          <h1 className="font-anton text-3xl text-white">
+            <span className="font-thin italic">About</span> LEAP
+          </h1>
           <p className="text-steel-light font-oswald">Your recovery companion</p>
         </div>
       </div>
@@ -33,7 +35,9 @@ const About = ({ onBack }: AboutProps) => {
             <div className="bg-steel p-2 rounded-lg">
               <Target className="text-white" size={20} />
             </div>
-            <h3 className="font-oswald font-semibold text-white text-xl">Our Mission</h3>
+            <h3 className="font-oswald font-semibold text-white text-xl">
+              <span className="font-thin italic">Our</span> Mission
+            </h3>
           </div>
           <p className="text-steel-light leading-relaxed">
             LEAP is designed specifically for men in labor-intensive fields who are navigating their recovery journey. 
