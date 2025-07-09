@@ -225,24 +225,38 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         </Card>
 
         {/* The Foreman Card */}
-        <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
-          <div className="flex flex-col items-center text-center mb-4">
-            <div className="bg-primary p-3 rounded-lg mb-3">
-              <Bot className="text-primary-foreground" size={20} />
+        <Card className="relative bg-card rounded-lg mb-4 border-0 shadow-none transition-colors duration-300 overflow-hidden">
+          {/* Background Image */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: 'url(/lovable-uploads/c61510da-8bef-4d57-8fba-f87d453bd59e.png)'
+            }}
+          />
+          
+          {/* Dark Overlay */}
+          <div className="absolute inset-0 bg-black/60" />
+          
+          {/* Content */}
+          <div className="relative z-10 p-4">
+            <div className="flex flex-col items-center text-center mb-4">
+              <div className="bg-white/20 backdrop-blur-sm p-3 rounded-lg mb-3 border border-white/30">
+                <Bot className="text-white" size={20} />
+              </div>
+              <div>
+                <h3 className="font-fjalla font-bold text-white text-2xl tracking-wide">
+                  THE FOREMAN
+                </h3>
+                <p className="text-white/80 text-sm font-source">Your Recovery Partner</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-2xl tracking-wide">
-                THE FOREMAN
-              </h3>
-              <p className="text-muted-foreground text-sm font-source">Your Recovery Partner</p>
-            </div>
+            <Button 
+              onClick={() => onNavigate?.('foreman')}
+              className="w-full bg-white/20 hover:bg-white/30 text-white font-source font-bold py-3 rounded-lg tracking-wide transition-colors duration-300 border border-white/30 backdrop-blur-sm"
+            >
+              CHAT WITH THE FOREMAN
+            </Button>
           </div>
-          <Button 
-            onClick={() => onNavigate?.('foreman')}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-source font-bold py-3 rounded-lg tracking-wide transition-colors duration-300"
-          >
-            CHAT WITH THE FOREMAN
-          </Button>
         </Card>
 
         {/* Bottom Action Cards */}
