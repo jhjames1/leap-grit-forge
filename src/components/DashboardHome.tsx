@@ -131,7 +131,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
                 <span className="font-oswald font-extralight tracking-tight">DAILY</span><span className="font-fjalla font-extrabold italic">LEAP</span>
               </h1>
-              <div className="mt-5"></div>
+              <div className="mt-8"></div>
               <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
                 WELCOME BACK, <span className="font-bold italic">{currentUser.toUpperCase()}</span>
               </p>
@@ -139,9 +139,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             </div>
             
             {/* Right column: Theme toggle and Trophy */}
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col items-end justify-between h-full">
               <ThemeToggle />
-              <div className="flex items-center space-x-2 mt-8">
+              <div className="flex items-center space-x-2">
                 <div className="bg-primary p-2 rounded-lg">
                   <Trophy className="text-primary-foreground" size={20} />
                 </div>
