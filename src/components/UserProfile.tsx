@@ -195,6 +195,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           <Shield size={16} />
         </Button>
       </div>
+      </div>
     </div>
   );
 };
