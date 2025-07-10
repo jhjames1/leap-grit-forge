@@ -32,9 +32,9 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
         {/* LEAP Logo */}
         <div className="mb-8 animate-fade-in">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-1 tracking-wide">
-            <span className="font-oswald font-extralight tracking-tight">LE</span><span className="font-fjalla font-extrabold italic">AP</span>
+            <span className="font-fjalla font-extrabold italic">LEAP</span>
           </h1>
-          <p className="text-muted-foreground text-sm font-oswald font-extralight tracking-wide">
+          <p className="text-white text-lg font-oswald font-extralight tracking-wide">
             Don't Tough It Out. Talk It Out.
           </p>
         </div>
