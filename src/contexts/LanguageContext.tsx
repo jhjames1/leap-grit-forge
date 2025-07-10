@@ -261,7 +261,10 @@ const englishTranslations = {
       title: 'The Foreman',
       subtitle: 'Your personal coach is here to help',
       button: 'Chat Now'
-    }
+    },
+    recoveryStrength: 'Recovery Strength',
+    wellnessLevel: 'Wellness Level',
+    actionsToday: 'actions today'
   },
   
   // Foreman Chat
@@ -936,7 +939,10 @@ const spanishTranslations = {
       title: 'El Capataz',
       subtitle: 'Tu entrenador personal está aquí para ayudar',
       button: 'Chatear Ahora'
-    }
+    },
+    recoveryStrength: 'Fuerza de Recuperación',
+    wellnessLevel: 'Nivel de Bienestar',
+    actionsToday: 'acciones hoy'
   },
   
   // Foreman Chat
