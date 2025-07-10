@@ -99,9 +99,16 @@ export const useUserData = () => {
       checkDate.setDate(today.getDate() - i);
       const dateString = checkDate.toDateString();
       
-      const hasActivity = activityLog.some(entry => 
-        new Date(entry.timestamp).toDateString() === dateString
-      );
+      // Check for any activity or journey completion on this day
+      const hasActivity = activityLog.some(entry => {
+        const entryDate = new Date(entry.timestamp).toDateString();
+        return entryDate === dateString && (
+          entry.action.includes('Used') || 
+          entry.action.includes('Completed Day') ||
+          entry.action.includes('journey') ||
+          entry.action.includes('tool')
+        );
+      });
       
       if (hasActivity) {
         currentStreak++;

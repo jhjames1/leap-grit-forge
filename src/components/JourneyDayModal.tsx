@@ -33,7 +33,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
   const [audioProgress, setAudioProgress] = useState(0);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const { updateUserData, userData } = useUserData();
+  const { updateUserData, userData, logActivity } = useUserData();
   const { toast } = useToast();
 
   // Load saved activity states
@@ -438,20 +438,25 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
   const handleCompleteDay = () => {
     if (!allActivitiesComplete) return;
     
-    const existingProgress = JSON.parse(localStorage.getItem('journeyProgress') || '{}');
-    const completedDays = existingProgress.completedDays || [];
+    // Update user data with journey progress
+    const currentProgress = userData?.journeyProgress || { completedDays: [], currentWeek: 1, badges: [] };
+    const updatedProgress = {
+      ...currentProgress,
+      completedDays: [...new Set([...currentProgress.completedDays, day])].sort((a, b) => a - b),
+      currentWeek: Math.floor((day - 1) / 7) + 1
+    };
     
-    if (!completedDays.includes(day)) {
-      const updatedProgress = {
-        ...existingProgress,
-        completedDays: [...completedDays, day]
-      };
-      localStorage.setItem('journeyProgress', JSON.stringify(updatedProgress));
-      
-      updateUserData({
-        journeyProgress: updatedProgress
-      });
-    }
+    updateUserData({
+      journeyProgress: updatedProgress
+    });
+    
+    // Log activity for streak calculation
+    logActivity(`Completed Day ${day}`, `Journey Day ${day}: ${dayData.title}`);
+    
+    toast({
+      title: "Day Complete!",
+      description: `Excellent work on Day ${day}. You're building strong foundations for recovery.`,
+    });
     
     onComplete();
   };

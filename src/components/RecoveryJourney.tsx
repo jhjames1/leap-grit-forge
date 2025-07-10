@@ -10,7 +10,7 @@ import JourneyDayModal from './JourneyDayModal';
 const RecoveryJourney = () => {
   const [currentDay, setCurrentDay] = useState(1);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const { userData, logActivity } = useUserData();
+  const { userData, logActivity, updateUserData } = useUserData();
   const { toast } = useToast();
   const totalDays = 90;
   
@@ -180,6 +180,18 @@ const RecoveryJourney = () => {
   };
 
   const handleCompleteDay = (day: number) => {
+    // Update journey progress in user data
+    const currentProgress = userData?.journeyProgress || { completedDays: [], currentWeek: 1, badges: [] };
+    const updatedProgress = {
+      ...currentProgress,
+      completedDays: [...new Set([...currentProgress.completedDays, day])].sort((a, b) => a - b),
+      currentWeek: Math.floor((day - 1) / 7) + 1
+    };
+    
+    updateUserData({
+      journeyProgress: updatedProgress
+    });
+    
     logActivity(`Completed Day ${day}: ${week1Days[day - 1]?.title}`);
     
     // Update current day if this was the active day
