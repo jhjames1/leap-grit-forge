@@ -192,7 +192,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
             </div>
             <div>
               <h4 className="font-fjalla font-bold text-muted-foreground uppercase tracking-wide">{activity.title}</h4>
-              <p className="text-muted-foreground text-sm font-source">Complete previous activity to unlock</p>
+              <p className="text-muted-foreground text-sm font-source">{t('common.unlock')}</p>
             </div>
           </div>
         </Card>
@@ -611,7 +611,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
               onClick={onClose}
               className="border-border text-muted-foreground hover:bg-muted font-source"
             >
-              Close
+              {t('common.close')}
             </Button>
             
             {!isCompleted && (
@@ -625,7 +625,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                 }`}
               >
                 <CheckCircle2 size={16} className="mr-2" />
-                {allActivitiesComplete ? 'Complete Day' : `Complete ${activities.length - completedActivities} more`}
+                {allActivitiesComplete ? t('common.completeDay') : t('common.completeMore', { count: activities.length - completedActivities })}
               </Button>
             )}
           </div>

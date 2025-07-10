@@ -617,7 +617,10 @@ const englishTranslations = {
     markComplete: 'Mark Complete',
     of: 'of',
     min: 'min',
-    day: 'Day'
+    day: 'Day',
+    unlock: 'Complete previous activity to unlock',
+    completeDay: 'Complete Day',
+    completeMore: 'Complete {{count}} more'
   }
 };
 
@@ -1150,6 +1153,9 @@ const spanishTranslations = {
     markComplete: 'Marcar Completo',
     of: 'de',
     min: 'min',
-    day: 'Día'
+    day: 'Día',
+    unlock: 'Completa la actividad anterior para desbloquear',
+    completeDay: 'Completar Día',
+    completeMore: 'Completa {{count}} más'
   }
 };
