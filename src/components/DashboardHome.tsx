@@ -152,7 +152,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <LanguageToggle />
               </div>
               <div className="flex items-end space-x-2 mt-12">
-                <div className="bg-primary p-2 rounded-lg">
+                <div className="bg-primary p-3 rounded-lg">
                   <Trophy className="text-primary-foreground" size={20} />
                 </div>
                 <span className="text-3xl font-bold text-foreground">{badgeCount}</span>
@@ -165,7 +165,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         <div className="flex gap-4 mb-4">
           <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[70%]">
             <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-primary p-2 rounded-sm">
+              <div className="bg-primary p-3 rounded-sm">
                 <Target className="text-primary-foreground" size={20} />
               </div>
               <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
@@ -181,7 +181,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 {t('home.streak.title').toUpperCase()}
               </h3>
               <div className="flex items-center justify-center space-x-2 mb-1">
-                <div className="bg-primary p-2 rounded-sm">
+                <div className="bg-primary p-3 rounded-sm">
                   <Flame className="text-primary-foreground" size={20} />
                 </div>
                 <div className="text-[28px] font-bold text-card-foreground">{recoveryStreak}</div>
@@ -199,7 +199,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           <div className="cursor-pointer" onClick={() => onNavigate?.('journey')}>
             <div className="flex items-center">
               <div className="flex items-center space-x-3">
-                <div className="bg-yellow-400 p-2 rounded-sm">
+                <div className="bg-yellow-400 p-3 rounded-sm">
                   <Play className="text-black" size={20} />
                 </div>
                 <span className="text-card-foreground font-source text-sm">{t('home.currentDay', {day: currentJourneyDay})}</span>
