@@ -38,9 +38,10 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     const todayString = currentDate.toDateString();
     const savedMotivationDate = localStorage.getItem('motivationDate');
     const savedMotivation = localStorage.getItem('dailyMotivation');
+    const savedLanguage = localStorage.getItem('motivationLanguage');
     const userStartDate = localStorage.getItem('userStartDate') || todayString;
     
-    if (savedMotivationDate === todayString && savedMotivation) {
+    if (savedMotivationDate === todayString && savedMotivation && savedLanguage === language) {
       setDailyMotivation(savedMotivation);
     } else {
     // Calculate days since user started
@@ -56,6 +57,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       setDailyMotivation(newMotivation);
       localStorage.setItem('motivationDate', todayString);
       localStorage.setItem('dailyMotivation', newMotivation);
+      localStorage.setItem('motivationLanguage', language);
       
       if (!localStorage.getItem('userStartDate')) {
         localStorage.setItem('userStartDate', todayString);
