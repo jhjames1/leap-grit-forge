@@ -13,6 +13,8 @@ import RecoveryCalendar from '@/components/RecoveryCalendar';
 import ForemanChat from '@/components/ForemanChat';
 import AdminLogin from '@/components/AdminLogin';
 import AdminDashboard from '@/components/AdminDashboard';
+import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import OfflineIndicator from '@/components/OfflineIndicator';
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -131,10 +133,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <OfflineIndicator />
       {renderActivePage()}
       {showBottomNav && (
         <BottomNavigation activeTab={activeTab} onTabChange={handleNavigation} />
       )}
+      <PWAInstallPrompt />
     </div>
   );
 };

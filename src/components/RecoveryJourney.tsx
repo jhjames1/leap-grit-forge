@@ -204,9 +204,8 @@ const RecoveryJourney = () => {
   ];
 
   const handleDayClick = (day: number) => {
-    // Updated unlocking logic: must be past 12:01 AM AND previous day completed
-    const isPreviousDayCompleted = day === 1 || completedDays.includes(day - 1);
-    const isUnlocked = isPast1201AM() && isPreviousDayCompleted;
+    // Enhanced unlocking logic using journeyManager
+    const isUnlocked = journeyManager.isDayUnlocked(completedDays, day);
     const isCompleted = completedDays.includes(day);
     
     if (isUnlocked || isCompleted) {
@@ -214,6 +213,8 @@ const RecoveryJourney = () => {
       logActivity(`Opened Day ${day}: ${week1Days[day - 1]?.title}`);
     } else {
       let reason = "";
+      const isPreviousDayCompleted = day === 1 || completedDays.includes(day - 1);
+      
       if (!isPast1201AM()) {
         reason = t('journey.notifications.unlock1201');
       } else if (!isPreviousDayCompleted) {
