@@ -13,27 +13,16 @@ interface PersonalizedGreetingProps {
 
 const PersonalizedGreeting = ({ firstName, onContinue }: PersonalizedGreetingProps) => {
   const { t } = useLanguage();
-  const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening'>('morning');
+  const [timeOfDay, setTimeOfDay] = useState<'morning'>('morning');
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) {
-      setTimeOfDay('morning');
-    } else {
-      setTimeOfDay('afternoon'); // Always use afternoon for evening hours
-    }
+    // Always show morning greeting regardless of time
+    setTimeOfDay('morning');
   }, []);
 
   const getIcon = () => {
-    switch (timeOfDay) {
-      case 'morning':
-        return <Sunrise className="text-primary" size={32} />;
-      case 'afternoon':
-        return <Sun className="text-primary" size={32} />;
-      default:
-        return <Sun className="text-primary" size={32} />;
-    }
+    return <Sunrise className="text-primary" size={32} />;
   };
 
   const handleContinue = () => {

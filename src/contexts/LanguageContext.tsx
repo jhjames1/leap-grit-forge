@@ -122,8 +122,8 @@ const englishTranslations = {
   // User Auth
   auth: {
     welcome: {
-      title: 'Welcome to LEAP',
-      subtitle: 'Enter your first name to get started'
+      title: 'Get Started',
+      subtitle: 'Enter your first name to begin'
     },
     firstName: {
       label: 'First Name',
@@ -486,6 +486,29 @@ const englishTranslations = {
       steadyBreather: "Steady Breather", 
       toolMaster: "Tool Master"
     },
+    months: {
+      january: "January",
+      february: "February", 
+      march: "March",
+      april: "April",
+      may: "May",
+      june: "June",
+      july: "July",
+      august: "August",
+      september: "September",
+      october: "October",
+      november: "November",
+      december: "December"
+    },
+    tools: {
+      steadySteel: "SteadySteel",
+      peerChat: "Peer Chat",
+      foremanChat: "The Foreman",
+      urgeTracker: "Redline Recovery",
+      gratitudeLog: "Gratitude Log",
+      breathingExercise: "SteadySteel",
+      noneYet: "None yet"
+    },
     settings: "Settings",
     editProfile: "Edit Profile",
     notificationSettings: "Notification Settings",
@@ -685,8 +708,8 @@ const spanishTranslations = {
   // User Auth
   auth: {
     welcome: {
-      title: 'Bienvenido a LEAP',
-      subtitle: 'Ingresa tu nombre para comenzar'
+      title: 'Comenzar',
+      subtitle: 'Ingresa tu nombre para empezar'
     },
     firstName: {
       label: 'Nombre',

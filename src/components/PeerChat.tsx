@@ -99,7 +99,21 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
 
   const handleVideoCall = () => {
     if (selectedPeer?.status === 'online') {
-      window.open('https://meet.google.com/new', '_blank');
+      // Try to open Teams first, then Zoom as fallback
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isMobile = /android|iphone|ipad|mobile/.test(userAgent);
+      
+      if (isMobile) {
+        // On mobile, try Teams app first
+        window.location.href = 'msteams://';
+        setTimeout(() => {
+          // Fallback to Zoom if Teams doesn't open
+          window.location.href = 'zoomus://';
+        }, 1000);
+      } else {
+        // On desktop, open Teams web or Zoom web
+        window.open('https://teams.microsoft.com/start', '_blank');
+      }
     } else {
       alert('This specialist is not available for video calls right now.');
     }
