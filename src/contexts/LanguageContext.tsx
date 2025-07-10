@@ -419,10 +419,8 @@ const englishTranslations = {
         badge: 'Mindset'
       }
     },
-    recentActivity: {
-      title: 'Recent Activity',
-      empty: 'Your completed activities will appear here as you use the tools.'
-    },
+    recentActivity: 'Recent Activity',
+    recentActivityEmpty: 'Your completed activities will appear here as you use the tools.',
     toolTitles: {
       emergencyHelp: 'Emergency Help',
       emergencyDesc: 'Get immediate support',
@@ -644,6 +642,9 @@ const englishTranslations = {
     pause: 'Pause',
     progress: 'Progress',
     markComplete: 'Mark Complete',
+    complete: 'Complete',
+    completed: 'Completed',
+    continue: 'Continue',
     of: 'of',
     min: 'min',
     day: 'Day',
@@ -955,10 +956,8 @@ const spanishTranslations = {
         badge: 'Mentalidad'
       }
     },
-    recentActivity: {
-      title: 'Actividad Reciente',
-      empty: 'Tus actividades completadas aparecerán aquí mientras uses las herramientas.'
-    },
+    recentActivity: 'Actividad Reciente',
+    recentActivityEmpty: 'Tus actividades completadas aparecerán aquí mientras uses las herramientas.',
     toolTitles: {
       emergencyHelp: 'Ayuda de Emergencia',
       emergencyDesc: 'Obtén apoyo inmediato',
@@ -1180,6 +1179,9 @@ const spanishTranslations = {
     pause: 'Pausa',
     progress: 'Progreso',
     markComplete: 'Marcar Completo',
+    complete: 'Completar',
+    completed: 'Completado',
+    continue: 'Continuar',
     of: 'de',
     min: 'min',
     day: 'Día',
