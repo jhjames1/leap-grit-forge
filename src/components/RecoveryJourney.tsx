@@ -10,16 +10,39 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import JourneyDayModal from './JourneyDayModal';
 import { logger } from '@/utils/logger';
 import { calculateCurrentJourneyDay, getDayStatus } from '@/utils/journeyCalculation';
+import { journeyManager } from '@/utils/journeyManager';
+import { trackingManager } from '@/utils/trackingManager';
+import { notificationManager } from '@/utils/notificationManager';
 
 const RecoveryJourney = () => {
   const [currentDay, setCurrentDay] = useState(1);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [forceRender, setForceRender] = useState(0);
+  const [userJourney, setUserJourney] = useState<any>(null);
+  const [phaseModifier, setPhaseModifier] = useState<any>(null);
   const { userData, logActivity } = useUserData();
   const { toast } = useToast();
   const { t } = useLanguage();
   const totalDays = 90;
   
+  // Initialize user's journey based on their onboarding data
+  useEffect(() => {
+    if (userData?.focusAreas && userData?.journeyStage) {
+      const journey = journeyManager.getUserJourney(userData.focusAreas);
+      const modifier = journeyManager.getPhaseModifier(userData.journeyStage);
+      
+      setUserJourney(journey);
+      setPhaseModifier(modifier);
+      
+      logger.debug('Journey initialized', { 
+        focusAreas: userData.focusAreas,
+        journeyStage: userData.journeyStage,
+        journeyFound: !!journey,
+        modifierFound: !!modifier
+      });
+    }
+  }, [userData?.focusAreas, userData?.journeyStage]);
+
   // Calculate current day based on completed days using shared utility
   const completedDays = userData?.journeyProgress?.completedDays || [];
   const actualCurrentDay = calculateCurrentJourneyDay(userData, totalDays);
@@ -27,7 +50,21 @@ const RecoveryJourney = () => {
   // Add useEffect to watch for userData changes and force re-render
   useEffect(() => {
     logger.debug('Journey progress updated', { completedDaysCount: completedDays.length, currentDay: actualCurrentDay });
-  }, [userData?.journeyProgress?.completedDays, forceRender]);
+    
+    // Schedule notifications for incomplete days
+    if (userData && actualCurrentDay <= totalDays) {
+      const todaysStats = trackingManager.getTodaysStats();
+      const dayCompleted = completedDays.includes(actualCurrentDay);
+      
+      if (!dayCompleted) {
+        notificationManager.scheduleReminders(
+          userData.firstName || 'user',
+          actualCurrentDay,
+          todaysStats.journeyActivitiesCompleted > 0
+        );
+      }
+    }
+  }, [userData?.journeyProgress?.completedDays, forceRender, actualCurrentDay]);
 
   // Check if it's past 12:01 AM
   const isPast1201AM = () => {

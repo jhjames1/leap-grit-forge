@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { SecureStorage } from '@/utils/secureStorage';
 import { logger } from '@/utils/logger';
 import { getSecureSession, clearSession, logSecurityEvent } from '@/utils/security';
+import { trackingManager } from '@/utils/trackingManager';
+import { notificationManager } from '@/utils/notificationManager';
 
 interface ActivityLogEntry {
   id: string;
@@ -30,6 +32,11 @@ interface UserData {
   toolboxStats: ToolboxStats;
   journeyProgress?: JourneyProgress;
   journeyResponses?: Record<string, string>;
+  focusAreas?: string[];
+  journeyStage?: string;
+  supportStyle?: string;
+  dailyStats?: Record<string, any>;
+  streakData?: any;
 }
 
 export const useUserData = () => {
@@ -51,9 +58,20 @@ export const useUserData = () => {
       }
     }
     
+    // Initialize tracking and notifications
+    if (currentUser) {
+      trackingManager.setUser(currentUser);
+      
+      // Check and reset daily stats if it's a new day
+      trackingManager.checkAndResetDaily();
+      
+      // Request notification permission
+      notificationManager.requestNotificationPermission();
+    }
+    
     // Cleanup old data on app start
     SecureStorage.cleanupOldData();
-  }, []);
+  }, [currentUser]);
 
   const loadUserData = (username: string) => {
     try {
@@ -204,9 +222,13 @@ export const useUserData = () => {
     }
   };
 
-  const logActivity = (action: string, details?: string) => {
-    if (!userData) return;
+  const logActivity = (action: string, details?: string, type: 'journey' | 'tool' | 'peer' | 'general' = 'general') => {
+    if (!userData || !currentUser) return;
 
+    // Use tracking manager for enhanced activity logging
+    trackingManager.logActivity(action, type, details);
+
+    // Also maintain the legacy activity log for backward compatibility
     const newActivity: ActivityLogEntry = {
       id: Date.now().toString(),
       action,

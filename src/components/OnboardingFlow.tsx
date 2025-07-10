@@ -67,7 +67,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   const handleComplete = () => {
     setShowSuccess(true);
     
-    // Save onboarding data
+    // Load onboarding data and set it in userData
     const onboardingData = {
       firstName: firstName.trim() || '',
       focusAreas,
@@ -78,9 +78,13 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
     localStorage.setItem('onboardingCompleted', 'true');
     localStorage.setItem('onboardingData', JSON.stringify(onboardingData));
     
-    // Show success screen briefly before completing
+    // Pass the full onboarding data including focus areas and journey stage
     setTimeout(() => {
-      onComplete(onboardingData);
+      onComplete({
+        ...onboardingData,
+        focusAreas, // Ensure focusAreas is passed
+        journeyStage // Ensure journeyStage is passed
+      });
     }, 2000);
   };
 
