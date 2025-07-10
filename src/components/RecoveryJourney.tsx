@@ -229,10 +229,10 @@ const RecoveryJourney = () => {
       </div>
 
       {/* Overall Progress Card */}
-      <Card className="bg-card p-6 rounded-lg mb-6 border-0 shadow-none">
+      <Card className="bg-black/[7.5%] p-6 rounded-lg mb-6 border-0 shadow-none">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-primary p-2 rounded-lg">
-            <Target className="text-primary-foreground" size={20} />
+          <div className="bg-yellow-400 p-2 rounded-lg">
+            <Target className="text-black" size={20} />
           </div>
           <div>
             <h3 className="font-fjalla font-bold text-card-foreground">Overall Progress</h3>
@@ -280,10 +280,10 @@ const RecoveryJourney = () => {
                   isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'
                 } ${
                   isCompleted
-                    ? 'bg-primary/10'
+                    ? 'bg-primary/10 border border-muted'
                     : isUnlocked
-                      ? 'bg-card hover:bg-accent'
-                      : 'bg-muted opacity-60'
+                      ? 'bg-card hover:bg-accent border border-muted'
+                      : 'bg-muted opacity-60 border border-muted'
                 }`}
               >
                 <div className="flex items-center space-x-4">

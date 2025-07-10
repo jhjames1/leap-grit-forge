@@ -68,31 +68,31 @@ const RecoveryCalendar = ({ onBack }: RecoveryCalendarProps) => {
       </div>
 
       {/* Current Streak */}
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
+      <Card className="bg-card mb-6 p-6 border-0 shadow-none">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="bg-construction p-2 rounded-lg">
-              <Trophy className="text-midnight" size={20} />
+            <div className="bg-primary p-2 rounded-lg">
+              <Trophy className="text-primary-foreground" size={20} />
             </div>
             <div>
-              <h3 className="font-oswald font-semibold text-white">Current Streak</h3>
-              <p className="text-steel-light text-sm">Keep up the great work!</p>
+              <h3 className="font-fjalla font-bold text-card-foreground">Current Streak</h3>
+              <p className="text-muted-foreground text-sm">Keep up the great work!</p>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-anton text-construction">{currentStreak}</div>
-            <div className="text-xs text-steel-light font-oswald">DAYS</div>
+            <div className="text-3xl font-bold text-primary">{currentStreak}</div>
+            <div className="text-xs text-muted-foreground font-fjalla">DAYS</div>
           </div>
         </div>
       </Card>
 
       {/* Calendar */}
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
+      <Card className="bg-card p-6 border-0 shadow-none">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-construction p-2 rounded-lg">
-            <CalendarIcon className="text-midnight" size={20} />
+          <div className="bg-primary p-2 rounded-lg">
+            <CalendarIcon className="text-primary-foreground" size={20} />
           </div>
-          <h3 className="font-oswald font-semibold text-white text-xl">Your Recovery Days</h3>
+          <h3 className="font-fjalla font-bold text-card-foreground text-xl">Your Recovery Days</h3>
         </div>
         
         <div className="bg-white/5 rounded-lg p-4">
@@ -137,35 +137,35 @@ const RecoveryCalendar = ({ onBack }: RecoveryCalendarProps) => {
         </div>
         
         {selectedDate && (
-          <div className="mt-4 p-4 bg-white/5 rounded-lg">
-            <h4 className="font-oswald font-semibold text-white mb-2">
+          <div className="mt-4 p-4 bg-muted rounded-lg">
+            <h4 className="font-fjalla font-bold text-card-foreground mb-2">
               {format(selectedDate, 'MMMM d, yyyy')}
             </h4>
             {isRecoveryDay(selectedDate) ? (
               <div className="flex items-center space-x-2">
-                <Badge className="bg-construction text-midnight font-oswald">
+                <Badge className="bg-primary text-primary-foreground font-fjalla">
                   Recovery Day
                 </Badge>
-                <span className="text-steel-light text-sm">Great job staying strong!</span>
+                <span className="text-muted-foreground text-sm">Great job staying strong!</span>
               </div>
             ) : (
-              <span className="text-steel-light text-sm">No recovery day logged</span>
+              <span className="text-muted-foreground text-sm">No recovery day logged</span>
             )}
           </div>
         )}
       </Card>
 
       {/* Legend */}
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mt-6 p-4">
-        <h4 className="font-oswald font-semibold text-white mb-3">Legend</h4>
+      <Card className="bg-card mt-6 p-4 border-0 shadow-none">
+        <h4 className="font-fjalla font-bold text-card-foreground mb-3">Legend</h4>
         <div className="space-y-2">
           <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 bg-construction rounded border-2 border-construction"></div>
-            <span className="text-steel-light text-sm">Recovery Day</span>
+            <div className="w-4 h-4 bg-primary rounded border-2 border-primary"></div>
+            <span className="text-muted-foreground text-sm">Recovery Day</span>
           </div>
           <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 bg-steel/30 rounded border-2 border-steel"></div>
-            <span className="text-steel-light text-sm">Today</span>
+            <div className="w-4 h-4 bg-muted rounded border-2 border-muted-foreground"></div>
+            <span className="text-muted-foreground text-sm">Today</span>
           </div>
         </div>
       </Card>

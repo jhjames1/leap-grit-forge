@@ -95,7 +95,7 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
       {/* Available Peers */}
       <div className="space-y-4">
         {peers.map((peer) => (
-          <Card key={peer.id} className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
+          <Card key={peer.id} className="bg-card p-4 border-0 shadow-none">
             <div className="flex items-start space-x-4">
               <div className="relative">
                 <div className="w-12 h-12 bg-steel rounded-full flex items-center justify-center">
@@ -106,14 +106,14 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
               
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-oswald font-semibold text-white">{peer.name}</h3>
+                  <h3 className="font-fjalla font-bold text-card-foreground">{peer.name}</h3>
                   <Badge className={`text-xs ${peer.status === 'online' ? 'bg-green-500/20 text-green-400' : peer.status === 'away' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'}`}>
                     {getStatusText(peer.status)}
                   </Badge>
                 </div>
                 
-                <p className="text-steel-light text-sm mb-2">Years in Recovery: {peer.yearsInRecovery}</p>
-                <p className="text-steel-light text-xs mb-3">{peer.availability}</p>
+                <p className="text-muted-foreground text-sm mb-2">Years in Recovery: {peer.yearsInRecovery}</p>
+                <p className="text-muted-foreground text-xs mb-3">{peer.availability}</p>
                 
                 <div className="flex space-x-2">
                   <Button
@@ -152,10 +152,10 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
       </div>
 
       {/* Emergency Support */}
-      <Card className="bg-red-500/10 border-red-500/30 p-4 mt-6">
+      <Card className="bg-red-500/10 border-red-500/30 p-4 mt-6 border-0 shadow-none">
         <div className="text-center">
-          <h3 className="font-oswald font-semibold text-white mb-2">Need Immediate Support?</h3>
-          <p className="text-steel-light text-sm mb-3">If you're in crisis, call the National Suicide Prevention Lifeline</p>
+          <h3 className="font-fjalla font-bold text-card-foreground mb-2">Need Immediate Support?</h3>
+          <p className="text-muted-foreground text-sm mb-3">If you're in crisis, call the National Suicide Prevention Lifeline</p>
           <Button 
             onClick={() => window.location.href = 'tel:988'}
             className="bg-red-500 hover:bg-red-600 text-white font-oswald font-semibold"
