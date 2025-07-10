@@ -1056,6 +1056,29 @@ const spanishTranslations = {
       steadyBreather: "Respirador Constante",
       toolMaster: "Maestro de Herramientas"
     },
+    months: {
+      january: "Enero",
+      february: "Febrero",
+      march: "Marzo", 
+      april: "Abril",
+      may: "Mayo",
+      june: "Junio",
+      july: "Julio",
+      august: "Agosto",
+      september: "Septiembre",
+      october: "Octubre",
+      november: "Noviembre",
+      december: "Diciembre"
+    },
+    tools: {
+      steadySteel: "Acero Firme",
+      peerChat: "Chat de Pares",
+      foremanChat: "El Capataz", 
+      urgeTracker: "Recuperación Línea Roja",
+      gratitudeLog: "Registro de Gratitud",
+      breathingExercise: "Acero Firme",
+      noneYet: "Ninguno aún"
+    },
     settings: "Configuraciones",
     editProfile: "Editar Perfil",
     notificationSettings: "Configuración de Notificaciones",

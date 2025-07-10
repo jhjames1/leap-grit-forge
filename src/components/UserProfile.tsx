@@ -14,12 +14,41 @@ interface UserProfileProps {
 }
 
 const UserProfile = ({ onNavigate }: UserProfileProps) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [currentView, setCurrentView] = useState<'profile' | 'edit' | 'notifications'>('profile');
   const { userData, currentUser } = useUserData();
   
   const phoneNumber = localStorage.getItem('phoneNumber');
   const lastLogin = localStorage.getItem('lastLogin') || new Date().toDateString();
+  
+  // Helper function to format dates based on language
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = date.toLocaleString('default', { month: 'long' });
+    const year = date.getFullYear();
+    
+    if (language === 'es') {
+      const monthKey = month.toLowerCase() as keyof typeof t;
+      const translatedMonth = t(`profile.months.${monthKey}`) || month;
+      return `${translatedMonth} ${year}`;
+    }
+    
+    return `${month} ${year}`;
+  };
+  
+  // Helper function to translate tool names
+  const translateTool = (toolName: string) => {
+    const toolMap: { [key: string]: string } = {
+      'SteadySteel': t('profile.tools.steadySteel'),
+      'Peer Chat': t('profile.tools.peerChat'),
+      'The Foreman': t('profile.tools.foremanChat'),
+      'Redline Recovery': t('profile.tools.urgeTracker'),
+      'Gratitude Log': t('profile.tools.gratitudeLog'),
+      'None yet': t('profile.tools.noneYet')
+    };
+    
+    return toolMap[toolName] || toolName;
+  };
   
   // Calculate user stats from real data
   const recoveryStreak = userData?.toolboxStats?.streak || 0;
@@ -37,7 +66,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   
   const mostUsedTool = Object.keys(toolUsage).length > 0 
     ? Object.entries(toolUsage).sort(([,a], [,b]) => b - a)[0][0] 
-    : 'None yet';
+    : t('profile.tools.noneYet');
 
   const profileStats = [
     { label: t('profile.recoveryStreak'), value: recoveryStreak, unit: t('profile.days'), color: "text-construction" },
@@ -47,10 +76,10 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
 
   const user = {
     name: currentUser || "User",
-    joinDate: "March 2024", // Could be calculated from userData creation date
+    joinDate: formatDate("March 1, 2024"), // Could be calculated from userData creation date
     streakDays: recoveryStreak,
     totalSessions: totalToolsUsed,
-    favoriteTools: mostUsedTool !== 'None yet' ? [mostUsedTool, "SteadySteel", "Peer Chat"] : ["SteadySteel", "Peer Chat"],
+    favoriteTools: mostUsedTool !== t('profile.tools.noneYet') ? [mostUsedTool, t('profile.tools.steadySteel'), t('profile.tools.peerChat')] : [t('profile.tools.steadySteel'), t('profile.tools.peerChat')],
     badges: [
       { name: t('profile.badges.weekWarrior'), earned: t('profile.earned', { time: '2 weeks ago' }), icon: "🏆" },
       { name: t('profile.badges.steadyBreather'), earned: t('profile.earned', { time: '1 week ago' }), icon: "🌬️" },
@@ -99,7 +128,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
                 <p className="text-muted-foreground text-sm font-source">{phoneNumber}</p>
               </div>
             )}
-            <p className="text-muted-foreground text-sm font-source">{t('profile.lastLogin', { date: lastLogin })}</p>
+            <p className="text-muted-foreground text-sm font-source">{t('profile.lastLogin', { date: formatDate(lastLogin) })}</p>
           </div>
         </div>
         
@@ -116,7 +145,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
         <div className="space-y-2 pt-4 border-t border-border">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground text-sm font-source">{t('profile.mostUsedTool')}</span>
-            <span className="text-primary font-fjalla font-medium">{mostUsedTool}</span>
+            <span className="text-primary font-fjalla font-medium">{translateTool(mostUsedTool)}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground text-sm font-source">{t('profile.weeklyProgress')}</span>
