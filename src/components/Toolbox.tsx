@@ -241,35 +241,35 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const todayToolsCount = getTodayToolsCount();
 
   return (
-    <div className="p-4 pb-24 bg-background min-h-screen">
+    <div className="p-4 pb-24 bg-[#F5F5F5] min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+        <h1 className="text-5xl font-bold text-gray-900 mb-1 tracking-wide">
           <span className="font-oswald font-extralight tracking-tight">RECOVERY</span><span className="font-fjalla font-extrabold italic">TOOLBOX</span>
         </h1>
-        <p className="text-steel-light font-oswald">Your support tools, always ready</p>
+        <p className="text-gray-600 font-oswald">Your support tools, always ready</p>
       </div>
 
       {/* Live Stats with updated tracking */}
-      <Card className="bg-card mb-6 p-4 border-0 shadow-none">
+      <Card className="bg-white mb-6 p-4 border-0 shadow-sm rounded-xl">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <div className="text-2xl font-bold text-primary">
               {todayToolsCount}
             </div>
-            <div className="text-xs text-muted-foreground font-source">Tools Used Today</div>
+            <div className="text-xs text-gray-600 font-source">Tools Used Today</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-primary">
               {dayStreak}
             </div>
-            <div className="text-xs text-muted-foreground font-source">Day Streak</div>
+            <div className="text-xs text-gray-600 font-source">Day Streak</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-primary">
               {userData?.toolboxStats.totalSessions || 0}
             </div>
-            <div className="text-xs text-muted-foreground font-source">Total Sessions</div>
+            <div className="text-xs text-gray-600 font-source">Total Sessions</div>
           </div>
         </div>
       </Card>
@@ -277,7 +277,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       {/* Emergency Button */}
       <Button 
         onClick={() => handleToolClick('panic')}
-        className="w-full bg-red-600 hover:bg-red-700 text-white font-fjalla font-bold py-6 mb-6 rounded-xl text-lg tracking-wide"
+        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-6 mb-6 rounded-xl text-lg tracking-wide"
       >
         <AlertTriangle className="mr-3" size={24} />
         I NEED HELP NOW
@@ -291,7 +291,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
           return (
             <Card 
               key={tool.id}
-              className="bg-card hover:bg-accent transition-all duration-200 cursor-pointer group border-0 shadow-none"
+              className="bg-white hover:bg-gray-50 transition-all duration-200 cursor-pointer group border-0 shadow-sm rounded-xl"
               onClick={() => handleToolClick(tool.id)}
             >
               <div className="p-6">
@@ -304,10 +304,10 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
                   </Badge>
                 </div>
                 
-                <h3 className="font-fjalla font-bold text-card-foreground mb-2 group-hover:text-primary transition-colors duration-200">
+                <h3 className="font-semibold text-[16px] text-gray-900 mb-2 group-hover:text-primary transition-colors duration-200">
                   {tool.title}
                 </h3>
-                <p className="text-muted-foreground text-sm leading-relaxed font-source">
+                <p className="text-gray-600 text-sm leading-relaxed font-source">
                   {tool.description}
                 </p>
               </div>
@@ -317,8 +317,8 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       </div>
 
       {/* Live Recent Activity with updated timestamp format */}
-      <Card className="bg-card mt-6 p-6 border-0 shadow-none">
-        <h3 className="font-fjalla font-bold text-card-foreground mb-4">Recent Activity</h3>
+      <Card className="bg-white mt-6 p-6 border-0 shadow-sm rounded-xl">
+        <h3 className="font-semibold text-[20px] text-gray-900 mb-4">Recent Activity</h3>
         <div className="space-y-3">
           {userData?.activityLog.length ? (
             userData.activityLog
@@ -327,17 +327,17 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
               .map((activity, index) => (
                 <div key={activity.id} className="flex items-center space-x-3 text-sm">
                   <div className={`w-3 h-3 rounded-full ${
-                    index === 0 ? 'bg-primary' : 'bg-muted'
+                    index === 0 ? 'bg-primary' : 'bg-gray-300'
                   }`}></div>
-                  <span className="text-muted-foreground font-source">
+                  <span className="text-gray-600 font-source">
                     {activity.action} - <span className={`font-medium ${
-                      index === 0 ? 'text-primary' : 'text-muted-foreground'
+                      index === 0 ? 'text-primary' : 'text-gray-600'
                     }`}>{formatTimestamp(activity.timestamp)}</span>
                   </span>
                 </div>
               ))
           ) : (
-            <div className="text-muted-foreground text-sm font-source">
+            <div className="text-gray-600 text-sm font-source">
               Your completed activities will appear here as you use the tools.
             </div>
           )}

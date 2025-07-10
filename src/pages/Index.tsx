@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import SplashScreen from '@/components/SplashScreen';
 import UserAuth from '@/components/UserAuth';
 import PersonalizedGreeting from '@/components/PersonalizedGreeting';
+import OnboardingFlow from '@/components/OnboardingFlow';
 import BottomNavigation from '@/components/BottomNavigation';
 import DashboardHome from '@/components/DashboardHome';
 import RecoveryJourney from '@/components/RecoveryJourney';
@@ -18,6 +19,7 @@ import AdminDashboard from '@/components/AdminDashboard';
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [showGreeting, setShowGreeting] = useState(false);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('home');
@@ -48,6 +50,18 @@ const Index = () => {
     setCurrentUser(userData.firstName);
     localStorage.setItem('currentUser', userData.firstName);
     setShowAuth(false);
+    
+    // Check if onboarding has been completed
+    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+    if (!onboardingCompleted && userData.isNewUser) {
+      setShowOnboarding(true);
+    } else {
+      setShowGreeting(true);
+    }
+  };
+
+  const handleOnboardingComplete = (onboardingData: any) => {
+    setShowOnboarding(false);
     setShowGreeting(true);
   };
 
@@ -61,6 +75,10 @@ const Index = () => {
 
   if (showAuth) {
     return <UserAuth onLogin={handleLogin} />;
+  }
+
+  if (showOnboarding) {
+    return <OnboardingFlow onComplete={handleOnboardingComplete} />;
   }
 
   if (showGreeting) {

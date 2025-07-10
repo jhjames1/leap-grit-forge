@@ -218,25 +218,25 @@ const RecoveryJourney = () => {
   const progress = (actualCurrentDay / totalDays) * 100;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#F5F5F5]">
       <div className="p-4 pb-24">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+        <h1 className="text-5xl font-bold text-gray-900 mb-1 tracking-wide">
           <span className="font-oswald font-extralight tracking-tight">RECOVERY</span><span className="font-fjalla font-extrabold italic">JOURNEY</span>
         </h1>
-        <p className="text-steel-light font-oswald">90-day guided track</p>
+        <p className="text-gray-600 font-oswald">90-day guided track</p>
       </div>
 
       {/* Overall Progress Card */}
-      <Card className="bg-card border border-black/[7.5%] p-6 rounded-lg mb-6 shadow-none">
+      <Card className="bg-white border-0 p-6 rounded-xl mb-6 shadow-sm">
         <div className="flex items-center space-x-3 mb-4">
           <div className="bg-yellow-400 p-2 rounded-lg">
             <Target className="text-black" size={20} />
           </div>
           <div>
-            <h3 className="font-fjalla font-bold text-card-foreground">Overall Progress</h3>
-            <p className="text-muted-foreground text-sm">
+            <h3 className="font-semibold text-[20px] text-gray-900">Overall Progress</h3>
+            <p className="text-gray-600 text-[16px]">
               Day <span className="text-primary font-bold text-lg">{actualCurrentDay}</span> of {totalDays}
             </p>
           </div>
@@ -244,8 +244,8 @@ const RecoveryJourney = () => {
         
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Journey Progress</span>
-            <span className="text-primary font-fjalla font-bold text-lg">{Math.round(progress)}%</span>
+            <span className="text-gray-600">Journey Progress</span>
+            <span className="text-primary font-bold text-lg">{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} className="h-3 bg-muted">
             <div 
@@ -257,12 +257,12 @@ const RecoveryJourney = () => {
       </Card>
 
       {/* Week 1: Foundation */}
-      <Card className="bg-card p-6 rounded-lg mb-6 border-0 shadow-none">
+      <Card className="bg-white p-6 rounded-xl mb-6 border-0 shadow-sm">
         <div className="flex items-center space-x-3 mb-4">
           <div className="bg-primary p-2 rounded-lg">
             <Trophy className="text-primary-foreground" size={20} />
           </div>
-          <h3 className="font-fjalla font-bold text-card-foreground">Week 1: Foundation</h3>
+          <h3 className="font-semibold text-[20px] text-gray-900">Week 1: Foundation</h3>
         </div>
         
         <div className="space-y-3">
@@ -276,14 +276,14 @@ const RecoveryJourney = () => {
               <Card
                 key={dayModule.day}
                 onClick={() => isUnlocked && handleDayClick(dayModule.day)}
-                className={`p-4 transition-all duration-200 border-0 shadow-none ${
+                className={`p-4 transition-all duration-200 border rounded-lg ${
                   isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'
                 } ${
                   isCompleted
-                    ? 'bg-primary/10 border border-muted'
+                    ? 'bg-primary/10 border-primary/20 shadow-sm'
                     : isUnlocked
-                      ? 'bg-card hover:bg-accent border border-muted'
-                      : 'bg-muted opacity-60 border border-muted'
+                      ? 'bg-white hover:bg-gray-50 border-gray-200 shadow-sm'
+                      : 'bg-gray-100 opacity-60 border-gray-200'
                 }`}
               >
                 <div className="flex items-center space-x-4">
@@ -316,13 +316,13 @@ const RecoveryJourney = () => {
                       </span>
                     </div>
                     
-                    <h3 className={`font-fjalla font-medium mb-1 ${
-                      isUnlocked ? 'text-card-foreground' : 'text-muted-foreground'
+                    <h3 className={`font-medium text-[16px] mb-1 ${
+                      isUnlocked ? 'text-gray-900' : 'text-gray-500'
                     }`}>
                       {dayModule.title}
                     </h3>
                     
-                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                    <div className="flex items-center space-x-2 text-xs text-gray-500">
                       <Clock size={12} className="text-primary" />
                       <span>{dayModule.duration}</span>
                     </div>
