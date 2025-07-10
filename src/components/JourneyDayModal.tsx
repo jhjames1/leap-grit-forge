@@ -14,9 +14,12 @@ interface JourneyDayModalProps {
   day: number;
   dayData: {
     title: string;
-    theme: string;
-    duration: string;
-    content: any;
+    keyMessage: string;
+    activity: string;
+    tool: string;
+    duration?: string;
+    modifiedTone?: string;
+    modifiedPacing?: string;
   };
   isCompleted: boolean;
   onClose: () => void;
@@ -136,39 +139,96 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
     // Note: Auto-completion removed - user must manually complete activities
   }, [isAudioPlaying, audioProgress, audioDuration, currentAudioActivity]);
 
-  const openBreathingExercise = () => {
-    // In a real app, this would open the breathing component
-    toast({
-      title: "Breathing Exercise Started",
-      description: "Take deep breaths and focus on your recovery journey.",
-    });
+  const openToolActivity = (toolName: string, activityKey: string) => {
+    switch (toolName) {
+      case 'Breathing Exercise':
+        toast({
+          title: "Breathing Exercise Started",
+          description: "Take deep breaths and focus on your recovery journey.",
+        });
+        break;
+      case 'Urge Tracker':
+        toast({
+          title: "Urge Tracker Opened",
+          description: "Track your urges and cravings to identify patterns.",
+        });
+        break;
+      case 'Peer Support':
+        toast({
+          title: "Connecting with Peers",
+          description: "Reach out to your support network for encouragement.",
+        });
+        break;
+      default:
+        toast({
+          title: "Activity Started",
+          description: "Complete this recovery tool activity.",
+        });
+    }
     
     // Simulate completion after 3 seconds
     setTimeout(() => {
-      markActivityComplete('breathing_exercise');
+      markActivityComplete(activityKey);
     }, 3000);
   };
 
   const getAllActivitiesForDay = (dayNum: number) => {
-    switch (dayNum) {
-      case 1:
-        return [
-          { key: 'welcome_audio', title: t('journey.dayModules.day1.activities.welcomeAudio'), type: 'audio' },
-          { key: 'how_recovery_works', title: t('journey.dayModules.day1.activities.howRecoveryWorks'), type: 'carousel' },
-          { key: 'why_here', title: t('journey.dayModules.day1.activities.yourWhy'), type: 'text_input' }
-        ];
-      case 2:
-        return [
-          { key: 'trigger_audio', title: 'Understanding Triggers', type: 'audio' },
-          { key: 'trigger_education', title: 'Trigger Education', type: 'slides' },
-          { key: 'breathing_exercise', title: 'Pause & Breathe', type: 'interactive' },
-          { key: 'top_triggers', title: 'Your Top Triggers', type: 'form' }
-        ];
+    // Create activities based on the tool mentioned in the journey data
+    const toolName = dayData.tool || 'Urge Tracker';
+    const activities = [];
+    
+    // Add tool-specific activity
+    switch (toolName) {
+      case 'Urge Tracker':
+        activities.push({ 
+          key: 'urge_tracking', 
+          title: 'Track Your Progress', 
+          type: 'interactive',
+          description: dayData.activity 
+        });
+        break;
+      case 'Breathing Exercise':
+        activities.push({ 
+          key: 'breathing_exercise', 
+          title: 'Mindful Breathing', 
+          type: 'interactive',
+          description: dayData.activity 
+        });
+        break;
+      case 'Gratitude Log':
+        activities.push({ 
+          key: 'gratitude_log', 
+          title: 'Gratitude Practice', 
+          type: 'text_input',
+          description: dayData.activity 
+        });
+        break;
+      case 'Peer Support':
+        activities.push({ 
+          key: 'peer_support', 
+          title: 'Connect with Peers', 
+          type: 'interactive',
+          description: dayData.activity 
+        });
+        break;
       default:
-        return [
-          { key: 'content', title: dayData.title, type: 'placeholder' }
-        ];
+        activities.push({ 
+          key: 'activity', 
+          title: dayData.title, 
+          type: 'text_input',
+          description: dayData.activity 
+        });
     }
+    
+    // Add reflection activity for all days
+    activities.push({
+      key: 'reflection',
+      title: 'Daily Reflection',
+      type: 'text_input',
+      description: 'How did today\'s activity help your recovery journey?'
+    });
+    
+    return activities;
   };
 
   const activities = getAllActivitiesForDay(day);
@@ -208,7 +268,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
             </div>
             
             {activity.key === 'welcome_audio' && (
-              <p className="text-muted-foreground text-sm mb-3 font-source">{t('journey.dayModules.day1.welcomeMessage')}</p>
+              <p className="text-muted-foreground text-sm mb-3 font-source">{dayData.keyMessage}</p>
             )}
             
             {activity.key === 'trigger_audio' && (
@@ -302,7 +362,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
               </div>
               <h4 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide">{activity.title}</h4>
             </div>
-            <p className="text-muted-foreground text-sm mb-4 font-source">Swipe through these 3 slides about recovery</p>
+            <p className="text-muted-foreground text-sm mb-4 font-source">{activity.description}</p>
             
             <div className="mb-4">
               <Carousel 
@@ -388,19 +448,19 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
               </div>
               <h4 className="font-oswald font-semibold text-white">{activity.title}</h4>
             </div>
-            <p className="text-steel-light text-sm mb-3">Interactive breathing exercise when triggered</p>
+            <p className="text-steel-light text-sm mb-3">{activity.description}</p>
             
             {!isCompleted ? (
               <Button 
-                onClick={openBreathingExercise}
+                onClick={() => openToolActivity(dayData.tool, activity.key)}
                 className="bg-construction hover:bg-construction-dark text-midnight font-oswald"
               >
-                Start Breathing Exercise
+                {activity.title === 'Mindful Breathing' ? 'Start Breathing' : `Start ${activity.title}`}
               </Button>
             ) : (
               <div className="flex items-center space-x-2 text-construction">
                 <CheckCircle2 size={16} />
-                <span className="font-oswald">Exercise Complete</span>
+                <span className="font-oswald">Activity Complete</span>
               </div>
             )}
           </Card>
@@ -415,13 +475,13 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
               </div>
               <h4 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide">{activity.title}</h4>
             </div>
-            <p className="text-muted-foreground text-sm mb-3 font-source">Complete this sentence: "I'm here because ______."</p>
+            <p className="text-muted-foreground text-sm mb-3 font-source">{activity.description}</p>
             
             <div className="space-y-3">
               <textarea
                 className="w-full bg-muted text-card-foreground p-3 rounded-lg border border-border resize-none font-source"
                 rows={3}
-                placeholder="I'm here because..."
+                placeholder={`${activity.description}...`}
                 defaultValue={activityStates[activity.key]?.data || ''}
                 disabled={isCompleted}
               />
@@ -555,7 +615,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
             </div>
             <div>
               <h2 className="font-fjalla font-bold text-foreground uppercase tracking-wide">{t('common.day')} {day}</h2>
-              <p className="text-muted-foreground text-sm font-source">{dayData.theme} • {dayData.duration}</p>
+              <p className="text-muted-foreground text-sm font-source">{dayData.tool} • {dayData.duration}</p>
             </div>
           </div>
           <Button
