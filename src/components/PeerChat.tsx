@@ -119,6 +119,36 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     }
   };
 
+  const handleQuickAction = (actionType: string) => {
+    const actionMessages = {
+      'need-support': "I need support right now. Could you please help me?",
+      'feeling-triggered': "I'm feeling triggered and could use some guidance on managing this.",
+      'good-day': "Having a good day today! Feeling positive about my recovery journey.",
+      'question': "I have a question and would appreciate your guidance."
+    };
+
+    const messageText = actionMessages[actionType as keyof typeof actionMessages];
+    if (messageText) {
+      const newMessage = {
+        id: Date.now(),
+        sender: 'user',
+        text: messageText,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isRead: false
+      };
+      
+      setMessages(prev => [...prev, newMessage]);
+      
+      // Simulate typing indicator for peer response
+      if (selectedPeer?.status === 'online') {
+        setIsTyping(true);
+        setTimeout(() => {
+          setIsTyping(false);
+        }, 2000);
+      }
+    }
+  };
+
   if (currentView === 'selection') {
     return (
       <PeerSelection 
@@ -223,18 +253,34 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
       {/* Quick Actions */}
       <div className="px-4 py-2">
         <div className="flex space-x-2 overflow-x-auto">
-          <Badge className="bg-steel text-white font-oswald whitespace-nowrap">
+          <Button 
+            size="sm"
+            onClick={() => handleQuickAction('need-support')}
+            className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+          >
             Need Support
-          </Badge>
-          <Badge className="bg-steel text-white font-oswald whitespace-nowrap">
+          </Button>
+          <Button 
+            size="sm"
+            onClick={() => handleQuickAction('feeling-triggered')}
+            className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+          >
             Feeling Triggered
-          </Badge>
-          <Badge className="bg-steel text-white font-oswald whitespace-nowrap">
+          </Button>
+          <Button 
+            size="sm"
+            onClick={() => handleQuickAction('good-day')}
+            className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+          >
             Good Day Today
-          </Badge>
-          <Badge className="bg-steel text-white font-oswald whitespace-nowrap">
+          </Button>
+          <Button 
+            size="sm"
+            onClick={() => handleQuickAction('question')}
+            className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+          >
             Question
-          </Badge>
+          </Button>
         </div>
       </div>
 
