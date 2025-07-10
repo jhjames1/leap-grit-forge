@@ -431,6 +431,11 @@ const englishTranslations = {
         away: 'Away',
         offline: 'Offline'
       },
+      availability: {
+        availableNow: 'Available now',
+        backIn15: 'Back in 15 mins',
+        availableAt: 'Available at'
+      },
       actions: {
         startChat: 'Start Chat',
         leaveMessage: 'Leave Message'
@@ -988,6 +993,11 @@ const spanishTranslations = {
         online: 'En línea',
         away: 'Ausente',
         offline: 'Desconectado'
+      },
+      availability: {
+        availableNow: 'Disponible ahora',
+        backIn15: 'De vuelta en 15 min',
+        availableAt: 'Disponible a las'
       },
       actions: {
         startChat: 'Iniciar Chat',

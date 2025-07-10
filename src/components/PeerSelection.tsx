@@ -19,28 +19,29 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
       name: 'Mike Rodriguez',
       status: 'online',
       yearsInRecovery: 5,
-      availability: 'Available now'
+      availabilityType: 'now'
     },
     {
       id: 2,
       name: 'David Chen',
       status: 'away',
       yearsInRecovery: 3,
-      availability: 'Back in 15 mins'
+      availabilityType: 'back15'
     },
     {
       id: 3,
       name: 'Marcus Thompson',
       status: 'offline',
       yearsInRecovery: 8,
-      availability: 'Available at 2:00 PM'
+      availabilityType: 'at',
+      availabilityTime: '2:00 PM'
     },
     {
       id: 4,
       name: 'James Wilson',
       status: 'online',
       yearsInRecovery: 4,
-      availability: 'Available now'
+      availabilityType: 'now'
     }
   ]);
 
@@ -59,6 +60,15 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
       case 'away': return t('toolbox.peerSupport.status.away');
       case 'offline': return t('toolbox.peerSupport.status.offline');
       default: return 'Unknown';
+    }
+  };
+
+  const getAvailabilityText = (peer: any) => {
+    switch (peer.availabilityType) {
+      case 'now': return t('toolbox.peerSupport.availability.availableNow');
+      case 'back15': return t('toolbox.peerSupport.availability.backIn15');
+      case 'at': return `${t('toolbox.peerSupport.availability.availableAt')} ${peer.availabilityTime}`;
+      default: return '';
     }
   };
 
@@ -115,7 +125,7 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
                 </div>
                 
                 <p className="text-muted-foreground text-sm mb-2">{t('toolbox.peerSupport.yearsInRecovery')} {peer.yearsInRecovery}</p>
-                <p className="text-muted-foreground text-xs mb-3">{peer.availability}</p>
+                <p className="text-muted-foreground text-xs mb-3">{getAvailabilityText(peer)}</p>
                 
                 <div className="flex space-x-2">
                   <Button
