@@ -6,6 +6,7 @@ import { X, Play, CheckCircle2, Clock, Target, Pause, RotateCcw } from 'lucide-r
 import { useUserData } from '@/hooks/useUserData';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import { useAudio } from '@/hooks/useAudio';
 
 interface JourneyDayModalProps {
   day: number;
@@ -30,11 +31,30 @@ interface ActivityState {
 const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: JourneyDayModalProps) => {
   const [activityStates, setActivityStates] = useState<ActivityState>({});
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
-  const [audioProgress, setAudioProgress] = useState(0);
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [currentAudioActivity, setCurrentAudioActivity] = useState<string | null>(null);
   const { updateUserData, userData, logActivity } = useUserData();
   const { toast } = useToast();
+
+  // Audio URLs for different activities
+  const audioUrls = {
+    welcome_audio: 'https://www.dropbox.com/scl/fi/krpggc0p4uypijf6ymqa1/Welcome-to-LEAP.mp3?rlkey=hy2sq0uh3zwog1qos4d06d6o8&st=ucb1aald&dl=1',
+    trigger_audio: '' // Add more audio URLs as needed
+  };
+
+  // Use audio hook for the current audio activity
+  const currentAudioUrl = currentAudioActivity ? audioUrls[currentAudioActivity as keyof typeof audioUrls] : '';
+  const {
+    isPlaying: isAudioPlaying,
+    isLoading: isAudioLoading,
+    duration: audioDuration,
+    currentTime: audioCurrentTime,
+    progress: audioProgress,
+    error: audioError,
+    play: playAudio,
+    pause: pauseAudio,
+    stop: stopAudio
+  } = useAudio(currentAudioUrl);
 
   // Load saved activity states
   useEffect(() => {
@@ -82,24 +102,29 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
     });
   };
 
-  const simulateAudioPlay = (activityKey: string) => {
-    if (isAudioPlaying) return;
+  // Handle real audio playback
+  const handleAudioPlay = (activityKey: string) => {
+    setCurrentAudioActivity(activityKey);
     
-    setIsAudioPlaying(true);
-    setAudioProgress(0);
-    
-    const interval = setInterval(() => {
-      setAudioProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsAudioPlaying(false);
-          markActivityComplete(activityKey);
-          return 100;
-        }
-        return prev + 1.67; // 1.67% every 100ms = 60 seconds (2 min) total
-      });
+    // Start playing when audio URL is set
+    setTimeout(() => {
+      if (audioUrls[activityKey as keyof typeof audioUrls]) {
+        playAudio();
+      }
     }, 100);
   };
+
+  const handleAudioPause = () => {
+    pauseAudio();
+  };
+
+  // Auto-complete when audio finishes
+  useEffect(() => {
+    if (currentAudioActivity && !isAudioPlaying && audioProgress >= 99 && audioDuration > 0) {
+      markActivityComplete(currentAudioActivity);
+      setCurrentAudioActivity(null);
+    }
+  }, [isAudioPlaying, audioProgress, audioDuration, currentAudioActivity]);
 
   const openBreathingExercise = () => {
     // In a real app, this would open the breathing component
@@ -180,35 +205,60 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
               <p className="text-muted-foreground text-sm mb-3 font-source">AI-narrated walkthrough of trigger types (1 minute)</p>
             )}
             
-            {isAudioPlaying && (
+            {(isAudioPlaying && currentAudioActivity === activity.key) && (
               <div className="mb-3">
                 <Progress value={audioProgress} className="h-2 bg-muted" />
-                <p className="text-muted-foreground text-xs mt-1 font-source">Playing... {Math.round(audioProgress)}%</p>
+                <div className="flex justify-between text-xs mt-1">
+                  <span className="text-muted-foreground font-source">
+                    {Math.floor(audioCurrentTime / 60)}:{String(Math.floor(audioCurrentTime % 60)).padStart(2, '0')}
+                  </span>
+                  <span className="text-muted-foreground font-source">
+                    {Math.floor(audioDuration / 60)}:{String(Math.floor(audioDuration % 60)).padStart(2, '0')}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {isAudioLoading && currentAudioActivity === activity.key && (
+              <div className="mb-3">
+                <div className="text-muted-foreground text-sm font-source">Loading audio...</div>
+              </div>
+            )}
+
+            {audioError && currentAudioActivity === activity.key && (
+              <div className="mb-3">
+                <div className="text-red-500 text-sm font-source">Failed to load audio. Please try again.</div>
               </div>
             )}
             
             <div className="flex space-x-2">
               {!isCompleted ? (
                 <Button 
-                  onClick={() => simulateAudioPlay(activity.key)}
-                  disabled={isAudioPlaying}
+                  onClick={() => {
+                    if (isAudioPlaying && currentAudioActivity === activity.key) {
+                      handleAudioPause();
+                    } else {
+                      handleAudioPlay(activity.key);
+                    }
+                  }}
+                  disabled={isAudioLoading && currentAudioActivity === activity.key}
                   className="bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold py-3 rounded-lg"
                 >
-                  {isAudioPlaying ? (
+                  {(isAudioPlaying && currentAudioActivity === activity.key) ? (
                     <>
                       <Pause size={16} className="mr-2" />
-                      Playing...
+                      Pause
                     </>
                   ) : (
                     <>
                       <Play size={16} className="mr-2" />
-                      Play Welcome Message
+                      {activity.key === 'welcome_audio' ? 'Play Welcome Message' : 'Play Audio'}
                     </>
                   )}
                 </Button>
               ) : (
                 <Button 
-                  onClick={() => simulateAudioPlay(activity.key)}
+                  onClick={() => handleAudioPlay(activity.key)}
                   className="bg-muted hover:bg-muted/80 text-muted-foreground border border-border font-source"
                 >
                   <RotateCcw size={16} className="mr-2" />
