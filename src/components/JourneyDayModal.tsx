@@ -120,7 +120,14 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
 
   // Auto-complete when audio finishes
   useEffect(() => {
-    if (currentAudioActivity && !isAudioPlaying && audioProgress >= 95 && audioDuration > 0) {
+    console.log('Audio useEffect triggered:', {
+      currentAudioActivity,
+      isAudioPlaying,
+      audioProgress,
+      audioDuration
+    });
+    
+    if (currentAudioActivity && !isAudioPlaying && audioProgress >= 90 && audioDuration > 0) {
       console.log(`Audio ${currentAudioActivity} completed - unlocking next activity`);
       markActivityComplete(currentAudioActivity);
       setCurrentAudioActivity(null);
@@ -234,29 +241,42 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
             
             <div className="flex space-x-2">
               {!isCompleted ? (
-                <Button 
-                  onClick={() => {
-                    if (isAudioPlaying && currentAudioActivity === activity.key) {
-                      handleAudioPause();
-                    } else {
-                      handleAudioPlay(activity.key);
-                    }
-                  }}
-                  disabled={isAudioLoading && currentAudioActivity === activity.key}
-                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold py-3 rounded-lg"
-                >
-                  {(isAudioPlaying && currentAudioActivity === activity.key) ? (
-                    <>
-                      <Pause size={16} className="mr-2" />
-                      Pause
-                    </>
-                  ) : (
-                    <>
-                      <Play size={16} className="mr-2" />
-                      {activity.key === 'welcome_audio' ? 'Play Welcome Message' : 'Play Audio'}
-                    </>
+                <>
+                  <Button 
+                    onClick={() => {
+                      if (isAudioPlaying && currentAudioActivity === activity.key) {
+                        handleAudioPause();
+                      } else {
+                        handleAudioPlay(activity.key);
+                      }
+                    }}
+                    disabled={isAudioLoading && currentAudioActivity === activity.key}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold py-3 rounded-lg"
+                  >
+                    {(isAudioPlaying && currentAudioActivity === activity.key) ? (
+                      <>
+                        <Pause size={16} className="mr-2" />
+                        Pause
+                      </>
+                    ) : (
+                      <>
+                        <Play size={16} className="mr-2" />
+                        {activity.key === 'welcome_audio' ? 'Play Welcome Message' : 'Play Audio'}
+                      </>
+                    )}
+                  </Button>
+                  
+                  {/* Manual completion button */}
+                  {currentAudioActivity === activity.key && audioDuration > 0 && (
+                    <Button 
+                      onClick={() => markActivityComplete(activity.key)}
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground font-source"
+                    >
+                      <CheckCircle2 size={16} className="mr-2" />
+                      Complete
+                    </Button>
                   )}
-                </Button>
+                </>
               ) : (
                 <Button 
                   onClick={() => handleAudioPlay(activity.key)}
