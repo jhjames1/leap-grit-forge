@@ -120,7 +120,8 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
 
   // Auto-complete when audio finishes
   useEffect(() => {
-    if (currentAudioActivity && !isAudioPlaying && audioProgress >= 99 && audioDuration > 0) {
+    if (currentAudioActivity && !isAudioPlaying && audioProgress >= 95 && audioDuration > 0) {
+      console.log(`Audio ${currentAudioActivity} completed - unlocking next activity`);
       markActivityComplete(currentAudioActivity);
       setCurrentAudioActivity(null);
     }
