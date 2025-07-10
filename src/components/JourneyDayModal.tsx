@@ -147,14 +147,14 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
     
     if (!isActive && !isCompleted) {
       return (
-        <Card key={activity.key} className="bg-steel-dark/30 border-steel-dark p-4 opacity-50">
+        <Card key={activity.key} className="bg-muted/30 border-0 shadow-none p-4 opacity-50 rounded-lg">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-steel-dark rounded-full flex items-center justify-center">
-              <span className="text-steel-light text-sm">{index + 1}</span>
+            <div className="w-8 h-8 bg-muted rounded-sm flex items-center justify-center">
+              <span className="text-muted-foreground text-sm font-source">{index + 1}</span>
             </div>
             <div>
-              <h4 className="font-oswald font-semibold text-steel-light">{activity.title}</h4>
-              <p className="text-steel-light text-sm">Complete previous activity to unlock</p>
+              <h4 className="font-fjalla font-bold text-muted-foreground uppercase tracking-wide">{activity.title}</h4>
+              <p className="text-muted-foreground text-sm font-source">Complete previous activity to unlock</p>
             </div>
           </div>
         </Card>
@@ -164,26 +164,26 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
     switch (activity.type) {
       case 'audio':
         return (
-          <Card key={activity.key} className={`border-steel-dark p-4 ${isCompleted ? 'bg-construction/10 border-construction/20' : 'bg-white/10'}`}>
+          <Card key={activity.key} className={`border-0 shadow-none p-4 rounded-lg ${isCompleted ? 'bg-card/50' : 'bg-card'}`}>
             <div className="flex items-center space-x-3 mb-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-construction' : 'bg-construction'}`}>
-                {isCompleted ? <CheckCircle2 className="text-midnight" size={16} /> : <Play className="text-midnight" size={16} />}
+              <div className={`w-8 h-8 rounded-sm flex items-center justify-center ${isCompleted ? 'bg-primary' : 'bg-primary'}`}>
+                {isCompleted ? <CheckCircle2 className="text-primary-foreground" size={16} /> : <Play className="text-primary-foreground" size={16} />}
               </div>
-              <h4 className="font-oswald font-semibold text-white">{activity.title}</h4>
+              <h4 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide">{activity.title}</h4>
             </div>
             
             {activity.key === 'welcome_audio' && (
-              <p className="text-steel-light text-sm mb-3">Welcome to LEAP - Your recovery journey starts here</p>
+              <p className="text-muted-foreground text-sm mb-3 font-source">Welcome to LEAP - Your recovery journey starts here</p>
             )}
             
             {activity.key === 'trigger_audio' && (
-              <p className="text-steel-light text-sm mb-3">AI-narrated walkthrough of trigger types (1 minute)</p>
+              <p className="text-muted-foreground text-sm mb-3 font-source">AI-narrated walkthrough of trigger types (1 minute)</p>
             )}
             
             {isAudioPlaying && (
               <div className="mb-3">
-                <Progress value={audioProgress} className="h-2" />
-                <p className="text-steel-light text-xs mt-1">Playing... {Math.round(audioProgress)}%</p>
+                <Progress value={audioProgress} className="h-2 bg-muted" />
+                <p className="text-muted-foreground text-xs mt-1 font-source">Playing... {Math.round(audioProgress)}%</p>
               </div>
             )}
             
@@ -192,7 +192,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                 <Button 
                   onClick={() => simulateAudioPlay(activity.key)}
                   disabled={isAudioPlaying}
-                  className="bg-construction hover:bg-construction-dark text-midnight font-oswald"
+                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold py-3 rounded-lg"
                 >
                   {isAudioPlaying ? (
                     <>
@@ -209,7 +209,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
               ) : (
                 <Button 
                   onClick={() => simulateAudioPlay(activity.key)}
-                  className="bg-construction/20 hover:bg-construction/30 text-construction border border-construction font-oswald"
+                  className="bg-muted hover:bg-muted/80 text-muted-foreground border border-border font-source"
                 >
                   <RotateCcw size={16} className="mr-2" />
                   Replay
@@ -458,40 +458,35 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="bg-[#1A2642] border-[#F9D058] border-[1px] max-w-lg w-full max-h-[80vh] overflow-y-auto">
+      <Card className="bg-background border-0 shadow-lg max-w-lg w-full max-h-[80vh] overflow-y-auto rounded-lg">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-steel-dark">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center space-x-3">
-            <div className="bg-construction p-2 rounded-lg">
-              <Target className="text-midnight" size={20} />
+            <div className="bg-primary p-2 rounded-sm">
+              <Target className="text-primary-foreground" size={20} />
             </div>
             <div>
-              <h2 className="font-oswald font-bold text-white">Day {day}</h2>
-              <p className="text-steel-light text-sm">{dayData.theme} • {dayData.duration}</p>
+              <h2 className="font-fjalla font-bold text-foreground uppercase tracking-wide">Day {day}</h2>
+              <p className="text-muted-foreground text-sm font-source">{dayData.theme} • {dayData.duration}</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="text-steel-light hover:text-white"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted"
           >
             <X size={20} />
           </Button>
         </div>
 
         {/* Progress Indicator */}
-        <div className="p-6 border-b border-steel-dark">
+        <div className="p-6 border-b border-border">
           <div className="flex justify-between text-sm mb-2">
-            <span className="text-steel-light">Progress</span>
-            <span className="text-construction font-oswald font-bold">{completedActivities}/{activities.length}</span>
+            <span className="text-muted-foreground font-source">Progress</span>
+            <span className="text-primary font-source font-bold">{completedActivities}/{activities.length}</span>
           </div>
-          <Progress value={dayProgress} className="h-2 bg-steel-dark">
-            <div 
-              className="h-full bg-gradient-to-r from-[#F9D058] to-[#FBE89D] rounded-full transition-all duration-500"
-              style={{ width: `${dayProgress}%` }}
-            />
-          </Progress>
+          <Progress value={dayProgress} className="h-2 bg-muted" />
           
           {/* Activity dots */}
           <div className="flex justify-center space-x-2 mt-3">
@@ -500,10 +495,10 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                 key={index}
                 className={`w-2 h-2 rounded-full transition-colors ${
                   index < completedActivities
-                    ? 'bg-construction'
+                    ? 'bg-primary'
                     : index === currentActivityIndex
-                      ? 'bg-construction/50'
-                      : 'bg-steel-dark'
+                      ? 'bg-primary/50'
+                      : 'bg-muted'
                 }`}
               />
             ))}
@@ -512,7 +507,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
 
         {/* Content */}
         <div className="p-6">
-          <h3 className="font-oswald font-semibold text-white text-xl mb-4">
+          <h3 className="font-fjalla font-bold text-foreground text-xl mb-4 uppercase tracking-wide">
             {dayData.title}
           </h3>
           
@@ -522,17 +517,17 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-steel-dark">
-          <div className="flex items-center space-x-2 text-sm text-steel-light">
-            <Clock size={16} className="text-construction" />
-            <span>{dayData.duration}</span>
+        <div className="flex items-center justify-between p-6 border-t border-border">
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <Clock size={16} className="text-primary" />
+            <span className="font-source">{dayData.duration}</span>
           </div>
           
           <div className="flex space-x-3">
             <Button
               variant="outline"
               onClick={onClose}
-              className="border-steel text-steel-light hover:bg-steel/10"
+              className="border-border text-muted-foreground hover:bg-muted font-source"
             >
               Close
             </Button>
@@ -541,10 +536,10 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
               <Button
                 onClick={handleCompleteDay}
                 disabled={!allActivitiesComplete}
-                className={`font-oswald font-semibold ${
+                className={`font-source font-bold ${
                   allActivitiesComplete
-                    ? 'bg-construction hover:bg-construction-dark text-midnight'
-                    : 'bg-steel-dark text-steel-light cursor-not-allowed'
+                    ? 'bg-yellow-400 hover:bg-yellow-500 text-black'
+                    : 'bg-muted text-muted-foreground cursor-not-allowed'
                 }`}
               >
                 <CheckCircle2 size={16} className="mr-2" />
