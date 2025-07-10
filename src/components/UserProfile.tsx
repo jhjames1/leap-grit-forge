@@ -74,14 +74,15 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   }
 
   return (
-    <div className="p-4 pb-24 bg-background min-h-screen">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-          {t('profile.title')}
-        </h1>
-        <p className="text-steel-light font-oswald">{t('profile.subtitle')}</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="p-4 pb-24">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+            <span className="font-oswald font-extralight tracking-tight">{t('profile.title').split(' ')[0]}</span><span className="font-fjalla font-extrabold italic">{t('profile.title').split(' ')[1]}</span>
+          </h1>
+          <p className="text-muted-foreground font-oswald">{t('profile.subtitle')}</p>
+        </div>
 
       {/* Profile Card */}
       <Card className="bg-card mb-6 p-6 border-0 shadow-none">

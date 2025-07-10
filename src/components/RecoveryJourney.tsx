@@ -5,6 +5,8 @@ import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, Lock, Play, Clock, Target, Trophy } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import JourneyDayModal from './JourneyDayModal';
 
 const RecoveryJourney = () => {
@@ -13,6 +15,7 @@ const RecoveryJourney = () => {
   const [forceRender, setForceRender] = useState(0);
   const { userData, logActivity } = useUserData();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const totalDays = 90;
   
   // Calculate current day based on completed days - force re-calculation on userData changes
@@ -49,18 +52,18 @@ const RecoveryJourney = () => {
       if (!currentDayComplete) {
         if (Math.abs(hoursRemaining - 12) < 0.5) {
           toast({
-            title: "LEAP Reminder",
-            description: "You've got 12 hours left to complete today's LEAP. Keep going—you're doing great.",
+            title: t('journey.notifications.reminderTitle'),
+            description: t('journey.notifications.reminder12h'),
           });
         } else if (Math.abs(hoursRemaining - 3) < 0.5) {
           toast({
-            title: "Almost There",
-            description: "Almost there. Let's finish strong.",
+            title: t('journey.notifications.almostThere'),
+            description: t('journey.notifications.almostThereMsg'),
           });
         } else if (Math.abs(hoursRemaining - 1) < 0.5) {
           toast({
-            title: "Final Hour",
-            description: "One hour left today. Let's LEAP!",
+            title: t('journey.notifications.finalHour'),
+            description: t('journey.notifications.finalHourMsg'),
           });
         }
       }
@@ -76,8 +79,8 @@ const RecoveryJourney = () => {
   const week1Days = [
     {
       day: 1,
-      title: "Starting Your Journey",
-      theme: "Foundation",
+      title: t('journey.dayModules.day1.title'),
+      theme: t('journey.dayModules.day1.theme'),
       duration: "5 min",
       content: {
         type: "foundation",
@@ -88,8 +91,8 @@ const RecoveryJourney = () => {
     },
     {
       day: 2,
-      title: "Understanding Triggers",
-      theme: "Awareness", 
+      title: t('journey.dayModules.day2.title'),
+      theme: t('journey.dayModules.day2.theme'), 
       duration: "7 min",
       content: {
         type: "awareness",
@@ -101,8 +104,8 @@ const RecoveryJourney = () => {
     },
     {
       day: 3,
-      title: "Building Your Support Network",
-      theme: "Connection",
+      title: t('journey.dayModules.day3.title'),
+      theme: t('journey.dayModules.day3.theme'),
       duration: "7 min", 
       content: {
         type: "connection",
@@ -113,8 +116,8 @@ const RecoveryJourney = () => {
     },
     {
       day: 4,
-      title: "Why You Want to Recover",
-      theme: "Motivation",
+      title: t('journey.dayModules.day4.title'),
+      theme: t('journey.dayModules.day4.theme'),
       duration: "5 min",
       content: {
         type: "motivation",
@@ -125,8 +128,8 @@ const RecoveryJourney = () => {
     },
     {
       day: 5,
-      title: "Naming the Real Enemy", 
-      theme: "Identity",
+      title: t('journey.dayModules.day5.title'), 
+      theme: t('journey.dayModules.day5.theme'),
       duration: "6 min",
       content: {
         type: "identity",
@@ -137,8 +140,8 @@ const RecoveryJourney = () => {
     },
     {
       day: 6,
-      title: "Creating Your Safe Space",
-      theme: "Environment", 
+      title: t('journey.dayModules.day6.title'),
+      theme: t('journey.dayModules.day6.theme'), 
       duration: "6 min",
       content: {
         type: "environment",
@@ -149,8 +152,8 @@ const RecoveryJourney = () => {
     },
     {
       day: 7,
-      title: "One Week Strong – Quick Reflection",
-      theme: "Reflection",
+      title: t('journey.dayModules.day7.title'),
+      theme: t('journey.dayModules.day7.theme'),
       duration: "5 min",
       content: {
         type: "reflection", 
@@ -174,13 +177,13 @@ const RecoveryJourney = () => {
     } else {
       let reason = "";
       if (!isPast1201AM()) {
-        reason = "Days unlock at 12:01 AM each day";
+        reason = t('journey.notifications.unlock1201');
       } else if (!isPreviousDayCompleted) {
-        reason = `Complete Day ${day - 1} first to unlock this day`;
+        reason = t('journey.notifications.completeFirst', { day: day - 1 });
       }
       
       toast({
-        title: "Day Locked",
+        title: t('journey.notifications.dayLocked'),
         description: reason,
       });
     }
@@ -202,13 +205,13 @@ const RecoveryJourney = () => {
     
     if (day === 7) {
       toast({
-        title: "Week 1 Complete! 🏆",
-        description: "You've unlocked your Week 1 Badge. Amazing progress!",
+        title: t('journey.notifications.week1Complete'),
+        description: t('journey.notifications.week1CompleteMsg'),
       });
     } else {
       toast({
-        title: `Day ${day} Complete! ✅`,
-        description: "Great work! You're building strong recovery foundations.",
+        title: t('journey.notifications.dayComplete', { day }),
+        description: t('journey.notifications.dayCompleteMsg'),
       });
     }
   };
@@ -221,9 +224,9 @@ const RecoveryJourney = () => {
   };
 
   const getButtonText = (day: number, status: string) => {
-    if (status === 'completed') return 'Review';
-    if (status === 'unlocked') return 'Start';
-    return 'Locked';
+    if (status === 'completed') return t('journey.review');
+    if (status === 'unlocked') return t('journey.start');
+    return t('journey.locked');
   };
 
   const progress = (actualCurrentDay / totalDays) * 100;
@@ -233,29 +236,29 @@ const RecoveryJourney = () => {
       <div className="p-4 pb-24">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-5xl font-bold text-gray-900 mb-1 tracking-wide">
-          <span className="font-oswald font-extralight tracking-tight">YOUR</span><span className="font-fjalla font-extrabold italic">JOURNEY</span>
+        <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+          <span className="font-oswald font-extralight tracking-tight">{t('journey.title').split(' ')[0]}</span><span className="font-fjalla font-extrabold italic">{t('journey.title').split(' ')[1]}</span>
         </h1>
-        <p className="text-gray-600 font-oswald">90-day guided track</p>
+        <p className="text-muted-foreground font-oswald">{t('journey.subtitle')}</p>
       </div>
 
       {/* Overall Progress Card */}
-      <Card className="bg-white border-0 p-6 rounded-xl mb-6 shadow-sm">
+      <Card className="bg-card border-0 p-6 rounded-xl mb-6 shadow-sm">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-yellow-400 p-2 rounded-lg">
-            <Target className="text-black" size={20} />
+          <div className="bg-primary p-2 rounded-lg">
+            <Target className="text-primary-foreground" size={20} />
           </div>
           <div>
-            <h3 className="font-semibold text-[20px] text-gray-900">Overall Progress</h3>
-            <p className="text-gray-600 text-[16px]">
-              Day <span className="text-primary font-bold text-lg">{actualCurrentDay}</span> of {totalDays}
+            <h3 className="font-semibold text-[20px] text-card-foreground">{t('journey.overallProgress')}</h3>
+            <p className="text-muted-foreground text-[16px]">
+              {t('journey.day')} <span className="text-primary font-bold text-lg">{actualCurrentDay}</span> {t('common.of')} {totalDays}
             </p>
           </div>
         </div>
         
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Journey Progress</span>
+            <span className="text-muted-foreground">{t('journey.journeyProgress')}</span>
             <span className="text-primary font-bold text-lg">{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} className="h-3 bg-muted">
@@ -268,12 +271,12 @@ const RecoveryJourney = () => {
       </Card>
 
       {/* Week 1: Foundation */}
-      <Card className="bg-white p-6 rounded-xl mb-6 border-0 shadow-sm">
+      <Card className="bg-card p-6 rounded-xl mb-6 border-0 shadow-sm">
         <div className="flex items-center space-x-3 mb-4">
           <div className="bg-primary p-2 rounded-lg">
             <Trophy className="text-primary-foreground" size={20} />
           </div>
-          <h3 className="font-semibold text-[20px] text-gray-900">Week 1: Foundation</h3>
+          <h3 className="font-semibold text-[20px] text-card-foreground">{t('journey.weekFoundation')}</h3>
         </div>
         
         <div className="space-y-3">
@@ -293,8 +296,8 @@ const RecoveryJourney = () => {
                   isCompleted
                     ? 'bg-primary/10 border-primary/20 shadow-sm'
                     : isUnlocked
-                      ? 'bg-white hover:bg-gray-50 border-gray-200 shadow-sm'
-                      : 'bg-gray-100 opacity-60 border-gray-200'
+                      ? 'bg-card hover:bg-accent border-border shadow-sm'
+                      : 'bg-muted opacity-60 border-border'
                 }`}
               >
                 <div className="flex items-center space-x-4">
@@ -319,7 +322,7 @@ const RecoveryJourney = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="font-fjalla font-bold text-primary text-sm">
-                        DAY {dayModule.day}
+                        {t('journey.day').toUpperCase()} {dayModule.day}
                       </span>
                       <span className="text-muted-foreground text-xs">•</span>
                       <span className="text-muted-foreground text-xs font-source uppercase tracking-wide">
@@ -328,12 +331,12 @@ const RecoveryJourney = () => {
                     </div>
                     
                     <h3 className={`font-medium text-[16px] mb-1 ${
-                      isUnlocked ? 'text-gray-900' : 'text-gray-500'
+                      isUnlocked ? 'text-card-foreground' : 'text-muted-foreground'
                     }`}>
                       {dayModule.title}
                     </h3>
                     
-                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                       <Clock size={12} className="text-primary" />
                       <span>{dayModule.duration}</span>
                     </div>

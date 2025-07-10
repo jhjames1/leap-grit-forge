@@ -289,10 +289,61 @@ const englishTranslations = {
   // Journey
   journey: {
     title: 'Your Journey',
+    subtitle: '90-day guided track',
     day: 'Day',
     complete: 'Complete',
     locked: 'Locked',
-    completed: 'Completed'
+    completed: 'Completed',
+    review: 'Review',
+    start: 'Start',
+    overallProgress: 'Overall Progress',
+    journeyProgress: 'Journey Progress',
+    weekFoundation: 'Week 1: Foundation',
+    dayModules: {
+      day1: {
+        title: 'Starting Your Journey',
+        theme: 'Foundation'
+      },
+      day2: {
+        title: 'Understanding Triggers',
+        theme: 'Awareness'
+      },
+      day3: {
+        title: 'Building Your Support Network',
+        theme: 'Connection'
+      },
+      day4: {
+        title: 'Why You Want to Recover',
+        theme: 'Motivation'
+      },
+      day5: {
+        title: 'Naming the Real Enemy',
+        theme: 'Identity'
+      },
+      day6: {
+        title: 'Creating Your Safe Space',
+        theme: 'Environment'
+      },
+      day7: {
+        title: 'One Week Strong – Quick Reflection',
+        theme: 'Reflection'
+      }
+    },
+    notifications: {
+      dayLocked: 'Day Locked',
+      unlock1201: 'Days unlock at 12:01 AM each day',
+      completeFirst: 'Complete Day {{day}} first to unlock this day',
+      reminderTitle: 'LEAP Reminder',
+      reminder12h: "You've got 12 hours left to complete today's LEAP. Keep going—you're doing great.",
+      almostThere: 'Almost There',
+      almostThereMsg: "Almost there. Let's finish strong.",
+      finalHour: 'Final Hour',
+      finalHourMsg: "One hour left today. Let's LEAP!",
+      week1Complete: 'Week 1 Complete! 🏆',
+      week1CompleteMsg: "You've unlocked your Week 1 Badge. Amazing progress!",
+      dayComplete: 'Day {{day}} Complete! ✅',
+      dayCompleteMsg: "Great work! You're building strong recovery foundations."
+    }
   },
   
   // Toolbox
@@ -335,6 +386,25 @@ const englishTranslations = {
     recentActivity: {
       title: 'Recent Activity',
       empty: 'Your completed activities will appear here as you use the tools.'
+    },
+    toolTitles: {
+      emergencyHelp: 'Emergency Help',
+      emergencyDesc: 'Get immediate support',
+      foremanTitle: 'The Foreman',
+      foremanDesc: 'Mentor and Affirmations',
+      redlineTitle: 'Redline Recovery',
+      redlineDesc: 'Track urges & get redirected',
+      steadySteelTitle: 'SteadySteel',
+      steadySteelDesc: 'Interactive breathing exercise',
+      gratitudeTitle: 'Gratitude Log',
+      gratitudeDesc: 'Focus on the positive'
+    },
+    badges: {
+      emergency: 'Emergency',
+      aiChat: 'AI Chat',
+      track: 'Track',
+      calm: 'Calm',
+      mindset: 'Mindset'
     }
   },
   
@@ -360,6 +430,31 @@ const englishTranslations = {
     editProfile: "Edit Profile",
     notificationSettings: "Notification Settings",
     weeklyCheckIn: "Weekly Check-In Schedule"
+  },
+
+  // Peer Chat
+  peerChat: {
+    secureChat: 'Secure & Confidential Chat',
+    online: 'Online',
+    away: 'Away',
+    offline: 'Offline',
+    typing: '{{name}} is typing...',
+    typingPlaceholder: 'Type your message...',
+    quickActions: {
+      needSupport: 'Need Support',
+      feelingTriggered: 'Feeling Triggered',
+      goodDay: 'Good Day Today',
+      question: 'Question'
+    },
+    checkIn: {
+      title: 'Weekly Check-in Available',
+      subtitle: 'Schedule with {{name}}',
+      button: 'Schedule'
+    },
+    unavailable: {
+      calls: 'This specialist is not available for calls right now.',
+      video: 'This specialist is not available for video calls right now.'
+    }
   },
 
   // Calendar
@@ -713,10 +808,61 @@ const spanishTranslations = {
   // Journey
   journey: {
     title: 'Tu Viaje',
+    subtitle: 'Pista guiada de 90 días',
     day: 'Día',
     complete: 'Completar',
     locked: 'Bloqueado',
-    completed: 'Completado'
+    completed: 'Completado',
+    review: 'Revisar',
+    start: 'Comenzar',
+    overallProgress: 'Progreso General',
+    journeyProgress: 'Progreso del Viaje',
+    weekFoundation: 'Semana 1: Fundación',
+    dayModules: {
+      day1: {
+        title: 'Comenzando Tu Viaje',
+        theme: 'Fundación'
+      },
+      day2: {
+        title: 'Entendiendo los Disparadores',
+        theme: 'Conciencia'
+      },
+      day3: {
+        title: 'Construyendo Tu Red de Apoyo',
+        theme: 'Conexión'
+      },
+      day4: {
+        title: 'Por Qué Quieres Recuperarte',
+        theme: 'Motivación'
+      },
+      day5: {
+        title: 'Nombrando al Verdadero Enemigo',
+        theme: 'Identidad'
+      },
+      day6: {
+        title: 'Creando Tu Espacio Seguro',
+        theme: 'Ambiente'
+      },
+      day7: {
+        title: 'Una Semana Fuerte – Reflexión Rápida',
+        theme: 'Reflexión'
+      }
+    },
+    notifications: {
+      dayLocked: 'Día Bloqueado',
+      unlock1201: 'Los días se desbloquean a las 12:01 AM cada día',
+      completeFirst: 'Completa el Día {{day}} primero para desbloquear este día',
+      reminderTitle: 'Recordatorio LEAP',
+      reminder12h: "Te quedan 12 horas para completar el LEAP de hoy. Sigue así—lo estás haciendo genial.",
+      almostThere: 'Casi Allí',
+      almostThereMsg: "Casi allí. Terminemos fuerte.",
+      finalHour: 'Hora Final',
+      finalHourMsg: "Queda una hora hoy. ¡Vamos a DAR EL SALTO!",
+      week1Complete: '¡Semana 1 Completa! 🏆',
+      week1CompleteMsg: "Has desbloqueado tu Insignia de Semana 1. ¡Progreso increíble!",
+      dayComplete: '¡Día {{day}} Completo! ✅',
+      dayCompleteMsg: "¡Gran trabajo! Estás construyendo bases sólidas de recuperación."
+    }
   },
   
   // Toolbox
@@ -759,6 +905,25 @@ const spanishTranslations = {
     recentActivity: {
       title: 'Actividad Reciente',
       empty: 'Tus actividades completadas aparecerán aquí mientras uses las herramientas.'
+    },
+    toolTitles: {
+      emergencyHelp: 'Ayuda de Emergencia',
+      emergencyDesc: 'Obtén apoyo inmediato',
+      foremanTitle: 'El Capataz',
+      foremanDesc: 'Mentor y Afirmaciones',
+      redlineTitle: 'Recuperación Redline',
+      redlineDesc: 'Rastrea impulsos y redirige',
+      steadySteelTitle: 'SteadySteel',
+      steadySteelDesc: 'Ejercicio de respiración interactivo',
+      gratitudeTitle: 'Diario de Gratitud',
+      gratitudeDesc: 'Enfócate en lo positivo'
+    },
+    badges: {
+      emergency: 'Emergencia',
+      aiChat: 'Chat IA',
+      track: 'Rastrear',
+      calm: 'Calma',
+      mindset: 'Mentalidad'
     }
   },
   
@@ -784,6 +949,31 @@ const spanishTranslations = {
     editProfile: "Editar Perfil",
     notificationSettings: "Configuración de Notificaciones",
     weeklyCheckIn: "Chequeo Semanal"
+  },
+
+  // Peer Chat
+  peerChat: {
+    secureChat: 'Chat Seguro y Confidencial',
+    online: 'En línea',
+    away: 'Ausente',
+    offline: 'Desconectado',
+    typing: '{{name}} está escribiendo...',
+    typingPlaceholder: 'Escribe tu mensaje...',
+    quickActions: {
+      needSupport: 'Necesito Apoyo',
+      feelingTriggered: 'Me Siento Disparado',
+      goodDay: 'Buen Día Hoy',
+      question: 'Pregunta'
+    },
+    checkIn: {
+      title: 'Chequeo Semanal Disponible',
+      subtitle: 'Programa con {{name}}',
+      button: 'Programar'
+    },
+    unavailable: {
+      calls: 'Este especialista no está disponible para llamadas ahora.',
+      video: 'Este especialista no está disponible para videollamadas ahora.'
+    }
   },
 
   // Calendar
