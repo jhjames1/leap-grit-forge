@@ -138,7 +138,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <ThemeToggle />
                 <LanguageToggle />
               </div>
-              <div className="flex items-center space-x-2 mt-16">
+              <div className="flex items-center space-x-2 mt-20">
                 <div className="bg-primary p-2 rounded-lg">
                   <Trophy className="text-primary-foreground" size={20} />
                 </div>
