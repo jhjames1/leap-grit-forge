@@ -266,8 +266,8 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                     )}
                   </Button>
                   
-                  {/* Manual completion button */}
-                  {currentAudioActivity === activity.key && audioDuration > 0 && (
+                  {/* Manual completion button - appears 5 seconds before audio ends */}
+                  {currentAudioActivity === activity.key && audioDuration > 0 && (audioDuration - audioCurrentTime <= 5) && (
                     <Button 
                       onClick={() => markActivityComplete(activity.key)}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground font-source"
