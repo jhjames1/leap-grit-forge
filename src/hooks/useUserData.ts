@@ -71,8 +71,12 @@ export const useUserData = () => {
             urgesThisWeek: 0,
             ...data.toolboxStats
           },
-          journeyProgress: data.journeyProgress,
-          journeyResponses: data.journeyResponses,
+          journeyProgress: data.journeyProgress || {
+            completedDays: [],
+            currentWeek: 1,
+            badges: []
+          },
+          journeyResponses: data.journeyResponses || {},
           lastAccess: Date.now()
         };
         
@@ -95,6 +99,12 @@ export const useUserData = () => {
             totalSessions: 0,
             urgesThisWeek: 0
           },
+          journeyProgress: {
+            completedDays: [],
+            currentWeek: 1,
+            badges: []
+          },
+          journeyResponses: {},
           lastAccess: Date.now()
         };
         
@@ -117,6 +127,12 @@ export const useUserData = () => {
           totalSessions: 0,
           urgesThisWeek: 0
         },
+        journeyProgress: {
+          completedDays: [],
+          currentWeek: 1,
+          badges: []
+        },
+        journeyResponses: {},
         lastAccess: Date.now()
       };
       setUserData(fallbackData);

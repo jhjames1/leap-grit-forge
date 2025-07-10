@@ -10,6 +10,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { LanguageToggle } from './LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { logger } from '@/utils/logger';
+import { calculateCurrentJourneyDay } from '@/utils/journeyCalculation';
 
 interface DashboardHomeProps {
   onNavigate?: (page: string) => void;
@@ -31,7 +32,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   // Calculate recovery streak and badges based on daily activity
   const [recoveryStreak, setRecoveryStreak] = useState(0);
   const [badgeCount, setBadgeCount] = useState(0);
-  const [currentJourneyDay, setCurrentJourneyDay] = useState(1);
+  
+  // Calculate current journey day using shared utility
+  const currentJourneyDay = calculateCurrentJourneyDay(userData);
 
   useEffect(() => {
     // Load daily motivation based on user's day count
@@ -65,11 +68,6 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         logger.error('Motivation headers not found or empty', { motivationHeaders });
         setDailyMotivation(t('home.journeyContinues'));
       }
-      
-      // Set current journey day to match RecoveryJourney logic
-      const completedDays = userData?.journeyProgress?.completedDays || [];
-      const calculatedDay = Math.min(Math.max(...completedDays, 0) + 1, 90);
-      setCurrentJourneyDay(calculatedDay);
       
       if (!localStorage.getItem('userStartDate')) {
         localStorage.setItem('userStartDate', todayString);

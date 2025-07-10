@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import JourneyDayModal from './JourneyDayModal';
 import { logger } from '@/utils/logger';
+import { calculateCurrentJourneyDay, getDayStatus } from '@/utils/journeyCalculation';
 
 const RecoveryJourney = () => {
   const [currentDay, setCurrentDay] = useState(1);
@@ -19,9 +20,9 @@ const RecoveryJourney = () => {
   const { t } = useLanguage();
   const totalDays = 90;
   
-  // Calculate current day based on completed days - force re-calculation on userData changes
+  // Calculate current day based on completed days using shared utility
   const completedDays = userData?.journeyProgress?.completedDays || [];
-  const actualCurrentDay = Math.min(Math.max(...completedDays, 0) + 1, totalDays);
+  const actualCurrentDay = calculateCurrentJourneyDay(userData, totalDays);
   
   // Add useEffect to watch for userData changes and force re-render
   useEffect(() => {
@@ -215,11 +216,8 @@ const RecoveryJourney = () => {
     }
   };
 
-  const getDayStatus = (day: number) => {
-    if (completedDays.includes(day)) return 'completed';
-    const isPreviousDayCompleted = day === 1 || completedDays.includes(day - 1);
-    if (isPast1201AM() && isPreviousDayCompleted) return 'unlocked';
-    return 'locked';
+  const getDayStatusForDay = (day: number) => {
+    return getDayStatus(userData, day);
   };
 
   const getButtonText = (day: number, status: string) => {
@@ -280,7 +278,7 @@ const RecoveryJourney = () => {
         
         <div className="space-y-3">
           {week1Days.map((dayModule) => {
-            const status = getDayStatus(dayModule.day);
+            const status = getDayStatusForDay(dayModule.day);
             const isCompleted = status === 'completed';
             const isUnlocked = status === 'unlocked' || isCompleted;
             const buttonText = getButtonText(dayModule.day, status);
