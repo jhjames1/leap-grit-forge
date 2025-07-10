@@ -282,7 +282,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
             </div>
             <div>
               <h2 className="font-fjalla font-bold text-card-foreground">{t('foreman.title')}</h2>
-              <p className="text-muted-foreground text-sm font-source">Your Recovery Mentor</p>
+              <p className="text-muted-foreground text-sm font-source">{t('foreman.subtitle')}</p>
             </div>
           </div>
         </div>

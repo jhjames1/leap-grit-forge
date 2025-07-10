@@ -273,6 +273,7 @@ const englishTranslations = {
   // Foreman Chat
   foreman: {
     title: 'The Foreman',
+    subtitle: 'Your Recovery Mentor',
     greeting: {
       morning: 'Morning! Ready to build something strong today?',
       afternoon: 'Afternoon! How\'s the foundation holding up?',
@@ -421,6 +422,26 @@ const englishTranslations = {
     },
     recentActivity: 'Recent Activity',
     recentActivityEmpty: 'Your completed activities will appear here as you use the tools.',
+    peerSupport: {
+      title: 'PEER SUPPORT',
+      subtitle: 'Choose someone to talk with',
+      yearsInRecovery: 'Years in Recovery:',
+      status: {
+        online: 'Online',
+        away: 'Away',
+        offline: 'Offline'
+      },
+      actions: {
+        startChat: 'Start Chat',
+        leaveMessage: 'Leave Message'
+      },
+      emergencySupport: {
+        title: 'Need Immediate Support?',
+        description: 'If you\'re in crisis, call the National Suicide Prevention Lifeline',
+        callButton: 'Call 988'
+      },
+      offlineConfirm: 'is currently offline. Would you like to leave a message?'
+    },
     toolTitles: {
       emergencyHelp: 'Emergency Help',
       emergencyDesc: 'Get immediate support',
@@ -810,6 +831,7 @@ const spanishTranslations = {
   // Foreman Chat
   foreman: {
     title: 'El Capataz',
+    subtitle: 'Tu Mentor de Recuperación',
     greeting: {
       morning: '¡Buenos días! ¿Listo para construir algo fuerte hoy?',
       afternoon: '¡Buenas tardes! ¿Cómo se mantiene la base?',
@@ -958,6 +980,26 @@ const spanishTranslations = {
     },
     recentActivity: 'Actividad Reciente',
     recentActivityEmpty: 'Tus actividades completadas aparecerán aquí mientras uses las herramientas.',
+    peerSupport: {
+      title: 'APOYO ENTRE PARES',
+      subtitle: 'Elige alguien con quien hablar',
+      yearsInRecovery: 'Años en Recuperación:',
+      status: {
+        online: 'En línea',
+        away: 'Ausente',
+        offline: 'Desconectado'
+      },
+      actions: {
+        startChat: 'Iniciar Chat',
+        leaveMessage: 'Dejar Mensaje'
+      },
+      emergencySupport: {
+        title: '¿Necesitas Apoyo Inmediato?',
+        description: 'Si estás en crisis, llama a la Línea Nacional de Prevención del Suicidio',
+        callButton: 'Llamar 988'
+      },
+      offlineConfirm: 'está desconectado actualmente. ¿Te gustaría dejar un mensaje?'
+    },
     toolTitles: {
       emergencyHelp: 'Ayuda de Emergencia',
       emergencyDesc: 'Obtén apoyo inmediato',

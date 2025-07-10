@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, User, MessageCircle, Video, Phone } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PeerSelectionProps {
   onBack: () => void;
@@ -11,6 +12,7 @@ interface PeerSelectionProps {
 }
 
 const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
+  const { t } = useLanguage();
   const [peers] = useState([
     {
       id: 1,
@@ -53,16 +55,16 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'online': return 'Online';
-      case 'away': return 'Away';
-      case 'offline': return 'Offline';
+      case 'online': return t('toolbox.peerSupport.status.online');
+      case 'away': return t('toolbox.peerSupport.status.away');
+      case 'offline': return t('toolbox.peerSupport.status.offline');
       default: return 'Unknown';
     }
   };
 
   const handleSelectPeer = (peer: any) => {
     if (peer.status === 'offline') {
-      const leaveMessage = confirm(`${peer.name} is currently offline. Would you like to leave a message?`);
+      const leaveMessage = confirm(`${peer.name} ${t('toolbox.peerSupport.offlineConfirm')}`);
       if (leaveMessage) {
         onSelectPeer({ ...peer, isOfflineMessage: true });
       }
@@ -86,9 +88,9 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
         </Button>
         <div>
           <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-            <span className="font-oswald font-extralight tracking-tight">PEER</span><span className="font-fjalla font-extrabold italic">SUPPORT</span>
+            <span className="font-oswald font-extralight tracking-tight">{t('toolbox.peerSupport.title').split(' ')[0]}</span><span className="font-fjalla font-extrabold italic">{t('toolbox.peerSupport.title').split(' ')[1]}</span>
           </h1>
-          <p className="text-steel-light font-oswald">Choose someone to talk with</p>
+          <p className="text-steel-light font-oswald">{t('toolbox.peerSupport.subtitle')}</p>
         </div>
       </div>
 
@@ -112,7 +114,7 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
                   </Badge>
                 </div>
                 
-                <p className="text-muted-foreground text-sm mb-2">Years in Recovery: {peer.yearsInRecovery}</p>
+                <p className="text-muted-foreground text-sm mb-2">{t('toolbox.peerSupport.yearsInRecovery')} {peer.yearsInRecovery}</p>
                 <p className="text-muted-foreground text-xs mb-3">{peer.availability}</p>
                 
                 <div className="flex space-x-2">
@@ -123,7 +125,7 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
                     disabled={peer.status === 'offline'}
                   >
                     <MessageCircle size={14} className="mr-1" />
-                    {peer.status === 'offline' ? 'Leave Message' : 'Start Chat'}
+                    {peer.status === 'offline' ? t('toolbox.peerSupport.actions.leaveMessage') : t('toolbox.peerSupport.actions.startChat')}
                   </Button>
                   
                   {peer.status === 'online' && (
@@ -154,13 +156,13 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
       {/* Emergency Support */}
       <Card className="bg-red-500/10 border-red-500/30 p-4 mt-6 border-0 shadow-none">
         <div className="text-center">
-          <h3 className="font-fjalla font-bold text-card-foreground mb-2">Need Immediate Support?</h3>
-          <p className="text-muted-foreground text-sm mb-3">If you're in crisis, call the National Suicide Prevention Lifeline</p>
+          <h3 className="font-fjalla font-bold text-card-foreground mb-2">{t('toolbox.peerSupport.emergencySupport.title')}</h3>
+          <p className="text-muted-foreground text-sm mb-3">{t('toolbox.peerSupport.emergencySupport.description')}</p>
           <Button 
             onClick={() => window.location.href = 'tel:988'}
             className="bg-red-500 hover:bg-red-600 text-white font-oswald font-semibold"
           >
-            Call 988
+            {t('toolbox.peerSupport.emergencySupport.callButton')}
           </Button>
         </div>
       </Card>
