@@ -675,6 +675,88 @@ const englishTranslations = {
     }
   },
 
+  // About page
+  about: {
+    title: 'ABOUT',
+    subtitle: 'Your recovery companion',
+    mission: {
+      title: 'Our Mission',
+      description: 'LEAP is designed specifically for men in labor-intensive fields who are navigating their journey. We understand the unique challenges you face and provide practical, no-nonsense tools to support your progress.'
+    },
+    privacy: {
+      title: 'Your Privacy Matters',
+      anonymity: 'Complete Anonymity:',
+      anonymityDesc: 'Your identity is protected. You can use the app without revealing personal information.',
+      communication: 'Secure Communication:',
+      communicationDesc: 'All peer chats and check-ins are encrypted and confidential.',
+      judgment: 'No Judgment Zone:',
+      judgmentDesc: 'This is your safe space to be honest about your struggles and victories.'
+    },
+    community: {
+      title: 'Peer Support',
+      description: 'Connect with certified peer specialists who understand your industry and challenges. They\'ve walked this path and are here to support you without judgment.'
+    },
+    values: {
+      title: 'Our Values',
+      respect: 'Respect:',
+      respectDesc: 'Your journey, your pace, your choices',
+      strength: 'Strength:',
+      strengthDesc: 'Building on the resilience you already have',
+      connection: 'Connection:',
+      connectionDesc: 'You don\'t have to do this alone',
+      progress: 'Progress:',
+      progressDesc: 'Every step forward counts'
+    },
+    terms: {
+      title: 'Terms & Conditions',
+      usage: 'By using LEAP, you agree to use the app responsibly and respect the privacy of other users.',
+      medical: 'This app is a support tool and does not replace professional medical advice or treatment.',
+      emergency: 'In case of emergency or immediate danger, please contact 911 or your local emergency services.',
+      crisis: 'For crisis support, contact the National Suicide Prevention Lifeline at 988.'
+    },
+    footer: 'LEAP is proudly developed by Thriving United, dedicated to supporting recovery in working communities.'
+  },
+
+  // Admin Dashboard
+  admin: {
+    title: 'ADMIN',
+    dashboardTitle: 'DASHBOARD',
+    subtitle: 'Recovery engagement analytics',
+    back: 'Back',
+    tabs: {
+      overview: 'Overview',
+      security: 'Security'
+    },
+    timeframes: {
+      week: 'Week',
+      month: 'Month',
+      quarter: 'Quarter'
+    },
+    metrics: {
+      totalUsers: 'Total Users',
+      activeUsers: 'Active Users',
+      avgStrength: 'Avg Strength',
+      atRisk: 'At Risk'
+    },
+    sections: {
+      domainEngagement: 'Domain Engagement',
+      userRiskAssessment: 'User Risk Assessment',
+      strength: 'Strength'
+    },
+    domains: {
+      peerSupport: 'Peer Support',
+      selfCare: 'Self-Care',
+      structure: 'Structure',
+      mood: 'Mood',
+      cravingControl: 'Craving Control'
+    },
+    riskLevels: {
+      high: 'HIGH',
+      medium: 'MEDIUM',
+      low: 'LOW'
+    }
+  },
+
   // Common
   common: {
     back: 'Back',
@@ -1265,6 +1347,88 @@ const spanishTranslations = {
       moderate: "Moderado",
       strong: "Fuerte",
       redZone: "Zona Roja"
+    }
+  },
+
+  // About page
+  about: {
+    title: 'ACERCA DE',
+    subtitle: 'Tu compañero de recuperación',
+    mission: {
+      title: 'Nuestra Misión',
+      description: 'LEAP está diseñado específicamente para hombres en campos de trabajo intensivo que están navegando su viaje. Entendemos los desafíos únicos que enfrentas y proporcionamos herramientas prácticas y sin tonterías para apoyar tu progreso.'
+    },
+    privacy: {
+      title: 'Tu Privacidad Importa',
+      anonymity: 'Anonimato Completo:',
+      anonymityDesc: 'Tu identidad está protegida. Puedes usar la aplicación sin revelar información personal.',
+      communication: 'Comunicación Segura:',
+      communicationDesc: 'Todos los chats con pares y chequeos están encriptados y son confidenciales.',
+      judgment: 'Zona Sin Juicios:',
+      judgmentDesc: 'Este es tu espacio seguro para ser honesto sobre tus luchas y victorias.'
+    },
+    community: {
+      title: 'Apoyo Entre Pares',
+      description: 'Conéctate con especialistas pares certificados que entienden tu industria y desafíos. Han caminado este sendero y están aquí para apoyarte sin juicios.'
+    },
+    values: {
+      title: 'Nuestros Valores',
+      respect: 'Respeto:',
+      respectDesc: 'Tu viaje, tu ritmo, tus elecciones',
+      strength: 'Fuerza:',
+      strengthDesc: 'Construyendo sobre la resistencia que ya tienes',
+      connection: 'Conexión:',
+      connectionDesc: 'No tienes que hacer esto solo',
+      progress: 'Progreso:',
+      progressDesc: 'Cada paso adelante cuenta'
+    },
+    terms: {
+      title: 'Términos y Condiciones',
+      usage: 'Al usar LEAP, aceptas usar la aplicación responsablemente y respetar la privacidad de otros usuarios.',
+      medical: 'Esta aplicación es una herramienta de apoyo y no reemplaza el consejo médico profesional o tratamiento.',
+      emergency: 'En caso de emergencia o peligro inmediato, por favor contacta al 911 o tus servicios de emergencia locales.',
+      crisis: 'Para apoyo en crisis, contacta a la Línea Nacional de Prevención del Suicidio al 988.'
+    },
+    footer: 'LEAP es desarrollado con orgullo por Thriving United, dedicado a apoyar la recuperación en comunidades trabajadoras.'
+  },
+
+  // Admin Dashboard
+  admin: {
+    title: 'ADMIN',
+    dashboardTitle: 'PANEL',
+    subtitle: 'Análisis de participación en recuperación',
+    back: 'Atrás',
+    tabs: {
+      overview: 'Resumen',
+      security: 'Seguridad'
+    },
+    timeframes: {
+      week: 'Semana',
+      month: 'Mes',
+      quarter: 'Trimestre'
+    },
+    metrics: {
+      totalUsers: 'Total de Usuarios',
+      activeUsers: 'Usuarios Activos',
+      avgStrength: 'Fuerza Promedio',
+      atRisk: 'En Riesgo'
+    },
+    sections: {
+      domainEngagement: 'Participación por Dominio',
+      userRiskAssessment: 'Evaluación de Riesgo de Usuario',
+      strength: 'Fuerza'
+    },
+    domains: {
+      peerSupport: 'Apoyo Entre Pares',
+      selfCare: 'Autocuidado',
+      structure: 'Estructura',
+      mood: 'Estado de Ánimo',
+      cravingControl: 'Control de Antojos'
+    },
+    riskLevels: {
+      high: 'ALTO',
+      medium: 'MEDIO',
+      low: 'BAJO'
     }
   },
 

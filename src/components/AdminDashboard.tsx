@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLanguage } from '@/contexts/LanguageContext';
 import SecurityAuditPanel from './SecurityAuditPanel';
 import { 
   Users, 
@@ -23,6 +24,7 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
+  const { t } = useLanguage();
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
 
   // Mock data - would come from backend
@@ -32,11 +34,11 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
     avgStrength: 67,
     riskUsers: 12,
     engagementTrends: [
-      { domain: 'Peer Support', avg: 72, trend: '+5%' },
-      { domain: 'Self-Care', avg: 68, trend: '+3%' },
-      { domain: 'Structure', avg: 65, trend: '+2%' },
-      { domain: 'Mood', avg: 61, trend: '-1%' },
-      { domain: 'Craving Control', avg: 58, trend: '-3%' }
+      { domain: t('admin.domains.peerSupport'), avg: 72, trend: '+5%' },
+      { domain: t('admin.domains.selfCare'), avg: 68, trend: '+3%' },
+      { domain: t('admin.domains.structure'), avg: 65, trend: '+2%' },
+      { domain: t('admin.domains.mood'), avg: 61, trend: '-1%' },
+      { domain: t('admin.domains.cravingControl'), avg: 58, trend: '-3%' }
     ],
     heatmapData: [
       { user: 'User001', strength: 85, lastActive: '2 hours ago', risk: 'low' },
@@ -69,25 +71,25 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-            <span className="font-oswald font-extralight tracking-tight">ADMIN</span><span className="font-fjalla font-extrabold italic">DASHBOARD</span>
+            <span className="font-oswald font-extralight tracking-tight">{t('admin.title')}</span><span className="font-fjalla font-extrabold italic">{t('admin.dashboardTitle')}</span>
           </h1>
-          <p className="text-steel-light font-oswald">Recovery engagement analytics</p>
+          <p className="text-steel-light font-oswald">{t('admin.subtitle')}</p>
         </div>
         <Button 
           onClick={onBack}
           variant="outline"
           className="border-steel text-steel-light hover:bg-steel/10"
         >
-          Back
+          {t('admin.back')}
         </Button>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="bg-steel-dark border-steel">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="overview">{t('admin.tabs.overview')}</TabsTrigger>
           <TabsTrigger value="security">
             <Shield className="mr-2 h-4 w-4" />
-            Security
+            {t('admin.tabs.security')}
           </TabsTrigger>
         </TabsList>
 
@@ -105,7 +107,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               'border-steel text-steel-light hover:bg-steel/10'
             }
           >
-            {period.charAt(0).toUpperCase() + period.slice(1)}
+            {t(`admin.timeframes.${period}`)}
           </Button>
         ))}
       </div>
@@ -119,7 +121,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
             </div>
             <div>
               <div className="text-2xl font-anton text-white">{mockData.totalUsers}</div>
-              <div className="text-xs text-steel-light font-oswald">Total Users</div>
+              <div className="text-xs text-steel-light font-oswald">{t('admin.metrics.totalUsers')}</div>
             </div>
           </div>
         </Card>
@@ -131,7 +133,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
             </div>
             <div>
               <div className="text-2xl font-anton text-white">{mockData.activeUsers}</div>
-              <div className="text-xs text-steel-light font-oswald">Active Users</div>
+              <div className="text-xs text-steel-light font-oswald">{t('admin.metrics.activeUsers')}</div>
             </div>
           </div>
         </Card>
@@ -143,7 +145,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
             </div>
             <div>
               <div className="text-2xl font-anton text-white">{mockData.avgStrength}%</div>
-              <div className="text-xs text-steel-light font-oswald">Avg Strength</div>
+              <div className="text-xs text-steel-light font-oswald">{t('admin.metrics.avgStrength')}</div>
             </div>
           </div>
         </Card>
@@ -155,7 +157,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
             </div>
             <div>
               <div className="text-2xl font-anton text-white">{mockData.riskUsers}</div>
-              <div className="text-xs text-steel-light font-oswald">At Risk</div>
+              <div className="text-xs text-steel-light font-oswald">{t('admin.metrics.atRisk')}</div>
             </div>
           </div>
         </Card>
@@ -167,7 +169,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
           <div className="bg-construction/20 p-2 rounded-lg">
             <BarChart3 className="text-construction" size={20} />
           </div>
-          <h3 className="font-oswald font-semibold text-white">Domain Engagement</h3>
+          <h3 className="font-oswald font-semibold text-white">{t('admin.sections.domainEngagement')}</h3>
         </div>
         
         <div className="space-y-3">
@@ -194,7 +196,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
           <div className="bg-construction/20 p-2 rounded-lg">
             <Target className="text-construction" size={20} />
           </div>
-          <h3 className="font-oswald font-semibold text-white">User Risk Assessment</h3>
+          <h3 className="font-oswald font-semibold text-white">{t('admin.sections.userRiskAssessment')}</h3>
         </div>
         
         <div className="space-y-3">
@@ -210,10 +212,10 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               <div className="flex items-center space-x-3">
                 <div className="text-right">
                   <div className="text-lg font-anton text-construction">{user.strength}%</div>
-                  <div className="text-xs text-steel-light">Strength</div>
+                  <div className="text-xs text-steel-light">{t('admin.sections.strength')}</div>
                 </div>
                 <Badge className={getRiskBadge(user.risk)}>
-                  {user.risk.toUpperCase()}
+                  {t(`admin.riskLevels.${user.risk}`)}
                 </Badge>
               </div>
             </div>

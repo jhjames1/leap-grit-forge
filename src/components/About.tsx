@@ -2,12 +2,15 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Shield, Users, Target, Heart, ArrowLeft } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AboutProps {
   onBack: () => void;
 }
 
 const About = ({ onBack }: AboutProps) => {
+  const { t } = useLanguage();
+
   return (
     <div className="p-4 pb-24 bg-background min-h-screen">
       {/* Header */}
@@ -22,9 +25,9 @@ const About = ({ onBack }: AboutProps) => {
         </Button>
         <div>
           <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-            <span className="font-oswald font-extralight tracking-tight">ABOUT</span><span className="font-fjalla font-extrabold italic">LEAP</span>
+            <span className="font-oswald font-extralight tracking-tight">{t('about.title').split('LEAP')[0]}</span><span className="font-fjalla font-extrabold italic">LEAP</span>
           </h1>
-          <p className="text-steel-light font-oswald">Your recovery companion</p>
+          <p className="text-steel-light font-oswald">{t('about.subtitle')}</p>
         </div>
       </div>
 
@@ -36,12 +39,11 @@ const About = ({ onBack }: AboutProps) => {
               <Target className="text-primary-foreground" size={20} />
             </div>
             <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">
-              Our Mission
+              {t('about.mission.title')}
             </h3>
           </div>
           <p className="text-card-foreground text-sm leading-relaxed">
-            LEAP is designed specifically for men in labor-intensive fields who are navigating their journey. 
-            We understand the unique challenges you face and provide practical, no-nonsense tools to support your progress.
+            {t('about.mission.description')}
           </p>
         </Card>
 
@@ -51,17 +53,17 @@ const About = ({ onBack }: AboutProps) => {
             <div className="bg-primary p-2 rounded-sm mr-3">
               <Shield className="text-primary-foreground" size={20} />
             </div>
-            <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">Your Privacy Matters</h3>
+            <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">{t('about.privacy.title')}</h3>
           </div>
           <div className="space-y-3 text-card-foreground text-sm">
             <p>
-              <strong className="text-card-foreground">Complete Anonymity:</strong> Your identity is protected. You can use the app without revealing personal information.
+              <strong className="text-card-foreground">{t('about.privacy.anonymity')}</strong> {t('about.privacy.anonymityDesc')}
             </p>
             <p>
-              <strong className="text-card-foreground">Secure Communication:</strong> All peer chats and check-ins are encrypted and confidential.
+              <strong className="text-card-foreground">{t('about.privacy.communication')}</strong> {t('about.privacy.communicationDesc')}
             </p>
             <p>
-              <strong className="text-card-foreground">No Judgment Zone:</strong> This is your safe space to be honest about your struggles and victories.
+              <strong className="text-card-foreground">{t('about.privacy.judgment')}</strong> {t('about.privacy.judgmentDesc')}
             </p>
           </div>
         </Card>
@@ -72,11 +74,10 @@ const About = ({ onBack }: AboutProps) => {
             <div className="bg-primary p-2 rounded-sm mr-3">
               <Users className="text-primary-foreground" size={20} />
             </div>
-            <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">Peer Support</h3>
+            <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">{t('about.community.title')}</h3>
           </div>
           <p className="text-card-foreground text-sm leading-relaxed">
-            Connect with certified peer specialists who understand your industry and challenges. 
-            They've walked this path and are here to support you without judgment.
+            {t('about.community.description')}
           </p>
         </Card>
 
@@ -86,31 +87,31 @@ const About = ({ onBack }: AboutProps) => {
             <div className="bg-primary p-2 rounded-sm mr-3">
               <Heart className="text-primary-foreground" size={20} />
             </div>
-            <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">Our Values</h3>
+            <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">{t('about.values.title')}</h3>
           </div>
           <div className="space-y-2 text-card-foreground text-sm">
-            <p>• <strong className="text-card-foreground">Respect:</strong> Your journey, your pace, your choices</p>
-            <p>• <strong className="text-card-foreground">Strength:</strong> Building on the resilience you already have</p>
-            <p>• <strong className="text-card-foreground">Connection:</strong> You don't have to do this alone</p>
-            <p>• <strong className="text-card-foreground">Progress:</strong> Every step forward counts</p>
+            <p>• <strong className="text-card-foreground">{t('about.values.respect')}</strong> {t('about.values.respectDesc')}</p>
+            <p>• <strong className="text-card-foreground">{t('about.values.strength')}</strong> {t('about.values.strengthDesc')}</p>
+            <p>• <strong className="text-card-foreground">{t('about.values.connection')}</strong> {t('about.values.connectionDesc')}</p>
+            <p>• <strong className="text-card-foreground">{t('about.values.progress')}</strong> {t('about.values.progressDesc')}</p>
           </div>
         </Card>
 
         {/* Terms */}
         <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
-          <h3 className="font-fjalla font-bold text-card-foreground text-xl mb-4 tracking-wide">Terms & Conditions</h3>
+          <h3 className="font-fjalla font-bold text-card-foreground text-xl mb-4 tracking-wide">{t('about.terms.title')}</h3>
           <div className="space-y-3 text-card-foreground text-sm">
             <p>
-              By using LEAP, you agree to use the app responsibly and respect the privacy of other users.
+              {t('about.terms.usage')}
             </p>
             <p>
-              This app is a support tool and does not replace professional medical advice or treatment.
+              {t('about.terms.medical')}
             </p>
             <p>
-              In case of emergency or immediate danger, please contact 911 or your local emergency services.
+              {t('about.terms.emergency')}
             </p>
             <p>
-              For crisis support, contact the National Suicide Prevention Lifeline at 988.
+              {t('about.terms.crisis')}
             </p>
           </div>
         </Card>
@@ -124,7 +125,7 @@ const About = ({ onBack }: AboutProps) => {
               className="h-16 w-auto mx-auto mb-4 opacity-90"
             />
             <p className="text-muted-foreground text-sm">
-              LEAP is proudly developed by Thriving United, dedicated to supporting recovery in working communities.
+              {t('about.footer')}
             </p>
           </div>
         </Card>
