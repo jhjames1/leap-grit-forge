@@ -40,7 +40,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
 
   // Audio URLs for different activities - language-aware
   const audioUrls = {
-    welcome_audio: language === 'es' ? '/lovable-uploads/Welcome-to-LEAPes.mp3' : '/lovable-uploads/Welcome to LEAP.mp3',
+    welcome_audio: language === 'es' ? '/lovable-uploads/Welcome-to-LEAPes.mp3' : '/lovable-uploads/Welcome to LEAPen.mp3',
     trigger_audio: '' // Add more audio URLs as needed
   };
 
