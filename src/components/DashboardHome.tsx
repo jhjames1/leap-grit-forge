@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Flame, Target, Trophy, Calendar, MessageCircle, Bot, ChevronRight, Play } from 'lucide-react';
+import { Flame, Target, Trophy, Calendar, MessageCircle, Bot, ChevronRight, Play, Shield, Zap } from 'lucide-react';
 import SMSOptIn from './SMSOptIn';
 import { useUserData } from '@/hooks/useUserData';
 import PhoneNumberPrompt from './PhoneNumberPrompt';
@@ -11,6 +11,7 @@ import { LanguageToggle } from './LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { logger } from '@/utils/logger';
 import { calculateCurrentJourneyDay } from '@/utils/journeyCalculation';
+import { trackingManager } from '@/utils/trackingManager';
 
 interface DashboardHomeProps {
   onNavigate?: (page: string) => void;
@@ -26,8 +27,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   // Daily motivation logic
   const [dailyMotivation, setDailyMotivation] = useState('');
 
-  // Remove the hard-coded dailyQuotes array since it's now in the language context
-  // const dailyQuotes = [...] - removed
+  // Real-time tracking data
+  const [dailyStats, setDailyStats] = useState<any>(null);
+  const [streakData, setStreakData] = useState<any>(null);
 
   // Calculate recovery streak and badges based on daily activity
   const [recoveryStreak, setRecoveryStreak] = useState(0);
@@ -74,32 +76,44 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       }
     }
 
-    // Calculate recovery streak
-    const activityLog = userData?.activityLog || [];
-    let currentStreak = 0;
-    
-    for (let i = 0; i < 365; i++) {
-      const checkDate = new Date(currentDate);
-      checkDate.setDate(currentDate.getDate() - i);
-      const dateString = checkDate.toDateString();
-      
-      const hasActivity = activityLog.some(entry => 
-        new Date(entry.timestamp).toDateString() === dateString
-      );
-      
-      if (hasActivity) {
-        currentStreak++;
-      } else if (i === 0) {
-        continue;
-      } else {
-        break;
+    // Load real-time tracking data
+    if (userData) {
+      try {
+        const stats = trackingManager.getTodaysStats();
+        const streak = trackingManager.getStreakData();
+        setDailyStats(stats);
+        setStreakData(streak);
+        setRecoveryStreak(streak.currentStreak);
+      } catch (error) {
+        console.error('Failed to load tracking stats:', error);
+        // Fallback to legacy calculation
+        const activityLog = userData?.activityLog || [];
+        let currentStreak = 0;
+        
+        for (let i = 0; i < 365; i++) {
+          const checkDate = new Date(currentDate);
+          checkDate.setDate(currentDate.getDate() - i);
+          const dateString = checkDate.toDateString();
+          
+          const hasActivity = activityLog.some(entry => 
+            new Date(entry.timestamp).toDateString() === dateString
+          );
+          
+          if (hasActivity) {
+            currentStreak++;
+          } else if (i === 0) {
+            continue;
+          } else {
+            break;
+          }
+        }
+        
+        setRecoveryStreak(currentStreak);
       }
     }
     
-    setRecoveryStreak(currentStreak);
-    
     // Calculate badge count based on activities completed
-    const uniqueActivities = new Set(activityLog.map(entry => entry.action));
+    const uniqueActivities = new Set((userData?.activityLog || []).map(entry => entry.action));
     setBadgeCount(uniqueActivities.size);
   }, [userData, language]);  // Add language dependency to refresh translations
 
@@ -261,6 +275,38 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </div>
         </Card>
 
+        {/* Recovery Strength Preview */}
+        {dailyStats && (
+          <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-fjalla font-bold text-card-foreground text-base tracking-wide">
+                {t('home.recoveryStrength') || 'RECOVERY STRENGTH'}
+              </h3>
+              <div className="text-2xl font-bold text-primary">{dailyStats.recoveryStrength}%</div>
+            </div>
+            <div className="flex items-center space-x-2 mb-3">
+              <Shield className="text-primary" size={16} />
+              <span className="text-sm text-muted-foreground">
+                {t('home.wellnessLevel') || 'Wellness Level'}: {dailyStats.wellnessLevel}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center space-x-2">
+                <Zap className="text-blue-500" size={14} />
+                <span className="text-muted-foreground">
+                  {dailyStats.actionsToday} {t('home.actionsToday') || 'actions today'}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Target className="text-green-500" size={14} />
+                <span className="text-muted-foreground">
+                  {dailyStats.toolsUsedToday} {t('home.toolsUsed') || 'tools used'}
+                </span>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Bottom Action Cards */}
         <div className="grid grid-cols-2 gap-4">
           <Card 
@@ -276,13 +322,13 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </Card>
           <Card 
             className="bg-card p-4 rounded-lg cursor-pointer hover:shadow-md transition-all duration-300 border-0 shadow-none"
-            onClick={() => onNavigate?.('chat')}
+            onClick={() => onNavigate?.('recovery-strength')}
           >
             <div className="flex flex-col items-center space-y-2">
               <div className="bg-primary p-3 rounded-lg">
-                <MessageCircle className="text-primary-foreground" size={20} />
+                <Shield className="text-primary-foreground" size={20} />
               </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">{t('nav.chatSupport').toUpperCase()}</h3>
+              <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">{t('nav.recoveryStrength') || 'RECOVERY STRENGTH'}</h3>
             </div>
           </Card>
         </div>
