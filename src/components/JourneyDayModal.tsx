@@ -38,7 +38,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
 
   // Audio URLs for different activities
   const audioUrls = {
-    welcome_audio: 'https://www.dropbox.com/scl/fi/krpggc0p4uypijf6ymqa1/Welcome-to-LEAP.mp3?rlkey=hy2sq0uh3zwog1qos4d06d6o8&st=ucb1aald&dl=1',
+    welcome_audio: '/lovable-uploads/Welcome to LEAP.mp3',
     trigger_audio: '' // Add more audio URLs as needed
   };
 
