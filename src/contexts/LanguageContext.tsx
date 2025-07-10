@@ -77,6 +77,94 @@ function getTranslation(key: string, language: Language): string {
 
 // English translations
 const englishTranslations = {
+  // User Auth
+  auth: {
+    welcome: {
+      title: 'Welcome to LEAP',
+      subtitle: 'Enter your first name to get started'
+    },
+    firstName: {
+      label: 'First Name',
+      placeholder: 'Enter your first name',
+      required: 'Please enter your first name'
+    },
+    button: {
+      enter: 'Enter App',
+      processing: 'Processing...'
+    },
+    error: {
+      general: 'An error occurred. Please try again.'
+    }
+  },
+
+  // Onboarding
+  onboarding: {
+    step1: {
+      title: 'What brings you to LEAP today?',
+      subtitle: 'Choose what you\'d like to build strength around.'
+    },
+    step2: {
+      title: 'Where are you in your journey?',
+      subtitle: 'We\'ll personalize things based on where you are.'
+    },
+    step3: {
+      title: 'What helps you feel focused?',
+      subtitle: 'We\'ll adjust your daily support to match your style.'
+    },
+    step4: {
+      title: 'What\'s your first name?',
+      subtitle: '(Optional, but helpful)',
+      placeholder: 'Enter your first name'
+    },
+    button: {
+      continue: 'Continue',
+      letsLeap: 'Let\'s LEAP'
+    },
+    success: {
+      title: 'Welcome to LEAP',
+      subtitle: 'Let\'s take it one day at a time.'
+    }
+  },
+  
+  // Focus Areas
+  focus: {
+    toughMoments: 'Managing tough moments',
+    connections: 'Building stronger connections',
+    routines: 'Creating healthy routines',
+    tools: 'Finding tools that work',
+    stayingTrack: 'Staying on track'
+  },
+  
+  // Journey Stages
+  journeyStages: {
+    starting: 'Just starting out',
+    fewWeeks: 'A few weeks in',
+    fewMonths: 'A few months strong',
+    steady: 'Feeling steady, but staying sharp',
+    startingAgain: 'Starting again after a pause'
+  },
+  
+  // Support Styles
+  support: {
+    reflection: 'Quiet reflection & journaling',
+    audio: 'Calming audio support',
+    goals: 'Simple daily goals',
+    progress: 'Seeing your progress',
+    connection: 'Knowing someone\'s there'
+  },
+
+  // Personalized Greeting
+  greeting: {
+    good: 'Good',
+    morning: 'morning',
+    afternoon: 'afternoon',
+    evening: 'evening',
+    gladYoureHere: 'I\'m glad you\'re here.',
+    button: {
+      letsLeap: 'Let\'s LEAP'
+    }
+  },
+
   // Navigation
   nav: {
     home: 'Home',
@@ -196,6 +284,94 @@ const englishTranslations = {
 
 // Spanish translations
 const spanishTranslations = {
+  // User Auth
+  auth: {
+    welcome: {
+      title: 'Bienvenido a LEAP',
+      subtitle: 'Ingresa tu nombre para comenzar'
+    },
+    firstName: {
+      label: 'Nombre',
+      placeholder: 'Ingresa tu nombre',
+      required: 'Por favor ingresa tu nombre'
+    },
+    button: {
+      enter: 'Entrar a la App',
+      processing: 'Procesando...'
+    },
+    error: {
+      general: 'Ocurrió un error. Por favor intenta de nuevo.'
+    }
+  },
+
+  // Onboarding
+  onboarding: {
+    step1: {
+      title: '¿Qué te trae a LEAP hoy?',
+      subtitle: 'Elige en qué te gustaría fortalecer.'
+    },
+    step2: {
+      title: '¿Dónde estás en tu camino?',
+      subtitle: 'Personalizaremos según donde te encuentres.'
+    },
+    step3: {
+      title: '¿Qué te ayuda a sentirte enfocado?',
+      subtitle: 'Ajustaremos tu apoyo diario según tu estilo.'
+    },
+    step4: {
+      title: '¿Cuál es tu nombre?',
+      subtitle: '(Opcional, pero útil)',
+      placeholder: 'Ingresa tu nombre'
+    },
+    button: {
+      continue: 'Continuar',
+      letsLeap: 'Vamos a DAR EL SALTO'
+    },
+    success: {
+      title: 'Bienvenido a LEAP',
+      subtitle: 'Vamos día a día.'
+    }
+  },
+  
+  // Focus Areas
+  focus: {
+    toughMoments: 'Manejar momentos difíciles',
+    connections: 'Construir conexiones más fuertes',
+    routines: 'Crear rutinas saludables',
+    tools: 'Encontrar herramientas que funcionen',
+    stayingTrack: 'Mantenerme en el camino'
+  },
+  
+  // Journey Stages
+  journeyStages: {
+    starting: 'Apenas comenzando',
+    fewWeeks: 'Unas semanas en el camino',
+    fewMonths: 'Unos meses fuerte',
+    steady: 'Sintiéndome estable, pero manteniéndome alerta',
+    startingAgain: 'Comenzando de nuevo después de una pausa'
+  },
+  
+  // Support Styles
+  support: {
+    reflection: 'Reflexión tranquila y escritura',
+    audio: 'Apoyo de audio calmante',
+    goals: 'Metas diarias simples',
+    progress: 'Ver tu progreso',
+    connection: 'Saber que alguien está ahí'
+  },
+
+  // Personalized Greeting
+  greeting: {
+    good: 'Buenos',
+    morning: 'días',
+    afternoon: 'tardes',
+    evening: 'noches',
+    gladYoureHere: 'Me alegra que estés aquí.',
+    button: {
+      letsLeap: 'Vamos a DAR EL SALTO'
+    }
+  },
+
   // Navigation
   nav: {
     home: 'Inicio',

@@ -3,6 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CheckCircle2, Brain, Users, Target, Zap, TrendingUp, PenTool, Headphones, Goal, BarChart, Link } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageToggle } from '@/components/LanguageToggle';
 
 interface OnboardingFlowProps {
   onComplete: (userData: {
@@ -14,6 +16,7 @@ interface OnboardingFlowProps {
 }
 
 const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(1);
   const [firstName, setFirstName] = useState('');
   const [focusAreas, setFocusAreas] = useState<string[]>([]);
@@ -22,27 +25,27 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const focusOptions = [
-    { id: 'tough-moments', label: 'Managing tough moments', icon: Brain },
-    { id: 'connections', label: 'Building stronger connections', icon: Users },
-    { id: 'routines', label: 'Creating healthy routines', icon: Target },
-    { id: 'tools', label: 'Finding tools that work', icon: Zap },
-    { id: 'staying-track', label: 'Staying on track', icon: TrendingUp }
+    { id: 'tough-moments', label: t('focus.toughMoments'), icon: Brain },
+    { id: 'connections', label: t('focus.connections'), icon: Users },
+    { id: 'routines', label: t('focus.routines'), icon: Target },
+    { id: 'tools', label: t('focus.tools'), icon: Zap },
+    { id: 'staying-track', label: t('focus.stayingTrack'), icon: TrendingUp }
   ];
 
   const stageOptions = [
-    { id: 'starting', label: 'Just starting out', emoji: '🌱' },
-    { id: 'few-weeks', label: 'A few weeks in', emoji: '🌤️' },
-    { id: 'few-months', label: 'A few months strong', emoji: '🌊' },
-    { id: 'steady', label: 'Feeling steady, but staying sharp', emoji: '🏔' },
-    { id: 'starting-again', label: 'Starting again after a pause', emoji: '🔁' }
+    { id: 'starting', label: t('journeyStages.starting'), emoji: '🌱' },
+    { id: 'few-weeks', label: t('journeyStages.fewWeeks'), emoji: '🌤️' },
+    { id: 'few-months', label: t('journeyStages.fewMonths'), emoji: '🌊' },
+    { id: 'steady', label: t('journeyStages.steady'), emoji: '🏔' },
+    { id: 'starting-again', label: t('journeyStages.startingAgain'), emoji: '🔁' }
   ];
 
   const supportOptions = [
-    { id: 'reflection', label: 'Quiet reflection & journaling', icon: PenTool },
-    { id: 'audio', label: 'Calming audio support', icon: Headphones },
-    { id: 'goals', label: 'Simple daily goals', icon: Goal },
-    { id: 'progress', label: 'Seeing your progress', icon: BarChart },
-    { id: 'connection', label: 'Knowing someone\'s there', icon: Link }
+    { id: 'reflection', label: t('support.reflection'), icon: PenTool },
+    { id: 'audio', label: t('support.audio'), icon: Headphones },
+    { id: 'goals', label: t('support.goals'), icon: Goal },
+    { id: 'progress', label: t('support.progress'), icon: BarChart },
+    { id: 'connection', label: t('support.connection'), icon: Link }
   ];
 
   const handleFocusToggle = (focusId: string) => {
@@ -98,10 +101,10 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
           <div className="mb-6">
             <CheckCircle2 className="mx-auto text-primary mb-4" size={48} />
             <h2 className="font-semibold text-[20px] text-gray-900 mb-2">
-              Welcome to LEAP{firstName ? `, ${firstName}` : ''}
+              {t('onboarding.success.title')}{firstName ? `, ${firstName}` : ''}
             </h2>
             <p className="text-gray-600 text-[16px]">
-              Let's take it one day at a time.
+              {t('onboarding.success.subtitle')}
             </p>
           </div>
         </Card>
@@ -115,10 +118,10 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
         return (
           <>
             <h2 className="font-semibold text-[20px] text-gray-900 mb-3 text-center">
-              What brings you to LEAP today?
+              {t('onboarding.step1.title')}
             </h2>
             <p className="text-gray-600 text-[16px] mb-6 text-center">
-              Choose what you'd like to build strength around.
+              {t('onboarding.step1.subtitle')}
             </p>
             
             <div className="space-y-3 mb-8">
@@ -158,10 +161,10 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
         return (
           <>
             <h2 className="font-semibold text-[20px] text-gray-900 mb-3 text-center">
-              Where are you in your journey?
+              {t('onboarding.step2.title')}
             </h2>
             <p className="text-gray-600 text-[16px] mb-6 text-center">
-              We'll personalize things based on where you are.
+              {t('onboarding.step2.subtitle')}
             </p>
             
             <div className="space-y-3 mb-8">
@@ -197,10 +200,10 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
         return (
           <>
             <h2 className="font-semibold text-[20px] text-gray-900 mb-3 text-center">
-              What helps you feel focused?
+              {t('onboarding.step3.title')}
             </h2>
             <p className="text-gray-600 text-[16px] mb-6 text-center">
-              We'll adjust your daily support to match your style.
+              {t('onboarding.step3.subtitle')}
             </p>
             
             <div className="space-y-3 mb-8">
@@ -240,16 +243,16 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
         return (
           <>
             <h2 className="font-semibold text-[20px] text-gray-900 mb-3 text-center">
-              What's your first name?
+              {t('onboarding.step4.title')}
             </h2>
             <p className="text-gray-600 text-[16px] mb-6 text-center">
-              (Optional, but helpful)
+              {t('onboarding.step4.subtitle')}
             </p>
             
             <div className="mb-8">
               <Input
                 type="text"
-                placeholder="Enter your first name"
+                placeholder={t('onboarding.step4.placeholder')}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 className="w-full p-4 text-[16px] border border-gray-200 rounded-lg bg-white focus:border-primary focus:outline-none"
@@ -265,6 +268,9 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <LanguageToggle />
+      </div>
       <Card className="bg-white p-8 max-w-sm w-full rounded-xl shadow-sm border-0 animate-fade-in">
         {renderStep()}
         
@@ -273,7 +279,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
           disabled={!canProceed()}
           className="w-full bg-[#FFCE00] hover:bg-[#E6B800] text-black font-bold py-4 text-[16px] rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {currentStep === 4 ? "Let's LEAP" : 'Continue'}
+          {currentStep === 4 ? t('onboarding.button.letsLeap') : t('onboarding.button.continue')}
         </Button>
       </Card>
     </div>

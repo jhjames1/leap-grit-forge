@@ -6,12 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from 'lucide-react';
 import { sanitizeInput, logSecurityEvent } from '@/utils/security';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { LanguageToggle } from '@/components/LanguageToggle';
 
 interface UserAuthProps {
   onLogin: (userData: { firstName: string; isNewUser: boolean }) => void;
 }
 
 const UserAuth = ({ onLogin }: UserAuthProps) => {
+  const { t } = useLanguage();
   const [credentials, setCredentials] = useState({
     firstName: ''
   });
@@ -28,7 +31,7 @@ const UserAuth = ({ onLogin }: UserAuthProps) => {
       const sanitizedFirstName = sanitizeInput(credentials.firstName);
       
       if (!sanitizedFirstName) {
-        setError('Please enter your first name');
+        setError(t('auth.firstName.required'));
         return;
       }
 
@@ -66,7 +69,7 @@ const UserAuth = ({ onLogin }: UserAuthProps) => {
       onLogin({ firstName: sanitizedFirstName, isNewUser });
     } catch (error) {
       console.error('Authentication error:', error);
-      setError('An error occurred. Please try again.');
+      setError(t('auth.error.general'));
       logSecurityEvent('auth_error', { error: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setIsLoading(false);
@@ -75,23 +78,26 @@ const UserAuth = ({ onLogin }: UserAuthProps) => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <LanguageToggle />
+      </div>
       <Card className="bg-card border-0 shadow-none p-8 max-w-sm w-full">
         <div className="text-center mb-6">
           <div className="w-16 h-16 mx-auto bg-primary p-2 rounded-lg flex items-center justify-center mb-4">
             <User className="text-primary-foreground" size={32} />
           </div>
           <h2 className="font-fjalla font-bold text-card-foreground text-2xl mb-2">
-            Welcome to LEAP
+            {t('auth.welcome.title')}
           </h2>
           <p className="text-muted-foreground text-sm font-source">
-            Enter your first name to get started
+            {t('auth.welcome.subtitle')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="firstName" className="text-card-foreground font-fjalla font-medium">
-              First Name
+              {t('auth.firstName.label')}
             </Label>
             <Input
               id="firstName"
@@ -99,7 +105,7 @@ const UserAuth = ({ onLogin }: UserAuthProps) => {
               value={credentials.firstName}
               onChange={(e) => setCredentials(prev => ({ ...prev, firstName: e.target.value }))}
               className="bg-background border-border text-card-foreground placeholder:text-muted-foreground mt-1"
-              placeholder="Enter your first name"
+              placeholder={t('auth.firstName.placeholder')}
               required
             />
           </div>
@@ -115,7 +121,7 @@ const UserAuth = ({ onLogin }: UserAuthProps) => {
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-fjalla font-semibold"
             disabled={isLoading}
           >
-            {isLoading ? "Processing..." : 'Enter App'}
+            {isLoading ? t('auth.button.processing') : t('auth.button.enter')}
           </Button>
         </form>
       </Card>
