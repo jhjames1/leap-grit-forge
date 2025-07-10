@@ -280,25 +280,31 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-fjalla font-bold text-card-foreground text-base tracking-wide">
-                {t('home.recoveryStrength') || 'RECOVERY STRENGTH'}
+                {t('home.strengthLevel') || 'STRENGTH LEVEL'}
               </h3>
               <div className="text-2xl font-bold text-primary">{dailyStats.recoveryStrength}%</div>
             </div>
             <div className="flex items-center space-x-2 mb-3">
-              <Shield className="text-primary" size={16} />
+              <div className="bg-primary p-2 rounded-sm">
+                <Shield className="text-primary-foreground" size={14} />
+              </div>
               <span className="text-sm text-muted-foreground">
-                {t('home.wellnessLevel') || 'Wellness Level'}: {dailyStats.wellnessLevel}
+                {t('home.leapProgress') || 'Leap Progress'}: {dailyStats.wellnessLevel}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="flex items-center space-x-2">
-                <Zap className="text-primary" size={14} />
+                <div className="bg-primary p-2 rounded-sm">
+                  <Zap className="text-primary-foreground" size={12} />
+                </div>
                 <span className="text-muted-foreground">
                   {dailyStats.actionsToday} {t('home.actionsToday') || 'actions today'}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
-                <Target className="text-primary" size={14} />
+                <div className="bg-primary p-2 rounded-sm">
+                  <Target className="text-primary-foreground" size={12} />
+                </div>
                 <span className="text-muted-foreground">
                   {dailyStats.toolsUsedToday} {t('home.toolsUsed') || 'tools used'}
                 </span>
@@ -328,7 +334,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <div className="bg-primary p-3 rounded-lg">
                 <Shield className="text-primary-foreground" size={20} />
               </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">{t('nav.recoveryStrength') || 'RECOVERY STRENGTH'}</h3>
+              <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">{t('nav.strengthMeter') || 'STRENGTH METER'}</h3>
             </div>
           </Card>
         </div>

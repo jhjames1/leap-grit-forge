@@ -209,7 +209,8 @@ const englishTranslations = {
     chat: 'Chat',
     profile: 'Profile',
     calendar: 'Calendar',
-    chatSupport: 'Chat Support'
+    chatSupport: 'Chat Support',
+    strengthMeter: 'Strength Meter'
   },
   
   // Home
@@ -262,8 +263,8 @@ const englishTranslations = {
       subtitle: 'Your personal coach is here to help',
       button: 'Chat Now'
     },
-    recoveryStrength: 'Recovery Strength',
-    wellnessLevel: 'Wellness Level',
+    strengthLevel: 'Strength Level',
+    leapProgress: 'Leap Progress',
     actionsToday: 'actions today',
     toolsUsed: 'tools used'
   },
@@ -888,7 +889,8 @@ const spanishTranslations = {
     chat: 'Chat',
     profile: 'Perfil',
     calendar: 'Calendario',
-    chatSupport: 'Soporte de Chat'
+    chatSupport: 'Soporte de Chat',
+    strengthMeter: 'Medidor de Fuerza'
   },
   
   // Home
@@ -941,8 +943,8 @@ const spanishTranslations = {
       subtitle: 'Tu entrenador personal está aquí para ayudar',
       button: 'Chatear Ahora'
     },
-    recoveryStrength: 'Fuerza de Recuperación',
-    wellnessLevel: 'Nivel de Bienestar',
+    strengthLevel: 'Nivel de Fuerza',
+    leapProgress: 'Progreso de Salto',
     actionsToday: 'acciones hoy',
     toolsUsed: 'herramientas usadas'
   },
