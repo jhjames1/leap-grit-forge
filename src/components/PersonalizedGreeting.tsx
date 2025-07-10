@@ -30,11 +30,11 @@ const PersonalizedGreeting = ({ firstName, onContinue }: PersonalizedGreetingPro
   const getIcon = () => {
     switch (timeOfDay) {
       case 'morning':
-        return <Sunrise className="text-yellow-400" size={32} />;
+        return <Sunrise className="text-primary" size={32} />;
       case 'afternoon':
-        return <Sun className="text-yellow-400" size={32} />;
+        return <Sun className="text-primary" size={32} />;
       case 'evening':
-        return <Sunset className="text-yellow-400" size={32} />;
+        return <Sunset className="text-primary" size={32} />;
     }
   };
 

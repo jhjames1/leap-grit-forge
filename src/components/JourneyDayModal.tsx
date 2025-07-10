@@ -123,7 +123,8 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
     pauseAudio();
   };
 
-  // Auto-complete when audio finishes
+  // Auto-complete when audio finishes - REMOVED
+  // User must manually click complete button
   useEffect(() => {
     console.log('Audio useEffect triggered:', {
       currentAudioActivity,
@@ -132,11 +133,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
       audioDuration
     });
     
-    if (currentAudioActivity && !isAudioPlaying && audioProgress >= 90 && audioDuration > 0) {
-      console.log(`Audio ${currentAudioActivity} completed - unlocking next activity`);
-      markActivityComplete(currentAudioActivity);
-      setCurrentAudioActivity(null);
-    }
+    // Note: Auto-completion removed - user must manually complete activities
   }, [isAudioPlaying, audioProgress, audioDuration, currentAudioActivity]);
 
   const openBreathingExercise = () => {
@@ -271,8 +268,8 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                     )}
                   </Button>
                   
-                  {/* Manual completion button - appears 5 seconds before audio ends */}
-                  {currentAudioActivity === activity.key && audioDuration > 0 && (audioDuration - audioCurrentTime <= 5) && (
+                  {/* Manual completion button - appears after audio starts playing */}
+                  {currentAudioActivity === activity.key && audioDuration > 0 && (
                     <Button 
                       onClick={() => markActivityComplete(activity.key)}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground font-source"

@@ -48,16 +48,25 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       const startDate = new Date(userStartDate);
       const daysSinceStart = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       const motivationHeaders = t('home.motivation.headers');
-      const quoteIndex = daysSinceStart % motivationHeaders.length;
+      console.log('Motivation headers:', motivationHeaders, 'Language:', language);
+      
+      // Ensure we have an array of quotes
+      if (Array.isArray(motivationHeaders) && motivationHeaders.length > 0) {
+        const quoteIndex = daysSinceStart % motivationHeaders.length;
+        const newMotivation = motivationHeaders[quoteIndex];
+        console.log('Selected motivation:', newMotivation, 'at index:', quoteIndex);
+        
+        setDailyMotivation(newMotivation);
+        localStorage.setItem('motivationDate', todayString);
+        localStorage.setItem('dailyMotivation', newMotivation);
+        localStorage.setItem('motivationLanguage', language);
+      } else {
+        console.error('Motivation headers not found or empty:', motivationHeaders);
+        setDailyMotivation('Your journey continues with strength and purpose.');
+      }
       
       // Set current journey day (minimum 1, maximum 90 for the program)
       setCurrentJourneyDay(Math.min(Math.max(1, daysSinceStart + 1), 90));
-      
-      const newMotivation = motivationHeaders[quoteIndex];
-      setDailyMotivation(newMotivation);
-      localStorage.setItem('motivationDate', todayString);
-      localStorage.setItem('dailyMotivation', newMotivation);
-      localStorage.setItem('motivationLanguage', language);
       
       if (!localStorage.getItem('userStartDate')) {
         localStorage.setItem('userStartDate', todayString);
