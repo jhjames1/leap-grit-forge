@@ -14,6 +14,7 @@ import {
   Users,
   Star
 } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ForemanChatProps {
   onBack: () => void;
@@ -48,6 +49,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
     sessionLength: 0
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   // Initialize with time-sensitive greeting
   useEffect(() => {
@@ -55,11 +57,11 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
     let greeting = '';
     
     if (hour < 12) {
-      greeting = "Good morning. What's on your mind?";
+      greeting = t('foreman.greeting.morning');
     } else if (hour < 17) {
-      greeting = "Good afternoon. What's on your mind?";
+      greeting = t('foreman.greeting.afternoon');
     } else {
-      greeting = "Good evening. What's on your mind?";
+      greeting = t('foreman.greeting.evening');
     }
 
     const initialMessage: Message = {
@@ -70,7 +72,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
     };
 
     setMessages([initialMessage]);
-  }, []);
+  }, [t]);  // Add t dependency to refresh when language changes
 
   // Recovery-focused response templates
   const responseTemplates = {
@@ -141,29 +143,25 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
     const mood = analyzeMood(userMessage);
     const lowerMessage = userMessage.toLowerCase();
     
+    // Get translated responses based on mood
+    const moodResponses = t('foreman.responses.' + mood);
+    
     // Handle specific recovery-related topics
     if (lowerMessage.includes('drank') || lowerMessage.includes('used') || lowerMessage.includes('relapsed')) {
-      const responses = responseTemplates.relapse;
-      return responses[Math.floor(Math.random() * responses.length)];
+      return moodResponses[Math.floor(Math.random() * moodResponses.length)];
     }
     
     // Handle tone adjustment requests
     if (lowerMessage.includes('tougher') || lowerMessage.includes('stronger') || lowerMessage.includes('tough love')) {
-      return "Alright then. No excuses. You know what needs to be done—do it anyway.";
+      return moodResponses[Math.floor(Math.random() * moodResponses.length)];
     }
     
     // Handle feeling words
     if (lowerMessage.includes('numb') || lowerMessage.includes('empty')) {
-      return "What's got you shut down? You trying to push through, or hide from it?";
+      return moodResponses[Math.floor(Math.random() * moodResponses.length)];
     }
     
     // Use mood-based responses
-    const moodResponses = responseTemplates[mood] || responseTemplates.neutral || [
-      "I hear you. What's the next right thing you can do?",
-      "Every job has tough moments. What matters is how you handle them.",
-      "You're talking to me instead of giving up. That's already a win."
-    ];
-    
     return moodResponses[Math.floor(Math.random() * moodResponses.length)];
   };
 
@@ -249,6 +247,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
   };
 
   const handleFieldStory = () => {
+    const fieldStories = t('foreman.fieldStories');
     const story = fieldStories[Math.floor(Math.random() * fieldStories.length)];
     const storyMessage: Message = {
       id: messages.length + 1,
@@ -282,7 +281,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
               <MessageCircle className="text-primary-foreground" size={20} />
             </div>
             <div>
-              <h2 className="font-fjalla font-bold text-card-foreground">The Foreman</h2>
+              <h2 className="font-fjalla font-bold text-card-foreground">{t('foreman.title')}</h2>
               <p className="text-muted-foreground text-sm font-source">Your Recovery Mentor</p>
             </div>
           </div>
@@ -321,7 +320,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
                     }`}
                   >
                     <Star size={14} />
-                    <span className="text-xs">Tool Belt</span>
+                    <span className="text-xs">{t('foreman.actions.toolBelt')}</span>
                   </Button>
                   <Button
                     size="sm"
@@ -329,7 +328,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
                     onClick={handleFieldStory}
                     className="border-border text-card-foreground hover:bg-accent text-xs font-source"
                   >
-                    Field Story
+                    {t('foreman.actions.fieldStory')}
                   </Button>
                   <Button
                     size="sm"
@@ -337,7 +336,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
                     className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-source"
                   >
                     <Users size={14} className="mr-1" />
-                    Talk to Peer
+                    {t('foreman.actions.talkToPeer')}
                   </Button>
                 </div>
               </div>
@@ -366,7 +365,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="What's on your mind?"
+            placeholder={t('foreman.placeholder')}
             className="flex-1 bg-background border-border text-card-foreground placeholder:text-muted-foreground"
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
           />

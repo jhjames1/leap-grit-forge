@@ -7,6 +7,8 @@ import { useUserData } from '@/hooks/useUserData';
 import PhoneNumberPrompt from './PhoneNumberPrompt';
 import StreakReminder from './StreakReminder';
 import { ThemeToggle } from './ThemeToggle';
+import { LanguageToggle } from './LanguageToggle';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DashboardHomeProps {
   onNavigate?: (page: string) => void;
@@ -17,6 +19,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   const [showPhonePrompt, setShowPhonePrompt] = useState(false);
   const [showStreakReminder, setShowStreakReminder] = useState(false);
   const { userData, logActivity } = useUserData();
+  const { t, language } = useLanguage();
 
   // Daily motivation logic
   const [dailyMotivation, setDailyMotivation] = useState('');
@@ -58,12 +61,13 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     // Calculate days since user started
       const startDate = new Date(userStartDate);
       const daysSinceStart = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      const quoteIndex = daysSinceStart % dailyQuotes.length;
+      const motivationHeaders = t('home.motivation.headers');
+      const quoteIndex = daysSinceStart % motivationHeaders.length;
       
       // Set current journey day (minimum 1, maximum 90 for the program)
       setCurrentJourneyDay(Math.min(Math.max(1, daysSinceStart + 1), 90));
       
-      const newMotivation = dailyQuotes[quoteIndex];
+      const newMotivation = motivationHeaders[quoteIndex];
       setDailyMotivation(newMotivation);
       localStorage.setItem('motivationDate', todayString);
       localStorage.setItem('dailyMotivation', newMotivation);
@@ -100,7 +104,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     // Calculate badge count based on activities completed
     const uniqueActivities = new Set(activityLog.map(entry => entry.action));
     setBadgeCount(uniqueActivities.size);
-  }, [userData]);
+  }, [userData, language]);  // Add language dependency to refresh translations
 
   const currentUser = localStorage.getItem('currentUser') || 'JOSEPH';
 
@@ -138,14 +142,15 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               </h1>
               <div className="mt-8"></div>
               <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
-                WELCOME BACK, <span className="font-bold italic">{currentUser.toUpperCase()}</span>
+                {t('home.welcome').toUpperCase()}, <span className="font-bold italic">{currentUser.toUpperCase()}</span>
               </p>
               <p className="text-muted-foreground text-sm">Your recovery journey continues.</p>
             </div>
             
-            {/* Right column: Theme toggle and Trophy */}
+            {/* Right column: Theme toggle, Language toggle, and Trophy */}
             <div className="flex flex-col items-end justify-between min-h-[120px]">
               <ThemeToggle />
+              <LanguageToggle />
               <div className="flex items-center space-x-2">
                 <div className="bg-primary p-2 rounded-lg">
                   <Trophy className="text-primary-foreground" size={20} />
@@ -181,7 +186,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 </div>
                 <div className="text-[28px] font-bold text-card-foreground">{recoveryStreak}</div>
               </div>
-              <p className="text-muted-foreground text-xs lowercase italic">days strong</p>
+              <p className="text-muted-foreground text-xs lowercase italic">{t('home.streak.days').toLowerCase()}</p>
             </div>
           </Card>
         </div>
@@ -189,7 +194,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         {/* Start Your Day Card */}
         <Card className="bg-black/[7.5%] p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
           <h3 className="font-fjalla font-bold text-card-foreground mb-2 tracking-wide">
-            START YOUR DAY
+            {t('home.startDay').toUpperCase()}
           </h3>
           <div className="cursor-pointer" onClick={() => onNavigate?.('journey')}>
             <div className="flex items-center">
@@ -206,7 +211,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         {/* Coming Up This Week */}
         <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
           <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">
-            COMING UP THIS WEEK
+            {t('home.comingUp').toUpperCase()}
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -242,9 +247,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             <div className="flex flex-col items-center text-center mb-4">
               <div>
                 <h3 className="font-fjalla font-bold text-white text-2xl tracking-wide">
-                  THE FOREMAN
+                  {t('home.foreman.title').toUpperCase()}
                 </h3>
-                <p className="text-white/80 text-sm font-source">Your Recovery Partner</p>
+                <p className="text-white/80 text-sm font-source">{t('home.foreman.subtitle')}</p>
               </div>
             </div>
             <Button 
@@ -252,7 +257,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold py-3 rounded-lg tracking-wide transition-colors duration-300 flex items-center justify-center gap-2"
             >
               <Bot size={20} />
-              CHAT WITH THE FOREMAN
+              {t('home.foreman.button').toUpperCase()}
             </Button>
           </div>
         </Card>
