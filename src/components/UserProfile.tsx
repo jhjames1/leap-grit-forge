@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, Shield, Edit, Bell, Calendar, Phone } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
+import { useLanguage } from '@/contexts/LanguageContext';
 import EditProfile from './EditProfile';
 import NotificationSettings from './NotificationSettings';
 
@@ -13,6 +14,7 @@ interface UserProfileProps {
 }
 
 const UserProfile = ({ onNavigate }: UserProfileProps) => {
+  const { t } = useLanguage();
   const [currentView, setCurrentView] = useState<'profile' | 'edit' | 'notifications'>('profile');
   const { userData, currentUser } = useUserData();
   
@@ -38,9 +40,9 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     : 'None yet';
 
   const profileStats = [
-    { label: "Recovery Streak", value: recoveryStreak, unit: "days", color: "text-construction" },
-    { label: "Total Tools Used", value: totalToolsUsed, unit: "times", color: "text-construction" },
-    { label: "Urges Tracked", value: urgesTracked, unit: "this week", color: "text-construction" }
+    { label: t('profile.recoveryStreak'), value: recoveryStreak, unit: t('profile.days'), color: "text-construction" },
+    { label: t('profile.totalToolsUsed'), value: totalToolsUsed, unit: t('profile.times'), color: "text-construction" },
+    { label: t('profile.urgesTracked'), value: urgesTracked, unit: t('profile.thisWeek'), color: "text-construction" }
   ];
 
   const user = {
@@ -50,9 +52,9 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     totalSessions: totalToolsUsed,
     favoriteTools: mostUsedTool !== 'None yet' ? [mostUsedTool, "SteadySteel", "Peer Chat"] : ["SteadySteel", "Peer Chat"],
     badges: [
-      { name: "Week Warrior", earned: "2 weeks ago", icon: "🏆" },
-      { name: "Steady Breather", earned: "1 week ago", icon: "🌬️" },
-      { name: "Tool Master", earned: "3 days ago", icon: "🧰" }
+      { name: "Week Warrior", earned: t('profile.earned', { time: '2 weeks ago' }), icon: "🏆" },
+      { name: "Steady Breather", earned: t('profile.earned', { time: '1 week ago' }), icon: "🌬️" },
+      { name: "Tool Master", earned: t('profile.earned', { time: '3 days ago' }), icon: "🧰" }
     ]
   };
 
@@ -76,9 +78,9 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-          <span className="font-oswald font-extralight tracking-tight">YOUR</span><span className="font-fjalla font-extrabold italic">PROFILE</span>
+          {t('profile.title')}
         </h1>
-        <p className="text-steel-light font-oswald">Track your progress and achievements</p>
+        <p className="text-steel-light font-oswald">{t('profile.subtitle')}</p>
       </div>
 
       {/* Profile Card */}
@@ -89,14 +91,14 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           </div>
           <div className="flex-1">
             <h2 className="font-fjalla font-bold text-card-foreground text-xl">{user.name}</h2>
-            <p className="text-muted-foreground font-source">Member since {user.joinDate}</p>
+            <p className="text-muted-foreground font-source">{t('profile.memberSince', { date: user.joinDate })}</p>
             {phoneNumber && (
               <div className="flex items-center space-x-2 mt-1">
                 <Phone size={14} className="text-muted-foreground" />
                 <p className="text-muted-foreground text-sm font-source">{phoneNumber}</p>
               </div>
             )}
-            <p className="text-muted-foreground text-sm font-source">Last login: {lastLogin}</p>
+            <p className="text-muted-foreground text-sm font-source">{t('profile.lastLogin', { date: lastLogin })}</p>
           </div>
         </div>
         
@@ -112,19 +114,19 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
 
         <div className="space-y-2 pt-4 border-t border-border">
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground text-sm font-source">Most Used Tool:</span>
+            <span className="text-muted-foreground text-sm font-source">{t('profile.mostUsedTool')}</span>
             <span className="text-primary font-fjalla font-medium">{mostUsedTool}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground text-sm font-source">Weekly Progress:</span>
-            <span className="text-primary font-fjalla font-medium">{Math.round((urgesTracked / 7) * 100)}% tracked</span>
+            <span className="text-muted-foreground text-sm font-source">{t('profile.weeklyProgress')}</span>
+            <span className="text-primary font-fjalla font-medium">{Math.round((urgesTracked / 7) * 100)}{t('profile.tracked')}</span>
           </div>
         </div>
       </Card>
 
       {/* Favorite Tools */}
       <Card className="bg-card mb-6 p-6 border-0 shadow-none">
-        <h3 className="font-fjalla font-bold text-card-foreground mb-4">Favorite Tools</h3>
+        <h3 className="font-fjalla font-bold text-card-foreground mb-4">{t('profile.favorites')}</h3>
         <div className="flex flex-wrap gap-2">
           {user.favoriteTools.map((tool, index) => (
             <Badge key={index} className="bg-primary text-primary-foreground text-xs font-source">
@@ -136,7 +138,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
 
       {/* Badges & Achievements */}
       <Card className="bg-card mb-6 p-6 border-0 shadow-none">
-        <h3 className="font-fjalla font-bold text-card-foreground mb-4">Achievements</h3>
+        <h3 className="font-fjalla font-bold text-card-foreground mb-4">{t('profile.achievements')}</h3>
         <div className="grid grid-cols-2 gap-4">
           {user.badges.map((badge, index) => (
             <div key={index} className="flex items-center space-x-3 p-3 bg-muted/20 rounded-lg">
@@ -145,7 +147,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
               </div>
               <div>
                 <p className="text-card-foreground font-medium font-fjalla">{badge.name}</p>
-                <p className="text-muted-foreground text-sm font-source">Earned {badge.earned}</p>
+                <p className="text-muted-foreground text-sm font-source">{badge.earned}</p>
               </div>
             </div>
           ))}
@@ -154,7 +156,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
 
       {/* Settings */}
       <Card className="bg-card p-6 border-0 shadow-none">
-        <h3 className="font-fjalla font-bold text-card-foreground mb-4">Settings</h3>
+        <h3 className="font-fjalla font-bold text-card-foreground mb-4">{t('profile.settings')}</h3>
         <div className="space-y-3">
           <Button 
             onClick={() => setCurrentView('edit')}
@@ -162,7 +164,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
             className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
           >
             <Edit size={16} className="mr-2" />
-            Edit Profile
+            {t('profile.editProfile')}
           </Button>
           <Button 
             onClick={() => setCurrentView('notifications')}
@@ -170,14 +172,14 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
             className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
           >
             <Bell size={16} className="mr-2" />
-            Notification Settings
+            {t('profile.notificationSettings')}
           </Button>
           <Button 
             variant="outline" 
             className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
           >
             <Calendar size={16} className="mr-2" />
-            Weekly Check-In Schedule
+            {t('profile.weeklyCheckIn')}
           </Button>
         </div>
       </Card>

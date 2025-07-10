@@ -339,6 +339,165 @@ const englishTranslations = {
     }
   },
   
+  // Profile
+  profile: {
+    title: "YOUR PROFILE",
+    subtitle: "Track your progress and achievements",
+    memberSince: "Member since {{date}}",
+    lastLogin: "Last login: {{date}}",
+    recoveryStreak: "Recovery Streak",
+    totalToolsUsed: "Total Tools Used",
+    urgesTracked: "Urges Tracked",
+    thisWeek: "this week",
+    days: "days",
+    times: "times",
+    mostUsedTool: "Most Used Tool:",
+    weeklyProgress: "Weekly Progress:",
+    tracked: "% tracked",
+    favorites: "Favorite Tools",
+    achievements: "Achievements",
+    earned: "Earned {{time}}",
+    settings: "Settings",
+    editProfile: "Edit Profile",
+    notificationSettings: "Notification Settings",
+    weeklyCheckIn: "Weekly Check-In Schedule"
+  },
+
+  // Calendar
+  calendar: {
+    title: "RECOVERY CALENDAR",
+    subtitle: "Track your progress",
+    currentStreak: "Current Streak",
+    keepUp: "Keep up the great work!",
+    recoveryDays: "Your Recovery Days",
+    recoveryDay: "Recovery Day",
+    greatJob: "Great job staying strong!",
+    noRecoveryDay: "No recovery day logged",
+    legend: "Legend",
+    today: "Today"
+  },
+
+  // Edit Profile
+  editProfile: {
+    title: "EDIT PROFILE",
+    firstName: "First Name",
+    phoneNumber: "Phone Number",
+    firstNamePlaceholder: "Enter your first name",
+    phoneNumberPlaceholder: "(555) 123-4567",
+    firstNameRequired: "First name is required",
+    phoneNumberInvalid: "Phone number must be 10 digits",
+    updating: "Updating...",
+    updateProfile: "Update Profile",
+    updateSuccess: "Profile updated successfully!",
+    updateError: "Failed to update profile. Please try again."
+  },
+
+  // Notifications
+  notifications: {
+    title: "NOTIFICATION SETTINGS",
+    dailyCheckIns: "Daily Check-ins",
+    morningCheckIn: "Morning Check-in",
+    morningCheckInDesc: "Get reminded to start your day right",
+    reminderTime: "Reminder Time",
+    recoverySupport: "Recovery Support",
+    peerMessages: "Peer Messages",
+    peerMessagesDesc: "Notifications from peer specialists",
+    weeklyProgress: "Weekly Progress",
+    weeklyCheckIn: "Weekly Check-in",
+    weeklyCheckInDesc: "Review your progress and set goals",
+    notificationMethod: "Notification Method",
+    pushNotifications: "Push Notifications",
+    pushNotificationsDesc: "Receive notifications on this device",
+    smsNotifications: "SMS Notifications",
+    smsNotificationsDesc: "Text message alerts and reminders",
+    saveSettings: "Save Settings"
+  },
+
+  // Breathing Exercise
+  breathing: {
+    title: "SteadySteel",
+    subtitle: "Feel that pressure in your chest? Let's ease it out.",
+    sessionLength: "Session Length:",
+    backgroundSound: "Background Sound",
+    voiceGuide: "Voice Guide (British Female)",
+    startSession: "Start Session",
+    close: "Close",
+    inhale: "Inhale",
+    hold: "Hold",
+    exhale: "Exhale",
+    rest: "Rest",
+    breathCycle: "Breath Cycle:",
+    voicePrompts: {
+      inhale: "Inhale slow and steady",
+      hold: "Hold it, stay with me",
+      exhale: "Now exhale, let that tension drain",
+      rest: "You're steady, you're solid"
+    },
+    completionMessages: [
+      "That's what slowing down feels like. Solid work.",
+      "Good move. You just reset your system.",
+      "Steady breathing, steady mind. Well done."
+    ],
+    backgroundSounds: [
+      "Workshop Hum",
+      "West Texas Wind",
+      "Campfire Crackle",
+      "Silent Mode"
+    ]
+  },
+
+  // Urge Tracker
+  urgeTracker: {
+    title: "Redline Recovery",
+    subtitle: "Let's track what you're feeling and find the right support.",
+    whatUrge: "What are you feeling an urge to do?",
+    howStrong: "How strong is it right now?",
+    whatsBehind: "What's behind it?",
+    redirect: "Let's redirect this energy.",
+    closeForNow: "Close for Now",
+    continue: "Continue",
+    useBreathing: "Use the Breathing Tool now",
+    hearForeman: "Hear from The Foreman",
+    checkPeer: "Check in with your Peer",
+    readAffirmation: "Read a saved affirmation",
+    checkInTime: "Check-In Time",
+    checkInSubtitle: "Still riding that wave? Let's check in.",
+    actedOnUrge: "Did you act on the urge?",
+    no: "No",
+    slippedStopped: "Slipped but Stopped",
+    yes: "Yes",
+    whatHelped: "What helped—or didn't?",
+    whatHelpedPlaceholder: "Quick thoughts on what worked or what made it harder...",
+    optionalReflection: "Optional reflection",
+    reflectionPlaceholder: "Anything else on your mind?",
+    saveReflection: "Save Reflection",
+    skipForNow: "Skip for Now",
+    urgeTypes: {
+      drink: "Drink",
+      use: "Use",
+      rage: "Rage",
+      isolate: "Isolate",
+      porn: "View Porn",
+      overeat: "Overeat",
+      other: "Other"
+    },
+    triggers: {
+      stress: "Stress",
+      shame: "Shame",
+      loneliness: "Loneliness",
+      anger: "Anger",
+      exhaustion: "Exhaustion",
+      boredom: "Boredom",
+      unknown: "Unknown"
+    },
+    intensityLabels: {
+      mild: "Mild",
+      moderate: "Moderate",
+      strong: "Strong",
+      redZone: "Red Zone"
+    }
+  },
+
   // Common
   common: {
     back: 'Back',
@@ -605,6 +764,165 @@ const spanishTranslations = {
     }
   },
   
+  // Profile
+  profile: {
+    title: "TU PERFIL",
+    subtitle: "Rastrea tu progreso y logros",
+    memberSince: "Miembro desde {{date}}",
+    lastLogin: "Último acceso: {{date}}",
+    recoveryStreak: "Racha de Recuperación",
+    totalToolsUsed: "Total de Herramientas Usadas",
+    urgesTracked: "Impulsos Rastreados",
+    thisWeek: "esta semana",
+    days: "días",
+    times: "veces",
+    mostUsedTool: "Herramienta Más Usada:",
+    weeklyProgress: "Progreso Semanal:",
+    tracked: "% rastreado",
+    favorites: "Herramientas Favoritas",
+    achievements: "Logros",
+    earned: "Obtenido {{time}}",
+    settings: "Configuraciones",
+    editProfile: "Editar Perfil",
+    notificationSettings: "Configuración de Notificaciones",
+    weeklyCheckIn: "Chequeo Semanal"
+  },
+
+  // Calendar
+  calendar: {
+    title: "CALENDARIO DE RECUPERACIÓN",
+    subtitle: "Rastrea tu progreso",
+    currentStreak: "Racha Actual",
+    keepUp: "¡Sigue con el gran trabajo!",
+    recoveryDays: "Tus Días de Recuperación",
+    recoveryDay: "Día de Recuperación",
+    greatJob: "¡Gran trabajo manteniéndote fuerte!",
+    noRecoveryDay: "No hay día de recuperación registrado",
+    legend: "Leyenda",
+    today: "Hoy"
+  },
+
+  // Edit Profile
+  editProfile: {
+    title: "EDITAR PERFIL",
+    firstName: "Nombre",
+    phoneNumber: "Número de Teléfono",
+    firstNamePlaceholder: "Ingresa tu nombre",
+    phoneNumberPlaceholder: "(555) 123-4567",
+    firstNameRequired: "El nombre es requerido",
+    phoneNumberInvalid: "El número de teléfono debe tener 10 dígitos",
+    updating: "Actualizando...",
+    updateProfile: "Actualizar Perfil",
+    updateSuccess: "¡Perfil actualizado exitosamente!",
+    updateError: "Error al actualizar el perfil. Inténtalo de nuevo."
+  },
+
+  // Notifications
+  notifications: {
+    title: "CONFIGURACIÓN DE NOTIFICACIONES",
+    dailyCheckIns: "Chequeos Diarios",
+    morningCheckIn: "Chequeo Matutino",
+    morningCheckInDesc: "Recuerda comenzar tu día bien",
+    reminderTime: "Hora del Recordatorio",
+    recoverySupport: "Apoyo de Recuperación",
+    peerMessages: "Mensajes de Compañeros",
+    peerMessagesDesc: "Notificaciones de especialistas pares",
+    weeklyProgress: "Progreso Semanal",
+    weeklyCheckIn: "Chequeo Semanal",
+    weeklyCheckInDesc: "Revisa tu progreso y establece metas",
+    notificationMethod: "Método de Notificación",
+    pushNotifications: "Notificaciones Push",
+    pushNotificationsDesc: "Recibe notificaciones en este dispositivo",
+    smsNotifications: "Notificaciones SMS",
+    smsNotificationsDesc: "Alertas y recordatorios por mensaje de texto",
+    saveSettings: "Guardar Configuración"
+  },
+
+  // Breathing Exercise
+  breathing: {
+    title: "SteadySteel",
+    subtitle: "¿Sientes esa presión en el pecho? Vamos a aliviarla.",
+    sessionLength: "Duración de la Sesión:",
+    backgroundSound: "Sonido de Fondo",
+    voiceGuide: "Guía de Voz (Mujer Británica)",
+    startSession: "Iniciar Sesión",
+    close: "Cerrar",
+    inhale: "Inhalar",
+    hold: "Mantener",
+    exhale: "Exhalar",
+    rest: "Descansar",
+    breathCycle: "Ciclo de Respiración:",
+    voicePrompts: {
+      inhale: "Inhala lenta y constantemente",
+      hold: "Manténlo, quédate conmigo",
+      exhale: "Ahora exhala, deja que esa tensión se vaya",
+      rest: "Estás estable, estás sólido"
+    },
+    completionMessages: [
+      "Así se siente desacelerar. Trabajo sólido.",
+      "Buena decisión. Acabas de reiniciar tu sistema.",
+      "Respiración constante, mente constante. Bien hecho."
+    ],
+    backgroundSounds: [
+      "Zumbido del Taller",
+      "Viento de Texas Occidental",
+      "Crepitar de Fogata",
+      "Modo Silencioso"
+    ]
+  },
+
+  // Urge Tracker
+  urgeTracker: {
+    title: "Recuperación Redline",
+    subtitle: "Vamos a rastrear lo que sientes y encontrar el apoyo adecuado.",
+    whatUrge: "¿Qué impulso sientes de hacer?",
+    howStrong: "¿Qué tan fuerte es ahora?",
+    whatsBehind: "¿Qué hay detrás de esto?",
+    redirect: "Vamos a redirigir esta energía.",
+    closeForNow: "Cerrar por Ahora",
+    continue: "Continuar",
+    useBreathing: "Usar la Herramienta de Respiración ahora",
+    hearForeman: "Escuchar al Capataz",
+    checkPeer: "Consultar con tu Compañero",
+    readAffirmation: "Leer una afirmación guardada",
+    checkInTime: "Hora de Chequeo",
+    checkInSubtitle: "¿Aún montando esa ola? Vamos a verificar.",
+    actedOnUrge: "¿Actuaste sobre el impulso?",
+    no: "No",
+    slippedStopped: "Resbalé pero Paré",
+    yes: "Sí",
+    whatHelped: "¿Qué ayudó—o no?",
+    whatHelpedPlaceholder: "Pensamientos rápidos sobre lo que funcionó o lo que lo hizo más difícil...",
+    optionalReflection: "Reflexión opcional",
+    reflectionPlaceholder: "¿Algo más en tu mente?",
+    saveReflection: "Guardar Reflexión",
+    skipForNow: "Omitir por Ahora",
+    urgeTypes: {
+      drink: "Beber",
+      use: "Usar",
+      rage: "Rabia",
+      isolate: "Aislar",
+      porn: "Ver Pornografía",
+      overeat: "Comer en Exceso",
+      other: "Otro"
+    },
+    triggers: {
+      stress: "Estrés",
+      shame: "Vergüenza",
+      loneliness: "Soledad",
+      anger: "Ira",
+      exhaustion: "Agotamiento",
+      boredom: "Aburrimiento",
+      unknown: "Desconocido"
+    },
+    intensityLabels: {
+      mild: "Leve",
+      moderate: "Moderado",
+      strong: "Fuerte",
+      redZone: "Zona Roja"
+    }
+  },
+
   // Common
   common: {
     back: 'Atrás',

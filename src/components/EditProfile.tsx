@@ -5,12 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, User, Phone } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface EditProfileProps {
   onBack: () => void;
 }
 
 const EditProfile = ({ onBack }: EditProfileProps) => {
+  const { t } = useLanguage();
   const { userData, updateUserData, currentUser } = useUserData();
   const [formData, setFormData] = useState({
     firstName: currentUser || '',
@@ -23,13 +25,13 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
     const newErrors: { [key: string]: string } = {};
 
     if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
+      newErrors.firstName = t('editProfile.firstNameRequired');
     }
 
     if (formData.phoneNumber) {
       const cleaned = formData.phoneNumber.replace(/\D/g, '');
       if (cleaned.length !== 10) {
-        newErrors.phoneNumber = 'Phone number must be 10 digits';
+        newErrors.phoneNumber = t('editProfile.phoneNumberInvalid');
       }
     }
 
@@ -79,13 +81,12 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
           localStorage.setItem('phoneNumber', formData.phoneNumber);
         }
         
-        // Show success message (you could add a toast here)
-        alert('Profile updated successfully!');
+        alert(t('editProfile.updateSuccess'));
         onBack();
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      setErrors({ general: 'Failed to update profile. Please try again.' });
+      setErrors({ general: t('editProfile.updateError') });
     } finally {
       setIsSubmitting(false);
     }
@@ -105,7 +106,7 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
             <ArrowLeft size={20} />
           </Button>
           <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-            <span className="font-oswald font-extralight tracking-tight">EDIT</span><span className="font-fjalla font-extrabold italic">PROFILE</span>
+            {t('editProfile.title')}
           </h1>
         </div>
 
@@ -115,14 +116,14 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
             <div className="space-y-2">
               <Label className="text-card-foreground font-fjalla flex items-center space-x-2">
                 <User size={16} />
-                <span>First Name</span>
+                <span>{t('editProfile.firstName')}</span>
               </Label>
               <Input
                 type="text"
                 value={formData.firstName}
                 onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                 className="bg-card border border-border text-card-foreground placeholder:text-muted-foreground"
-                placeholder="Enter your first name"
+                placeholder={t('editProfile.firstNamePlaceholder')}
               />
               {errors.firstName && <p className="text-red-500 text-sm">{errors.firstName}</p>}
             </div>
@@ -131,14 +132,14 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
             <div className="space-y-2">
               <Label className="text-card-foreground font-fjalla flex items-center space-x-2">
                 <Phone size={16} />
-                <span>Phone Number</span>
+                <span>{t('editProfile.phoneNumber')}</span>
               </Label>
               <Input
                 type="tel"
                 value={formData.phoneNumber}
                 onChange={handlePhoneChange}
                 className="bg-card border border-border text-card-foreground placeholder:text-muted-foreground"
-                placeholder="(555) 123-4567"
+                placeholder={t('editProfile.phoneNumberPlaceholder')}
               />
               {errors.phoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber}</p>}
             </div>
@@ -154,7 +155,7 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
               disabled={isSubmitting}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-fjalla font-bold"
             >
-              {isSubmitting ? 'Updating...' : 'Update Profile'}
+              {isSubmitting ? t('editProfile.updating') : t('editProfile.updateProfile')}
             </Button>
           </form>
         </Card>

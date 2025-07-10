@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, ArrowLeft, Trophy } from 'lucide-react';
 import { format, isToday, isSameDay } from 'date-fns';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RecoveryCalendarProps {
   onBack: () => void;
 }
 
 const RecoveryCalendar = ({ onBack }: RecoveryCalendarProps) => {
+  const { t } = useLanguage();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   // Mock recovery days - in a real app, this would come from user data
@@ -61,9 +63,9 @@ const RecoveryCalendar = ({ onBack }: RecoveryCalendarProps) => {
         </Button>
         <div>
           <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-            <span className="font-oswald font-extralight tracking-tight">RECOVERY</span><span className="font-fjalla font-extrabold italic">CALENDAR</span>
+            {t('calendar.title')}
           </h1>
-          <p className="text-steel-light font-oswald">Track your progress</p>
+          <p className="text-steel-light font-oswald">{t('calendar.subtitle')}</p>
         </div>
       </div>
 
@@ -75,13 +77,13 @@ const RecoveryCalendar = ({ onBack }: RecoveryCalendarProps) => {
               <Trophy className="text-primary-foreground" size={20} />
             </div>
             <div>
-              <h3 className="font-fjalla font-bold text-card-foreground">Current Streak</h3>
-              <p className="text-muted-foreground text-sm">Keep up the great work!</p>
+              <h3 className="font-fjalla font-bold text-card-foreground">{t('calendar.currentStreak')}</h3>
+              <p className="text-muted-foreground text-sm">{t('calendar.keepUp')}</p>
             </div>
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold text-primary">{currentStreak}</div>
-            <div className="text-xs text-muted-foreground font-fjalla">DAYS</div>
+            <div className="text-xs text-muted-foreground font-fjalla">{t('profile.days').toUpperCase()}</div>
           </div>
         </div>
       </Card>
@@ -92,7 +94,7 @@ const RecoveryCalendar = ({ onBack }: RecoveryCalendarProps) => {
           <div className="bg-primary p-2 rounded-lg">
             <CalendarIcon className="text-primary-foreground" size={20} />
           </div>
-          <h3 className="font-fjalla font-bold text-card-foreground text-xl">Your Recovery Days</h3>
+          <h3 className="font-fjalla font-bold text-card-foreground text-xl">{t('calendar.recoveryDays')}</h3>
         </div>
         
         <div className="bg-white/5 rounded-lg p-4">
@@ -144,12 +146,12 @@ const RecoveryCalendar = ({ onBack }: RecoveryCalendarProps) => {
             {isRecoveryDay(selectedDate) ? (
               <div className="flex items-center space-x-2">
                 <Badge className="bg-primary text-primary-foreground font-fjalla">
-                  Recovery Day
+                  {t('calendar.recoveryDay')}
                 </Badge>
-                <span className="text-muted-foreground text-sm">Great job staying strong!</span>
+                <span className="text-muted-foreground text-sm">{t('calendar.greatJob')}</span>
               </div>
             ) : (
-              <span className="text-muted-foreground text-sm">No recovery day logged</span>
+              <span className="text-muted-foreground text-sm">{t('calendar.noRecoveryDay')}</span>
             )}
           </div>
         )}
@@ -157,15 +159,15 @@ const RecoveryCalendar = ({ onBack }: RecoveryCalendarProps) => {
 
       {/* Legend */}
       <Card className="bg-card mt-6 p-4 border-0 shadow-none">
-        <h4 className="font-fjalla font-bold text-card-foreground mb-3">Legend</h4>
+        <h4 className="font-fjalla font-bold text-card-foreground mb-3">{t('calendar.legend')}</h4>
         <div className="space-y-2">
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 bg-primary rounded border-2 border-primary"></div>
-            <span className="text-muted-foreground text-sm">Recovery Day</span>
+            <span className="text-muted-foreground text-sm">{t('calendar.recoveryDay')}</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-4 h-4 bg-muted rounded border-2 border-muted-foreground"></div>
-            <span className="text-muted-foreground text-sm">Today</span>
+            <span className="text-muted-foreground text-sm">{t('calendar.today')}</span>
           </div>
         </div>
       </Card>
