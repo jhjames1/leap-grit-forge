@@ -231,8 +231,8 @@ const RecoveryJourney = () => {
         {/* Overall Progress Card */}
         <Card className="bg-card border border-black/[7.5%] p-6 rounded-lg mb-6 shadow-none">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="bg-muted p-2 rounded-lg">
-              <Target className="text-muted-foreground" size={20} />
+            <div className="bg-primary p-2 rounded-lg">
+              <Target className="text-primary-foreground" size={20} />
             </div>
           <div>
             <h3 className="font-fjalla font-bold text-card-foreground">Overall Progress</h3>

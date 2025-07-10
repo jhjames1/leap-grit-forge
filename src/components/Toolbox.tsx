@@ -296,10 +296,10 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
             >
               <div className="p-6">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="p-3 rounded-lg transition-all duration-200 bg-muted group-hover:bg-muted/80">
-                    <Icon className="transition-colors duration-200 text-muted-foreground" size={20} />
+                  <div className="p-3 rounded-lg transition-all duration-200 bg-primary group-hover:bg-primary/80">
+                    <Icon className="transition-colors duration-200 text-primary-foreground" size={20} />
                   </div>
-                  <Badge className="bg-muted text-muted-foreground text-xs font-source transition-all duration-200">
+                  <Badge className={`${tool.badgeColor} text-white text-xs font-source transition-all duration-200`}>
                     {tool.badge}
                   </Badge>
                 </div>
