@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import JourneyDayModal from './JourneyDayModal';
+import { logger } from '@/utils/logger';
 
 const RecoveryJourney = () => {
   const [currentDay, setCurrentDay] = useState(1);
@@ -24,8 +25,7 @@ const RecoveryJourney = () => {
   
   // Add useEffect to watch for userData changes and force re-render
   useEffect(() => {
-    console.log('RecoveryJourney: userData changed, completed days:', completedDays);
-    console.log('RecoveryJourney: actualCurrentDay calculated as:', actualCurrentDay);
+    logger.debug('Journey progress updated', { completedDaysCount: completedDays.length, currentDay: actualCurrentDay });
   }, [userData?.journeyProgress?.completedDays, forceRender]);
 
   // Check if it's past 12:01 AM
@@ -190,8 +190,7 @@ const RecoveryJourney = () => {
   };
 
   const handleCompleteDay = (day: number) => {
-    console.log('RecoveryJourney: handleCompleteDay called for day', day);
-    console.log('RecoveryJourney: Current completed days before update:', completedDays);
+    logger.debug('Recovery journey day completion', { day, completedDaysCount: completedDays.length });
     
     // Update current day if this was the active day
     if (day === actualCurrentDay && day < totalDays) {

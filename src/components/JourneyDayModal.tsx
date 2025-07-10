@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { useAudio } from '@/hooks/useAudio';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { logger } from '@/utils/logger';
 
 interface JourneyDayModalProps {
   day: number;
@@ -44,8 +45,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
     trigger_audio: '' // Add more audio URLs as needed
   };
 
-  console.log('Current language:', language);
-  console.log('Audio URL being used:', audioUrls.welcome_audio);
+  logger.debug('JourneyDayModal initialized', { language });
 
   // Use audio hook for the current audio activity
   const currentAudioUrl = currentAudioActivity ? audioUrls[currentAudioActivity as keyof typeof audioUrls] : '';
@@ -519,27 +519,28 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
   const handleCompleteDay = () => {
     if (!allActivitiesComplete) return;
     
-    console.log('JourneyDayModal: handleCompleteDay called for day', day);
-    console.log('JourneyDayModal: Current user data:', userData?.journeyProgress);
+    logger.debug('Journey day completion initiated', { day });
     
-    // Update user data with journey progress
-    const currentProgress = userData?.journeyProgress || { completedDays: [], currentWeek: 1, badges: [] };
+    if (!userData?.journeyProgress) {
+      logger.warn('No journey progress data available');
+      return;
+    }
+
+    const isAlreadyCompleted = userData.journeyProgress.completedDays.includes(day);
+    if (isAlreadyCompleted) {
+      logger.debug('Day already completed, skipping');
+      return;
+    }
+
     const updatedProgress = {
-      ...currentProgress,
-      completedDays: [...new Set([...currentProgress.completedDays, day])].sort((a, b) => a - b),
-      currentWeek: Math.floor((day - 1) / 7) + 1
+      ...userData.journeyProgress,
+      completedDays: [...userData.journeyProgress.completedDays, day].sort((a, b) => a - b)
     };
+
+    logger.debug('Updating journey progress');
+    updateUserData({ journeyProgress: updatedProgress });
     
-    console.log('JourneyDayModal: Updating progress to:', updatedProgress);
-    
-    updateUserData({
-      journeyProgress: updatedProgress
-    });
-    
-    // Log activity for streak calculation
-    logActivity(`Completed Day ${day}`, `Journey Day ${day}: ${dayData.title}`);
-    
-    console.log('JourneyDayModal: Calling onComplete');
+    logger.debug('Journey day completion callback triggered');
     onComplete();
   };
 

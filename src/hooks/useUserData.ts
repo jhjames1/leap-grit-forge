@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SecureStorage } from '@/utils/secureStorage';
+import { logger } from '@/utils/logger';
 import { getSecureSession, clearSession, logSecurityEvent } from '@/utils/security';
 
 interface ActivityLogEntry {
@@ -102,7 +103,7 @@ export const useUserData = () => {
         logSecurityEvent('user_data_created', { username });
       }
     } catch (error) {
-      console.error('Failed to load user data:', error);
+      logger.error('Failed to load user data', error);
       logSecurityEvent('user_data_error', { username, error: error instanceof Error ? error.message : 'Unknown error' });
       
       // Create minimal fallback data
@@ -182,7 +183,7 @@ export const useUserData = () => {
         logSecurityEvent('user_data_updated', { username: currentUser });
       }
     } catch (error) {
-      console.error('Failed to update user data:', error);
+      logger.error('Failed to update user data', error);
       logSecurityEvent('user_data_update_error', { username: currentUser, error: error instanceof Error ? error.message : 'Unknown error' });
     }
   };

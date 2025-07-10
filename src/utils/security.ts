@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import CryptoJS from 'crypto-js';
+import { logger } from './logger';
 import DOMPurify from 'dompurify';
 
 // Security configuration
@@ -27,13 +28,13 @@ export const decryptData = (encryptedData: string): string => {
     
     // If decryption results in empty string, it likely failed
     if (!decrypted) {
-      console.warn('Decryption resulted in empty string, possible data corruption');
+      logger.warn('Decryption resulted in empty string, possible data corruption');
       return '';
     }
     
     return decrypted;
   } catch (error) {
-    console.error('Decryption failed:', error);
+    logger.error('Decryption failed', error);
     return '';
   }
 };
@@ -109,7 +110,7 @@ export const getSecureSession = (): { username: string; token: string } | null =
     
     return { username: sessionData.username, token: sessionData.token };
   } catch (error) {
-    console.error('Session retrieval failed:', error);
+    logger.error('Session retrieval failed', error);
     return null;
   }
 };

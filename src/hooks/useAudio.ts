@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { logger } from '@/utils/logger';
 
 interface UseAudioReturn {
   isPlaying: boolean;
@@ -36,15 +37,15 @@ export const useAudio = (url: string): UseAudioReturn => {
     setError(null);
 
     const handleLoadStart = () => {
-      console.log('useAudio: Load started');
+      logger.debug('useAudio: Load started');
     };
 
     const handleLoadedMetadata = () => {
-      console.log('useAudio: Metadata loaded, duration:', audio.duration);
+      logger.debug('useAudio: Metadata loaded');
     };
 
     const handleLoadedData = () => {
-      console.log('useAudio: Data loaded, setting duration:', audio.duration);
+      logger.debug('useAudio: Data loaded');
       setDuration(audio.duration);
       setIsLoading(false);
     };
@@ -54,7 +55,7 @@ export const useAudio = (url: string): UseAudioReturn => {
     };
 
     const handleEnded = () => {
-      console.log('useAudio: Audio ended');
+      logger.debug('useAudio: Audio ended');
       setIsPlaying(false);
       setCurrentTime(0);
     };
@@ -82,26 +83,26 @@ export const useAudio = (url: string): UseAudioReturn => {
         }
       }
       
-      console.error('useAudio: Error occurred:', errorMessage, errorTarget.error);
+      logger.error('useAudio: Audio error occurred', { message: errorMessage });
       setError(errorMessage);
       setIsLoading(false);
     };
 
     const handleCanPlay = () => {
-      console.log('useAudio: Can play audio');
+      logger.debug('useAudio: Can play audio');
       setIsLoading(false);
     };
 
     const handleProgress = () => {
-      console.log('useAudio: Download progress');
+      logger.debug('useAudio: Download progress');
     };
 
     const handleStalled = () => {
-      console.log('useAudio: Download stalled');
+      logger.debug('useAudio: Download stalled');
     };
 
     const handleSuspend = () => {
-      console.log('useAudio: Download suspended');
+      logger.debug('useAudio: Download suspended');
     };
 
     audio.addEventListener('loadstart', handleLoadStart);
@@ -116,11 +117,11 @@ export const useAudio = (url: string): UseAudioReturn => {
     audio.addEventListener('suspend', handleSuspend);
 
     // Set the source after adding event listeners
-    console.log('useAudio: Setting audio source to:', url);
+    logger.debug('useAudio: Setting audio source');
     audio.src = url;
 
     return () => {
-      console.log('useAudio: Cleaning up audio element');
+      logger.debug('useAudio: Cleaning up audio element');
       audio.removeEventListener('loadstart', handleLoadStart);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('loadeddata', handleLoadedData);

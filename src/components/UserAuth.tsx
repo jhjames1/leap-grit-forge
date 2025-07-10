@@ -8,6 +8,7 @@ import { User } from 'lucide-react';
 import { sanitizeInput, logSecurityEvent } from '@/utils/security';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageToggle } from '@/components/LanguageToggle';
+import { logger } from '@/utils/logger';
 
 interface UserAuthProps {
   onLogin: (userData: { firstName: string; isNewUser: boolean }) => void;
@@ -68,7 +69,7 @@ const UserAuth = ({ onLogin }: UserAuthProps) => {
       localStorage.setItem('currentUser', sanitizedFirstName);
       onLogin({ firstName: sanitizedFirstName, isNewUser });
     } catch (error) {
-      console.error('Authentication error:', error);
+      logger.error('Authentication failed', error);
       setError(t('auth.error.general'));
       logSecurityEvent('auth_error', { error: error instanceof Error ? error.message : 'Unknown error' });
     } finally {

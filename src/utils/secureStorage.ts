@@ -1,4 +1,5 @@
 import { encryptData, decryptData, sanitizeInput } from './security';
+import { logger } from './logger';
 
 export class SecureStorage {
   private static encrypt = true; // Enable encryption for sensitive data
@@ -16,7 +17,7 @@ export class SecureStorage {
         localStorage.setItem(userKey, JSON.stringify(sanitizedData));
       }
     } catch (error) {
-      console.error('Failed to store user data:', error);
+      logger.error('Failed to store user data', error);
     }
   }
   
@@ -34,31 +35,34 @@ export class SecureStorage {
           try {
             return JSON.parse(decryptedData);
           } catch (parseError) {
-            console.error('Failed to parse decrypted data:', parseError);
-            // Try to fallback to unencrypted data
+            logger.error('Failed to parse decrypted data', parseError);
+            
+            // Try fallback parsing
             try {
-              return JSON.parse(storedData);
+              return JSON.parse(decryptedData);
             } catch (fallbackError) {
-              console.error('Fallback parsing also failed:', fallbackError);
+              logger.error('Fallback parsing also failed', fallbackError);
               return null;
             }
           }
         } else {
-          // Decryption failed, try unencrypted fallback
-          try {
-            const fallbackData = JSON.parse(storedData);
-            console.warn('Using unencrypted fallback data for user:', username);
-            return fallbackData;
-          } catch (fallbackError) {
-            console.error('Both encrypted and unencrypted parsing failed:', fallbackError);
-            return null;
+          // Try unencrypted fallback
+          const fallbackData = localStorage.getItem(`leap_user_${username}`);
+          if (fallbackData) {
+            try {
+              logger.warn('Using unencrypted fallback data');
+              return JSON.parse(fallbackData);
+            } catch (fallbackError) {
+              logger.error('Both encrypted and unencrypted parsing failed', fallbackError);
+              return null;
+            }
           }
         }
       } else {
         return JSON.parse(storedData);
       }
     } catch (error) {
-      console.error('Failed to retrieve user data:', error);
+      logger.error('Failed to retrieve user data', error);
       return null;
     }
   }
@@ -103,7 +107,7 @@ export class SecureStorage {
             localStorage.removeItem(key);
           }
         } catch (error) {
-          console.error('Error during cleanup:', error);
+          logger.error('Error during cleanup', error);
         }
       }
     });

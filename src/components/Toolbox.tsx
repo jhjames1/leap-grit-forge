@@ -16,6 +16,7 @@ import UrgeTracker from '@/components/UrgeTracker';
 import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { logger } from '@/utils/logger';
 
 interface ToolboxProps {
   onNavigate?: (page: string) => void;
@@ -189,7 +190,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         setShowGratitudeLog(true);
         break;
       default:
-        console.log(`Opening ${toolId} tool`);
+        logger.debug('Tool opened', { toolId });
     }
   };
 

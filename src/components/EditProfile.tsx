@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, User, Phone } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { logger } from '@/utils/logger';
 
 interface EditProfileProps {
   onBack: () => void;
@@ -85,7 +86,7 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
         onBack();
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Failed to update profile', error);
       setErrors({ general: t('editProfile.updateError') });
     } finally {
       setIsSubmitting(false);
