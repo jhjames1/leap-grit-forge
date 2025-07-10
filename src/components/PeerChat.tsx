@@ -243,9 +243,9 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         </div>
       </div>
 
-      {/* Scheduled Check-in Banner */}
+      {/* Scheduled Check-in Banner - Moved to bottom */}
       {selectedPeer?.status === 'online' && (
-        <div className="absolute top-20 left-4 right-4 bg-steel/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+        <div className="bg-steel/90 backdrop-blur-sm border-t border-steel-dark p-3">
           <div className="flex items-center space-x-3">
             <Calendar className="text-white" size={16} />
             <div className="flex-1">

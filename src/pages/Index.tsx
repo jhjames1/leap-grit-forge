@@ -42,7 +42,8 @@ const Index = () => {
     if (!currentUser) {
       setShowAuth(true);
     } else {
-      setShowGreeting(true);
+      // Always show onboarding for returning users too
+      setShowOnboarding(true);
     }
   };
 
@@ -51,13 +52,8 @@ const Index = () => {
     localStorage.setItem('currentUser', userData.firstName);
     setShowAuth(false);
     
-    // Check if onboarding has been completed
-    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
-    if (!onboardingCompleted && userData.isNewUser) {
-      setShowOnboarding(true);
-    } else {
-      setShowGreeting(true);
-    }
+    // Always show onboarding for every user
+    setShowOnboarding(true);
   };
 
   const handleOnboardingComplete = (onboardingData: any) => {
