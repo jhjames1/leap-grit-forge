@@ -228,12 +228,12 @@ const RecoveryJourney = () => {
         <p className="text-steel-light font-oswald">90-day guided track</p>
       </div>
 
-      {/* Overall Progress Card */}
-      <Card className="bg-card border border-black/[7.5%] p-6 rounded-lg mb-6 shadow-none">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-yellow-400 p-2 rounded-lg">
-            <Target className="text-black" size={20} />
-          </div>
+        {/* Overall Progress Card */}
+        <Card className="bg-card border border-black/[7.5%] p-6 rounded-lg mb-6 shadow-none">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="bg-muted p-2 rounded-lg">
+              <Target className="text-muted-foreground" size={20} />
+            </div>
           <div>
             <h3 className="font-fjalla font-bold text-card-foreground">Overall Progress</h3>
             <p className="text-muted-foreground text-sm">
@@ -259,8 +259,8 @@ const RecoveryJourney = () => {
       {/* Week 1: Foundation */}
       <Card className="bg-card p-6 rounded-lg mb-6 border-0 shadow-none">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-primary p-2 rounded-lg">
-            <Trophy className="text-primary-foreground" size={20} />
+          <div className="bg-muted p-2 rounded-lg">
+            <Trophy className="text-muted-foreground" size={20} />
           </div>
           <h3 className="font-fjalla font-bold text-card-foreground">Week 1: Foundation</h3>
         </div>
@@ -280,9 +280,9 @@ const RecoveryJourney = () => {
                   isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'
                 } ${
                   isCompleted
-                    ? 'bg-primary/10 border border-muted'
+                    ? 'bg-muted/30 border border-muted'
                     : isUnlocked
-                      ? 'bg-card hover:bg-accent border border-muted'
+                      ? 'bg-card hover:bg-muted/50 border border-muted'
                       : 'bg-muted opacity-60 border border-muted'
                 }`}
               >
@@ -290,15 +290,15 @@ const RecoveryJourney = () => {
                   {/* Status Icon */}
                   <div className={`p-2 rounded-lg flex-shrink-0 transition-all duration-200 ${
                     isCompleted
-                      ? 'bg-primary'
+                      ? 'bg-muted'
                       : isUnlocked
-                        ? 'bg-primary'
+                        ? 'bg-muted'
                         : 'bg-muted'
                   }`}>
                     {isCompleted ? (
-                      <CheckCircle2 className="text-primary-foreground" size={20} />
+                      <CheckCircle2 className="text-muted-foreground" size={20} />
                     ) : isUnlocked ? (
-                      <Play className="text-primary-foreground" size={20} />
+                      <Play className="text-muted-foreground" size={20} />
                     ) : (
                       <Lock className="text-muted-foreground" size={20} />
                     )}
@@ -307,7 +307,7 @@ const RecoveryJourney = () => {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
-                      <span className="font-fjalla font-bold text-primary text-sm">
+                      <span className="font-fjalla font-bold text-muted-foreground text-sm">
                         DAY {dayModule.day}
                       </span>
                       <span className="text-muted-foreground text-xs">•</span>
@@ -323,7 +323,7 @@ const RecoveryJourney = () => {
                     </h3>
                     
                     <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                      <Clock size={12} className="text-primary" />
+                      <Clock size={12} className="text-muted-foreground" />
                       <span>{dayModule.duration}</span>
                     </div>
                   </div>
@@ -334,8 +334,8 @@ const RecoveryJourney = () => {
                       !isUnlocked
                         ? 'bg-muted text-muted-foreground cursor-not-allowed border border-muted'
                         : isCompleted 
-                          ? 'border-primary text-primary hover:bg-primary/10 bg-transparent border'
-                          : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg'
+                          ? 'border-muted text-muted-foreground hover:bg-muted/50 bg-transparent border'
+                          : 'bg-muted hover:bg-muted/80 text-muted-foreground shadow-lg'
                     }`}
                     disabled={!isUnlocked}
                     onClick={(e) => {
