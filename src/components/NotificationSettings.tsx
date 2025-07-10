@@ -5,6 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Bell, Clock, Flame, MessageSquare, Calendar, Smartphone } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface NotificationSettingsProps {
   onBack: () => void;
@@ -20,6 +21,7 @@ interface NotificationPreferences {
 }
 
 const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
+  const { t } = useLanguage();
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     dailyMotivation: true,
     motivationTime: '08:00',
@@ -75,7 +77,7 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
         <div className="space-y-4 max-w-md mx-auto">
           {/* Daily Motivation */}
           <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-            <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">Daily Check-ins</h3>
+            <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">{t('notifications.dailyCheckIns')}</h3>
             
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -83,8 +85,8 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
                   <Bell className="text-primary-foreground" size={16} />
                 </div>
                 <div>
-                  <Label className="text-card-foreground font-medium">Morning Check-in</Label>
-                  <p className="text-muted-foreground text-sm">Get reminded to start your day right</p>
+                    <Label className="text-card-foreground font-medium">{t('notifications.morningCheckIn')}</Label>
+                    <p className="text-muted-foreground text-sm">{t('notifications.morningCheckInDesc')}</p>
                 </div>
               </div>
               <Switch
@@ -117,7 +119,7 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
 
           {/* Recovery Support */}
           <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-            <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">Recovery Support</h3>
+            <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">{t('notifications.recoverySupport')}</h3>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -126,8 +128,8 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
                     <MessageSquare className="text-primary-foreground" size={16} />
                   </div>
                   <div>
-                    <Label className="text-card-foreground font-medium">Peer Messages</Label>
-                    <p className="text-muted-foreground text-sm">Notifications from peer specialists</p>
+                    <Label className="text-card-foreground font-medium">{t('notifications.peerMessages')}</Label>
+                    <p className="text-muted-foreground text-sm">{t('notifications.peerMessagesDesc')}</p>
                   </div>
                 </div>
                 <Switch
@@ -148,8 +150,8 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
                   <Calendar className="text-primary-foreground" size={16} />
                 </div>
                 <div>
-                  <Label className="text-card-foreground font-medium">Weekly Check-in</Label>
-                  <p className="text-muted-foreground text-sm">Review your progress and set goals</p>
+                    <Label className="text-card-foreground font-medium">{t('notifications.weeklyCheckIn')}</Label>
+                    <p className="text-muted-foreground text-sm">{t('notifications.weeklyCheckInDesc')}</p>
                 </div>
               </div>
               <Switch
@@ -161,7 +163,7 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
 
           {/* Notification Method */}
           <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-            <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">Notification Method</h3>
+            <h3 className="font-fjalla font-bold text-card-foreground mb-4 tracking-wide">{t('notifications.notificationMethod')}</h3>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -170,8 +172,8 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
                     <Bell className="text-primary-foreground" size={16} />
                   </div>
                   <div>
-                    <Label className="text-card-foreground font-medium">Push Notifications</Label>
-                    <p className="text-muted-foreground text-sm">Receive notifications on this device</p>
+                    <Label className="text-card-foreground font-medium">{t('notifications.pushNotifications')}</Label>
+                    <p className="text-muted-foreground text-sm">{t('notifications.pushNotificationsDesc')}</p>
                   </div>
                 </div>
                 <Switch
@@ -186,8 +188,8 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
                     <Smartphone className="text-primary-foreground" size={16} />
                   </div>
                   <div>
-                    <Label className="text-card-foreground font-medium">SMS Notifications</Label>
-                    <p className="text-muted-foreground text-sm">Text message alerts and reminders</p>
+                    <Label className="text-card-foreground font-medium">{t('notifications.smsNotifications')}</Label>
+                    <p className="text-muted-foreground text-sm">{t('notifications.smsNotificationsDesc')}</p>
                   </div>
                 </div>
                 <Switch

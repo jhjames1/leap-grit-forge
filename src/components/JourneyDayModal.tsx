@@ -268,14 +268,15 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                     )}
                   </Button>
                   
-                  {/* Manual completion button - appears after audio starts playing */}
-                  {currentAudioActivity === activity.key && audioDuration > 0 && (
+                  {/* Manual completion button - appears 5 seconds before audio ends */}
+                  {currentAudioActivity === activity.key && audioDuration > 0 && (audioDuration - audioCurrentTime <= 5) && (
                     <Button 
                       onClick={() => markActivityComplete(activity.key)}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground font-source"
+                      disabled={isCompleted}
                     >
                       <CheckCircle2 size={16} className="mr-2" />
-                      Complete
+                      {t('common.complete')}
                     </Button>
                   )}
                 </>
@@ -294,14 +295,14 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
 
       case 'carousel':
         return (
-          <Card key={activity.key} className={`border-steel-dark p-4 ${isCompleted ? 'bg-construction/10 border-construction/20' : 'bg-white/10'}`}>
+          <Card key={activity.key} className={`border-0 shadow-none p-4 rounded-lg ${isCompleted ? 'bg-card/50' : 'bg-card'}`}>
             <div className="flex items-center space-x-3 mb-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-construction' : 'bg-construction'}`}>
-                {isCompleted ? <CheckCircle2 className="text-midnight" size={16} /> : <span className="text-midnight text-sm">{index + 1}</span>}
+              <div className={`w-8 h-8 rounded-sm flex items-center justify-center ${isCompleted ? 'bg-primary' : 'bg-primary'}`}>
+                {isCompleted ? <CheckCircle2 className="text-primary-foreground" size={16} /> : <span className="text-primary-foreground text-sm font-source">{index + 1}</span>}
               </div>
-              <h4 className="font-oswald font-semibold text-white">{activity.title}</h4>
+              <h4 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide">{activity.title}</h4>
             </div>
-            <p className="text-steel-light text-sm mb-4">Swipe through these 3 slides about recovery</p>
+            <p className="text-muted-foreground text-sm mb-4 font-source">Swipe through these 3 slides about recovery</p>
             
             <div className="mb-4">
               <Carousel 
@@ -365,14 +366,14 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
             {!isCompleted ? (
               <Button 
                 onClick={() => markActivityComplete(activity.key)}
-                className="bg-construction hover:bg-construction-dark text-midnight font-oswald w-full"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-source w-full"
               >
-                Continue to Next Activity
+                {t('common.continue')}
               </Button>
             ) : (
-              <div className="flex items-center space-x-2 text-construction justify-center">
+              <div className="flex items-center space-x-2 text-primary justify-center">
                 <CheckCircle2 size={16} />
-                <span className="font-oswald">Slides Complete</span>
+                <span className="font-source">{t('common.completed')}</span>
               </div>
             )}
           </Card>
@@ -407,18 +408,18 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
 
       case 'text_input':
         return (
-          <Card key={activity.key} className={`border-steel-dark p-4 ${isCompleted ? 'bg-construction/10 border-construction/20' : 'bg-white/10'}`}>
+          <Card key={activity.key} className={`border-0 shadow-none p-4 rounded-lg ${isCompleted ? 'bg-card/50' : 'bg-card'}`}>
             <div className="flex items-center space-x-3 mb-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-construction' : 'bg-construction'}`}>
-                {isCompleted ? <CheckCircle2 className="text-midnight" size={16} /> : <span className="text-midnight text-sm">{index + 1}</span>}
+              <div className={`w-8 h-8 rounded-sm flex items-center justify-center ${isCompleted ? 'bg-primary' : 'bg-primary'}`}>
+                {isCompleted ? <CheckCircle2 className="text-primary-foreground" size={16} /> : <span className="text-primary-foreground text-sm font-source">{index + 1}</span>}
               </div>
-              <h4 className="font-oswald font-semibold text-white">{activity.title}</h4>
+              <h4 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide">{activity.title}</h4>
             </div>
-            <p className="text-steel-light text-sm mb-3">Complete this sentence: "I'm here because ______."</p>
+            <p className="text-muted-foreground text-sm mb-3 font-source">Complete this sentence: "I'm here because ______."</p>
             
             <div className="space-y-3">
               <textarea
-                className="w-full bg-steel-dark text-white p-3 rounded-lg border border-steel resize-none"
+                className="w-full bg-muted text-card-foreground p-3 rounded-lg border border-border resize-none font-source"
                 rows={3}
                 placeholder="I'm here because..."
                 defaultValue={activityStates[activity.key]?.data || ''}
@@ -433,10 +434,17 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                       markActivityComplete(activity.key, textarea.value);
                     }
                   }}
-                  className="bg-construction hover:bg-construction-dark text-midnight font-oswald"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-source w-full"
                 >
-                  Save Response
+                  {t('common.continue')}
                 </Button>
+              )}
+              
+              {isCompleted && (
+                <div className="flex items-center space-x-2 text-primary justify-center">
+                  <CheckCircle2 size={16} />
+                  <span className="font-source">{t('common.completed')}</span>
+                </div>
               )}
             </div>
           </Card>

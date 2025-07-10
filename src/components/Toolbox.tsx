@@ -125,8 +125,8 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const tools = [
     {
       id: 'panic',
-      title: 'Emergency Help',
-      description: 'Get immediate support',
+      title: t('toolbox.tools.emergencyHelp'),
+      description: t('toolbox.tools.emergencyDesc'),
       icon: AlertTriangle,
       color: 'bg-red-600 hover:bg-red-700',
       badge: 'Emergency',
@@ -134,38 +134,38 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     },
     {
       id: 'foreman',
-      title: 'The Foreman',
-      description: 'Mentor and Affirmations',
+      title: t('toolbox.tools.foreman.title'),
+      description: t('toolbox.tools.foreman.description'),
       icon: Bot,
       color: 'bg-steel hover:bg-steel-light',
-      badge: 'AI Chat',
+      badge: t('toolbox.tools.foreman.badge'),
       badgeColor: 'bg-steel'
     },
     {
       id: 'urge',
-      title: 'Redline Recovery',
-      description: 'Track urges & get redirected',
+      title: t('toolbox.tools.urgeTracker.title'),
+      description: t('toolbox.tools.urgeTracker.description'),
       icon: TrendingUp,
       color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
-      badge: 'Track',
+      badge: t('toolbox.tools.urgeTracker.badge'),
       badgeColor: 'bg-construction'
     },
     {
       id: 'breathing',
-      title: 'SteadySteel',
-      description: 'Interactive breathing exercise',
+      title: t('toolbox.tools.breathingExercise.title'),
+      description: t('toolbox.tools.breathingExercise.description'),
       icon: Wind,
       color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
-      badge: 'Calm',
+      badge: t('toolbox.tools.breathingExercise.badge'),
       badgeColor: 'bg-construction'
     },
     {
       id: 'gratitude',
-      title: 'Gratitude Log',
-      description: 'Focus on the positive',
+      title: t('toolbox.tools.gratitudeLog.title'),
+      description: t('toolbox.tools.gratitudeLog.description'),
       icon: Heart,
       color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
-      badge: 'Mindset',
+      badge: t('toolbox.tools.gratitudeLog.badge'),
       badgeColor: 'bg-construction'
     }
   ];
@@ -247,7 +247,11 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-5xl font-bold text-gray-900 mb-1 tracking-wide">
-          <span className="font-oswald font-extralight tracking-tight">YOUR</span><span className="font-fjalla font-extrabold italic">TOOLBOX</span>
+          {t('toolbox.title').split(' ').map((word, index) => (
+            <span key={index} className={index === 0 ? "font-oswald font-extralight tracking-tight" : "font-fjalla font-extrabold italic"}>
+              {word.toUpperCase()}{index === 0 ? ' ' : ''}
+            </span>
+          ))}
         </h1>
         <p className="text-gray-600 font-oswald">{t('toolbox.subtitle')}</p>
       </div>
@@ -320,7 +324,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
 
       {/* Live Recent Activity with updated timestamp format */}
       <Card className="bg-white mt-6 p-6 border-0 shadow-sm rounded-xl">
-        <h3 className="font-semibold text-[20px] text-gray-900 mb-4">Recent Activity</h3>
+        <h3 className="font-semibold text-[20px] text-gray-900 mb-4">{t('toolbox.recentActivity')}</h3>
         <div className="space-y-3">
           {userData?.activityLog.length ? (
             userData.activityLog
@@ -340,7 +344,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
               ))
           ) : (
             <div className="text-gray-600 text-sm font-source">
-              Your completed activities will appear here as you use the tools.
+              {t('toolbox.recentActivityEmpty')}
             </div>
           )}
         </div>
