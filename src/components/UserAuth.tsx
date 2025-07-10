@@ -75,22 +75,22 @@ const UserAuth = ({ onLogin }: UserAuthProps) => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full">
+      <Card className="bg-card border-0 shadow-none p-8 max-w-sm w-full">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 mx-auto bg-construction/20 rounded-full flex items-center justify-center mb-4">
-            <User className="text-construction" size={32} />
+          <div className="w-16 h-16 mx-auto bg-primary p-2 rounded-lg flex items-center justify-center mb-4">
+            <User className="text-primary-foreground" size={32} />
           </div>
-          <h2 className="font-oswald font-bold text-white text-2xl mb-2">
+          <h2 className="font-fjalla font-bold text-card-foreground text-2xl mb-2">
             Welcome to LEAP
           </h2>
-          <p className="text-steel-light text-sm">
+          <p className="text-muted-foreground text-sm font-source">
             Enter your first name to get started
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="firstName" className="text-white font-oswald font-medium">
+            <Label htmlFor="firstName" className="text-card-foreground font-fjalla font-medium">
               First Name
             </Label>
             <Input
@@ -98,7 +98,7 @@ const UserAuth = ({ onLogin }: UserAuthProps) => {
               type="text"
               value={credentials.firstName}
               onChange={(e) => setCredentials(prev => ({ ...prev, firstName: e.target.value }))}
-              className="bg-steel-dark border-steel text-white placeholder:text-steel-light mt-1"
+              className="bg-background border-border text-card-foreground placeholder:text-muted-foreground mt-1"
               placeholder="Enter your first name"
               required
             />
@@ -112,7 +112,7 @@ const UserAuth = ({ onLogin }: UserAuthProps) => {
 
           <Button 
             type="submit"
-            className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-fjalla font-semibold"
             disabled={isLoading}
           >
             {isLoading ? "Processing..." : 'Enter App'}

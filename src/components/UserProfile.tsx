@@ -140,7 +140,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
         <div className="grid grid-cols-2 gap-4">
           {user.badges.map((badge, index) => (
             <div key={index} className="flex items-center space-x-3 p-3 bg-muted/20 rounded-lg">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center">
                 <span>{badge.icon}</span>
               </div>
               <div>

@@ -23,7 +23,7 @@ const StreakReminder = ({ onAction, onClose }: StreakReminderProps) => {
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="text-steel-light hover:text-white"
+            className="text-black hover:text-black/70"
           >
             <X size={20} />
           </Button>

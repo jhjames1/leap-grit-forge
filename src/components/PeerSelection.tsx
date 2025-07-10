@@ -86,7 +86,7 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
         </Button>
         <div>
           <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-            <span className="font-oswald font-extralight tracking-tight">PEER</span><span className="font-fjalla font-extrabold italic">SELECTION</span>
+            <span className="font-oswald font-extralight tracking-tight">PEER</span><span className="font-fjalla font-extrabold italic">SUPPORT</span>
           </h1>
           <p className="text-steel-light font-oswald">Choose someone to talk with</p>
         </div>
@@ -101,7 +101,7 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
                 <div className="w-12 h-12 bg-steel rounded-full flex items-center justify-center">
                   <User className="text-white" size={20} />
                 </div>
-                <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${getStatusColor(peer.status)} rounded-full border-2 border-midnight`}></div>
+                <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${getStatusColor(peer.status)} rounded-full`}></div>
               </div>
               
               <div className="flex-1">

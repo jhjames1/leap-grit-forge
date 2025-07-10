@@ -229,7 +229,7 @@ const RecoveryJourney = () => {
       </div>
 
       {/* Overall Progress Card */}
-      <Card className="bg-black/[7.5%] p-6 rounded-lg mb-6 border-0 shadow-none">
+      <Card className="bg-card border border-black/[7.5%] p-6 rounded-lg mb-6 shadow-none">
         <div className="flex items-center space-x-3 mb-4">
           <div className="bg-yellow-400 p-2 rounded-lg">
             <Target className="text-black" size={20} />
@@ -354,24 +354,6 @@ const RecoveryJourney = () => {
         </div>
       </Card>
 
-      {/* Week 1 Progress Summary */}
-      <Card className="bg-card p-6 rounded-lg border-0 shadow-none">
-        <h3 className="font-fjalla font-bold text-card-foreground mb-3">Week 1 Progress</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Days Completed</span>
-            <span className="text-primary font-fjalla font-bold">
-              {completedDays.filter(day => day <= 7).length} / 7
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Foundation Strength</span>
-            <span className="text-primary font-fjalla font-bold">
-              {Math.round((completedDays.filter(day => day <= 7).length / 7) * 100)}%
-            </span>
-          </div>
-        </div>
-      </Card>
 
       {/* Day Modal */}
       {selectedDay && (
