@@ -40,7 +40,7 @@ const About = ({ onBack }: AboutProps) => {
             </h3>
           </div>
           <p className="text-card-foreground text-sm leading-relaxed">
-            LEAP is designed specifically for men in labor-intensive fields who are navigating their recovery journey. 
+            LEAP is designed specifically for men in labor-intensive fields who are navigating their journey. 
             We understand the unique challenges you face and provide practical, no-nonsense tools to support your progress.
           </p>
         </Card>

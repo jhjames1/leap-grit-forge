@@ -234,7 +234,7 @@ const RecoveryJourney = () => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-5xl font-bold text-gray-900 mb-1 tracking-wide">
-          <span className="font-oswald font-extralight tracking-tight">RECOVERY</span><span className="font-fjalla font-extrabold italic">JOURNEY</span>
+          <span className="font-oswald font-extralight tracking-tight">YOUR</span><span className="font-fjalla font-extrabold italic">JOURNEY</span>
         </h1>
         <p className="text-gray-600 font-oswald">90-day guided track</p>
       </div>

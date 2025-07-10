@@ -56,7 +56,7 @@ const SMSOptIn = ({ onClose }: SMSOptInProps) => {
         
         <div className="space-y-4">
           <p className="text-steel-light">
-            Get daily motivation and check-in reminders via SMS to support your recovery journey.
+            Get daily motivation and check-in reminders via SMS to support your journey.
           </p>
           
           <div className="space-y-2">

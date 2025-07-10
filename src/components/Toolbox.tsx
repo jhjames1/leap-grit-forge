@@ -247,7 +247,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-5xl font-bold text-gray-900 mb-1 tracking-wide">
-          <span className="font-oswald font-extralight tracking-tight">RECOVERY</span><span className="font-fjalla font-extrabold italic">TOOLBOX</span>
+          <span className="font-oswald font-extralight tracking-tight">YOUR</span><span className="font-fjalla font-extrabold italic">TOOLBOX</span>
         </h1>
         <p className="text-gray-600 font-oswald">{t('toolbox.subtitle')}</p>
       </div>

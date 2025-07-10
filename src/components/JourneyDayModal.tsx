@@ -206,7 +206,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
             </div>
             
             {activity.key === 'welcome_audio' && (
-              <p className="text-muted-foreground text-sm mb-3 font-source">Welcome to LEAP - Your recovery journey starts here</p>
+              <p className="text-muted-foreground text-sm mb-3 font-source">Welcome to LEAP - Your journey starts here</p>
             )}
             
             {activity.key === 'trigger_audio' && (

@@ -192,7 +192,7 @@ const englishTranslations = {
   // Home
   home: {
     welcome: 'Welcome',
-    journeyContinues: 'Your recovery journey continues.',
+    journeyContinues: 'Your journey continues.',
     todaysMotivation: "Today's Motivation",
     currentDay: 'Day {{day}}: Building Daily Habits',
     motivation: {
@@ -200,18 +200,17 @@ const englishTranslations = {
         "Every day is a new opportunity to build the life you want.",
         "Strength doesn't come from what you can do. It comes from overcoming what you thought you couldn't.",
         "The only impossible journey is the one you never begin.",
-        "Recovery is not a destination, it's a way of life.",
         "Progress, not perfection, is the goal.",
         "You are stronger than your urges.",
         "One day at a time, one choice at a time.",
         "Your past doesn't define your future.",
         "Courage isn't the absence of fear, it's moving forward despite it.",
         "Every small step forward is a victory.",
-        "Recovery is a journey of self-discovery.",
+        "Your path is a journey of self-discovery.",
         "You have the power to change your story.",
         "Healing happens one breath at a time.",
         "Your strength is greater than any challenge.",
-        "Today is a new chance to choose recovery."
+        "Today is a new chance to choose growth."
       ]
     },
     streak: {
@@ -236,7 +235,7 @@ const englishTranslations = {
     },
     foreman: {
       title: 'The Foreman',
-      subtitle: 'Your recovery coach is here to help',
+      subtitle: 'Your personal coach is here to help',
       button: 'Chat Now'
     }
   },
@@ -289,7 +288,7 @@ const englishTranslations = {
   
   // Journey
   journey: {
-    title: 'Your Recovery Journey',
+    title: 'Your Journey',
     day: 'Day',
     complete: 'Complete',
     locked: 'Locked',
@@ -298,7 +297,7 @@ const englishTranslations = {
   
   // Toolbox
   toolbox: {
-    title: 'Recovery Toolbox',
+    title: 'Your Toolbox',
     subtitle: 'Your support tools, always ready',
     stats: {
       todayTools: 'Tools Used Today',
@@ -617,7 +616,7 @@ const spanishTranslations = {
   // Home
   home: {
     welcome: 'Bienvenido',
-    journeyContinues: 'Tu viaje de recuperación continúa.',
+    journeyContinues: 'Tu viaje continúa.',
     todaysMotivation: 'Motivación de Hoy',
     currentDay: 'Día {{day}}: Construyendo Hábitos Diarios',
     motivation: {
@@ -625,18 +624,17 @@ const spanishTranslations = {
         "Cada día es una nueva oportunidad para construir la vida que quieres.",
         "La fuerza no viene de lo que puedes hacer. Viene de superar lo que pensaste que no podías.",
         "El único viaje imposible es el que nunca comienzas.",
-        "La recuperación no es un destino, es una forma de vida.",
         "El progreso, no la perfección, es la meta.",
         "Eres más fuerte que tus impulsos.",
         "Un día a la vez, una decisión a la vez.",
         "Tu pasado no define tu futuro.",
         "El coraje no es la ausencia del miedo, es seguir adelante a pesar de él.",
         "Cada pequeño paso adelante es una victoria.",
-        "La recuperación es un viaje de autodescubrimiento.",
+        "Tu camino es un viaje de autodescubrimiento.",
         "Tienes el poder de cambiar tu historia.",
         "La sanación ocurre una respiración a la vez.",
         "Tu fuerza es mayor que cualquier desafío.",
-        "Hoy es una nueva oportunidad para elegir la recuperación."
+        "Hoy es una nueva oportunidad para elegir el crecimiento."
       ]
     },
     streak: {
@@ -661,7 +659,7 @@ const spanishTranslations = {
     },
     foreman: {
       title: 'El Capataz',
-      subtitle: 'Tu entrenador de recuperación está aquí para ayudar',
+      subtitle: 'Tu entrenador personal está aquí para ayudar',
       button: 'Chatear Ahora'
     }
   },
@@ -714,7 +712,7 @@ const spanishTranslations = {
   
   // Journey
   journey: {
-    title: 'Tu Viaje de Recuperación',
+    title: 'Tu Viaje',
     day: 'Día',
     complete: 'Completar',
     locked: 'Bloqueado',
@@ -723,7 +721,7 @@ const spanishTranslations = {
   
   // Toolbox
   toolbox: {
-    title: 'Caja de Herramientas de Recuperación',
+    title: 'Tu Caja de Herramientas',
     subtitle: 'Tus herramientas de apoyo, siempre listas',
     stats: {
       todayTools: 'Herramientas Usadas Hoy',
