@@ -438,6 +438,9 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
   const handleCompleteDay = () => {
     if (!allActivitiesComplete) return;
     
+    console.log('JourneyDayModal: handleCompleteDay called for day', day);
+    console.log('JourneyDayModal: Current user data:', userData?.journeyProgress);
+    
     // Update user data with journey progress
     const currentProgress = userData?.journeyProgress || { completedDays: [], currentWeek: 1, badges: [] };
     const updatedProgress = {
@@ -446,6 +449,8 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
       currentWeek: Math.floor((day - 1) / 7) + 1
     };
     
+    console.log('JourneyDayModal: Updating progress to:', updatedProgress);
+    
     updateUserData({
       journeyProgress: updatedProgress
     });
@@ -453,11 +458,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
     // Log activity for streak calculation
     logActivity(`Completed Day ${day}`, `Journey Day ${day}: ${dayData.title}`);
     
-    toast({
-      title: "Day Complete!",
-      description: `Excellent work on Day ${day}. You're building strong foundations for recovery.`,
-    });
-    
+    console.log('JourneyDayModal: Calling onComplete');
     onComplete();
   };
 

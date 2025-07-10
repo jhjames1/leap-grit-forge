@@ -10,13 +10,20 @@ import JourneyDayModal from './JourneyDayModal';
 const RecoveryJourney = () => {
   const [currentDay, setCurrentDay] = useState(1);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const { userData, logActivity, updateUserData } = useUserData();
+  const [forceRender, setForceRender] = useState(0);
+  const { userData, logActivity } = useUserData();
   const { toast } = useToast();
   const totalDays = 90;
   
-  // Calculate current day based on completed days
+  // Calculate current day based on completed days - force re-calculation on userData changes
   const completedDays = userData?.journeyProgress?.completedDays || [];
   const actualCurrentDay = Math.min(Math.max(...completedDays, 0) + 1, totalDays);
+  
+  // Add useEffect to watch for userData changes and force re-render
+  useEffect(() => {
+    console.log('RecoveryJourney: userData changed, completed days:', completedDays);
+    console.log('RecoveryJourney: actualCurrentDay calculated as:', actualCurrentDay);
+  }, [userData?.journeyProgress?.completedDays, forceRender]);
 
   // Check if it's past 12:01 AM
   const isPast1201AM = () => {
@@ -180,19 +187,8 @@ const RecoveryJourney = () => {
   };
 
   const handleCompleteDay = (day: number) => {
-    // Update journey progress in user data
-    const currentProgress = userData?.journeyProgress || { completedDays: [], currentWeek: 1, badges: [] };
-    const updatedProgress = {
-      ...currentProgress,
-      completedDays: [...new Set([...currentProgress.completedDays, day])].sort((a, b) => a - b),
-      currentWeek: Math.floor((day - 1) / 7) + 1
-    };
-    
-    updateUserData({
-      journeyProgress: updatedProgress
-    });
-    
-    logActivity(`Completed Day ${day}: ${week1Days[day - 1]?.title}`);
+    console.log('RecoveryJourney: handleCompleteDay called for day', day);
+    console.log('RecoveryJourney: Current completed days before update:', completedDays);
     
     // Update current day if this was the active day
     if (day === actualCurrentDay && day < totalDays) {
@@ -200,6 +196,9 @@ const RecoveryJourney = () => {
     }
     
     setSelectedDay(null);
+    
+    // Force re-render to update UI
+    setForceRender(prev => prev + 1);
     
     if (day === 7) {
       toast({
