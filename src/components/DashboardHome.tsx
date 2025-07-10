@@ -19,7 +19,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   const [showPhonePrompt, setShowPhonePrompt] = useState(false);
   const [showStreakReminder, setShowStreakReminder] = useState(false);
   const { userData, logActivity } = useUserData();
-  const { t, language } = useLanguage();
+  const { t, language, getArray } = useLanguage();
 
   // Daily motivation logic
   const [dailyMotivation, setDailyMotivation] = useState('');
@@ -47,7 +47,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     // Calculate days since user started
       const startDate = new Date(userStartDate);
       const daysSinceStart = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      const motivationHeaders = t('home.motivation.headers');
+      const motivationHeaders = getArray('home.motivation.headers');
       console.log('Motivation headers:', motivationHeaders, 'Language:', language);
       
       // Ensure we have an array of quotes
@@ -62,7 +62,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         localStorage.setItem('motivationLanguage', language);
       } else {
         console.error('Motivation headers not found or empty:', motivationHeaders);
-        setDailyMotivation('Your journey continues with strength and purpose.');
+        setDailyMotivation(t('home.journeyContinues'));
       }
       
       // Set current journey day (minimum 1, maximum 90 for the program)

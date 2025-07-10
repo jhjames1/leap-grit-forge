@@ -6,6 +6,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
   t: (key: string, interpolations?: Record<string, string | number>) => string;
+  getArray: (key: string) => any[];
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -29,12 +30,16 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     return getTranslation(key, language, interpolations);
   };
 
+  const getArray = (key: string): any[] => {
+    return getArrayTranslation(key, language);
+  };
+
   useEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, getArray }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -86,6 +91,30 @@ const getTranslation = (key: string, language: Language, interpolations?: Record
   }
   
   return result;
+};
+
+// Function to get array translations without processing
+const getArrayTranslation = (key: string, language: Language): any[] => {
+  const translations = language === 'es' ? spanishTranslations : englishTranslations;
+  
+  // Handle nested keys (e.g., 'home.motivation.headers')
+  const keys = key.split('.');
+  let value: any = translations;
+  
+  for (const k of keys) {
+    if (value && typeof value === 'object' && k in value) {
+      value = value[k];
+    } else {
+      // If key not found in Spanish, fall back to English
+      if (language === 'es') {
+        return getArrayTranslation(key, 'en');
+      }
+      return []; // Return empty array if not found
+    }
+  }
+  
+  // Return the array as-is if it's an array, otherwise return empty array
+  return Array.isArray(value) ? value : [];
 };
 
 // English translations
