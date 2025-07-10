@@ -254,19 +254,19 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       <Card className="bg-card mb-6 p-4 border-0 shadow-none">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-bold text-muted-foreground">
+            <div className="text-2xl font-bold text-primary">
               {todayToolsCount}
             </div>
             <div className="text-xs text-muted-foreground font-source">Tools Used Today</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-muted-foreground">
+            <div className="text-2xl font-bold text-primary">
               {dayStreak}
             </div>
             <div className="text-xs text-muted-foreground font-source">Day Streak</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-muted-foreground">
+            <div className="text-2xl font-bold text-primary">
               {userData?.toolboxStats.totalSessions || 0}
             </div>
             <div className="text-xs text-muted-foreground font-source">Total Sessions</div>
@@ -291,7 +291,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
           return (
             <Card 
               key={tool.id}
-              className="bg-card hover:bg-muted/50 transition-all duration-200 cursor-pointer group border-0 shadow-none"
+              className="bg-card hover:bg-accent transition-all duration-200 cursor-pointer group border-0 shadow-none"
               onClick={() => handleToolClick(tool.id)}
             >
               <div className="p-6">
@@ -299,12 +299,12 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
                   <div className="p-3 rounded-lg transition-all duration-200 bg-primary group-hover:bg-primary/80">
                     <Icon className="transition-colors duration-200 text-primary-foreground" size={20} />
                   </div>
-                  <Badge className={`${tool.badgeColor} text-white text-xs font-source transition-all duration-200`}>
+                  <Badge className="bg-primary text-primary-foreground text-xs font-source transition-all duration-200">
                     {tool.badge}
                   </Badge>
                 </div>
                 
-                <h3 className="font-fjalla font-bold text-card-foreground mb-2 group-hover:text-muted-foreground transition-colors duration-200">
+                <h3 className="font-fjalla font-bold text-card-foreground mb-2 group-hover:text-primary transition-colors duration-200">
                   {tool.title}
                 </h3>
                 <p className="text-muted-foreground text-sm leading-relaxed font-source">
@@ -327,11 +327,11 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
               .map((activity, index) => (
                 <div key={activity.id} className="flex items-center space-x-3 text-sm">
                   <div className={`w-3 h-3 rounded-full ${
-                    index === 0 ? 'bg-muted-foreground' : 'bg-muted'
+                    index === 0 ? 'bg-primary' : 'bg-muted'
                   }`}></div>
                   <span className="text-muted-foreground font-source">
                     {activity.action} - <span className={`font-medium ${
-                      index === 0 ? 'text-muted-foreground' : 'text-muted-foreground'
+                      index === 0 ? 'text-primary' : 'text-muted-foreground'
                     }`}>{formatTimestamp(activity.timestamp)}</span>
                   </span>
                 </div>
