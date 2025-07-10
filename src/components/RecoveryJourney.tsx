@@ -81,7 +81,7 @@ const RecoveryJourney = () => {
       day: 1,
       title: t('journey.dayModules.day1.title'),
       theme: t('journey.dayModules.day1.theme'),
-      duration: "5 min",
+      duration: `5 ${t('common.min')}`,
       content: {
         type: "foundation",
         audio: "AI-generated welcome audio (2 min)",
@@ -93,7 +93,7 @@ const RecoveryJourney = () => {
       day: 2,
       title: t('journey.dayModules.day2.title'),
       theme: t('journey.dayModules.day2.theme'), 
-      duration: "7 min",
+      duration: `7 ${t('common.min')}`,
       content: {
         type: "awareness",
         audio: "AI-narrated trigger types walkthrough (1 min)",
@@ -106,7 +106,7 @@ const RecoveryJourney = () => {
       day: 3,
       title: t('journey.dayModules.day3.title'),
       theme: t('journey.dayModules.day3.theme'),
-      duration: "7 min", 
+      duration: `7 ${t('common.min')}`,
       content: {
         type: "connection",
         categories: "Select: one person, one group, one self-tool",
@@ -118,7 +118,7 @@ const RecoveryJourney = () => {
       day: 4,
       title: t('journey.dayModules.day4.title'),
       theme: t('journey.dayModules.day4.theme'),
-      duration: "5 min",
+      duration: `5 ${t('common.min')}`,
       content: {
         type: "motivation",
         input: "3 reasons for recovery",
@@ -130,7 +130,7 @@ const RecoveryJourney = () => {
       day: 5,
       title: t('journey.dayModules.day5.title'), 
       theme: t('journey.dayModules.day5.theme'),
-      duration: "6 min",
+      duration: `6 ${t('common.min')}`,
       content: {
         type: "identity",
         interactive: "Drag-and-drop: 3 addiction vs. 3 positive traits",
@@ -142,7 +142,7 @@ const RecoveryJourney = () => {
       day: 6,
       title: t('journey.dayModules.day6.title'),
       theme: t('journey.dayModules.day6.theme'), 
-      duration: "6 min",
+      duration: `6 ${t('common.min')}`,
       content: {
         type: "environment",
         checklist: "Pick 1: Declutter nightstand, wallet, app folder",
@@ -154,7 +154,7 @@ const RecoveryJourney = () => {
       day: 7,
       title: t('journey.dayModules.day7.title'),
       theme: t('journey.dayModules.day7.theme'),
-      duration: "5 min",
+      duration: `5 ${t('common.min')}`,
       content: {
         type: "reflection", 
         rating: "Tap-to-rate 5 weekly milestones",
@@ -322,7 +322,7 @@ const RecoveryJourney = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="font-fjalla font-bold text-primary text-sm">
-                        {t('journey.day').toUpperCase()} {dayModule.day}
+                        {t('common.day').toUpperCase()} {dayModule.day}
                       </span>
                       <span className="text-muted-foreground text-xs">•</span>
                       <span className="text-muted-foreground text-xs font-source uppercase tracking-wide">

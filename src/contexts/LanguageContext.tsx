@@ -302,7 +302,8 @@ const englishTranslations = {
     dayModules: {
       day1: {
         title: 'Starting Your Journey',
-        theme: 'Foundation'
+        theme: 'Foundation',
+        welcomeMessage: 'Welcome to LEAP - Your journey starts here'
       },
       day2: {
         title: 'Understanding Triggers',
@@ -605,7 +606,12 @@ const englishTranslations = {
     yes: 'Yes',
     no: 'No',
     play: 'Play',
-    pause: 'Pause'
+    pause: 'Pause',
+    progress: 'Progress',
+    markComplete: 'Mark Complete',
+    of: 'of',
+    min: 'min',
+    day: 'Day'
   }
 };
 
@@ -823,7 +829,8 @@ const spanishTranslations = {
     dayModules: {
       day1: {
         title: 'Comenzando Tu Viaje',
-        theme: 'Fundación'
+        theme: 'Fundación',
+        welcomeMessage: 'Bienvenido a LEAP - Tu viaje comienza aquí'
       },
       day2: {
         title: 'Entendiendo los Disparadores',
@@ -1126,6 +1133,11 @@ const spanishTranslations = {
     yes: 'Sí',
     no: 'No',
     play: 'Reproducir',
-    pause: 'Pausa'
+    pause: 'Pausa',
+    progress: 'Progreso',
+    markComplete: 'Marcar Completo',
+    of: 'de',
+    min: 'min',
+    day: 'Día'
   }
 };

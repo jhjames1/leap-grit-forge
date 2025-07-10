@@ -211,7 +211,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
             </div>
             
             {activity.key === 'welcome_audio' && (
-              <p className="text-muted-foreground text-sm mb-3 font-source">Welcome to LEAP - Your journey starts here</p>
+              <p className="text-muted-foreground text-sm mb-3 font-source">{t('journey.dayModules.day1.welcomeMessage')}</p>
             )}
             
             {activity.key === 'trigger_audio' && (
@@ -503,7 +503,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                 onClick={() => markActivityComplete(activity.key)}
                 className="bg-construction hover:bg-construction-dark text-midnight font-oswald mt-3"
               >
-                Mark Complete
+                {t('common.markComplete')}
               </Button>
             )}
           </Card>
@@ -548,7 +548,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
               <Target className="text-primary-foreground" size={20} />
             </div>
             <div>
-              <h2 className="font-fjalla font-bold text-foreground uppercase tracking-wide">Day {day}</h2>
+              <h2 className="font-fjalla font-bold text-foreground uppercase tracking-wide">{t('common.day')} {day}</h2>
               <p className="text-muted-foreground text-sm font-source">{dayData.theme} • {dayData.duration}</p>
             </div>
           </div>
@@ -565,7 +565,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
         {/* Progress Indicator */}
         <div className="p-6 border-b border-border">
           <div className="flex justify-between text-sm mb-2">
-            <span className="text-muted-foreground font-source">Progress</span>
+            <span className="text-muted-foreground font-source">{t('common.progress')}</span>
             <span className="text-primary font-source font-bold">{completedActivities}/{activities.length}</span>
           </div>
           <Progress value={dayProgress} className="h-2 bg-muted" />
