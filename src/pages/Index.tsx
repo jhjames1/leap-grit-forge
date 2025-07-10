@@ -116,7 +116,7 @@ const Index = () => {
       case 'about':
         return <About onBack={handleBackToHome} />;
       case 'calendar':
-        return <RecoveryCalendar onBack={handleBackToHome} />;
+        return <RecoveryCalendar onNavigate={handleNavigation} />;
       case 'foreman':
         return <ForemanChat onBack={handleBackToHome} />;
       case 'admin':
