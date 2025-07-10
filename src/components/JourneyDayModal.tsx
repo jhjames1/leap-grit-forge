@@ -7,6 +7,7 @@ import { useUserData } from '@/hooks/useUserData';
 import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import { useAudio } from '@/hooks/useAudio';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface JourneyDayModalProps {
   day: number;
@@ -35,10 +36,11 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
   const [currentAudioActivity, setCurrentAudioActivity] = useState<string | null>(null);
   const { updateUserData, userData, logActivity } = useUserData();
   const { toast } = useToast();
+  const { language } = useLanguage();
 
-  // Audio URLs for different activities
+  // Audio URLs for different activities - language-aware
   const audioUrls = {
-    welcome_audio: '/lovable-uploads/Welcome-to-LEAP.mp3',
+    welcome_audio: language === 'es' ? '/lovable-uploads/Welcome-to-LEAPes.mp3' : '/lovable-uploads/Welcome-to-LEAP.mp3',
     trigger_audio: '' // Add more audio URLs as needed
   };
 
