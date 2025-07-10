@@ -148,7 +148,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                           size={20} 
                         />
                       </div>
-                      <span className={`font-fjalla font-bold tracking-wide ${
+                      <span className={`text-sm ${
                         isSelected ? 'text-card-foreground' : 'text-muted-foreground'
                       }`}>
                         {option.label}
@@ -193,7 +193,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                           size={20} 
                         />
                       </div>
-                      <span className={`font-fjalla font-bold tracking-wide ${
+                      <span className={`text-sm ${
                         isSelected ? 'text-card-foreground' : 'text-muted-foreground'
                       }`}>
                         {option.label}
@@ -238,7 +238,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                           size={20} 
                         />
                       </div>
-                      <span className={`font-fjalla font-bold tracking-wide ${
+                      <span className={`text-sm ${
                         isSelected ? 'text-card-foreground' : 'text-muted-foreground'
                       }`}>
                         {option.label}
