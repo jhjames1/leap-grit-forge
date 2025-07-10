@@ -126,7 +126,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
   // Auto-complete when audio finishes - REMOVED
   // User must manually click complete button
   useEffect(() => {
-    console.log('Audio useEffect triggered:', {
+    logger.debug('Audio state updated', {
       currentAudioActivity,
       isAudioPlaying,
       audioProgress,

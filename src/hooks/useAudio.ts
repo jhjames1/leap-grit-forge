@@ -24,11 +24,11 @@ export const useAudio = (url: string): UseAudioReturn => {
 
   useEffect(() => {
     if (!url) {
-      console.log('useAudio: No URL provided');
+      logger.debug('useAudio: No URL provided');
       return;
     }
 
-    console.log('useAudio: Creating audio element for URL:', url);
+    logger.debug('useAudio: Creating audio element', { url });
     const audio = new Audio();
     audio.crossOrigin = 'anonymous';
     audio.preload = 'metadata';
@@ -139,18 +139,18 @@ export const useAudio = (url: string): UseAudioReturn => {
 
   const play = () => {
     if (audioRef.current && !error) {
-      console.log('useAudio: Attempting to play audio');
+      logger.debug('useAudio: Attempting to play audio');
       audioRef.current.play()
         .then(() => {
-          console.log('useAudio: Audio play successful');
+          logger.debug('useAudio: Audio play successful');
           setIsPlaying(true);
         })
         .catch((err) => {
-          console.error('useAudio: Play failed:', err);
+          logger.error('useAudio: Play failed', err);
           setError(`Failed to play audio: ${err.message}`);
         });
     } else {
-      console.log('useAudio: Cannot play - no audio ref or error exists:', { hasAudio: !!audioRef.current, error });
+      logger.debug('useAudio: Cannot play audio', { hasAudio: !!audioRef.current, error });
     }
   };
 

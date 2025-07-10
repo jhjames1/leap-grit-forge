@@ -9,6 +9,7 @@ import StreakReminder from './StreakReminder';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageToggle } from './LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { logger } from '@/utils/logger';
 
 interface DashboardHomeProps {
   onNavigate?: (page: string) => void;
@@ -48,20 +49,20 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       const startDate = new Date(userStartDate);
       const daysSinceStart = Math.floor((currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       const motivationHeaders = getArray('home.motivation.headers');
-      console.log('Motivation headers:', motivationHeaders, 'Language:', language);
+      logger.debug('Motivation headers loaded', { motivationHeaders, language });
       
       // Ensure we have an array of quotes
       if (Array.isArray(motivationHeaders) && motivationHeaders.length > 0) {
         const quoteIndex = daysSinceStart % motivationHeaders.length;
         const newMotivation = motivationHeaders[quoteIndex];
-        console.log('Selected motivation:', newMotivation, 'at index:', quoteIndex);
+        logger.debug('Selected daily motivation', { newMotivation, quoteIndex });
         
         setDailyMotivation(newMotivation);
         localStorage.setItem('motivationDate', todayString);
         localStorage.setItem('dailyMotivation', newMotivation);
         localStorage.setItem('motivationLanguage', language);
       } else {
-        console.error('Motivation headers not found or empty:', motivationHeaders);
+        logger.error('Motivation headers not found or empty', { motivationHeaders });
         setDailyMotivation(t('home.journeyContinues'));
       }
       
