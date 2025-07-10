@@ -91,7 +91,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     setBadgeCount(uniqueActivities.size);
   }, [userData, language]);  // Add language dependency to refresh translations
 
-  const currentUser = localStorage.getItem('currentUser') || 'JOSEPH';
+  const currentUser = userData?.firstName || localStorage.getItem('currentUser') || t('home.defaultWelcome');
 
   const handleToolClick = (tool: string) => {
     logActivity('Used ' + tool);

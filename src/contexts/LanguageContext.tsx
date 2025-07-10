@@ -192,6 +192,7 @@ const englishTranslations = {
   // Home
   home: {
     welcome: 'Welcome',
+    defaultWelcome: 'Welcome',
     journeyContinues: 'Your journey continues.',
     todaysMotivation: "Today's Motivation",
     currentDay: 'Day {{day}}: Building Daily Habits',
@@ -719,6 +720,7 @@ const spanishTranslations = {
   // Home
   home: {
     welcome: 'Bienvenido',
+    defaultWelcome: 'Bienvenido',
     journeyContinues: 'Tu viaje continúa.',
     todaysMotivation: 'Motivación de Hoy',
     currentDay: 'Día {{day}}: Construyendo Hábitos Diarios',

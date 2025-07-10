@@ -46,28 +46,28 @@ const PersonalizedGreeting = ({ firstName, onContinue }: PersonalizedGreetingPro
   if (!visible) return null;
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-4 animate-fade-in">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 animate-fade-in">
       <div className="absolute top-4 right-4">
         <LanguageToggle />
       </div>
-      <Card className="bg-white p-8 max-w-sm w-full rounded-xl shadow-sm border-0 animate-scale-in">
+      <Card className="bg-card p-6 max-w-sm w-full rounded-xl shadow-sm border-0 animate-scale-in">
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <div className="bg-primary p-2 rounded-lg mx-auto mb-6 w-fit">
             {getIcon()}
           </div>
           
           <div className="mb-8">
-            <h2 className="font-semibold text-[20px] text-gray-900 mb-3">
+            <h2 className="font-semibold text-[20px] text-card-foreground mb-3">
               {t('greeting.good')} {t(`greeting.${timeOfDay}`)}{firstName ? `, ${firstName}` : ''}.
             </h2>
-            <p className="text-gray-600 text-[16px] mb-6">
+            <p className="text-muted-foreground text-[16px] mb-6">
               {t('greeting.gladYoureHere')}
             </p>
           </div>
 
           <Button 
             onClick={handleContinue}
-            className="w-full bg-[#FFCE00] hover:bg-[#E6B800] text-black font-bold py-4 text-[16px] rounded-xl transition-all duration-200"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 text-[16px] rounded-xl transition-all duration-200"
           >
             {t('greeting.button.letsLeap')}
           </Button>

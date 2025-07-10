@@ -69,7 +69,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
     
     // Save onboarding data
     const onboardingData = {
-      firstName: firstName.trim() || 'Friend',
+      firstName: firstName.trim() || '',
       focusAreas,
       journeyStage,
       supportStyle
@@ -96,14 +96,16 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
 
   if (showSuccess) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-4">
-        <Card className="bg-white p-8 max-w-sm w-full rounded-xl shadow-sm border-0 text-center animate-fade-in">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="bg-card p-6 max-w-sm w-full rounded-xl shadow-sm border-0 text-center animate-fade-in">
           <div className="mb-6">
-            <CheckCircle2 className="mx-auto text-primary mb-4" size={48} />
-            <h2 className="font-semibold text-[20px] text-gray-900 mb-2">
+            <div className="bg-primary p-2 rounded-lg mx-auto mb-4 w-fit">
+              <CheckCircle2 className="text-primary-foreground" size={24} />
+            </div>
+            <h2 className="font-semibold text-[20px] text-card-foreground mb-2">
               {t('onboarding.success.title')}{firstName ? `, ${firstName}` : ''}
             </h2>
-            <p className="text-gray-600 text-[16px]">
+            <p className="text-muted-foreground text-[16px]">
               {t('onboarding.success.subtitle')}
             </p>
           </div>
@@ -117,10 +119,10 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       case 1:
         return (
           <>
-            <h2 className="font-semibold text-[20px] text-gray-900 mb-3 text-center">
+            <h2 className="font-semibold text-[20px] text-card-foreground mb-3 text-center">
               {t('onboarding.step1.title')}
             </h2>
-            <p className="text-gray-600 text-[16px] mb-6 text-center">
+            <p className="text-muted-foreground text-[16px] mb-6 text-center">
               {t('onboarding.step1.subtitle')}
             </p>
             
@@ -136,16 +138,16 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                     className={`p-4 cursor-pointer transition-all duration-200 border rounded-lg ${
                       isSelected 
                         ? 'bg-primary/10 border-primary/20 shadow-sm' 
-                        : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                        : 'bg-card border-border hover:bg-accent hover:shadow-sm'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
                       <Icon 
-                        className={`${isSelected ? 'text-primary' : 'text-gray-500'}`} 
+                        className={`${isSelected ? 'text-primary' : 'text-muted-foreground'}`} 
                         size={20} 
                       />
                       <span className={`text-[16px] ${
-                        isSelected ? 'text-gray-900 font-medium' : 'text-gray-700'
+                        isSelected ? 'text-card-foreground font-medium' : 'text-muted-foreground'
                       }`}>
                         {option.label}
                       </span>
@@ -160,10 +162,10 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       case 2:
         return (
           <>
-            <h2 className="font-semibold text-[20px] text-gray-900 mb-3 text-center">
+            <h2 className="font-semibold text-[20px] text-card-foreground mb-3 text-center">
               {t('onboarding.step2.title')}
             </h2>
-            <p className="text-gray-600 text-[16px] mb-6 text-center">
+            <p className="text-muted-foreground text-[16px] mb-6 text-center">
               {t('onboarding.step2.subtitle')}
             </p>
             
@@ -178,13 +180,13 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                     className={`p-4 cursor-pointer transition-all duration-200 border rounded-lg ${
                       isSelected 
                         ? 'bg-primary/10 border-primary/20 shadow-sm' 
-                        : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                        : 'bg-card border-border hover:bg-accent hover:shadow-sm'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
                       <span className="text-xl">{option.emoji}</span>
                       <span className={`text-[16px] ${
-                        isSelected ? 'text-gray-900 font-medium' : 'text-gray-700'
+                        isSelected ? 'text-card-foreground font-medium' : 'text-muted-foreground'
                       }`}>
                         {option.label}
                       </span>
@@ -199,10 +201,10 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       case 3:
         return (
           <>
-            <h2 className="font-semibold text-[20px] text-gray-900 mb-3 text-center">
+            <h2 className="font-semibold text-[20px] text-card-foreground mb-3 text-center">
               {t('onboarding.step3.title')}
             </h2>
-            <p className="text-gray-600 text-[16px] mb-6 text-center">
+            <p className="text-muted-foreground text-[16px] mb-6 text-center">
               {t('onboarding.step3.subtitle')}
             </p>
             
@@ -218,16 +220,16 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                     className={`p-4 cursor-pointer transition-all duration-200 border rounded-lg ${
                       isSelected 
                         ? 'bg-primary/10 border-primary/20 shadow-sm' 
-                        : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                        : 'bg-card border-border hover:bg-accent hover:shadow-sm'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
                       <Icon 
-                        className={`${isSelected ? 'text-primary' : 'text-gray-500'}`} 
+                        className={`${isSelected ? 'text-primary' : 'text-muted-foreground'}`} 
                         size={20} 
                       />
                       <span className={`text-[16px] ${
-                        isSelected ? 'text-gray-900 font-medium' : 'text-gray-700'
+                        isSelected ? 'text-card-foreground font-medium' : 'text-muted-foreground'
                       }`}>
                         {option.label}
                       </span>
@@ -242,10 +244,10 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       case 4:
         return (
           <>
-            <h2 className="font-semibold text-[20px] text-gray-900 mb-3 text-center">
+            <h2 className="font-semibold text-[20px] text-card-foreground mb-3 text-center">
               {t('onboarding.step4.title')}
             </h2>
-            <p className="text-gray-600 text-[16px] mb-6 text-center">
+            <p className="text-muted-foreground text-[16px] mb-6 text-center">
               {t('onboarding.step4.subtitle')}
             </p>
             
@@ -255,7 +257,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                 placeholder={t('onboarding.step4.placeholder')}
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className="w-full p-4 text-[16px] border border-gray-200 rounded-lg bg-white focus:border-primary focus:outline-none"
+                className="w-full p-4 text-[16px] border border-border rounded-lg bg-background focus:border-primary focus:outline-none"
               />
             </div>
           </>
@@ -267,17 +269,17 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="absolute top-4 right-4">
         <LanguageToggle />
       </div>
-      <Card className="bg-white p-8 max-w-sm w-full rounded-xl shadow-sm border-0 animate-fade-in">
+      <Card className="bg-card p-6 max-w-sm w-full rounded-xl shadow-sm border-0 animate-fade-in">
         {renderStep()}
         
         <Button
           onClick={handleNext}
           disabled={!canProceed()}
-          className="w-full bg-[#FFCE00] hover:bg-[#E6B800] text-black font-bold py-4 text-[16px] rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 text-[16px] rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {currentStep === 4 ? t('onboarding.button.letsLeap') : t('onboarding.button.continue')}
         </Button>
