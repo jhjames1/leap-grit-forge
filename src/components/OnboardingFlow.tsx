@@ -142,10 +142,12 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                     }`}
                   >
                     <div className="flex items-center space-x-3">
-                      <Icon 
-                        className={`${isSelected ? 'text-primary' : 'text-muted-foreground'}`} 
-                        size={20} 
-                      />
+                      <div className={`p-3 rounded-lg ${isSelected ? 'bg-primary' : 'bg-muted'}`}>
+                        <Icon 
+                          className={`${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`} 
+                          size={20} 
+                        />
+                      </div>
                       <span className={`text-[16px] ${
                         isSelected ? 'text-card-foreground font-medium' : 'text-muted-foreground'
                       }`}>
@@ -224,10 +226,12 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                     }`}
                   >
                     <div className="flex items-center space-x-3">
-                      <Icon 
-                        className={`${isSelected ? 'text-primary' : 'text-muted-foreground'}`} 
-                        size={20} 
-                      />
+                      <div className={`p-3 rounded-lg ${isSelected ? 'bg-primary' : 'bg-muted'}`}>
+                        <Icon 
+                          className={`${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`} 
+                          size={20} 
+                        />
+                      </div>
                       <span className={`text-[16px] ${
                         isSelected ? 'text-card-foreground font-medium' : 'text-muted-foreground'
                       }`}>

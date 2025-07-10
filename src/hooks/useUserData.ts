@@ -58,17 +58,67 @@ export const useUserData = () => {
     try {
       const data = SecureStorage.getUserData(username);
       if (data) {
+        // Ensure data has required structure
+        const normalizedData = {
+          firstName: data.firstName || username,
+          gratitudeEntries: data.gratitudeEntries || [],
+          activityLog: data.activityLog || [],
+          toolboxStats: {
+            toolsToday: 0,
+            streak: 0,
+            totalSessions: 0,
+            urgesThisWeek: 0,
+            ...data.toolboxStats
+          },
+          journeyProgress: data.journeyProgress,
+          journeyResponses: data.journeyResponses,
+          lastAccess: Date.now()
+        };
+        
         // Update daily stats
-        updateDailyStats(data);
-        setUserData(data);
+        updateDailyStats(normalizedData);
+        setUserData(normalizedData);
         
         // Update last access
         SecureStorage.updateLastAccess(username);
         logSecurityEvent('user_data_accessed', { username });
+      } else {
+        // Create initial user data if none exists
+        const initialData = {
+          firstName: username,
+          gratitudeEntries: [],
+          activityLog: [],
+          toolboxStats: {
+            toolsToday: 0,
+            streak: 0,
+            totalSessions: 0,
+            urgesThisWeek: 0
+          },
+          lastAccess: Date.now()
+        };
+        
+        SecureStorage.setUserData(username, initialData);
+        setUserData(initialData);
+        logSecurityEvent('user_data_created', { username });
       }
     } catch (error) {
       console.error('Failed to load user data:', error);
       logSecurityEvent('user_data_error', { username, error: error instanceof Error ? error.message : 'Unknown error' });
+      
+      // Create minimal fallback data
+      const fallbackData = {
+        firstName: username,
+        gratitudeEntries: [],
+        activityLog: [],
+        toolboxStats: {
+          toolsToday: 0,
+          streak: 0,
+          totalSessions: 0,
+          urgesThisWeek: 0
+        },
+        lastAccess: Date.now()
+      };
+      setUserData(fallbackData);
     }
   };
 

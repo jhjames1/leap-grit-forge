@@ -30,7 +30,30 @@ export class SecureStorage {
       
       if (this.encrypt) {
         const decryptedData = decryptData(storedData);
-        return decryptedData ? JSON.parse(decryptedData) : null;
+        if (decryptedData) {
+          try {
+            return JSON.parse(decryptedData);
+          } catch (parseError) {
+            console.error('Failed to parse decrypted data:', parseError);
+            // Try to fallback to unencrypted data
+            try {
+              return JSON.parse(storedData);
+            } catch (fallbackError) {
+              console.error('Fallback parsing also failed:', fallbackError);
+              return null;
+            }
+          }
+        } else {
+          // Decryption failed, try unencrypted fallback
+          try {
+            const fallbackData = JSON.parse(storedData);
+            console.warn('Using unencrypted fallback data for user:', username);
+            return fallbackData;
+          } catch (fallbackError) {
+            console.error('Both encrypted and unencrypted parsing failed:', fallbackError);
+            return null;
+          }
+        }
       } else {
         return JSON.parse(storedData);
       }

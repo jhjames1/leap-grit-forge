@@ -23,7 +23,15 @@ export const encryptData = (data: string): string => {
 export const decryptData = (encryptedData: string): string => {
   try {
     const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY);
-    return bytes.toString(CryptoJS.enc.Utf8);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    
+    // If decryption results in empty string, it likely failed
+    if (!decrypted) {
+      console.warn('Decryption resulted in empty string, possible data corruption');
+      return '';
+    }
+    
+    return decrypted;
   } catch (error) {
     console.error('Decryption failed:', error);
     return '';
