@@ -386,6 +386,7 @@ const englishTranslations = {
   // Toolbox
   toolbox: {
     title: 'Your Toolbox',
+    titleParts: ['YOUR', 'TOOLBOX'],
     subtitle: 'Your support tools, always ready',
     stats: {
       todayTools: 'Tools Used Today',
@@ -486,6 +487,11 @@ const englishTranslations = {
     favorites: "Favorite Tools",
     achievements: "Achievements",
     earned: "Earned {{time}}",
+    badges: {
+      weekWarrior: "Week Warrior",
+      steadyBreather: "Steady Breather", 
+      toolMaster: "Tool Master"
+    },
     settings: "Settings",
     editProfile: "Edit Profile",
     notificationSettings: "Notification Settings",
@@ -949,6 +955,7 @@ const spanishTranslations = {
   // Toolbox
   toolbox: {
     title: 'Tu Caja de Herramientas',
+    titleParts: ['TU CAJA DE', 'HERRAMIENTAS'],
     subtitle: 'Tus herramientas de apoyo, siempre listas',
     stats: {
       todayTools: 'Herramientas Usadas Hoy',
@@ -1047,8 +1054,13 @@ const spanishTranslations = {
     weeklyProgress: "Progreso Semanal:",
     tracked: "% rastreado",
     favorites: "Herramientas Favoritas",
-    achievements: "Logros",
+    achievements: "Logros", 
     earned: "Obtenido {{time}}",
+    badges: {
+      weekWarrior: "Guerrero Semanal",
+      steadyBreather: "Respirador Constante",
+      toolMaster: "Maestro de Herramientas"
+    },
     settings: "Configuraciones",
     editProfile: "Editar Perfil",
     notificationSettings: "Configuración de Notificaciones",

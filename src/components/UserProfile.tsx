@@ -52,9 +52,9 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     totalSessions: totalToolsUsed,
     favoriteTools: mostUsedTool !== 'None yet' ? [mostUsedTool, "SteadySteel", "Peer Chat"] : ["SteadySteel", "Peer Chat"],
     badges: [
-      { name: "Week Warrior", earned: t('profile.earned', { time: '2 weeks ago' }), icon: "🏆" },
-      { name: "Steady Breather", earned: t('profile.earned', { time: '1 week ago' }), icon: "🌬️" },
-      { name: "Tool Master", earned: t('profile.earned', { time: '3 days ago' }), icon: "🧰" }
+      { name: t('profile.badges.weekWarrior'), earned: t('profile.earned', { time: '2 weeks ago' }), icon: "🏆" },
+      { name: t('profile.badges.steadyBreather'), earned: t('profile.earned', { time: '1 week ago' }), icon: "🌬️" },
+      { name: t('profile.badges.toolMaster'), earned: t('profile.earned', { time: '3 days ago' }), icon: "🧰" }
     ]
   };
 

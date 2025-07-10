@@ -247,11 +247,22 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-5xl font-bold text-gray-900 mb-1 tracking-wide">
-          {t('toolbox.title').split(' ').map((word, index) => (
-            <span key={index} className={index === 0 ? "font-oswald font-extralight tracking-tight" : "font-fjalla font-extrabold italic"}>
-              {word.toUpperCase()}{index === 0 ? ' ' : ''}
-            </span>
-          ))}
+          {(() => {
+            const titleParts = t('toolbox.titleParts');
+            if (Array.isArray(titleParts)) {
+              return titleParts.map((part: string, index: number) => (
+                <span key={index} className={index === 0 ? "font-oswald font-extralight tracking-tight" : "font-fjalla font-extrabold italic"}>
+                  {part}{index === 0 ? ' ' : ''}
+                </span>
+              ));
+            } else {
+              return t('toolbox.title').split(' ').map((word, index) => (
+                <span key={index} className={index === 0 ? "font-oswald font-extralight tracking-tight" : "font-fjalla font-extrabold italic"}>
+                  {word.toUpperCase()}{index === 0 ? ' ' : ''}
+                </span>
+              ));
+            }
+          })()}
         </h1>
         <p className="text-gray-600 font-oswald">{t('toolbox.subtitle')}</p>
       </div>
