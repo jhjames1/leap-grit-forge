@@ -148,8 +148,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             </div>
             
             {/* Right column: Theme toggle, Language toggle, and Trophy */}
-            <div className="flex flex-col items-end">
-              <div className="flex items-center space-x-3 mb-6">
+            <div className="flex flex-col items-end justify-between h-full">
+              <div className="flex items-center space-x-3">
                 <ThemeToggle />
                 <LanguageToggle />
               </div>
