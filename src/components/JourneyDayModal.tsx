@@ -36,7 +36,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
   const [currentAudioActivity, setCurrentAudioActivity] = useState<string | null>(null);
   const { updateUserData, userData, logActivity } = useUserData();
   const { toast } = useToast();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   // Audio URLs for different activities - language-aware
   const audioUrls = {
@@ -261,12 +261,12 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
                     {(isAudioPlaying && currentAudioActivity === activity.key) ? (
                       <>
                         <Pause size={16} className="mr-2" />
-                        Pause
+                        {t('common.pause')}
                       </>
                     ) : (
                       <>
                         <Play size={16} className="mr-2" />
-                        {activity.key === 'welcome_audio' ? 'Play Welcome Message' : 'Play Audio'}
+                        {t('common.play')}
                       </>
                     )}
                   </Button>

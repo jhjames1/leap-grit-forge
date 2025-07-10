@@ -603,7 +603,9 @@ const englishTranslations = {
     close: 'Close',
     ok: 'OK',
     yes: 'Yes',
-    no: 'No'
+    no: 'No',
+    play: 'Play',
+    pause: 'Pause'
   }
 };
 
@@ -1122,6 +1124,8 @@ const spanishTranslations = {
     close: 'Cerrar',
     ok: 'OK',
     yes: 'Sí',
-    no: 'No'
+    no: 'No',
+    play: 'Reproducir',
+    pause: 'Pausa'
   }
 };
