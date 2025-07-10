@@ -70,7 +70,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+          <h1 className="text-5xl text-foreground mb-1 tracking-wide">
             <span className="font-oswald font-extralight tracking-tight">{t('admin.title')}</span><span className="font-fjalla font-extrabold italic">{t('admin.dashboardTitle')}</span>
           </h1>
           <p className="text-steel-light font-oswald">{t('admin.subtitle')}</p>
@@ -120,8 +120,8 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               <Users className="text-construction" size={20} />
             </div>
             <div>
-              <div className="text-2xl font-anton text-white">{mockData.totalUsers}</div>
-              <div className="text-xs text-steel-light font-oswald">{t('admin.metrics.totalUsers')}</div>
+              <div className="text-2xl font-bold text-foreground">{mockData.totalUsers}</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.totalUsers')}</div>
             </div>
           </div>
         </Card>
@@ -132,8 +132,8 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               <Activity className="text-construction" size={20} />
             </div>
             <div>
-              <div className="text-2xl font-anton text-white">{mockData.activeUsers}</div>
-              <div className="text-xs text-steel-light font-oswald">{t('admin.metrics.activeUsers')}</div>
+              <div className="text-2xl font-bold text-foreground">{mockData.activeUsers}</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.activeUsers')}</div>
             </div>
           </div>
         </Card>
@@ -144,8 +144,8 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               <TrendingUp className="text-construction" size={20} />
             </div>
             <div>
-              <div className="text-2xl font-anton text-white">{mockData.avgStrength}%</div>
-              <div className="text-xs text-steel-light font-oswald">{t('admin.metrics.avgStrength')}</div>
+              <div className="text-2xl font-bold text-foreground">{mockData.avgStrength}%</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.avgStrength')}</div>
             </div>
           </div>
         </Card>
@@ -156,8 +156,8 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               <AlertTriangle className="text-red-400" size={20} />
             </div>
             <div>
-              <div className="text-2xl font-anton text-white">{mockData.riskUsers}</div>
-              <div className="text-xs text-steel-light font-oswald">{t('admin.metrics.atRisk')}</div>
+              <div className="text-2xl font-bold text-foreground">{mockData.riskUsers}</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.atRisk')}</div>
             </div>
           </div>
         </Card>
@@ -211,8 +211,8 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               </div>
               <div className="flex items-center space-x-3">
                 <div className="text-right">
-                  <div className="text-lg font-anton text-construction">{user.strength}%</div>
-                  <div className="text-xs text-steel-light">{t('admin.sections.strength')}</div>
+                  <div className="text-2xl font-bold text-foreground">{user.strength}%</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.sections.strength')}</div>
                 </div>
                 <Badge className={getRiskBadge(user.risk)}>
                   {t(`admin.riskLevels.${user.risk}`)}

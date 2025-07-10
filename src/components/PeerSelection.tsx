@@ -97,7 +97,7 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
           <ArrowLeft size={20} />
         </Button>
         <div>
-          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+          <h1 className="text-5xl text-foreground mb-1 tracking-wide">
             <span className="font-oswald font-extralight tracking-tight">{t('toolbox.peerSupport.title').split(' ')[0]}</span><span className="font-fjalla font-extrabold italic">{t('toolbox.peerSupport.title').split(' ')[1]}</span>
           </h1>
           <p className="text-steel-light font-oswald">{t('toolbox.peerSupport.subtitle')}</p>

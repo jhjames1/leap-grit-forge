@@ -106,8 +106,8 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
           >
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-            {t('editProfile.title')}
+          <h1 className="text-5xl text-foreground mb-1 tracking-wide">
+            <span className="font-oswald font-extralight tracking-tight">{t('editProfile.title').split(' ')[0]}</span><span className="font-fjalla font-extrabold italic">{t('editProfile.title').split(' ')[1] || ''}</span>
           </h1>
         </div>
 

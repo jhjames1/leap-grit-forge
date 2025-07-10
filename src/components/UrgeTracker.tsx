@@ -282,10 +282,10 @@ const UrgeTracker = ({ onClose, onCancel, onNavigate }: UrgeTrackerProps) => {
             <h3 className="font-oswald font-semibold text-white mb-4">How strong is it right now?</h3>
             <div className="mb-6">
               <div className="text-center mb-4">
-                <span className={`text-4xl font-anton ${getIntensityColor(intensity[0])}`}>
+                <span className={`text-2xl font-bold ${getIntensityColor(intensity[0])}`}>
                   {intensity[0]}
                 </span>
-                <p className={`font-oswald font-semibold ${getIntensityColor(intensity[0])}`}>
+                <p className={`text-xs uppercase tracking-wide font-oswald ${getIntensityColor(intensity[0])}`}>
                   {getIntensityLabel(intensity[0])}
                 </p>
               </div>
