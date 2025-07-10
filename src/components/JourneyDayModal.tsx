@@ -156,9 +156,9 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
     switch (dayNum) {
       case 1:
         return [
-          { key: 'welcome_audio', title: 'Welcome Message (2 min.)', type: 'audio' },
-          { key: 'how_recovery_works', title: 'How Recovery Works', type: 'carousel' },
-          { key: 'why_here', title: 'Your Why', type: 'text_input' }
+          { key: 'welcome_audio', title: t('journey.dayModules.day1.activities.welcomeAudio'), type: 'audio' },
+          { key: 'how_recovery_works', title: t('journey.dayModules.day1.activities.howRecoveryWorks'), type: 'carousel' },
+          { key: 'why_here', title: t('journey.dayModules.day1.activities.yourWhy'), type: 'text_input' }
         ];
       case 2:
         return [

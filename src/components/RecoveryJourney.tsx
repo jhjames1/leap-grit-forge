@@ -249,7 +249,7 @@ const RecoveryJourney = () => {
             <Target className="text-primary-foreground" size={20} />
           </div>
           <div>
-            <h3 className="font-semibold text-[20px] text-card-foreground">{t('journey.overallProgress')}</h3>
+            <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">{t('journey.overallProgress').toUpperCase()}</h3>
             <p className="text-muted-foreground text-[16px]">
               {t('journey.day')} <span className="text-primary font-bold text-lg">{actualCurrentDay}</span> {t('common.of')} {totalDays}
             </p>
@@ -276,7 +276,7 @@ const RecoveryJourney = () => {
           <div className="bg-primary p-2 rounded-lg">
             <Trophy className="text-primary-foreground" size={20} />
           </div>
-          <h3 className="font-semibold text-[20px] text-card-foreground">{t('journey.weekFoundation')}</h3>
+          <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">{t('journey.weekFoundation').toUpperCase()}</h3>
         </div>
         
         <div className="space-y-3">

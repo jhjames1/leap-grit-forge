@@ -304,7 +304,12 @@ const englishTranslations = {
       day1: {
         title: 'Starting Your Journey',
         theme: 'Foundation',
-        welcomeMessage: 'Welcome to LEAP - Your journey starts here'
+        welcomeMessage: 'Welcome to LEAP - Your journey starts here',
+        activities: {
+          welcomeAudio: 'Welcome Message (2 min.)',
+          howRecoveryWorks: 'How Recovery Works',
+          yourWhy: 'Your Why'
+        }
       },
       day2: {
         title: 'Understanding Triggers',
@@ -832,7 +837,12 @@ const spanishTranslations = {
       day1: {
         title: 'Comenzando Tu Viaje',
         theme: 'Fundación',
-        welcomeMessage: 'Bienvenido a LEAP - Tu viaje comienza aquí'
+        welcomeMessage: 'Bienvenido a LEAP - Tu viaje comienza aquí',
+        activities: {
+          welcomeAudio: 'Mensaje de Bienvenida (2 min.)',
+          howRecoveryWorks: 'Cómo Funciona la Recuperación',
+          yourWhy: 'Tu Por Qué'
+        }
       },
       day2: {
         title: 'Entendiendo los Disparadores',
