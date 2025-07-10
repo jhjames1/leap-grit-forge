@@ -229,27 +229,27 @@ const RecoveryJourney = () => {
       </div>
 
       {/* Overall Progress Card */}
-      <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] mb-6 p-6 rounded-lg">
+      <Card className="bg-card p-6 rounded-lg mb-6 border-0 shadow-none">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-construction p-2 rounded-lg">
-            <Target className="text-midnight" size={20} />
+          <div className="bg-primary p-2 rounded-lg">
+            <Target className="text-primary-foreground" size={20} />
           </div>
           <div>
-            <h3 className="font-oswald font-semibold text-white">Overall Progress</h3>
-            <p className="text-steel-light text-sm">
-              Day <span className="text-construction font-bold text-lg">{actualCurrentDay}</span> of {totalDays}
+            <h3 className="font-fjalla font-bold text-card-foreground">Overall Progress</h3>
+            <p className="text-muted-foreground text-sm">
+              Day <span className="text-primary font-bold text-lg">{actualCurrentDay}</span> of {totalDays}
             </p>
           </div>
         </div>
         
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-steel-light">Journey Progress</span>
-            <span className="text-construction font-oswald font-bold text-lg">{Math.round(progress)}%</span>
+            <span className="text-muted-foreground">Journey Progress</span>
+            <span className="text-primary font-fjalla font-bold text-lg">{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="h-3 bg-steel-dark">
+          <Progress value={progress} className="h-3 bg-muted">
             <div 
-              className="h-full bg-gradient-to-r from-[#F9D058] to-[#FBE89D] rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </Progress>
@@ -257,12 +257,12 @@ const RecoveryJourney = () => {
       </Card>
 
       {/* Week 1: Foundation */}
-      <Card className="bg-[#1A2642]/75 backdrop-blur-sm border-[#F9D058] border-[1px] mb-6 p-6 rounded-lg">
+      <Card className="bg-card p-6 rounded-lg mb-6 border-0 shadow-none">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-construction p-2 rounded-lg">
-            <Trophy className="text-midnight" size={20} />
+          <div className="bg-primary p-2 rounded-lg">
+            <Trophy className="text-primary-foreground" size={20} />
           </div>
-          <h3 className="font-oswald font-semibold text-white">Week 1: Foundation</h3>
+          <h3 className="font-fjalla font-bold text-card-foreground">Week 1: Foundation</h3>
         </div>
         
         <div className="space-y-3">
@@ -276,66 +276,66 @@ const RecoveryJourney = () => {
               <Card
                 key={dayModule.day}
                 onClick={() => isUnlocked && handleDayClick(dayModule.day)}
-                className={`border-steel-dark p-4 transition-all duration-200 ${
+                className={`p-4 transition-all duration-200 border-0 shadow-none ${
                   isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'
                 } ${
                   isCompleted
-                    ? 'bg-construction/10 border-construction/30'
+                    ? 'bg-primary/10'
                     : isUnlocked
-                      ? 'bg-white/10 backdrop-blur-sm hover:bg-white/15 hover:border-construction/20'
-                      : 'bg-steel-dark/20 border-steel-dark/50 opacity-60'
+                      ? 'bg-card hover:bg-accent'
+                      : 'bg-muted opacity-60'
                 }`}
               >
                 <div className="flex items-center space-x-4">
                   {/* Status Icon */}
                   <div className={`p-2 rounded-lg flex-shrink-0 transition-all duration-200 ${
                     isCompleted
-                      ? 'bg-construction'
+                      ? 'bg-primary'
                       : isUnlocked
-                        ? 'bg-construction'
-                        : 'bg-steel-dark'
+                        ? 'bg-primary'
+                        : 'bg-muted'
                   }`}>
                     {isCompleted ? (
-                      <CheckCircle2 className="text-midnight" size={20} />
+                      <CheckCircle2 className="text-primary-foreground" size={20} />
                     ) : isUnlocked ? (
-                      <Play className="text-midnight" size={20} />
+                      <Play className="text-primary-foreground" size={20} />
                     ) : (
-                      <Lock className="text-steel-light" size={20} />
+                      <Lock className="text-muted-foreground" size={20} />
                     )}
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
-                      <span className="font-oswald font-bold text-construction text-sm">
+                      <span className="font-fjalla font-bold text-primary text-sm">
                         DAY {dayModule.day}
                       </span>
-                      <span className="text-steel-light text-xs">•</span>
-                      <span className="text-steel-light text-xs font-oswald uppercase tracking-wide">
+                      <span className="text-muted-foreground text-xs">•</span>
+                      <span className="text-muted-foreground text-xs font-source uppercase tracking-wide">
                         {dayModule.theme}
                       </span>
                     </div>
                     
-                    <h3 className={`font-oswald font-medium mb-1 ${
-                      isUnlocked ? 'text-white' : 'text-steel-light'
+                    <h3 className={`font-fjalla font-medium mb-1 ${
+                      isUnlocked ? 'text-card-foreground' : 'text-muted-foreground'
                     }`}>
                       {dayModule.title}
                     </h3>
                     
-                    <div className="flex items-center space-x-2 text-xs text-steel-light">
-                      <Clock size={12} className="text-construction" />
+                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                      <Clock size={12} className="text-primary" />
                       <span>{dayModule.duration}</span>
                     </div>
                   </div>
 
                   {/* Action Button */}
                   <Button 
-                    className={`font-oswald font-semibold px-4 py-2 rounded-lg transition-all duration-200 ${
+                    className={`font-fjalla font-semibold px-4 py-2 rounded-lg transition-all duration-200 ${
                       !isUnlocked
-                        ? 'bg-steel-dark text-steel-light cursor-not-allowed border border-steel-dark'
+                        ? 'bg-muted text-muted-foreground cursor-not-allowed border border-muted'
                         : isCompleted 
-                          ? 'border-construction text-construction hover:bg-construction/10 bg-transparent border'
-                          : 'bg-construction hover:bg-construction-dark text-midnight shadow-lg hover:shadow-construction/20'
+                          ? 'border-primary text-primary hover:bg-primary/10 bg-transparent border'
+                          : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg'
                     }`}
                     disabled={!isUnlocked}
                     onClick={(e) => {
@@ -355,18 +355,18 @@ const RecoveryJourney = () => {
       </Card>
 
       {/* Week 1 Progress Summary */}
-      <Card className="bg-white/5 backdrop-blur-sm border-steel-dark p-6 rounded-lg">
-        <h3 className="font-oswald font-semibold text-white mb-3">Week 1 Progress</h3>
+      <Card className="bg-card p-6 rounded-lg border-0 shadow-none">
+        <h3 className="font-fjalla font-bold text-card-foreground mb-3">Week 1 Progress</h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-steel-light">Days Completed</span>
-            <span className="text-construction font-oswald font-bold">
+            <span className="text-muted-foreground">Days Completed</span>
+            <span className="text-primary font-fjalla font-bold">
               {completedDays.filter(day => day <= 7).length} / 7
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-steel-light">Foundation Strength</span>
-            <span className="text-construction font-oswald font-bold">
+            <span className="text-muted-foreground">Foundation Strength</span>
+            <span className="text-primary font-fjalla font-bold">
               {Math.round((completedDays.filter(day => day <= 7).length / 7) * 100)}%
             </span>
           </div>

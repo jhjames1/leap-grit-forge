@@ -251,25 +251,25 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       </div>
 
       {/* Live Stats with updated tracking */}
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-4">
+      <Card className="bg-card mb-6 p-4 border-0 shadow-none">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-anton text-construction">
+            <div className="text-2xl font-bold text-primary">
               {todayToolsCount}
             </div>
-            <div className="text-xs text-steel-light font-oswald">Tools Used Today</div>
+            <div className="text-xs text-muted-foreground font-source">Tools Used Today</div>
           </div>
           <div>
-            <div className="text-2xl font-anton text-construction">
+            <div className="text-2xl font-bold text-primary">
               {dayStreak}
             </div>
-            <div className="text-xs text-steel-light font-oswald">Day Streak</div>
+            <div className="text-xs text-muted-foreground font-source">Day Streak</div>
           </div>
           <div>
-            <div className="text-2xl font-anton text-construction">
+            <div className="text-2xl font-bold text-primary">
               {userData?.toolboxStats.totalSessions || 0}
             </div>
-            <div className="text-xs text-steel-light font-oswald">Total Sessions</div>
+            <div className="text-xs text-muted-foreground font-source">Total Sessions</div>
           </div>
         </div>
       </Card>
@@ -277,7 +277,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       {/* Emergency Button */}
       <Button 
         onClick={() => handleToolClick('panic')}
-        className="w-full bg-red-600 hover:bg-red-700 text-white font-oswald font-bold py-6 mb-6 rounded-xl text-lg tracking-wide industrial-shadow"
+        className="w-full bg-red-600 hover:bg-red-700 text-white font-fjalla font-bold py-6 mb-6 rounded-xl text-lg tracking-wide"
       >
         <AlertTriangle className="mr-3" size={24} />
         I NEED HELP NOW
@@ -291,29 +291,23 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
           return (
             <Card 
               key={tool.id}
-              className="bg-white/10 backdrop-blur-sm border-steel-dark hover:bg-white/15 hover:border-construction/30 transition-all duration-200 cursor-pointer group"
+              className="bg-card hover:bg-accent transition-all duration-200 cursor-pointer group border-0 shadow-none"
               onClick={() => handleToolClick(tool.id)}
             >
               <div className="p-6">
                 <div className="flex items-start justify-between mb-3">
-                  <div className={`p-3 rounded-lg transition-all duration-200 ${
-                    tool.id === 'foreman' 
-                      ? 'bg-steel group-hover:bg-construction'
-                      : 'bg-steel group-hover:bg-construction'
-                  }`}>
-                    <Icon className={`transition-colors duration-200 ${
-                      tool.id === 'foreman' ? 'text-white group-hover:text-midnight' : 'text-white group-hover:text-midnight'
-                    }`} size={20} />
+                  <div className="p-3 rounded-lg transition-all duration-200 bg-primary group-hover:bg-primary/80">
+                    <Icon className="transition-colors duration-200 text-primary-foreground" size={20} />
                   </div>
-                  <Badge className={`${tool.badgeColor} text-midnight text-xs font-oswald transition-all duration-200`}>
+                  <Badge className="bg-primary text-primary-foreground text-xs font-source transition-all duration-200">
                     {tool.badge}
                   </Badge>
                 </div>
                 
-                <h3 className="font-oswald font-semibold text-white mb-2 group-hover:text-construction transition-colors duration-200">
+                <h3 className="font-fjalla font-bold text-card-foreground mb-2 group-hover:text-primary transition-colors duration-200">
                   {tool.title}
                 </h3>
-                <p className="text-steel-light text-sm leading-relaxed">
+                <p className="text-muted-foreground text-sm leading-relaxed font-source">
                   {tool.description}
                 </p>
               </div>
@@ -323,8 +317,8 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       </div>
 
       {/* Live Recent Activity with updated timestamp format */}
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mt-6 p-6">
-        <h3 className="font-oswald font-semibold text-white mb-4">Recent Activity</h3>
+      <Card className="bg-card mt-6 p-6 border-0 shadow-none">
+        <h3 className="font-fjalla font-bold text-card-foreground mb-4">Recent Activity</h3>
         <div className="space-y-3">
           {userData?.activityLog.length ? (
             userData.activityLog
@@ -333,17 +327,17 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
               .map((activity, index) => (
                 <div key={activity.id} className="flex items-center space-x-3 text-sm">
                   <div className={`w-3 h-3 rounded-full ${
-                    index === 0 ? 'bg-construction' : 'bg-steel'
+                    index === 0 ? 'bg-primary' : 'bg-muted'
                   }`}></div>
-                  <span className="text-steel-light">
+                  <span className="text-muted-foreground font-source">
                     {activity.action} - <span className={`font-medium ${
-                      index === 0 ? 'text-construction' : 'text-steel-light'
+                      index === 0 ? 'text-primary' : 'text-muted-foreground'
                     }`}>{formatTimestamp(activity.timestamp)}</span>
                   </span>
                 </div>
               ))
           ) : (
-            <div className="text-steel-light text-sm">
+            <div className="text-muted-foreground text-sm font-source">
               Your completed activities will appear here as you use the tools.
             </div>
           )}

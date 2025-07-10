@@ -82,52 +82,52 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
       </div>
 
       {/* Profile Card */}
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
+      <Card className="bg-card mb-6 p-6 border-0 shadow-none">
         <div className="flex items-center space-x-4 mb-4">
-          <div className="w-16 h-16 bg-construction rounded-full flex items-center justify-center">
-            <User className="text-midnight" size={24} />
+          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
+            <User className="text-primary-foreground" size={24} />
           </div>
           <div className="flex-1">
-            <h2 className="font-oswald font-bold text-white text-xl">{user.name}</h2>
-            <p className="text-steel-light">Member since {user.joinDate}</p>
+            <h2 className="font-fjalla font-bold text-card-foreground text-xl">{user.name}</h2>
+            <p className="text-muted-foreground font-source">Member since {user.joinDate}</p>
             {phoneNumber && (
               <div className="flex items-center space-x-2 mt-1">
-                <Phone size={14} className="text-steel-light" />
-                <p className="text-steel-light text-sm">{phoneNumber}</p>
+                <Phone size={14} className="text-muted-foreground" />
+                <p className="text-muted-foreground text-sm font-source">{phoneNumber}</p>
               </div>
             )}
-            <p className="text-steel-light text-sm">Last login: {lastLogin}</p>
+            <p className="text-muted-foreground text-sm font-source">Last login: {lastLogin}</p>
           </div>
         </div>
         
         <div className="grid grid-cols-3 gap-4 text-center mb-4">
           {profileStats.map((stat, index) => (
             <div key={index}>
-              <div className={`text-2xl font-anton ${stat.color}`}>{stat.value}</div>
-              <div className="text-xs text-steel-light font-oswald">{stat.unit}</div>
-              <div className="text-xs text-steel-light">{stat.label}</div>
+              <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+              <div className="text-xs text-muted-foreground font-source">{stat.unit}</div>
+              <div className="text-xs text-muted-foreground font-source">{stat.label}</div>
             </div>
           ))}
         </div>
 
-        <div className="space-y-2 pt-4 border-t border-steel-dark/50">
+        <div className="space-y-2 pt-4 border-t border-border">
           <div className="flex justify-between items-center">
-            <span className="text-steel-light text-sm">Most Used Tool:</span>
-            <span className="text-construction font-oswald font-medium">{mostUsedTool}</span>
+            <span className="text-muted-foreground text-sm font-source">Most Used Tool:</span>
+            <span className="text-primary font-fjalla font-medium">{mostUsedTool}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-steel-light text-sm">Weekly Progress:</span>
-            <span className="text-construction font-oswald font-medium">{Math.round((urgesTracked / 7) * 100)}% tracked</span>
+            <span className="text-muted-foreground text-sm font-source">Weekly Progress:</span>
+            <span className="text-primary font-fjalla font-medium">{Math.round((urgesTracked / 7) * 100)}% tracked</span>
           </div>
         </div>
       </Card>
 
       {/* Favorite Tools */}
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
-        <h3 className="font-oswald font-semibold text-white mb-4">Favorite Tools</h3>
+      <Card className="bg-card mb-6 p-6 border-0 shadow-none">
+        <h3 className="font-fjalla font-bold text-card-foreground mb-4">Favorite Tools</h3>
         <div className="flex flex-wrap gap-2">
           {user.favoriteTools.map((tool, index) => (
-            <Badge key={index} className="bg-construction text-midnight text-xs font-oswald">
+            <Badge key={index} className="bg-primary text-primary-foreground text-xs font-source">
               {tool}
             </Badge>
           ))}
@@ -135,17 +135,17 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
       </Card>
 
       {/* Badges & Achievements */}
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
-        <h3 className="font-oswald font-semibold text-white mb-4">Achievements</h3>
+      <Card className="bg-card mb-6 p-6 border-0 shadow-none">
+        <h3 className="font-fjalla font-bold text-card-foreground mb-4">Achievements</h3>
         <div className="grid grid-cols-2 gap-4">
           {user.badges.map((badge, index) => (
-            <div key={index} className="flex items-center space-x-3 p-3 bg-steel-dark/20 rounded-lg">
-              <div className="w-8 h-8 bg-steel rounded-full flex items-center justify-center">
+            <div key={index} className="flex items-center space-x-3 p-3 bg-muted/20 rounded-lg">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                 <span>{badge.icon}</span>
               </div>
               <div>
-                <p className="text-white font-medium">{badge.name}</p>
-                <p className="text-steel-light text-sm">Earned {badge.earned}</p>
+                <p className="text-card-foreground font-medium font-fjalla">{badge.name}</p>
+                <p className="text-muted-foreground text-sm font-source">Earned {badge.earned}</p>
               </div>
             </div>
           ))}
@@ -153,13 +153,13 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
       </Card>
 
       {/* Settings */}
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
-        <h3 className="font-oswald font-semibold text-white mb-4">Settings</h3>
+      <Card className="bg-card p-6 border-0 shadow-none">
+        <h3 className="font-fjalla font-bold text-card-foreground mb-4">Settings</h3>
         <div className="space-y-3">
           <Button 
             onClick={() => setCurrentView('edit')}
             variant="outline" 
-            className="w-full border-steel text-steel-light hover:bg-steel/10 justify-start"
+            className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
           >
             <Edit size={16} className="mr-2" />
             Edit Profile
@@ -167,14 +167,14 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           <Button 
             onClick={() => setCurrentView('notifications')}
             variant="outline" 
-            className="w-full border-steel text-steel-light hover:bg-steel/10 justify-start"
+            className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
           >
             <Bell size={16} className="mr-2" />
             Notification Settings
           </Button>
           <Button 
             variant="outline" 
-            className="w-full border-steel text-steel-light hover:bg-steel/10 justify-start"
+            className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
           >
             <Calendar size={16} className="mr-2" />
             Weekly Check-In Schedule
@@ -187,7 +187,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
         <Button
           onClick={handleAdminAccess}
           variant="ghost"
-          className="w-full text-steel-dark hover:text-steel opacity-10 hover:opacity-30 transition-opacity"
+          className="w-full text-muted hover:text-muted-foreground opacity-10 hover:opacity-30 transition-opacity"
         >
           <Shield size={16} />
         </Button>

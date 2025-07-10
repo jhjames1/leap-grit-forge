@@ -267,24 +267,23 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Header */}
-      <div className="bg-midnight/90 backdrop-blur-sm border-b border-steel-dark p-4">
+      <div className="bg-card border-b border-border p-4 border-0 shadow-none">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={onBack}
-              className="text-steel-light hover:text-white"
+              className="text-muted-foreground hover:text-card-foreground"
             >
               <ArrowLeft size={20} />
             </Button>
-            {/* Icon shows in construction yellow when active */}
-            <div className="w-12 h-12 bg-construction rounded-full flex items-center justify-center">
-              <MessageCircle className="text-midnight" size={20} />
+            <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+              <MessageCircle className="text-primary-foreground" size={20} />
             </div>
             <div>
-              <h2 className="font-oswald font-semibold text-white">The Foreman</h2>
-              <p className="text-steel-light text-sm">Your Recovery Mentor</p>
+              <h2 className="font-fjalla font-bold text-card-foreground">The Foreman</h2>
+              <p className="text-muted-foreground text-sm font-source">Your Recovery Mentor</p>
             </div>
           </div>
         </div>
@@ -297,12 +296,12 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
             <div className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] ${
                 msg.sender === 'user' 
-                  ? 'bg-steel text-white' 
-                  : 'bg-white/10 backdrop-blur-sm text-white'
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-card text-card-foreground border-0 shadow-none'
               } rounded-2xl p-4`}>
-                <p className="text-sm leading-relaxed mb-1">{msg.text}</p>
-                <p className={`text-xs ${
-                  msg.sender === 'user' ? 'text-white/70' : 'text-steel-light'
+                <p className="text-sm leading-relaxed mb-1 font-source">{msg.text}</p>
+                <p className={`text-xs font-source ${
+                  msg.sender === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
                 }`}>
                   {msg.time}
                 </p>
@@ -317,8 +316,8 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
                     size="sm"
                     variant="outline"
                     onClick={() => handleSaveMessage(msg.id)}
-                    className={`border-steel text-steel-light hover:text-white hover:bg-steel/20 ${
-                      savedAffirmations.includes(msg.id) ? 'bg-steel/20' : ''
+                    className={`border-border text-card-foreground hover:bg-accent font-source ${
+                      savedAffirmations.includes(msg.id) ? 'bg-accent' : ''
                     }`}
                   >
                     <Star size={14} />
@@ -328,14 +327,14 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
                     size="sm"
                     variant="outline"
                     onClick={handleFieldStory}
-                    className="border-steel text-steel-light hover:text-white hover:bg-steel/20 text-xs"
+                    className="border-border text-card-foreground hover:bg-accent text-xs font-source"
                   >
                     Field Story
                   </Button>
                   <Button
                     size="sm"
                     onClick={handlePeerEscalation}
-                    className="bg-construction hover:bg-construction-dark text-midnight text-xs font-oswald"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-source"
                   >
                     <Users size={14} className="mr-1" />
                     Talk to Peer
@@ -350,16 +349,16 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
       </div>
 
       {/* Message Input */}
-      <div className="bg-midnight/90 backdrop-blur-sm border-t border-steel-dark p-4">
+      <div className="bg-card border-t border-border p-4 border-0 shadow-none">
         <div className="flex space-x-3">
           <Button
             size="icon"
             variant="outline"
             onClick={toggleListening}
-            className={`border-steel ${
+            className={`border-border ${
               isListening 
-                ? 'bg-construction text-midnight' 
-                : 'text-steel-light hover:text-white hover:bg-steel/20'
+                ? 'bg-primary text-primary-foreground' 
+                : 'text-muted-foreground hover:text-card-foreground hover:bg-accent'
             }`}
           >
             {isListening ? <Mic size={16} /> : <MicOff size={16} />}
@@ -368,12 +367,12 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="What's on your mind?"
-            className="flex-1 bg-white/10 border-steel-dark text-white placeholder:text-steel-light"
+            className="flex-1 bg-background border-border text-card-foreground placeholder:text-muted-foreground"
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
           />
           <Button 
             onClick={handleSendMessage}
-            className="bg-steel hover:bg-steel-light text-white px-6"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
           >
             <Send size={16} />
           </Button>
