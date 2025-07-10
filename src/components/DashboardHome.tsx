@@ -292,13 +292,13 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="flex items-center space-x-2">
-                <Zap className="text-blue-500" size={14} />
+                <Zap className="text-primary" size={14} />
                 <span className="text-muted-foreground">
                   {dailyStats.actionsToday} {t('home.actionsToday') || 'actions today'}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
-                <Target className="text-green-500" size={14} />
+                <Target className="text-primary" size={14} />
                 <span className="text-muted-foreground">
                   {dailyStats.toolsUsedToday} {t('home.toolsUsed') || 'tools used'}
                 </span>

@@ -264,7 +264,8 @@ const englishTranslations = {
     },
     recoveryStrength: 'Recovery Strength',
     wellnessLevel: 'Wellness Level',
-    actionsToday: 'actions today'
+    actionsToday: 'actions today',
+    toolsUsed: 'tools used'
   },
   
   // Foreman Chat
@@ -942,7 +943,8 @@ const spanishTranslations = {
     },
     recoveryStrength: 'Fuerza de Recuperación',
     wellnessLevel: 'Nivel de Bienestar',
-    actionsToday: 'acciones hoy'
+    actionsToday: 'acciones hoy',
+    toolsUsed: 'herramientas usadas'
   },
   
   // Foreman Chat
