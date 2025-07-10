@@ -65,8 +65,10 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         setDailyMotivation(t('home.journeyContinues'));
       }
       
-      // Set current journey day (minimum 1, maximum 90 for the program)
-      setCurrentJourneyDay(Math.min(Math.max(1, daysSinceStart + 1), 90));
+      // Set current journey day to match RecoveryJourney logic
+      const completedDays = userData?.journeyProgress?.completedDays || [];
+      const calculatedDay = Math.min(Math.max(...completedDays, 0) + 1, 90);
+      setCurrentJourneyDay(calculatedDay);
       
       if (!localStorage.getItem('userStartDate')) {
         localStorage.setItem('userStartDate', todayString);

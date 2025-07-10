@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CheckCircle2, Brain, Users, Target, Zap, TrendingUp, PenTool, Headphones, Goal, BarChart, Link } from 'lucide-react';
+import { CheckCircle2, Brain, Users, Target, Zap, TrendingUp, PenTool, Headphones, Goal, BarChart, Link, Sprout, CloudSun, Waves, Mountain, RotateCcw } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageToggle } from '@/components/LanguageToggle';
 
@@ -33,11 +33,11 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   ];
 
   const stageOptions = [
-    { id: 'starting', label: t('journeyStages.starting'), emoji: '🌱' },
-    { id: 'few-weeks', label: t('journeyStages.fewWeeks'), emoji: '🌤️' },
-    { id: 'few-months', label: t('journeyStages.fewMonths'), emoji: '🌊' },
-    { id: 'steady', label: t('journeyStages.steady'), emoji: '🏔' },
-    { id: 'starting-again', label: t('journeyStages.startingAgain'), emoji: '🔁' }
+    { id: 'starting', label: t('journeyStages.starting'), icon: Sprout },
+    { id: 'few-weeks', label: t('journeyStages.fewWeeks'), icon: CloudSun },
+    { id: 'few-months', label: t('journeyStages.fewMonths'), icon: Waves },
+    { id: 'steady', label: t('journeyStages.steady'), icon: Mountain },
+    { id: 'starting-again', label: t('journeyStages.startingAgain'), icon: RotateCcw }
   ];
 
   const supportOptions = [
@@ -148,8 +148,8 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                           size={20} 
                         />
                       </div>
-                      <span className={`text-[16px] ${
-                        isSelected ? 'text-card-foreground font-medium' : 'text-muted-foreground'
+                      <span className={`font-fjalla font-bold tracking-wide ${
+                        isSelected ? 'text-card-foreground' : 'text-muted-foreground'
                       }`}>
                         {option.label}
                       </span>
@@ -173,6 +173,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
             
             <div className="space-y-3 mb-8">
               {stageOptions.map(option => {
+                const Icon = option.icon;
                 const isSelected = journeyStage === option.id;
                 
                 return (
@@ -186,9 +187,14 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                     }`}
                   >
                     <div className="flex items-center space-x-3">
-                      <span className="text-xl">{option.emoji}</span>
-                      <span className={`text-[16px] ${
-                        isSelected ? 'text-card-foreground font-medium' : 'text-muted-foreground'
+                      <div className={`p-3 rounded-lg ${isSelected ? 'bg-primary' : 'bg-muted'}`}>
+                        <Icon 
+                          className={`${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`} 
+                          size={20} 
+                        />
+                      </div>
+                      <span className={`font-fjalla font-bold tracking-wide ${
+                        isSelected ? 'text-card-foreground' : 'text-muted-foreground'
                       }`}>
                         {option.label}
                       </span>
@@ -232,8 +238,8 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                           size={20} 
                         />
                       </div>
-                      <span className={`text-[16px] ${
-                        isSelected ? 'text-card-foreground font-medium' : 'text-muted-foreground'
+                      <span className={`font-fjalla font-bold tracking-wide ${
+                        isSelected ? 'text-card-foreground' : 'text-muted-foreground'
                       }`}>
                         {option.label}
                       </span>
