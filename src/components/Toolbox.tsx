@@ -15,6 +15,7 @@ import BreathingExercise from '@/components/BreathingExercise';
 import UrgeTracker from '@/components/UrgeTracker';
 import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
 import { useUserData } from '@/hooks/useUserData';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ToolboxProps {
   onNavigate?: (page: string) => void;
@@ -25,6 +26,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const [showUrgeTracker, setShowUrgeTracker] = useState(false);
   const [showGratitudeLog, setShowGratitudeLog] = useState(false);
   const { userData, logActivity, updateToolboxStats } = useUserData();
+  const { t } = useLanguage();
 
   // Calculate daily reset at midnight
   useEffect(() => {
@@ -247,7 +249,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         <h1 className="text-5xl font-bold text-gray-900 mb-1 tracking-wide">
           <span className="font-oswald font-extralight tracking-tight">RECOVERY</span><span className="font-fjalla font-extrabold italic">TOOLBOX</span>
         </h1>
-        <p className="text-gray-600 font-oswald">Your support tools, always ready</p>
+        <p className="text-gray-600 font-oswald">{t('toolbox.subtitle')}</p>
       </div>
 
       {/* Live Stats with updated tracking */}
@@ -257,19 +259,19 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
             <div className="text-2xl font-bold text-primary">
               {todayToolsCount}
             </div>
-            <div className="text-xs text-gray-600 font-source">Tools Used Today</div>
+            <div className="text-xs text-gray-600 font-source">{t('toolbox.stats.todayTools')}</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-primary">
               {dayStreak}
             </div>
-            <div className="text-xs text-gray-600 font-source">Day Streak</div>
+            <div className="text-xs text-gray-600 font-source">{t('toolbox.stats.dayStreak')}</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-primary">
               {userData?.toolboxStats.totalSessions || 0}
             </div>
-            <div className="text-xs text-gray-600 font-source">Total Sessions</div>
+            <div className="text-xs text-gray-600 font-source">{t('toolbox.stats.totalSessions')}</div>
           </div>
         </div>
       </Card>
@@ -280,7 +282,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-6 mb-6 rounded-xl text-lg tracking-wide"
       >
         <AlertTriangle className="mr-3" size={24} />
-        I NEED HELP NOW
+        {t('toolbox.emergency.button').toUpperCase()}
       </Button>
 
       {/* Tools Grid */}

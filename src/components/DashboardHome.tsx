@@ -24,23 +24,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   // Daily motivation logic
   const [dailyMotivation, setDailyMotivation] = useState('');
 
-  const dailyQuotes = [
-    "Every day is a new opportunity to build the life you want.",
-    "Strength doesn't come from what you can do. It comes from overcoming what you thought you couldn't.",
-    "The only impossible journey is the one you never begin.",
-    "Recovery is not a destination, it's a way of life.",
-    "Progress, not perfection, is the goal.",
-    "You are stronger than your urges.",
-    "One day at a time, one choice at a time.",
-    "Your past doesn't define your future.",
-    "Courage isn't the absence of fear, it's moving forward despite it.",
-    "Every small step forward is a victory.",
-    "Recovery is a journey of self-discovery.",
-    "You have the power to change your story.",
-    "Healing happens one breath at a time.",
-    "Your strength is greater than any challenge.",
-    "Today is a new chance to choose recovery."
-  ];
+  // Remove the hard-coded dailyQuotes array since it's now in the language context
+  // const dailyQuotes = [...] - removed
 
   // Calculate recovery streak and badges based on daily activity
   const [recoveryStreak, setRecoveryStreak] = useState(0);
@@ -144,7 +129,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
                 {t('home.welcome').toUpperCase()}, <span className="font-bold italic">{currentUser.toUpperCase()}</span>
               </p>
-              <p className="text-muted-foreground text-sm">Your recovery journey continues.</p>
+              <p className="text-muted-foreground text-sm">{t('home.journeyContinues')}</p>
             </div>
             
             {/* Right column: Theme toggle, Language toggle, and Trophy */}
@@ -171,7 +156,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <Target className="text-primary-foreground" size={20} />
               </div>
               <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                TODAY'S MOTIVATION
+                {t('home.todaysMotivation').toUpperCase()}
               </h3>
             </div>
             <p className="text-card-foreground text-sm italic leading-tight">"{dailyMotivation}"</p>
@@ -180,7 +165,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[30%]">
             <div className="text-center">
               <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide mb-2">
-                STREAK
+                {t('home.streak.title').toUpperCase()}
               </h3>
               <div className="flex items-center justify-center space-x-2 mb-1">
                 <div className="bg-primary p-2 rounded-sm">
@@ -204,7 +189,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <div className="bg-yellow-400 p-2 rounded-sm">
                   <Play className="text-black" size={20} />
                 </div>
-                <span className="text-card-foreground font-source text-sm">Day {currentJourneyDay}: Building Daily Habits</span>
+                <span className="text-card-foreground font-source text-sm">{t('home.currentDay', {day: currentJourneyDay})}</span>
               </div>
             </div>
           </div>
@@ -217,16 +202,16 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-card-foreground font-source text-sm">Day 20: Weekend Recovery Strategies</span>
-              <span className="text-primary font-source font-bold text-sm">TOMORROW</span>
+              <span className="text-card-foreground font-source text-sm">{t('home.upcomingActivities.weekend')}</span>
+              <span className="text-primary font-source font-bold text-sm">{t('home.time.tomorrow').toUpperCase()}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-card-foreground font-source text-sm">Day 25: Peer Communication</span>
-              <span className="text-primary font-source font-bold text-sm">2 DAYS</span>
+              <span className="text-card-foreground font-source text-sm">{t('home.upcomingActivities.communication')}</span>
+              <span className="text-primary font-source font-bold text-sm">{t('home.time.days', {count: 2}).toUpperCase()}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-card-foreground font-source text-sm">Day 30: Month Milestone Review</span>
-              <span className="text-primary font-source font-bold text-sm">1 WEEK</span>
+              <span className="text-card-foreground font-source text-sm">{t('home.upcomingActivities.milestone')}</span>
+              <span className="text-primary font-source font-bold text-sm">{t('home.time.week', {count: 1}).toUpperCase()}</span>
             </div>
           </div>
         </Card>
@@ -274,7 +259,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <div className="bg-primary p-3 rounded-lg">
                 <Calendar className="text-primary-foreground" size={20} />
               </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">CALENDAR</h3>
+              <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">{t('nav.calendar').toUpperCase()}</h3>
             </div>
           </Card>
           <Card 
@@ -285,7 +270,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
               <div className="bg-primary p-3 rounded-lg">
                 <MessageCircle className="text-primary-foreground" size={20} />
               </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">CHAT SUPPORT</h3>
+              <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">{t('nav.chatSupport').toUpperCase()}</h3>
             </div>
           </Card>
         </div>

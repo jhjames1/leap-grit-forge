@@ -5,7 +5,7 @@ export type Language = 'en' | 'es';
 interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, interpolations?: Record<string, string | number>) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -25,8 +25,8 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     localStorage.setItem('leap-language', newLanguage);
   };
 
-  const t = (key: string): string => {
-    return getTranslation(key, language);
+  const t = (key: string, interpolations?: Record<string, string | number>): string => {
+    return getTranslation(key, language, interpolations);
   };
 
   useEffect(() => {
@@ -49,31 +49,44 @@ export function useLanguage() {
 }
 
 // Translation function
-function getTranslation(key: string, language: Language): string {
+const getTranslation = (key: string, language: Language, interpolations?: Record<string, string | number>): string => {
   const translations = language === 'es' ? spanishTranslations : englishTranslations;
   
-  // Navigate nested keys (e.g., "foreman.greeting")
+  // Handle nested keys (e.g., 'home.welcome')
   const keys = key.split('.');
   let value: any = translations;
   
   for (const k of keys) {
-    value = value?.[k];
-    if (value === undefined) break;
-  }
-  
-  // Fallback to English if Spanish translation missing
-  if (value === undefined && language === 'es') {
-    const keys = key.split('.');
-    let fallback: any = englishTranslations;
-    for (const k of keys) {
-      fallback = fallback?.[k];
-      if (fallback === undefined) break;
+    if (value && typeof value === 'object' && k in value) {
+      value = value[k];
+    } else {
+      // If key not found in Spanish, fall back to English
+      if (language === 'es') {
+        return getTranslation(key, 'en', interpolations);
+      }
+      return key; // Return the key itself if not found
     }
-    return fallback || key;
   }
   
-  return value || key;
-}
+  // Handle arrays (return random item for variety)
+  if (Array.isArray(value)) {
+    const now = new Date();
+    const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    value = value[dayOfYear % value.length];
+  }
+  
+  let result = typeof value === 'string' ? value : key;
+  
+  // Handle interpolations (e.g., {{day}}, {{count}})
+  if (interpolations && typeof result === 'string') {
+    Object.entries(interpolations).forEach(([placeholder, replacement]) => {
+      const pattern = new RegExp(`{{${placeholder}}}`, 'g');
+      result = result.replace(pattern, String(replacement));
+    });
+  }
+  
+  return result;
+};
 
 // English translations
 const englishTranslations = {
@@ -171,24 +184,39 @@ const englishTranslations = {
     journey: 'Journey',
     toolbox: 'Toolbox',
     chat: 'Chat',
-    profile: 'Profile'
+    profile: 'Profile',
+    calendar: 'Calendar',
+    chatSupport: 'Chat Support'
   },
   
-  // Dashboard Home
+  // Home
   home: {
-    welcome: 'Welcome back',
+    welcome: 'Welcome',
+    journeyContinues: 'Your recovery journey continues.',
+    todaysMotivation: "Today's Motivation",
+    currentDay: 'Day {{day}}: Building Daily Habits',
     motivation: {
       headers: [
-        'Every Day is a Fresh Start',
-        'You Are Stronger Than You Know',
-        'Progress Over Perfection',
-        'One Day at a Time',
-        'Believe in Your Journey'
+        "Every day is a new opportunity to build the life you want.",
+        "Strength doesn't come from what you can do. It comes from overcoming what you thought you couldn't.",
+        "The only impossible journey is the one you never begin.",
+        "Recovery is not a destination, it's a way of life.",
+        "Progress, not perfection, is the goal.",
+        "You are stronger than your urges.",
+        "One day at a time, one choice at a time.",
+        "Your past doesn't define your future.",
+        "Courage isn't the absence of fear, it's moving forward despite it.",
+        "Every small step forward is a victory.",
+        "Recovery is a journey of self-discovery.",
+        "You have the power to change your story.",
+        "Healing happens one breath at a time.",
+        "Your strength is greater than any challenge.",
+        "Today is a new chance to choose recovery."
       ]
     },
     streak: {
-      days: 'Days Strong',
-      today: 'Today'
+      title: 'Streak',
+      days: 'days'
     },
     badges: {
       earned: 'Badges Earned',
@@ -196,6 +224,16 @@ const englishTranslations = {
     },
     startDay: 'Start Your Day',
     comingUp: 'Coming Up This Week',
+    upcomingActivities: {
+      weekend: 'Weekend Recovery Strategies',
+      communication: 'Peer Communication',
+      milestone: 'Month Milestone Review'
+    },
+    time: {
+      tomorrow: 'Tomorrow',
+      days: '{{count}} Days',
+      week: '{{count}} Week'
+    },
     foreman: {
       title: 'The Foreman',
       subtitle: 'Your recovery coach is here to help',
@@ -261,10 +299,44 @@ const englishTranslations = {
   // Toolbox
   toolbox: {
     title: 'Recovery Toolbox',
-    urgeTracker: 'Urge Tracker',
-    breathingExercise: 'Breathing Exercise',
-    gratitudeLog: 'Gratitude Log',
-    recoveryStrength: 'Recovery Strength'
+    subtitle: 'Your support tools, always ready',
+    stats: {
+      todayTools: 'Tools Used Today',
+      dayStreak: 'Day Streak', 
+      totalSessions: 'Total Sessions'
+    },
+    emergency: {
+      title: 'Emergency Help',
+      description: 'Get immediate support',
+      button: 'I Need Help Now',
+      badge: 'Emergency'
+    },
+    tools: {
+      foreman: {
+        title: 'The Foreman',
+        description: 'Mentor and Affirmations',
+        badge: 'AI Chat'
+      },
+      urgeTracker: {
+        title: 'Redline Recovery',
+        description: 'Track urges & get redirected',
+        badge: 'Track'
+      },
+      breathingExercise: {
+        title: 'SteadySteel',
+        description: 'Interactive breathing exercise',
+        badge: 'Calm'
+      },
+      gratitudeLog: {
+        title: 'Gratitude Log',
+        description: 'Focus on the positive',
+        badge: 'Mindset'
+      }
+    },
+    recentActivity: {
+      title: 'Recent Activity',
+      empty: 'Your completed activities will appear here as you use the tools.'
+    }
   },
   
   // Common
@@ -378,24 +450,39 @@ const spanishTranslations = {
     journey: 'Viaje',
     toolbox: 'Herramientas',
     chat: 'Chat',
-    profile: 'Perfil'
+    profile: 'Perfil',
+    calendar: 'Calendario',
+    chatSupport: 'Soporte de Chat'
   },
   
-  // Dashboard Home
+  // Home
   home: {
-    welcome: 'Bienvenido de nuevo',
+    welcome: 'Bienvenido',
+    journeyContinues: 'Tu viaje de recuperación continúa.',
+    todaysMotivation: 'Motivación de Hoy',
+    currentDay: 'Día {{day}}: Construyendo Hábitos Diarios',
     motivation: {
       headers: [
-        'Cada Día es un Nuevo Comienzo',
-        'Eres Más Fuerte de lo que Crees',
-        'Progreso Sobre Perfección',
-        'Un Día a la Vez',
-        'Cree en tu Camino'
+        "Cada día es una nueva oportunidad para construir la vida que quieres.",
+        "La fuerza no viene de lo que puedes hacer. Viene de superar lo que pensaste que no podías.",
+        "El único viaje imposible es el que nunca comienzas.",
+        "La recuperación no es un destino, es una forma de vida.",
+        "El progreso, no la perfección, es la meta.",
+        "Eres más fuerte que tus impulsos.",
+        "Un día a la vez, una decisión a la vez.",
+        "Tu pasado no define tu futuro.",
+        "El coraje no es la ausencia del miedo, es seguir adelante a pesar de él.",
+        "Cada pequeño paso adelante es una victoria.",
+        "La recuperación es un viaje de autodescubrimiento.",
+        "Tienes el poder de cambiar tu historia.",
+        "La sanación ocurre una respiración a la vez.",
+        "Tu fuerza es mayor que cualquier desafío.",
+        "Hoy es una nueva oportunidad para elegir la recuperación."
       ]
     },
     streak: {
-      days: 'Días Fuerte',
-      today: 'Hoy'
+      title: 'Racha',
+      days: 'días'
     },
     badges: {
       earned: 'Insignias Ganadas',
@@ -403,6 +490,16 @@ const spanishTranslations = {
     },
     startDay: 'Comienza tu Día',
     comingUp: 'Próximamente Esta Semana',
+    upcomingActivities: {
+      weekend: 'Estrategias de Recuperación de Fin de Semana',
+      communication: 'Comunicación con Compañeros',
+      milestone: 'Revisión del Hito del Mes'
+    },
+    time: {
+      tomorrow: 'Mañana',
+      days: '{{count}} Días',
+      week: '{{count}} Semana'
+    },
     foreman: {
       title: 'El Capataz',
       subtitle: 'Tu entrenador de recuperación está aquí para ayudar',
@@ -468,10 +565,44 @@ const spanishTranslations = {
   // Toolbox
   toolbox: {
     title: 'Caja de Herramientas de Recuperación',
-    urgeTracker: 'Rastreador de Impulsos',
-    breathingExercise: 'Ejercicio de Respiración',
-    gratitudeLog: 'Diario de Gratitud',
-    recoveryStrength: 'Fuerza de Recuperación'
+    subtitle: 'Tus herramientas de apoyo, siempre listas',
+    stats: {
+      todayTools: 'Herramientas Usadas Hoy',
+      dayStreak: 'Racha de Días',
+      totalSessions: 'Sesiones Totales'
+    },
+    emergency: {
+      title: 'Ayuda de Emergencia',
+      description: 'Obtén apoyo inmediato',
+      button: 'Necesito Ayuda Ahora',
+      badge: 'Emergencia'
+    },
+    tools: {
+      foreman: {
+        title: 'El Capataz',
+        description: 'Mentor y Afirmaciones',
+        badge: 'Chat IA'
+      },
+      urgeTracker: {
+        title: 'Recuperación Redline',
+        description: 'Rastrea impulsos y redirige',
+        badge: 'Rastrear'
+      },
+      breathingExercise: {
+        title: 'SteadySteel', 
+        description: 'Ejercicio de respiración interactivo',
+        badge: 'Calma'
+      },
+      gratitudeLog: {
+        title: 'Diario de Gratitud',
+        description: 'Enfócate en lo positivo',
+        badge: 'Mentalidad'
+      }
+    },
+    recentActivity: {
+      title: 'Actividad Reciente',
+      empty: 'Tus actividades completadas aparecerán aquí mientras uses las herramientas.'
+    }
   },
   
   // Common
