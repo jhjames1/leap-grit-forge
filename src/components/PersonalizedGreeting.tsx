@@ -20,10 +20,8 @@ const PersonalizedGreeting = ({ firstName, onContinue }: PersonalizedGreetingPro
     const hour = new Date().getHours();
     if (hour < 12) {
       setTimeOfDay('morning');
-    } else if (hour < 18) {
-      setTimeOfDay('afternoon');
     } else {
-      setTimeOfDay('evening');
+      setTimeOfDay('afternoon'); // Always use afternoon for evening hours
     }
   }, []);
 
@@ -33,8 +31,8 @@ const PersonalizedGreeting = ({ firstName, onContinue }: PersonalizedGreetingPro
         return <Sunrise className="text-primary" size={32} />;
       case 'afternoon':
         return <Sun className="text-primary" size={32} />;
-      case 'evening':
-        return <Sunset className="text-primary" size={32} />;
+      default:
+        return <Sun className="text-primary" size={32} />;
     }
   };
 
@@ -69,7 +67,7 @@ const PersonalizedGreeting = ({ firstName, onContinue }: PersonalizedGreetingPro
             onClick={handleContinue}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 text-[16px] rounded-xl transition-all duration-200"
           >
-            {t('greeting.button.letsLeap')}
+            Let's <span className="font-fjalla italic">Leap</span>
           </Button>
         </div>
       </Card>

@@ -200,14 +200,8 @@ const englishTranslations = {
     good: 'Good',
     morning: 'morning',
     afternoon: 'afternoon',
-    evening: 'evening',
-    gladYoureHere: 'I\'m glad you\'re here.',
-    button: {
-      letsLeap: 'Let\'s LEAP'
-    }
+    gladYoureHere: 'I\'m glad you\'re here.'
   },
-
-  // Navigation
   nav: {
     home: 'Home',
     journey: 'Journey',
@@ -772,6 +766,7 @@ const spanishTranslations = {
     evening: 'noches',
     gladYoureHere: 'Me alegra que estés aquí.',
     button: {
+      continue: 'Continuar',
       letsLeap: 'Vamos a DAR EL SALTO'
     }
   },

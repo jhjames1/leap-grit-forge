@@ -42,12 +42,13 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
         {/* Loading Animation */}
         <div className="mb-12 animate-scale-in">
           <div className="relative w-20 h-20">
-            {/* Gauge Background */}
-            <div className="absolute inset-0 border-4 border-steel-light rounded-full opacity-30"></div>
-            {/* Animated Gauge */}
-            <div className="absolute inset-0 border-4 border-construction rounded-full border-t-transparent animate-gauge-spin"></div>
-            {/* Center Dot */}
-            <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-construction rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
+            {/* Logo */}
+            <img 
+              src="/lovable-uploads/a2a531dc-d4e3-4fd1-bd33-12f9b5644f1e.png" 
+              alt="LEAP Logo" 
+              className="w-full h-full object-contain animate-spin"
+              style={{ animation: 'spin 2s linear infinite' }}
+            />
           </div>
           <p className="text-white font-oswald mt-4 text-sm tracking-wide">
             Loading your tools...

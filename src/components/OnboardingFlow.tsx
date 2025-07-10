@@ -281,7 +281,16 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
           disabled={!canProceed()}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 text-[16px] rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {currentStep === 4 ? t('onboarding.button.letsLeap') : t('onboarding.button.continue')}
+          {currentStep === 4 ? (
+            <>
+              {t('onboarding.button.letsLeap').split(' ').slice(0, -1).join(' ')}{' '}
+              <span className="font-fjalla italic">
+                {t('onboarding.button.letsLeap').split(' ').slice(-1)[0]}
+              </span>
+            </>
+          ) : (
+            t('onboarding.button.continue')
+          )}
         </Button>
       </Card>
     </div>
