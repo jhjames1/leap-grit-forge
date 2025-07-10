@@ -129,7 +129,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background pb-20">
       {/* Header */}
       <div className="bg-midnight/90 backdrop-blur-sm border-b border-steel-dark p-4">
         <div className="flex items-center justify-between">
@@ -238,25 +238,6 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         </div>
       </div>
 
-      {/* Message Input */}
-      <div className="bg-midnight/90 backdrop-blur-sm border-t border-steel-dark p-4">
-        <div className="flex space-x-3">
-          <Input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 bg-white/10 border-steel-dark text-white placeholder:text-steel-light"
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-          />
-          <Button 
-            onClick={handleSendMessage}
-            className="bg-steel hover:bg-steel-light text-white px-6"
-          >
-            <Send size={16} />
-          </Button>
-        </div>
-      </div>
-
       {/* Scheduled Check-in Banner - Moved to bottom */}
       {selectedPeer?.status === 'online' && (
         <div className="bg-steel/90 backdrop-blur-sm border-t border-steel-dark p-3">
@@ -276,6 +257,25 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
           </div>
         </div>
       )}
+
+      {/* Message Input */}
+      <div className="bg-midnight/90 backdrop-blur-sm border-t border-steel-dark p-4">
+        <div className="flex space-x-3">
+          <Input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type your message..."
+            className="flex-1 bg-white/10 border-steel-dark text-white placeholder:text-steel-light"
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          />
+          <Button 
+            onClick={handleSendMessage}
+            className="bg-steel hover:bg-steel-light text-white px-6"
+          >
+            <Send size={16} />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

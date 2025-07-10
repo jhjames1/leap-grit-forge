@@ -1,8 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import SplashScreen from '@/components/SplashScreen';
 import UserAuth from '@/components/UserAuth';
-import PersonalizedGreeting from '@/components/PersonalizedGreeting';
 import OnboardingFlow from '@/components/OnboardingFlow';
 import BottomNavigation from '@/components/BottomNavigation';
 import DashboardHome from '@/components/DashboardHome';
@@ -20,7 +18,6 @@ const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showGreeting, setShowGreeting] = useState(false);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [currentPage, setCurrentPage] = useState('home');
@@ -58,45 +55,8 @@ const Index = () => {
 
   const handleOnboardingComplete = (onboardingData: any) => {
     setShowOnboarding(false);
-    setShowGreeting(true);
+    // Skip greeting completely and go straight to main app
   };
-
-  const handleGreetingComplete = () => {
-    setShowGreeting(false);
-  };
-
-  if (showSplash) {
-    return <SplashScreen onComplete={handleSplashComplete} />;
-  }
-
-  if (showAuth) {
-    return <UserAuth onLogin={handleLogin} />;
-  }
-
-  if (showOnboarding) {
-    return <OnboardingFlow onComplete={handleOnboardingComplete} />;
-  }
-
-  if (showGreeting) {
-    return (
-      <PersonalizedGreeting 
-        firstName={currentUser || undefined}
-        onContinue={handleGreetingComplete}
-      />
-    );
-  }
-
-  if (showAdminLogin && !isAdminLoggedIn) {
-    return (
-      <AdminLogin 
-        onLogin={() => {
-          setIsAdminLoggedIn(true);
-          setCurrentPage('admin');
-        }}
-        onBack={() => setShowAdminLogin(false)}
-      />
-    );
-  }
 
   const handleNavigation = (page: string) => {
     if (page === 'admin-login') {
@@ -116,6 +76,30 @@ const Index = () => {
     setIsAdminLoggedIn(false);
     setShowAdminLogin(false);
   };
+
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
+  if (showAuth) {
+    return <UserAuth onLogin={handleLogin} />;
+  }
+
+  if (showOnboarding) {
+    return <OnboardingFlow onComplete={handleOnboardingComplete} />;
+  }
+
+  if (showAdminLogin && !isAdminLoggedIn) {
+    return (
+      <AdminLogin 
+        onLogin={() => {
+          setIsAdminLoggedIn(true);
+          setCurrentPage('admin');
+        }}
+        onBack={() => setShowAdminLogin(false)}
+      />
+    );
+  }
 
   const renderActivePage = () => {
     switch (currentPage) {
