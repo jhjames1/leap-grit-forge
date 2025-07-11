@@ -129,17 +129,17 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     if (!journey) return [];
 
     const completedDays = userData?.journeyProgress?.completedDays || [];
-    const currentDay = Math.max(1, ...completedDays) + 1;
+    const today = calculateCurrentJourneyDay(userData);
+    const startDay = today + 1; // Start from tomorrow
     
     const upcomingActivities = [];
-    const maxDay = Math.min(currentDay + 6, journey.days.length); // Next 7 days max
+    const maxDay = Math.min(startDay + 6, journey.days.length); // Next 7 days from tomorrow
     
-    for (let day = currentDay; day <= maxDay; day++) {
+    for (let day = startDay; day <= maxDay; day++) {
       const dayData = journey.days.find(d => d.day === day);
-      if (dayData && journeyManager.isDayUnlocked(completedDays, day)) {
-        const daysUntil = day - currentDay;
-        const timeLabel = daysUntil === 0 ? 'Today' : 
-                         daysUntil === 1 ? 'Tomorrow' : 
+      if (dayData) { // Remove unlock check - show all upcoming activities
+        const daysUntil = day - today; // Calculate relative to today
+        const timeLabel = daysUntil === 1 ? 'Tomorrow' : 
                          `In ${daysUntil} days`;
         
         // Extract activity from the day
