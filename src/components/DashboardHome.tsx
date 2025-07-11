@@ -10,7 +10,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { LanguageToggle } from './LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { logger } from '@/utils/logger';
-import { calculateCurrentJourneyDay } from '@/utils/journeyCalculation';
+import { calculateCurrentJourneyDay, getDayStatus } from '@/utils/journeyCalculation';
 import { trackingManager } from '@/utils/trackingManager';
 
 interface DashboardHomeProps {
@@ -37,6 +37,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   
   // Calculate current journey day using shared utility
   const currentJourneyDay = calculateCurrentJourneyDay(userData);
+  
+  // Check if the current day is locked
+  const currentDayStatus = getDayStatus(userData, currentJourneyDay);
 
   useEffect(() => {
     // Load daily motivation based on user's day count
@@ -215,7 +218,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <div className="bg-yellow-400 p-3 rounded-sm">
                   <Play className="text-black" size={20} />
                 </div>
-                <span className="text-card-foreground font-source text-sm">{t('home.currentDay', {day: currentJourneyDay})}</span>
+                <span className="text-card-foreground font-source text-sm">
+                  {currentDayStatus === 'locked' ? 'Available Tomorrow' : t('home.currentDay', {day: currentJourneyDay})}
+                </span>
               </div>
             </div>
           </div>
