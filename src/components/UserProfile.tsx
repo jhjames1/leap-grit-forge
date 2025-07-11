@@ -122,9 +122,9 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
       color: "text-construction" 
     },
     { 
-      label: t('profile.actionsToday'), 
+      label: "Actions Today", 
       value: liveActionsToday, 
-      unit: t('profile.today'), 
+      unit: "today", 
       color: "text-construction" 
     }
   ];
