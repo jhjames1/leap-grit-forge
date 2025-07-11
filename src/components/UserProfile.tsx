@@ -20,8 +20,8 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const { t, language } = useLanguage();
   const [currentView, setCurrentView] = useState<'profile' | 'edit' | 'notifications' | 'saved-wisdom'>('profile');
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
-  const { userData, currentUser } = useUserData();
-  const { signOut } = useAuth();
+  const { userData } = useUserData();
+  const { signOut, user: authUser } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -167,7 +167,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   ];
 
   const user = {
-    name: currentUser || "User",
+    name: authUser?.user_metadata?.first_name || "User",
     joinDate: formatDate("March 1, 2024"), // Could be calculated from userData creation date
     streakDays: liveRecoveryStreak,
     totalSessions: liveTotalToolsUsed,
@@ -222,7 +222,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
             <User className="text-primary-foreground" size={24} />
           </div>
           <div className="flex-1">
-            <h2 className="font-fjalla font-bold text-card-foreground text-xl">{user.name}</h2>
+            <h2 className="font-fjalla font-bold text-card-foreground text-xl">{authUser?.user_metadata?.first_name || user.name}</h2>
             <p className="text-muted-foreground font-source">{t('profile.memberSince', { date: user.joinDate })}</p>
             {phoneNumber && (
               <div className="flex items-center space-x-2 mt-1">

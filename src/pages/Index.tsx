@@ -32,7 +32,7 @@ const Index = () => {
       setShowSplash(false);
       // Check if authenticated user needs onboarding
       if (isAuthenticated && user) {
-        const hasCompletedOnboarding = localStorage.getItem(`leap_onboarding_${user.user_metadata?.first_name}`);
+        const hasCompletedOnboarding = localStorage.getItem(`leap_onboarding_completed_${user.id}`);
         if (!hasCompletedOnboarding) {
           setShowOnboarding(true);
         }
@@ -51,9 +51,9 @@ const Index = () => {
   const handleOnboardingComplete = (onboardingData: any) => {
     setShowOnboarding(false);
     
-    // Mark onboarding as complete
-    if (user?.user_metadata?.first_name) {
-      localStorage.setItem(`leap_onboarding_${user.user_metadata.first_name}`, 'completed');
+    // Mark onboarding as complete for this authenticated user
+    if (user?.id) {
+      localStorage.setItem(`leap_onboarding_completed_${user.id}`, 'completed');
     }
     
     // Save onboarding data to userData

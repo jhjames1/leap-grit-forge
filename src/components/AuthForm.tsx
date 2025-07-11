@@ -20,8 +20,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const [signUpData, setSignUpData] = useState({
     email: '',
     password: '',
-    firstName: '',
-    lastName: ''
+    firstName: ''
   });
 
   const [signInData, setSignInData] = useState({
@@ -41,13 +40,12 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
       const { error } = await supabase.auth.signUp({
         email: signUpData.email,
         password: signUpData.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            first_name: signUpData.firstName,
-            last_name: signUpData.lastName
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              first_name: signUpData.firstName
+            }
           }
-        }
       });
 
       if (error) {
@@ -134,27 +132,15 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-firstname">First Name</Label>
-                    <Input
-                      id="signup-firstname"
-                      placeholder="First name"
-                      value={signUpData.firstName}
-                      onChange={(e) => setSignUpData(prev => ({ ...prev, firstName: e.target.value }))}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-lastname">Last Name</Label>
-                    <Input
-                      id="signup-lastname"
-                      placeholder="Last name"
-                      value={signUpData.lastName}
-                      onChange={(e) => setSignUpData(prev => ({ ...prev, lastName: e.target.value }))}
-                      required
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-firstname">First Name</Label>
+                  <Input
+                    id="signup-firstname"
+                    placeholder="First name"
+                    value={signUpData.firstName}
+                    onChange={(e) => setSignUpData(prev => ({ ...prev, firstName: e.target.value }))}
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
