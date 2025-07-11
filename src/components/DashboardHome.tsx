@@ -190,7 +190,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     
     // Randomly select 3-4 activities and shuffle
     const shuffled = upcomingActivities.sort(() => Math.random() - 0.5);
-    const result = shuffled.slice(0, 4);
+    const result = shuffled.slice(0, 3);
     
     console.log('final result:', result);
     return result;
