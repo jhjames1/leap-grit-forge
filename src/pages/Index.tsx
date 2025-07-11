@@ -30,12 +30,22 @@ const Index = () => {
   useEffect(() => {
     if (!loading) {
       setShowSplash(false);
+      
       // Check if authenticated user needs onboarding
       if (isAuthenticated && user) {
+        console.log('Auth state changed - checking onboarding status for user:', user.id);
         const hasCompletedOnboarding = localStorage.getItem(`leap_onboarding_completed_${user.id}`);
+        console.log('Onboarding completion status:', hasCompletedOnboarding);
+        
         if (!hasCompletedOnboarding) {
+          console.log('Triggering onboarding flow for user:', user.id);
           setShowOnboarding(true);
+        } else {
+          console.log('User has already completed onboarding');
         }
+      } else if (!isAuthenticated && !loading) {
+        console.log('User not authenticated, hiding onboarding');
+        setShowOnboarding(false);
       }
     }
   }, [loading, isAuthenticated, user]);
