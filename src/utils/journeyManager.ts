@@ -140,7 +140,8 @@ export class JourneyManager {
   public isDayUnlocked(
     completedDays: number[], 
     dayNumber: number, 
-    currentTime: Date = new Date()
+    currentTime: Date = new Date(),
+    completionDates?: Record<number, Date>
   ): boolean {
     // Day 1 is always unlocked
     if (dayNumber === 1) return true;
@@ -149,14 +150,23 @@ export class JourneyManager {
     const previousDayCompleted = completedDays.includes(dayNumber - 1);
     if (!previousDayCompleted) return false;
 
-    // Must be past 12:01 AM of the day AFTER the previous day was completed
-    // For now, we'll implement a simple version - must be past 12:01 AM today
-    const currentDate = new Date(currentTime);
-    const unlockTime = new Date(currentDate);
-    unlockTime.setHours(0, 1, 0, 0); // 12:01 AM today
+    // If we have completion dates, use them for accurate timing
+    if (completionDates && completionDates[dayNumber - 1]) {
+      const completionDate = completionDates[dayNumber - 1];
+      const nextDay = new Date(completionDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      nextDay.setHours(0, 1, 0, 0); // 12:01 AM the next day
+      
+      return currentTime >= nextDay;
+    }
+
+    // Fallback: if no completion dates available, be restrictive
+    // Only unlock if it's a different calendar day than when we might have completed
+    const today = new Date(currentTime);
+    today.setHours(0, 1, 0, 0); // 12:01 AM today
     
-    // If current time is before 12:01 AM today, the day is locked
-    return currentTime >= unlockTime;
+    // This is conservative - requires waiting until 12:01 AM of the next calendar day
+    return currentTime >= today;
   }
 
   /**

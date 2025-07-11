@@ -594,7 +594,11 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
 
     const updatedProgress = {
       ...userData.journeyProgress,
-      completedDays: [...userData.journeyProgress.completedDays, day].sort((a, b) => a - b)
+      completedDays: [...userData.journeyProgress.completedDays, day].sort((a, b) => a - b),
+      completionDates: {
+        ...userData.journeyProgress.completionDates,
+        [day]: new Date().toISOString()
+      }
     };
 
     logger.debug('Updating journey progress');

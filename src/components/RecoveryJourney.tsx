@@ -170,8 +170,13 @@ const RecoveryJourney = () => {
   }));
 
   const handleDayClick = (day: number) => {
-    // Enhanced unlocking logic using journeyManager
-    const isUnlocked = journeyManager.isDayUnlocked(completedDays, day, new Date());
+    // Enhanced unlocking logic using journeyManager with completion dates
+    const completionDates = userData?.journeyProgress?.completionDates;
+    const completionDatesMap = completionDates ? Object.fromEntries(
+      Object.entries(completionDates).map(([k, v]) => [parseInt(k), new Date(v as string)])
+    ) : undefined;
+    
+    const isUnlocked = journeyManager.isDayUnlocked(completedDays, day, new Date(), completionDatesMap);
     const isCompleted = completedDays.includes(day);
     
     if (isUnlocked || isCompleted) {

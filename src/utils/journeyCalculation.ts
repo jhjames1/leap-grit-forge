@@ -1,9 +1,11 @@
 import { logger } from './logger';
+import { journeyManager } from './journeyManager';
 
 interface JourneyProgress {
   completedDays: number[];
   currentWeek: number;
   badges: string[];
+  completionDates?: Record<number, string>;
 }
 
 interface UserData {
@@ -83,18 +85,12 @@ export const getDayStatus = (userData: UserData | null, day: number): 'completed
     return 'completed';
   }
   
-  // Check if it's past 12:01 AM
-  const now = new Date();
-  const threshold = new Date();
-  threshold.setHours(0, 1, 0, 0); // 12:01 AM
-  const isPast1201AM = now >= threshold;
+  // Use journeyManager for consistent unlocking logic
+  const completionDates = userData.journeyProgress?.completionDates;
+  const completionDatesMap = completionDates ? Object.fromEntries(
+    Object.entries(completionDates).map(([k, v]) => [parseInt(k), new Date(v)])
+  ) : undefined;
   
-  // Check if previous day is completed (or it's day 1)
-  const isPreviousDayCompleted = day === 1 || completedDays.includes(day - 1);
-  
-  if (isPast1201AM && isPreviousDayCompleted) {
-    return 'unlocked';
-  }
-  
-  return 'locked';
+  const isUnlocked = journeyManager.isDayUnlocked(completedDays, day, new Date(), completionDatesMap);
+  return isUnlocked ? 'unlocked' : 'locked';
 };

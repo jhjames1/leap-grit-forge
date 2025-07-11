@@ -23,6 +23,7 @@ interface JourneyProgress {
   completedDays: number[];
   currentWeek: number;
   badges: string[];
+  completionDates?: Record<number, string>; // Store completion timestamps
 }
 
 interface UserData {
