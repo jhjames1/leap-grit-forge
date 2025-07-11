@@ -124,7 +124,6 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
                     onClick={() => handleSelectPeer(specialist)}
                     size="sm"
                     className="bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold flex-1"
-                    disabled={specialist.status.status === 'offline'}
                   >
                     <MessageCircle size={14} className="mr-1" />
                     {specialist.status.status === 'offline' ? t('toolbox.peerSupport.actions.leaveMessage') : t('toolbox.peerSupport.actions.startChat')}
