@@ -55,16 +55,21 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
 
   const handleSendMessage = async () => {
     if (!message.trim()) {
-      console.log('Empty message, not sending');
+      console.log('💬 Empty message, not sending');
       return;
     }
 
-    console.log('Sending message:', message);
+    console.log('💬 Sending message from PeerChat:', message);
+    console.log('💬 Current session:', session);
+    console.log('💬 Current messages count before send:', messages.length);
+    
     await sendMessage({ 
       content: message,
       sender_type: 'user'
     });
     setMessage('');
+    
+    console.log('💬 Message sent, clearing input');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -209,31 +214,50 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div 
-            key={msg.id}
-            className={`flex ${msg.sender_type === 'user' ? 'justify-end' : msg.message_type === 'system' ? 'justify-center' : 'justify-start'}`}
-          >
-            <div className={`max-w-[80%] ${
-              msg.sender_type === 'user' 
-                ? 'bg-steel text-white' 
-                : msg.message_type === 'system'
-                ? 'bg-construction/20 text-construction border border-construction/30'
-                : 'bg-white/10 backdrop-blur-sm text-white'
-            } rounded-2xl p-4`}>
-              <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
-              <p className={`text-xs ${
-                msg.sender_type === 'user' ? 'text-white/70' : msg.message_type === 'system' ? 'text-construction/70' : 'text-steel-light'
-              }`}>
-                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
+        {(() => {
+          console.log('🎨 Rendering messages in PeerChat:');
+          console.log('🎨 Messages array:', messages);
+          console.log('🎨 Messages length:', messages?.length || 0);
+          console.log('🎨 Session:', session);
+          console.log('🎨 Loading:', loading);
+          console.log('🎨 Error:', error);
+          return null;
+        })()}
+        
+        {messages.map((msg) => {
+          console.log('🎨 Rendering individual message:', msg);
+          return (
+            <div 
+              key={msg.id}
+              className={`flex ${msg.sender_type === 'user' ? 'justify-end' : msg.message_type === 'system' ? 'justify-center' : 'justify-start'}`}
+            >
+              <div className={`max-w-[80%] ${
+                msg.sender_type === 'user' 
+                  ? 'bg-steel text-white' 
+                  : msg.message_type === 'system'
+                  ? 'bg-construction/20 text-construction border border-construction/30'
+                  : 'bg-white/10 backdrop-blur-sm text-white'
+              } rounded-2xl p-4`}>
+                <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
+                <p className={`text-xs ${
+                  msg.sender_type === 'user' ? 'text-white/70' : msg.message_type === 'system' ? 'text-construction/70' : 'text-steel-light'
+                }`}>
+                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {messages.length === 0 && session && (
           <div className="text-center text-steel-light py-8">
             <p>Chat session started. Send a message to begin the conversation.</p>
+          </div>
+        )}
+
+        {messages.length === 0 && !session && !loading && (
+          <div className="text-center text-steel-light py-8">
+            <p>No chat session active. Initializing...</p>
           </div>
         )}
       </div>

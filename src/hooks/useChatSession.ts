@@ -40,7 +40,10 @@ export function useChatSession(specialistId?: string) {
   useEffect(() => {
     if (!session) return;
 
-    console.log('Setting up real-time subscription for session:', session.id);
+    console.log('🔴 Setting up real-time subscription for session:', session.id);
+    
+    // Load existing messages first
+    loadMessages(session.id);
     
     // Set up real-time subscription for messages
     const messagesChannel = supabase
@@ -54,23 +57,28 @@ export function useChatSession(specialistId?: string) {
           filter: `session_id=eq.${session.id}`
         },
         (payload) => {
-          console.log('New message received:', payload);
+          console.log('📨 New message received via realtime:', payload);
           const newMessage = payload.new as ChatMessage;
+          console.log('📨 New message details:', newMessage);
           setMessages(prev => {
+            console.log('📨 Current messages before update:', prev.length);
             // Avoid duplicates
             if (prev.find(msg => msg.id === newMessage.id)) {
+              console.log('📨 Message already exists, skipping');
               return prev;
             }
-            return [...prev, newMessage];
+            const updatedMessages = [...prev, newMessage];
+            console.log('📨 Updated messages count:', updatedMessages.length);
+            return updatedMessages;
           });
         }
       )
       .subscribe((status) => {
-        console.log('Messages subscription status:', status);
+        console.log('📡 Messages subscription status:', status);
       });
 
     return () => {
-      console.log('Cleaning up messages subscription');
+      console.log('🔌 Cleaning up messages subscription');
       supabase.removeChannel(messagesChannel);
     };
   }, [session]);
@@ -136,8 +144,11 @@ export function useChatSession(specialistId?: string) {
         throw sessionError;
       }
 
-      console.log('Session created:', sessionData);
+      console.log('🆕 Session created:', sessionData);
       setSession(sessionData as ChatSession);
+
+      // Load existing messages immediately after setting session
+      await loadMessages(sessionData.id);
 
       // Send initial system message
       await sendMessage({
@@ -157,7 +168,7 @@ export function useChatSession(specialistId?: string) {
 
   const loadMessages = async (sessionId: string) => {
     try {
-      console.log('Loading messages for session:', sessionId);
+      console.log('💾 Loading messages for session:', sessionId);
       const { data, error } = await supabase
         .from('chat_messages')
         .select('*')
@@ -165,14 +176,15 @@ export function useChatSession(specialistId?: string) {
         .order('created_at');
 
       if (error) {
-        console.error('Error loading messages:', error);
+        console.error('💾 Error loading messages:', error);
         throw error;
       }
 
-      console.log('Loaded messages:', data?.length || 0);
+      console.log('💾 Loaded messages:', data?.length || 0, 'messages');
+      console.log('💾 Message details:', data);
       setMessages((data || []) as ChatMessage[]);
     } catch (err) {
-      console.error('Error loading messages:', err);
+      console.error('💾 Error loading messages:', err);
     }
   };
 
