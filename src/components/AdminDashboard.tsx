@@ -30,10 +30,13 @@ interface AdminDashboardProps {
 
 const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
   const { t } = useLanguage();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
   const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Get admin user's first name for welcome message
+  const adminFirstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin';
 
   useEffect(() => {
     loadAnalytics();
@@ -85,200 +88,216 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
   };
 
   return (
-    <div className="p-4 pb-24 bg-background min-h-screen">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-5xl text-foreground mb-1 tracking-wide">
-            <span className="font-oswald font-extralight tracking-tight">{t('admin.title')}</span><span className="font-fjalla font-extrabold italic">{t('admin.dashboardTitle')}</span>
-          </h1>
-          <p className="text-steel-light font-oswald">{t('admin.subtitle')}</p>
+    <div className="min-h-screen bg-background">
+      <div className="p-4 pb-24">
+        {/* Header - Matching home page style */}
+        <div className="mb-6">
+          <div className="flex justify-between items-start mb-6">
+            {/* Left column: Title and welcome text */}
+            <div className="flex-1">
+              <h1 className="text-5xl text-foreground mb-1 tracking-wide">
+                <span className="font-oswald font-extralight tracking-tight">ADMIN</span><span className="font-fjalla font-extrabold italic">PORTAL</span>
+              </h1>
+              <div className="mt-8"></div>
+              <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
+                WELCOME, <span className="font-bold italic">{adminFirstName.toUpperCase()}</span>
+              </p>
+              <p className="text-muted-foreground text-sm">Monitor and manage your LEAP community</p>
+            </div>
+            
+            {/* Right column: Action buttons */}
+            <div className="flex flex-col items-end">
+              <div className="flex items-center space-x-2">
+                <Button 
+                  onClick={refreshData}
+                  variant="outline"
+                  size="sm"
+                  className="border-primary text-primary hover:bg-primary/10"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Loading...' : 'Refresh'}
+                </Button>
+                <Button 
+                  onClick={handleSignOut}
+                  variant="outline"
+                  size="sm"
+                  className="border-destructive text-destructive hover:bg-destructive/10"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </Button>
+                <Button 
+                  onClick={onBack}
+                  variant="outline"
+                  size="sm"
+                  className="border-muted-foreground text-muted-foreground hover:bg-muted/10"
+                >
+                  Back
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex space-x-2">
-          <Button 
-            onClick={refreshData}
-            variant="outline"
-            className="border-construction text-construction hover:bg-construction/10"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Loading...' : 'Refresh Data'}
-          </Button>
-          <Button 
-            onClick={handleSignOut}
-            variant="outline"
-            className="border-red-500 text-red-400 hover:bg-red-500/10"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
-          <Button 
-            onClick={onBack}
-            variant="outline"
-            className="border-steel text-steel-light hover:bg-steel/10"
-          >
-            {t('admin.back')}
-          </Button>
-        </div>
-      </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="bg-steel-dark border-steel">
-          <TabsTrigger value="overview">{t('admin.tabs.overview')}</TabsTrigger>
-          <TabsTrigger value="specialists">
-            <UserCheck className="mr-2 h-4 w-4" />
-            Peer Specialists
-          </TabsTrigger>
-          <TabsTrigger value="security">
-            <Shield className="mr-2 h-4 w-4" />
-            {t('admin.tabs.security')}
-          </TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="bg-card border-border">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="specialists">
+              <UserCheck className="mr-2 h-4 w-4" />
+              Peer Specialists
+            </TabsTrigger>
+            <TabsTrigger value="security">
+              <Shield className="mr-2 h-4 w-4" />
+              Security
+            </TabsTrigger>
+          </TabsList>
 
         <TabsContent value="overview">
 
-      {/* Time Filter */}
-      <div className="flex space-x-2 mb-6">
-        {['week', 'month', 'quarter'].map((period) => (
-          <Button
-            key={period}
-            onClick={() => setSelectedTimeframe(period)}
-            variant={selectedTimeframe === period ? 'default' : 'outline'}
-            className={selectedTimeframe === period ? 
-              'bg-construction text-midnight' : 
-              'border-steel text-steel-light hover:bg-steel/10'
-            }
-          >
-            {t(`admin.timeframes.${period}`)}
-          </Button>
-        ))}
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
-          <div className="flex items-center space-x-3">
-            <div className="bg-construction/20 p-2 rounded-lg">
-              <Users className="text-construction" size={20} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">{analytics?.totalUsers || 0}</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.totalUsers')}</div>
-            </div>
+          {/* Time Filter */}
+          <div className="flex space-x-2 mb-6">
+            {['week', 'month', 'quarter'].map((period) => (
+              <Button
+                key={period}
+                onClick={() => setSelectedTimeframe(period)}
+                variant={selectedTimeframe === period ? 'default' : 'outline'}
+                className={selectedTimeframe === period ? 
+                  'bg-primary text-primary-foreground' : 
+                  'border-border text-muted-foreground hover:bg-muted/10'
+                }
+              >
+                {period.charAt(0).toUpperCase() + period.slice(1)}
+              </Button>
+            ))}
           </div>
-        </Card>
 
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
-          <div className="flex items-center space-x-3">
-            <div className="bg-construction/20 p-2 rounded-lg">
-              <Activity className="text-construction" size={20} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">{analytics?.activeUsers || 0}</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.activeUsers')}</div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
-          <div className="flex items-center space-x-3">
-            <div className="bg-construction/20 p-2 rounded-lg">
-              <TrendingUp className="text-construction" size={20} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">{analytics?.averageRecoveryStrength || 0}%</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.avgStrength')}</div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
-          <div className="flex items-center space-x-3">
-            <div className="bg-red-500/20 p-2 rounded-lg">
-              <AlertTriangle className="text-red-400" size={20} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">{analytics?.atRiskUsers || 0}</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.atRisk')}</div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Domain Engagement Trends */}
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark mb-6 p-6">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-construction/20 p-2 rounded-lg">
-            <BarChart3 className="text-construction" size={20} />
-          </div>
-          <h3 className="font-oswald font-semibold text-white">{t('admin.sections.domainEngagement')}</h3>
-        </div>
-        
-        <div className="space-y-3">
-          {engagementTrends.map((domain, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-steel-dark/30 rounded-lg">
+          {/* Key Metrics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
               <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-construction rounded-full"></div>
-                <span className="text-white font-medium">{domain.domain}</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <span className="text-steel-light">{domain.avg}%</span>
-                <Badge className={`${domain.trend.startsWith('+') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                  {domain.trend}
-                </Badge>
-              </div>
-            </div>
-          ))}
-          {analytics && analytics.totalEngagementActions === 0 && (
-            <p className="text-steel-light text-center py-4">No user engagement data available yet.</p>
-          )}
-        </div>
-      </Card>
-
-      {/* User Risk Heatmap */}
-      <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-construction/20 p-2 rounded-lg">
-            <Target className="text-construction" size={20} />
-          </div>
-          <h3 className="font-oswald font-semibold text-white">{t('admin.sections.userRiskAssessment')}</h3>
-        </div>
-        
-        <div className="space-y-3">
-          {analytics?.userRiskData.map((user, index) => (
-            <div key={index} className="flex items-center justify-between p-4 bg-steel-dark/30 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className={`w-4 h-4 ${getRiskColor(user.risk)} rounded-full`}></div>
+                <div className="bg-primary p-3 rounded-sm">
+                  <Users className="text-primary-foreground" size={20} />
+                </div>
                 <div>
-                  <span className="text-white font-medium">{user.id}</span>
-                  <p className="text-steel-light text-sm">{user.lastActive}</p>
+                  <div className="text-2xl font-bold text-card-foreground">{analytics?.totalUsers || 0}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Users</div>
                 </div>
               </div>
+            </Card>
+
+            <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
               <div className="flex items-center space-x-3">
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-foreground">{user.recoveryStrength}%</div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.sections.strength')}</div>
+                <div className="bg-primary p-3 rounded-sm">
+                  <Activity className="text-primary-foreground" size={20} />
                 </div>
-                <Badge className={getRiskBadge(user.risk)}>
-                  {t(`admin.riskLevels.${user.risk}`)}
-                </Badge>
+                <div>
+                  <div className="text-2xl font-bold text-card-foreground">{analytics?.activeUsers || 0}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Active Users</div>
+                </div>
               </div>
+            </Card>
+
+            <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+              <div className="flex items-center space-x-3">
+                <div className="bg-primary p-3 rounded-sm">
+                  <TrendingUp className="text-primary-foreground" size={20} />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-card-foreground">{analytics?.averageRecoveryStrength || 0}%</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Avg Strength</div>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+              <div className="flex items-center space-x-3">
+                <div className="bg-destructive/20 p-3 rounded-sm">
+                  <AlertTriangle className="text-destructive" size={20} />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-card-foreground">{analytics?.atRiskUsers || 0}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">At Risk</div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Domain Engagement Trends */}
+          <Card className="bg-black/[7.5%] p-6 rounded-lg mb-6 border-0 shadow-none transition-colors duration-300">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-primary p-3 rounded-sm">
+                <BarChart3 className="text-primary-foreground" size={20} />
+              </div>
+              <h3 className="font-fjalla font-bold text-card-foreground tracking-wide">DOMAIN ENGAGEMENT</h3>
             </div>
-          ))}
-          {analytics && analytics.userRiskData.length === 0 && (
-            <p className="text-steel-light text-center py-4">No user data available yet.</p>
-          )}
-        </div>
-      </Card>
-        </TabsContent>
+            
+            <div className="space-y-3">
+              {engagementTrends.map((domain, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-card rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-primary rounded-full"></div>
+                    <span className="text-card-foreground font-medium font-source">{domain.domain}</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-muted-foreground font-source">{domain.avg}%</span>
+                    <Badge className={`${domain.trend.startsWith('+') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                      {domain.trend}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+              {analytics && analytics.totalEngagementActions === 0 && (
+                <p className="text-muted-foreground text-center py-4 font-source italic">No user engagement data available yet.</p>
+              )}
+            </div>
+          </Card>
 
-        <TabsContent value="specialists">
-          <PeerSpecialistManagement />
-        </TabsContent>
+          {/* User Risk Heatmap */}
+          <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-primary p-3 rounded-sm">
+                <Target className="text-primary-foreground" size={20} />
+              </div>
+              <h3 className="font-fjalla font-bold text-card-foreground tracking-wide">USER RISK ASSESSMENT</h3>
+            </div>
+            
+            <div className="space-y-3">
+              {analytics?.userRiskData.map((user, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-black/[7.5%] rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-4 h-4 ${getRiskColor(user.risk)} rounded-full`}></div>
+                    <div>
+                      <span className="text-card-foreground font-medium font-source">{user.id}</span>
+                      <p className="text-muted-foreground text-sm font-source">{user.lastActive}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-card-foreground">{user.recoveryStrength}%</div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Strength</div>
+                    </div>
+                    <Badge className={getRiskBadge(user.risk)}>
+                      {user.risk.charAt(0).toUpperCase() + user.risk.slice(1)}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+              {analytics && analytics.userRiskData.length === 0 && (
+                <p className="text-muted-foreground text-center py-4 font-source italic">No user data available yet.</p>
+              )}
+            </div>
+          </Card>
+          </TabsContent>
 
-        <TabsContent value="security">
-          <SecurityAuditPanel />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="specialists">
+            <PeerSpecialistManagement />
+          </TabsContent>
+
+          <TabsContent value="security">
+            <SecurityAuditPanel />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

@@ -60,12 +60,16 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { t, getArray } = useLanguage();
-  const { currentUser } = useUserData();
+  const { userData } = useUserData();
+  const userName = userData?.firstName || localStorage.getItem('currentUser') || 'friend';
 
   // Initialize with direct, provocative greeting
   useEffect(() => {
     const initialPrompts = getArray('foreman.initialPrompts');
-    const greeting = initialPrompts[Math.floor(Math.random() * initialPrompts.length)];
+    let greeting = initialPrompts[Math.floor(Math.random() * initialPrompts.length)];
+    
+    // Personalize the greeting with the user's name
+    greeting = greeting.replace(/{name}/g, userName);
 
     const initialMessage: Message = {
       id: 1,
@@ -75,7 +79,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
     };
 
     setMessages([initialMessage]);
-  }, [t]);
+  }, [t, userName]);
 
 
   const classifyInput = (text: string): InputType => {
@@ -301,7 +305,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
 
   const handleSaveMessage = (messageId: number) => {
     const message = messages.find(m => m.id === messageId);
-    if (!message || !currentUser) return;
+    if (!message || !userName) return;
 
     const { SavedWisdomManager } = require('@/utils/savedWisdom');
     const category = SavedWisdomManager.categorizeMessage(message.text);
@@ -310,7 +314,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
       messageId,
       text: message.text,
       category,
-      username: currentUser
+      username: userName
     });
 
     if (success) {
