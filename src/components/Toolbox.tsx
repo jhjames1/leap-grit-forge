@@ -28,7 +28,6 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const [showUrgeTracker, setShowUrgeTracker] = useState(false);
   const [showGratitudeLog, setShowGratitudeLog] = useState(false);
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
-  const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const { userData, logActivity, updateToolboxStats } = useUserData();
   const { t } = useLanguage();
 
@@ -56,11 +55,6 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     
     return () => clearInterval(interval);
   }, [userData]);
-
-  // Force refresh of Recent Activity when userData.activityLog changes
-  useEffect(() => {
-    setActivityRefreshKey(prev => prev + 1);
-  }, [userData?.activityLog?.length]);
 
   // Calculate daily reset at midnight
   useEffect(() => {
@@ -369,17 +363,16 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         })}
       </div>
 
-      {/* Live Recent Activity with real-time updates */}
+      {/* Live Recent Activity with updated timestamp format */}
       <Card className="bg-white mt-6 p-6 border-0 shadow-sm rounded-xl">
         <h3 className="font-semibold text-[20px] text-gray-900 mb-4">{t('toolbox.recentActivity')}</h3>
-        <div className="space-y-3" key={activityRefreshKey}>
-          {userData?.activityLog?.length ? (
+        <div className="space-y-3">
+          {userData?.activityLog.length ? (
             userData.activityLog
               .filter(activity => activity.action.includes('Completed'))
-              .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) // Sort by most recent first
               .slice(0, 3)
               .map((activity, index) => (
-                <div key={`${activity.id}-${activityRefreshKey}`} className="flex items-center space-x-3 text-sm">
+                <div key={activity.id} className="flex items-center space-x-3 text-sm">
                   <div className={`w-3 h-3 rounded-full ${
                     index === 0 ? 'bg-primary' : 'bg-gray-300'
                   }`}></div>
