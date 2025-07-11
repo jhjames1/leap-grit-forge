@@ -176,7 +176,7 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   const currentWeekData = {
     weekNumber: currentWeek,
     days: getWeekDays(currentWeek),
-    title: currentWeek === 1 ? t('journey.weekFoundation') : `${t('journey.week')} ${currentWeek}`,
+    title: currentWeek === 1 ? t('journey.weekFoundation') : `Week ${currentWeek}`,
   };
 
   // Navigation handlers
