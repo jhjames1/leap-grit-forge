@@ -55,6 +55,16 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const totalToolsUsed = userData?.toolboxStats?.totalSessions || 0;
   const urgesTracked = userData?.toolboxStats?.urgesThisWeek || 0;
   
+  // Calculate weekly progress based on completed days this week
+  const completedDays = userData?.journeyProgress?.completedDays || [];
+  const currentWeekNumber = Math.ceil((completedDays.length > 0 ? Math.max(...completedDays) : 1) / 7);
+  const weekStartDay = (currentWeekNumber - 1) * 7 + 1;
+  const weekEndDay = currentWeekNumber * 7;
+  
+  // Count completed days in current week
+  const weekCompletedDays = completedDays.filter(day => day >= weekStartDay && day <= weekEndDay).length;
+  const weeklyProgressPercentage = Math.round((weekCompletedDays / 7) * 100);
+  
   // Find most used tool from activity log
   const toolUsage = userData?.activityLog?.reduce((acc: { [key: string]: number }, entry) => {
     if (entry.action.startsWith('Used ')) {
@@ -149,7 +159,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground text-sm font-source">{t('profile.weeklyProgress')}</span>
-            <span className="text-primary font-fjalla font-medium">{Math.round((urgesTracked / 7) * 100)}{t('profile.tracked')}</span>
+            <span className="text-primary font-fjalla font-medium">{weeklyProgressPercentage}% ({weekCompletedDays}/7 {t('profile.days')})</span>
           </div>
         </div>
       </Card>
