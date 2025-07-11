@@ -162,7 +162,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       if (dayData) { // Remove unlock check - show all upcoming activities
         const daysUntil = day - today; // Calculate relative to today
         const timeLabel = daysUntil === 1 ? 'Tomorrow' : 
-                         `In ${daysUntil} days`;
+                         `${daysUntil} days`;
         
         // Extract activity from the day
         if (dayData.activity) {
@@ -188,9 +188,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     
     console.log('upcomingActivities before shuffle:', upcomingActivities);
     
-    // Randomly select 3-4 activities and shuffle
-    const shuffled = upcomingActivities.sort(() => Math.random() - 0.5);
-    const result = shuffled.slice(0, 3);
+    // Keep chronological order and take first 3
+    const result = upcomingActivities.slice(0, 3);
     
     console.log('final result:', result);
     return result;
