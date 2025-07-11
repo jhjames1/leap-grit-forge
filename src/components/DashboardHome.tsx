@@ -196,7 +196,14 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     return result;
   };
 
+  console.log('=== DASHBOARD DEBUG ===');
+  console.log('userData:', userData);
+  console.log('userData.focusAreas:', userData?.focusAreas);
+  console.log('About to call getUpcomingWeekActivities...');
+  
   const upcomingActivities = getUpcomingWeekActivities();
+  console.log('upcomingActivities result:', upcomingActivities);
+  
   const currentUser = userData?.firstName || localStorage.getItem('currentUser') || t('home.defaultWelcome');
 
   const handleToolClick = (tool: string) => {
