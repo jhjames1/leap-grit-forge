@@ -213,14 +213,21 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             {t('home.startDay').toUpperCase()}
           </h3>
           <div className="cursor-pointer" onClick={() => onNavigate?.('journey')}>
-            <div className="flex items-center">
+            <div className={`flex items-center ${currentDayStatus === 'locked' ? 'opacity-50' : ''}`}>
               <div className="flex items-center space-x-3">
                 <div className="bg-yellow-400 p-3 rounded-sm">
                   <Play className="text-black" size={20} />
                 </div>
-                <span className="text-card-foreground font-source text-sm">
-                  {currentDayStatus === 'locked' ? 'Available Tomorrow' : t('home.currentDay', {day: currentJourneyDay})}
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-card-foreground font-source text-sm">
+                    {t('home.currentDay', {day: currentJourneyDay})}
+                  </span>
+                  {currentDayStatus === 'locked' && (
+                    <span className="text-muted-foreground font-source text-xs">
+                      Available Tomorrow
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
