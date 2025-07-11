@@ -17,8 +17,10 @@ import {
   MessageSquare,
   Target,
   Activity,
-  Shield
+  Shield,
+  UserCheck
 } from 'lucide-react';
+import PeerSpecialistManagement from './PeerSpecialistManagement';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -107,6 +109,10 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="bg-steel-dark border-steel">
           <TabsTrigger value="overview">{t('admin.tabs.overview')}</TabsTrigger>
+          <TabsTrigger value="specialists">
+            <UserCheck className="mr-2 h-4 w-4" />
+            Peer Specialists
+          </TabsTrigger>
           <TabsTrigger value="security">
             <Shield className="mr-2 h-4 w-4" />
             {t('admin.tabs.security')}
@@ -248,6 +254,10 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
           )}
         </div>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="specialists">
+          <PeerSpecialistManagement />
         </TabsContent>
 
         <TabsContent value="security">

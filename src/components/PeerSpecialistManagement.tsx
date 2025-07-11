@@ -1,0 +1,471 @@
+import { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  UserPlus, 
+  Edit, 
+  Check, 
+  X, 
+  Users,
+  AlertCircle
+} from 'lucide-react';
+
+interface PeerSpecialist {
+  id: string;
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  bio: string | null;
+  specialties: string[] | null;
+  years_experience: number;
+  is_verified: boolean;
+  is_active: boolean;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface SpecialistFormData {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  bio: string;
+  specialties: string[];
+  years_experience: number;
+  avatar_url: string;
+}
+
+const PeerSpecialistManagement = () => {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [specialists, setSpecialists] = useState<PeerSpecialist[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingSpecialist, setEditingSpecialist] = useState<PeerSpecialist | null>(null);
+  const [formData, setFormData] = useState<SpecialistFormData>({
+    user_id: '',
+    first_name: '',
+    last_name: '',
+    bio: '',
+    specialties: [],
+    years_experience: 0,
+    avatar_url: ''
+  });
+  const [newSpecialty, setNewSpecialty] = useState('');
+
+  useEffect(() => {
+    fetchSpecialists();
+  }, []);
+
+  const fetchSpecialists = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('peer_specialists')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSpecialists(data || []);
+    } catch (error) {
+      console.error('Error fetching specialists:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch peer specialists",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      user_id: '',
+      first_name: '',
+      last_name: '',
+      bio: '',
+      specialties: [],
+      years_experience: 0,
+      avatar_url: ''
+    });
+    setEditingSpecialist(null);
+    setNewSpecialty('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      if (editingSpecialist) {
+        // Update existing specialist
+        const { error } = await supabase
+          .from('peer_specialists')
+          .update({
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            bio: formData.bio,
+            specialties: formData.specialties,
+            years_experience: formData.years_experience,
+            avatar_url: formData.avatar_url || null
+          })
+          .eq('id', editingSpecialist.id);
+
+        if (error) throw error;
+        
+        toast({
+          title: "Success",
+          description: "Specialist updated successfully"
+        });
+      } else {
+        // Create new specialist
+        const { error } = await supabase
+          .from('peer_specialists')
+          .insert({
+            user_id: formData.user_id,
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            bio: formData.bio,
+            specialties: formData.specialties,
+            years_experience: formData.years_experience,
+            avatar_url: formData.avatar_url || null,
+            is_verified: false,
+            is_active: true
+          });
+
+        if (error) throw error;
+        
+        toast({
+          title: "Success",
+          description: "Specialist added successfully"
+        });
+      }
+
+      fetchSpecialists();
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving specialist:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save specialist",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEdit = (specialist: PeerSpecialist) => {
+    setEditingSpecialist(specialist);
+    setFormData({
+      user_id: specialist.user_id,
+      first_name: specialist.first_name,
+      last_name: specialist.last_name,
+      bio: specialist.bio || '',
+      specialties: specialist.specialties || [],
+      years_experience: specialist.years_experience,
+      avatar_url: specialist.avatar_url || ''
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleStatusToggle = async (specialist: PeerSpecialist, field: 'is_active' | 'is_verified') => {
+    try {
+      const { error } = await supabase
+        .from('peer_specialists')
+        .update({
+          [field]: !specialist[field]
+        })
+        .eq('id', specialist.id);
+
+      if (error) throw error;
+      
+      fetchSpecialists();
+      toast({
+        title: "Success",
+        description: `Specialist ${field === 'is_active' ? 'status' : 'verification'} updated`
+      });
+    } catch (error) {
+      console.error('Error updating specialist:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update specialist",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const addSpecialty = () => {
+    if (newSpecialty.trim() && !formData.specialties.includes(newSpecialty.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        specialties: [...prev.specialties, newSpecialty.trim()]
+      }));
+      setNewSpecialty('');
+    }
+  };
+
+  const removeSpecialty = (specialty: string) => {
+    setFormData(prev => ({
+      ...prev,
+      specialties: prev.specialties.filter(s => s !== specialty)
+    }));
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="bg-construction/20 p-2 rounded-lg">
+            <Users className="text-construction" size={20} />
+          </div>
+          <h2 className="font-oswald font-semibold text-white text-xl">Peer Specialists</h2>
+        </div>
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button 
+              onClick={resetForm}
+              className="bg-construction text-midnight hover:bg-construction/90"
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Add Specialist
+            </Button>
+          </DialogTrigger>
+          
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-steel-dark border-steel">
+            <DialogHeader>
+              <DialogTitle className="text-white">
+                {editingSpecialist ? 'Edit Specialist' : 'Add New Specialist'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name" className="text-white">First Name</Label>
+                  <Input
+                    id="first_name"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                    required
+                    className="bg-steel border-steel-light text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="last_name" className="text-white">Last Name</Label>
+                  <Input
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                    required
+                    className="bg-steel border-steel-light text-white"
+                  />
+                </div>
+              </div>
+              
+              {!editingSpecialist && (
+                <div className="space-y-2">
+                  <Label htmlFor="user_id" className="text-white">User ID</Label>
+                  <Input
+                    id="user_id"
+                    value={formData.user_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, user_id: e.target.value }))}
+                    placeholder="Enter authenticated user ID"
+                    required
+                    className="bg-steel border-steel-light text-white"
+                  />
+                  <p className="text-steel-light text-sm">Must be a valid authenticated user ID</p>
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="bio" className="text-white">Bio</Label>
+                <Textarea
+                  id="bio"
+                  value={formData.bio}
+                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                  rows={3}
+                  className="bg-steel border-steel-light text-white"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="years_experience" className="text-white">Years of Experience</Label>
+                  <Input
+                    id="years_experience"
+                    type="number"
+                    min="0"
+                    value={formData.years_experience}
+                    onChange={(e) => setFormData(prev => ({ ...prev, years_experience: parseInt(e.target.value) || 0 }))}
+                    className="bg-steel border-steel-light text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="avatar_url" className="text-white">Avatar URL</Label>
+                  <Input
+                    id="avatar_url"
+                    value={formData.avatar_url}
+                    onChange={(e) => setFormData(prev => ({ ...prev, avatar_url: e.target.value }))}
+                    placeholder="https://..."
+                    className="bg-steel border-steel-light text-white"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-white">Specialties</Label>
+                <div className="flex space-x-2">
+                  <Input
+                    value={newSpecialty}
+                    onChange={(e) => setNewSpecialty(e.target.value)}
+                    placeholder="Add specialty"
+                    className="bg-steel border-steel-light text-white"
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
+                  />
+                  <Button type="button" onClick={addSpecialty} variant="outline">
+                    Add
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.specialties.map((specialty, index) => (
+                    <Badge key={index} className="bg-construction/20 text-construction border-construction/30">
+                      {specialty}
+                      <button
+                        type="button"
+                        onClick={() => removeSpecialty(specialty)}
+                        className="ml-2 hover:text-red-400"
+                      >
+                        <X size={12} />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-construction text-midnight hover:bg-construction/90">
+                  {editingSpecialist ? 'Update' : 'Create'} Specialist
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Specialists List */}
+      {loading ? (
+        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
+          <p className="text-steel-light text-center">Loading specialists...</p>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {specialists.map((specialist) => (
+            <Card key={specialist.id} className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-construction/20 rounded-full flex items-center justify-center">
+                    {specialist.avatar_url ? (
+                      <img 
+                        src={specialist.avatar_url} 
+                        alt={`${specialist.first_name} ${specialist.last_name}`}
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <Users className="text-construction" size={20} />
+                    )}
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold text-white">
+                      {specialist.first_name} {specialist.last_name}
+                    </h3>
+                    <p className="text-steel-light text-sm">
+                      {specialist.years_experience} years experience
+                    </p>
+                    {specialist.bio && (
+                      <p className="text-steel-light text-sm mt-1 max-w-md truncate">
+                        {specialist.bio}
+                      </p>
+                    )}
+                    {specialist.specialties && specialist.specialties.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {specialist.specialties.map((specialty, index) => (
+                          <Badge key={index} className="bg-construction/20 text-construction border-construction/30 text-xs">
+                            {specialty}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={specialist.is_active}
+                        onCheckedChange={() => handleStatusToggle(specialist, 'is_active')}
+                      />
+                      <span className="text-sm text-steel-light">Active</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={specialist.is_verified}
+                        onCheckedChange={() => handleStatusToggle(specialist, 'is_verified')}
+                      />
+                      <span className="text-sm text-steel-light">Verified</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    {specialist.is_verified && (
+                      <Check className="text-green-400" size={16} />
+                    )}
+                    {!specialist.is_active && (
+                      <AlertCircle className="text-red-400" size={16} />
+                    )}
+                  </div>
+                  
+                  <Button
+                    onClick={() => handleEdit(specialist)}
+                    variant="outline"
+                    size="sm"
+                    className="border-steel text-steel-light hover:bg-steel/10"
+                  >
+                    <Edit size={16} />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))}
+          
+          {specialists.length === 0 && (
+            <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
+              <p className="text-steel-light text-center">No peer specialists found. Add your first specialist to get started.</p>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PeerSpecialistManagement;
