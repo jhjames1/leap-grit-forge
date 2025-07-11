@@ -30,6 +30,15 @@ export function useChatSession(specialistId?: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('🔄 useChatSession state:', { 
+    specialistId, 
+    userId: user?.id, 
+    sessionId: session?.id, 
+    messagesCount: messages.length,
+    loading, 
+    error 
+  });
+
   useEffect(() => {
     if (!user || !specialistId) return;
 

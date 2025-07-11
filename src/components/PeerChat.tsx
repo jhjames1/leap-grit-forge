@@ -214,19 +214,15 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {(() => {
-          console.log('🎨 Rendering messages in PeerChat:');
-          console.log('🎨 Messages array:', messages);
-          console.log('🎨 Messages length:', messages?.length || 0);
-          console.log('🎨 Session:', session);
-          console.log('🎨 Loading:', loading);
-          console.log('🎨 Error:', error);
-          return null;
-        })()}
+        {/* Debug info - only show in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="fixed top-0 left-0 bg-black text-white p-2 text-xs z-50 max-w-sm opacity-80">
+            Messages: {messages?.length || 0} | Session: {session?.id ? session.id.slice(0,8) : 'None'} | Loading: {loading ? 'Yes' : 'No'} | Error: {error ? 'Yes' : 'No'}
+          </div>
+        )}
         
-        {messages.map((msg) => {
-          console.log('🎨 Rendering individual message:', msg);
-          return (
+        {Array.isArray(messages) && messages.length > 0 ? (
+          messages.map((msg) => (
             <div 
               key={msg.id}
               className={`flex ${msg.sender_type === 'user' ? 'justify-end' : msg.message_type === 'system' ? 'justify-center' : 'justify-start'}`}
@@ -246,19 +242,27 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                 </p>
               </div>
             </div>
-          );
-        })}
-
-        {messages.length === 0 && session && (
-          <div className="text-center text-steel-light py-8">
-            <p>Chat session started. Send a message to begin the conversation.</p>
-          </div>
-        )}
-
-        {messages.length === 0 && !session && !loading && (
-          <div className="text-center text-steel-light py-8">
-            <p>No chat session active. Initializing...</p>
-          </div>
+          ))
+        ) : (
+          <>
+            {session && !loading && (
+              <div className="text-center text-steel-light py-8">
+                <p>Chat session started. Send a message to begin the conversation.</p>
+              </div>
+            )}
+            
+            {!session && !loading && (
+              <div className="text-center text-steel-light py-8">
+                <p>No chat session active. Initializing...</p>
+              </div>
+            )}
+            
+            {loading && (
+              <div className="text-center text-steel-light py-8">
+                <p>Loading chat...</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
