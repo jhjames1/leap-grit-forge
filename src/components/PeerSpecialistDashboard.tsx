@@ -353,23 +353,39 @@ const PeerSpecialistDashboard = () => {
           </div>
         </div>
         
-        <div className="flex space-x-2">
-          <Button
-            onClick={() => setIsStatusDialogOpen(true)}
-            variant="outline"
-            className="border-construction text-construction hover:bg-construction/10"
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            Status
-          </Button>
-          <Button
-            onClick={handleSignOut}
-            variant="outline"
-            className="border-red-500 text-red-400 hover:bg-red-500/10"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+        <div className="flex items-center space-x-4">
+          {/* Online/Offline Toggle */}
+          <div className="flex items-center space-x-3">
+            <span className="text-steel-light font-oswald text-sm">
+              {specialistStatus?.status === 'online' ? 'Online' : 'Offline'}
+            </span>
+            <Switch
+              checked={specialistStatus?.status === 'online'}
+              onCheckedChange={(checked) => {
+                updateStatus(checked ? 'online' : 'offline');
+              }}
+              className="data-[state=checked]:bg-construction"
+            />
+          </div>
+          
+          <div className="flex space-x-2">
+            <Button
+              onClick={() => setIsStatusDialogOpen(true)}
+              variant="outline"
+              className="border-construction text-construction hover:bg-construction/10"
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Status
+            </Button>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className="border-red-500 text-red-400 hover:bg-red-500/10"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </div>
 
