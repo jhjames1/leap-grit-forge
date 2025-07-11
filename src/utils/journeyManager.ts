@@ -149,11 +149,14 @@ export class JourneyManager {
     const previousDayCompleted = completedDays.includes(dayNumber - 1);
     if (!previousDayCompleted) return false;
 
-    // Must be past 12:01 AM
-    const today = new Date(currentTime);
-    today.setHours(0, 1, 0, 0); // 12:01 AM
+    // Must be past 12:01 AM of the day AFTER the previous day was completed
+    // For now, we'll implement a simple version - must be past 12:01 AM today
+    const currentDate = new Date(currentTime);
+    const unlockTime = new Date(currentDate);
+    unlockTime.setHours(0, 1, 0, 0); // 12:01 AM today
     
-    return currentTime >= today;
+    // If current time is before 12:01 AM today, the day is locked
+    return currentTime >= unlockTime;
   }
 
   /**
