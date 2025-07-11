@@ -182,9 +182,11 @@ const PeerSpecialistManagement = () => {
       resetForm();
     } catch (error) {
       console.error('Error saving specialist:', error);
+      console.error('Error details:', error?.message);
+      console.error('Full error object:', error);
       toast({
         title: "Error",
-        description: "Failed to save specialist",
+        description: `Failed to save specialist: ${error?.message || 'Unknown error'}`,
         variant: "destructive"
       });
     }
