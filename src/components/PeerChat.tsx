@@ -13,6 +13,8 @@ import {
   Shield
 } from 'lucide-react';
 import PeerSelection from './PeerSelection';
+import { PeerSpecialist } from '@/hooks/usePeerSpecialists';
+import { useChatSession } from '@/hooks/useChatSession';
 
 interface PeerChatProps {
   onBack?: () => void;
@@ -20,77 +22,38 @@ interface PeerChatProps {
 
 const PeerChat = ({ onBack }: PeerChatProps) => {
   const [currentView, setCurrentView] = useState<'selection' | 'chat'>('selection');
-  const [selectedPeer, setSelectedPeer] = useState<any>(null);
+  const [selectedPeer, setSelectedPeer] = useState<PeerSpecialist | null>(null);
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<any[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
+  
+  const { 
+    session, 
+    messages, 
+    loading, 
+    error, 
+    startSession, 
+    sendMessage, 
+    endSession 
+  } = useChatSession(selectedPeer?.id);
 
-  // Load user-specific chat history when peer is selected
-  useEffect(() => {
-    if (selectedPeer && currentView === 'chat') {
-      const currentUser = localStorage.getItem('currentUser') || 'User';
-      const chatKey = `chat_${currentUser}_${selectedPeer.id}`;
-      const savedMessages = localStorage.getItem(chatKey);
-      
-      if (savedMessages) {
-        setMessages(JSON.parse(savedMessages));
-      } else {
-        // Start with a clean slate for new conversations
-        setMessages([]);
-        
-        if (selectedPeer.isOfflineMessage) {
-          const offlineMessage = {
-            id: Date.now(),
-            sender: 'system',
-            text: `${selectedPeer.name} is currently offline. Your message will be delivered when they're available.`,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isRead: false
-          };
-          setMessages([offlineMessage]);
-        }
-      }
-    }
-  }, [selectedPeer, currentView]);
-
-  // Save messages when they change
-  useEffect(() => {
-    if (selectedPeer && messages.length > 0) {
-      const currentUser = localStorage.getItem('currentUser') || 'User';
-      const chatKey = `chat_${currentUser}_${selectedPeer.id}`;
-      localStorage.setItem(chatKey, JSON.stringify(messages));
-    }
-  }, [messages, selectedPeer]);
-
-  const handleSelectPeer = (peer: any) => {
+  const handleSelectPeer = async (peer: PeerSpecialist) => {
     setSelectedPeer(peer);
     setCurrentView('chat');
+    
+    // Start a new session if none exists
+    if (!session) {
+      await startSession();
+    }
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (message.trim()) {
-      const newMessage = {
-        id: Date.now(),
-        sender: 'user',
-        text: message,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isRead: false
-      };
-      
-      setMessages(prev => [...prev, newMessage]);
+      await sendMessage({ content: message });
       setMessage('');
-      
-      // Simulate typing indicator for peer response
-      if (selectedPeer?.status === 'online') {
-        setIsTyping(true);
-        setTimeout(() => {
-          setIsTyping(false);
-        }, 2000);
-      }
     }
   };
 
   const handlePhoneCall = () => {
-    if (selectedPeer?.status === 'online') {
+    if (selectedPeer?.status.status === 'online') {
       window.location.href = 'tel:+14327018678';
     } else {
       alert('This specialist is not available for calls right now.');
@@ -98,7 +61,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   };
 
   const handleVideoCall = () => {
-    if (selectedPeer?.status === 'online') {
+    if (selectedPeer?.status.status === 'online') {
       // Try to open Teams first, then Zoom as fallback
       const userAgent = navigator.userAgent.toLowerCase();
       const isMobile = /android|iphone|ipad|mobile/.test(userAgent);
@@ -119,7 +82,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     }
   };
 
-  const handleQuickAction = (actionType: string) => {
+  const handleQuickAction = async (actionType: string) => {
     const actionMessages = {
       'need-support': "I need support right now. Could you please help me?",
       'feeling-triggered': "I'm feeling triggered and could use some guidance on managing this.",
@@ -129,23 +92,11 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
 
     const messageText = actionMessages[actionType as keyof typeof actionMessages];
     if (messageText) {
-      const newMessage = {
-        id: Date.now(),
-        sender: 'user',
-        text: messageText,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isRead: false
-      };
-      
-      setMessages(prev => [...prev, newMessage]);
-      
-      // Simulate typing indicator for peer response
-      if (selectedPeer?.status === 'online') {
-        setIsTyping(true);
-        setTimeout(() => {
-          setIsTyping(false);
-        }, 2000);
-      }
+      await sendMessage({ 
+        content: messageText, 
+        message_type: 'quick_action',
+        metadata: { action_type: actionType }
+      });
     }
   };
 
@@ -176,11 +127,11 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
               <User className="text-white" size={16} />
             </div>
             <div>
-              <h2 className="font-oswald font-semibold text-white">{selectedPeer?.name || 'Peer Specialist'}</h2>
+              <h2 className="font-oswald font-semibold text-white">{selectedPeer?.first_name} {selectedPeer?.last_name}</h2>
               <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${selectedPeer?.status === 'online' ? 'bg-green-500' : selectedPeer?.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${selectedPeer?.status.status === 'online' ? 'bg-green-500' : selectedPeer?.status.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'}`}></div>
                 <p className="text-steel-light text-sm">
-                  {selectedPeer?.status === 'online' ? 'Online' : selectedPeer?.status === 'away' ? 'Away' : 'Offline'}
+                  {selectedPeer?.status.status === 'online' ? 'Online' : selectedPeer?.status.status === 'away' ? 'Away' : 'Offline'}
                 </p>
               </div>
             </div>
@@ -192,7 +143,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
               variant="outline" 
               className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
               onClick={handlePhoneCall}
-              disabled={selectedPeer?.status !== 'online'}
+              disabled={selectedPeer?.status.status !== 'online'}
             >
               <Phone size={16} />
             </Button>
@@ -201,7 +152,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
               variant="outline" 
               className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
               onClick={handleVideoCall}
-              disabled={selectedPeer?.status !== 'online'}
+              disabled={selectedPeer?.status.status !== 'online'}
             >
               <Video size={16} />
             </Button>
@@ -222,32 +173,24 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         {messages.map((msg) => (
           <div 
             key={msg.id}
-            className={`flex ${msg.sender === 'user' ? 'justify-end' : msg.sender === 'system' ? 'justify-center' : 'justify-start'}`}
+            className={`flex ${msg.sender_type === 'user' ? 'justify-end' : msg.message_type === 'system' ? 'justify-center' : 'justify-start'}`}
           >
             <div className={`max-w-[80%] ${
-              msg.sender === 'user' 
+              msg.sender_type === 'user' 
                 ? 'bg-steel text-white' 
-                : msg.sender === 'system'
+                : msg.message_type === 'system'
                 ? 'bg-construction/20 text-construction border border-construction/30'
                 : 'bg-white/10 backdrop-blur-sm text-white'
             } rounded-2xl p-4`}>
-              <p className="text-sm leading-relaxed mb-1">{msg.text}</p>
+              <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
               <p className={`text-xs ${
-                msg.sender === 'user' ? 'text-white/70' : msg.sender === 'system' ? 'text-construction/70' : 'text-steel-light'
+                msg.sender_type === 'user' ? 'text-white/70' : msg.message_type === 'system' ? 'text-construction/70' : 'text-steel-light'
               }`}>
-                {msg.time}
+                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
           </div>
         ))}
-        
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-white/10 backdrop-blur-sm text-white rounded-2xl p-4">
-              <p className="text-sm text-steel-light italic">{selectedPeer?.name} is typing...</p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Quick Actions */}
@@ -285,7 +228,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
       </div>
 
       {/* Scheduled Check-in Banner - Moved to bottom */}
-      {selectedPeer?.status === 'online' && (
+      {selectedPeer?.status.status === 'online' && (
         <div className="bg-steel/90 backdrop-blur-sm border-t border-steel-dark p-3">
           <div className="flex items-center space-x-3">
             <Calendar className="text-white" size={16} />
@@ -294,7 +237,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                 Weekly Check-in Available
               </p>
               <p className="text-white/70 text-xs">
-                Schedule with {selectedPeer.name}
+                Schedule with {selectedPeer.first_name} {selectedPeer.last_name}
               </p>
             </div>
             <Button size="sm" className="bg-midnight hover:bg-matte text-white">

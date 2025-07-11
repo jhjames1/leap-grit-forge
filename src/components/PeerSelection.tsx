@@ -1,55 +1,26 @@
 
-import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, User, MessageCircle, Video, Phone } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePeerSpecialists, PeerSpecialist } from '@/hooks/usePeerSpecialists';
 
 interface PeerSelectionProps {
   onBack: () => void;
-  onSelectPeer: (peer: any) => void;
+  onSelectPeer: (peer: PeerSpecialist) => void;
 }
 
 const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
   const { t } = useLanguage();
-  const [peers] = useState([
-    {
-      id: 1,
-      name: 'Mike Rodriguez',
-      status: 'online',
-      yearsInRecovery: 5,
-      availabilityType: 'now'
-    },
-    {
-      id: 2,
-      name: 'David Chen',
-      status: 'away',
-      yearsInRecovery: 3,
-      availabilityType: 'back15'
-    },
-    {
-      id: 3,
-      name: 'Marcus Thompson',
-      status: 'offline',
-      yearsInRecovery: 8,
-      availabilityType: 'at',
-      availabilityTime: '2:00 PM'
-    },
-    {
-      id: 4,
-      name: 'James Wilson',
-      status: 'online',
-      yearsInRecovery: 4,
-      availabilityType: 'now'
-    }
-  ]);
+  const { specialists, loading, error } = usePeerSpecialists();
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online': return 'bg-green-500';
       case 'away': return 'bg-yellow-500';
       case 'offline': return 'bg-gray-500';
+      case 'busy': return 'bg-red-500';
       default: return 'bg-gray-500';
     }
   };
@@ -59,29 +30,47 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
       case 'online': return t('toolbox.peerSupport.status.online');
       case 'away': return t('toolbox.peerSupport.status.away');
       case 'offline': return t('toolbox.peerSupport.status.offline');
+      case 'busy': return 'Busy';
       default: return 'Unknown';
     }
   };
 
-  const getAvailabilityText = (peer: any) => {
-    switch (peer.availabilityType) {
-      case 'now': return t('toolbox.peerSupport.availability.availableNow');
-      case 'back15': return t('toolbox.peerSupport.availability.backIn15');
-      case 'at': return `${t('toolbox.peerSupport.availability.availableAt')} ${peer.availabilityTime}`;
+  const getAvailabilityText = (specialist: PeerSpecialist) => {
+    switch (specialist.status.status) {
+      case 'online': return 'Available now';
+      case 'away': return specialist.status.status_message || 'Away';
+      case 'offline': return 'Offline';
+      case 'busy': return 'Busy';
       default: return '';
     }
   };
 
-  const handleSelectPeer = (peer: any) => {
-    if (peer.status === 'offline') {
-      const leaveMessage = confirm(`${peer.name} ${t('toolbox.peerSupport.offlineConfirm')}`);
+  const handleSelectPeer = (specialist: PeerSpecialist) => {
+    if (specialist.status.status === 'offline') {
+      const leaveMessage = confirm(`${specialist.first_name} ${specialist.last_name} ${t('toolbox.peerSupport.offlineConfirm')}`);
       if (leaveMessage) {
-        onSelectPeer({ ...peer, isOfflineMessage: true });
+        onSelectPeer({ ...specialist, isOfflineMessage: true } as any);
       }
     } else {
-      onSelectPeer(peer);
+      onSelectPeer(specialist);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pb-24 flex items-center justify-center">
+        <p className="text-muted-foreground">Loading specialists...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background pb-24 flex items-center justify-center">
+        <p className="text-red-500">Error loading specialists: {error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -106,39 +95,42 @@ const PeerSelection = ({ onBack, onSelectPeer }: PeerSelectionProps) => {
 
       {/* Available Peers */}
       <div className="space-y-4">
-        {peers.map((peer) => (
-          <Card key={peer.id} className="bg-card p-4 border-0 shadow-none">
+        {specialists.map((specialist) => (
+          <Card key={specialist.id} className="bg-card p-4 border-0 shadow-none">
             <div className="flex items-start space-x-4">
               <div className="relative">
                 <div className="w-12 h-12 bg-steel rounded-full flex items-center justify-center">
                   <User className="text-white" size={20} />
                 </div>
-                <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${getStatusColor(peer.status)} rounded-full`}></div>
+                <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${getStatusColor(specialist.status.status)} rounded-full`}></div>
               </div>
               
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-fjalla font-bold text-card-foreground">{peer.name}</h3>
-                  <Badge className={`text-xs ${peer.status === 'online' ? 'bg-green-500/20 text-green-400' : peer.status === 'away' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'}`}>
-                    {getStatusText(peer.status)}
+                  <h3 className="font-fjalla font-bold text-card-foreground">{specialist.first_name} {specialist.last_name}</h3>
+                  <Badge className={`text-xs ${specialist.status.status === 'online' ? 'bg-green-500/20 text-green-400' : specialist.status.status === 'away' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                    {getStatusText(specialist.status.status)}
                   </Badge>
                 </div>
                 
-                <p className="text-muted-foreground text-sm mb-2">{t('toolbox.peerSupport.yearsInRecovery')} {peer.yearsInRecovery}</p>
-                <p className="text-muted-foreground text-xs mb-3">{getAvailabilityText(peer)}</p>
+                <p className="text-muted-foreground text-sm mb-2">{specialist.years_experience} years experience</p>
+                {specialist.specialties.length > 0 && (
+                  <p className="text-muted-foreground text-xs mb-2">Specialties: {specialist.specialties.join(', ')}</p>
+                )}
+                <p className="text-muted-foreground text-xs mb-3">{getAvailabilityText(specialist)}</p>
                 
                 <div className="flex space-x-2">
                   <Button
-                    onClick={() => handleSelectPeer(peer)}
+                    onClick={() => handleSelectPeer(specialist)}
                     size="sm"
                     className="bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold flex-1"
-                    disabled={peer.status === 'offline'}
+                    disabled={specialist.status.status === 'offline'}
                   >
                     <MessageCircle size={14} className="mr-1" />
-                    {peer.status === 'offline' ? t('toolbox.peerSupport.actions.leaveMessage') : t('toolbox.peerSupport.actions.startChat')}
+                    {specialist.status.status === 'offline' ? t('toolbox.peerSupport.actions.leaveMessage') : t('toolbox.peerSupport.actions.startChat')}
                   </Button>
                   
-                  {peer.status === 'online' && (
+                  {specialist.status.status === 'online' && (
                     <>
                       <Button
                         size="sm"
