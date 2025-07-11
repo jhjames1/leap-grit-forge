@@ -16,8 +16,10 @@ import {
   Check, 
   X, 
   Users,
-  AlertCircle
+  AlertCircle,
+  Search
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface PeerSpecialist {
   id: string;
@@ -44,10 +46,17 @@ interface SpecialistFormData {
   avatar_url: string;
 }
 
+interface UserOption {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
 const PeerSpecialistManagement = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [specialists, setSpecialists] = useState<PeerSpecialist[]>([]);
+  const [users, setUsers] = useState<UserOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSpecialist, setEditingSpecialist] = useState<PeerSpecialist | null>(null);
@@ -61,9 +70,11 @@ const PeerSpecialistManagement = () => {
     avatar_url: ''
   });
   const [newSpecialty, setNewSpecialty] = useState('');
+  const [userSearch, setUserSearch] = useState('');
 
   useEffect(() => {
     fetchSpecialists();
+    fetchUsers();
   }, []);
 
   const fetchSpecialists = async () => {
@@ -88,6 +99,21 @@ const PeerSpecialistManagement = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_users_for_admin');
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch users',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       user_id: '',
@@ -100,6 +126,7 @@ const PeerSpecialistManagement = () => {
     });
     setEditingSpecialist(null);
     setNewSpecialty('');
+    setUserSearch('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -220,6 +247,14 @@ const PeerSpecialistManagement = () => {
     }));
   };
 
+  const filteredUsers = users.filter(user => 
+    user.email.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
+  const handleUserSelect = (userId: string) => {
+    setFormData(prev => ({ ...prev, user_id: userId }));
+  };
+
   return (
     <div className="space-y-6">
       {/* Info Card */}
@@ -229,11 +264,11 @@ const PeerSpecialistManagement = () => {
           <div>
             <h3 className="text-blue-400 font-semibold mb-1">How to add specialists:</h3>
             <p className="text-blue-300 text-sm">
-              1. Create a user account first (have them sign up normally)
+              1. Users must first create accounts by signing up normally
               <br />
-              2. Get their User ID from the auth users table 
+              2. Search and select the user by their email address below
               <br />
-              3. Add them as a specialist here using their User ID
+              3. Fill in their specialist details and add them to the program
               <br />
               4. They can then access the Specialist Dashboard at /specialist
             </p>
@@ -294,16 +329,41 @@ const PeerSpecialistManagement = () => {
               
               {!editingSpecialist && (
                 <div className="space-y-2">
-                  <Label htmlFor="user_id" className="text-white">User ID</Label>
-                  <Input
-                    id="user_id"
-                    value={formData.user_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, user_id: e.target.value }))}
-                    placeholder="Enter authenticated user ID"
-                    required
-                    className="bg-steel border-steel-light text-white"
-                  />
-                  <p className="text-steel-light text-sm">Must be a valid authenticated user ID</p>
+                  <Label htmlFor="user_select" className="text-white">Select User *</Label>
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by email address..."
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        className="pl-9 bg-steel border-steel-light text-white"
+                      />
+                    </div>
+                    <Select value={formData.user_id} onValueChange={handleUserSelect}>
+                      <SelectTrigger className="bg-steel border-steel-light text-white">
+                        <SelectValue placeholder="Select a user to make specialist" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredUsers.length === 0 ? (
+                          <SelectItem value="" disabled>
+                            {userSearch ? 'No users found' : 'No users available'}
+                          </SelectItem>
+                        ) : (
+                          filteredUsers.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{user.email}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  Joined: {new Date(user.created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               )}
               
