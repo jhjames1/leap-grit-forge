@@ -10,15 +10,22 @@ interface PWAState {
   isInstallable: boolean;
   isInstalled: boolean;
   isOnline: boolean;
+  updateAvailable: boolean;
+  updateReady: boolean;
   showInstallPrompt: () => Promise<void>;
   hideInstallPrompt: () => void;
+  installUpdate: () => Promise<void>;
+  dismissUpdate: () => void;
 }
 
 export const usePWA = (): PWAState => {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [updateReady, setUpdateReady] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -106,10 +113,46 @@ export const usePWA = (): PWAState => {
         .then(registration => {
           console.log('LEAP PWA: Service Worker registered:', registration);
           
+          // Listen for updates
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              console.log('LEAP PWA: New service worker found');
+              setUpdateAvailable(true);
+              setWaitingWorker(newWorker);
+              
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('LEAP PWA: New service worker installed');
+                  setUpdateReady(true);
+                  
+                  toast({
+                    title: "Update Available",
+                    description: "A new version of LEAP is ready to install.",
+                    duration: 0, // Don't auto-dismiss
+                  });
+                }
+              });
+            }
+          });
+          
           // Listen for service worker messages
           navigator.serviceWorker.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'SYNC_DATA') {
-              console.log('LEAP PWA: Sync message received:', event.data.message);
+            if (event.data) {
+              switch (event.data.type) {
+                case 'SYNC_DATA':
+                  console.log('LEAP PWA: Sync message received:', event.data.message);
+                  break;
+                case 'UPDATE_INSTALLING':
+                  toast({
+                    title: "Installing Update",
+                    description: "LEAP is updating to the latest version...",
+                  });
+                  break;
+                case 'UPDATE_COMPLETE':
+                  console.log('LEAP PWA: Update complete');
+                  break;
+              }
             }
           });
         })
@@ -159,11 +202,58 @@ export const usePWA = (): PWAState => {
     console.log('LEAP PWA: Install prompt hidden');
   };
 
+  const installUpdate = async (): Promise<void> => {
+    if (!waitingWorker) {
+      console.log('LEAP PWA: No waiting worker available');
+      return;
+    }
+
+    try {
+      console.log('LEAP PWA: Installing update...');
+      
+      // Backup user data before update (extra safety)
+      const userData = {
+        recoveryData: localStorage.getItem('recoveryData'),
+        userProfile: localStorage.getItem('userProfile'),
+        journeyProgress: localStorage.getItem('journeyProgress'),
+        timestamp: Date.now()
+      };
+      localStorage.setItem('leap-backup', JSON.stringify(userData));
+      
+      // Tell the waiting service worker to skip waiting
+      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+      
+      // Wait a moment then reload the page
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
+    } catch (error) {
+      console.error('LEAP PWA: Update installation failed:', error);
+      toast({
+        title: "Update Failed",
+        description: "Could not install the update. Please refresh the page manually.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const dismissUpdate = (): void => {
+    setUpdateAvailable(false);
+    setUpdateReady(false);
+    setWaitingWorker(null);
+    console.log('LEAP PWA: Update dismissed');
+  };
+
   return {
     isInstallable,
     isInstalled,
     isOnline,
+    updateAvailable,
+    updateReady,
     showInstallPrompt,
-    hideInstallPrompt
+    hideInstallPrompt,
+    installUpdate,
+    dismissUpdate
   };
 };

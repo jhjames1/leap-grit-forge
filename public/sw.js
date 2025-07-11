@@ -1,7 +1,8 @@
 // LEAP Recovery App Service Worker
-const CACHE_NAME = 'leap-recovery-v1';
-const STATIC_CACHE = 'leap-static-v1';
-const DYNAMIC_CACHE = 'leap-dynamic-v1';
+const CACHE_VERSION = '1.0.1'; // Increment this for new versions
+const CACHE_NAME = `leap-recovery-v${CACHE_VERSION}`;
+const STATIC_CACHE = `leap-static-v${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `leap-dynamic-v${CACHE_VERSION}`;
 
 // Assets to cache on install
 const STATIC_ASSETS = [
@@ -24,7 +25,8 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('LEAP Service Worker: Static assets cached successfully');
-        return self.skipWaiting();
+        // Don't skip waiting immediately - let clients control the update
+        return;
       })
       .catch(error => {
         console.error('LEAP Service Worker: Error caching static assets:', error);
@@ -51,6 +53,17 @@ self.addEventListener('activate', (event) => {
       .then(() => {
         console.log('LEAP Service Worker: Activated successfully');
         return self.clients.claim();
+      })
+      .then(() => {
+        // Notify clients that update is complete
+        return self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'UPDATE_COMPLETE',
+              message: 'App updated successfully'
+            });
+          });
+        });
       })
   );
 });
@@ -192,5 +205,25 @@ self.addEventListener('notificationclick', (event) => {
           }
         })
     );
+  }
+});
+
+// Handle messages from the main app
+self.addEventListener('message', (event) => {
+  console.log('LEAP Service Worker: Message received:', event.data);
+  
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    // Client is ready for the update
+    self.skipWaiting();
+    
+    // Notify all clients that we're updating
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'UPDATE_INSTALLING',
+          message: 'Installing update...'
+        });
+      });
+    });
   }
 });
