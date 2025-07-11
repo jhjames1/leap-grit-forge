@@ -55,7 +55,7 @@ export function usePeerSpecialists() {
         .from('peer_specialists')
         .select(`
           *,
-          specialist_status (
+          specialist_status!inner (
             status,
             status_message,
             last_seen
@@ -75,10 +75,10 @@ export function usePeerSpecialists() {
         years_experience: specialist.years_experience || 0,
         avatar_url: specialist.avatar_url,
         is_verified: specialist.is_verified,
-        status: specialist.specialist_status?.[0] || {
-          status: 'offline' as const,
-          status_message: null,
-          last_seen: new Date().toISOString()
+        status: {
+          status: (specialist.specialist_status?.status as 'online' | 'away' | 'offline' | 'busy') || 'offline',
+          status_message: specialist.specialist_status?.status_message || null,
+          last_seen: specialist.specialist_status?.last_seen || new Date().toISOString()
         }
       }));
 
