@@ -27,6 +27,13 @@ const RecoveryJourney = () => {
   
   // Initialize user's journey based on their onboarding data
   useEffect(() => {
+    logger.debug('Journey initialization check', { 
+      userData: !!userData,
+      focusAreas: userData?.focusAreas,
+      journeyStage: userData?.journeyStage,
+      hasUserData: !!userData
+    });
+
     if (userData?.focusAreas && userData?.journeyStage) {
       const journey = journeyManager.getUserJourney(userData.focusAreas);
       const modifier = journeyManager.getPhaseModifier(userData.journeyStage);
@@ -40,8 +47,16 @@ const RecoveryJourney = () => {
         journeyFound: !!journey,
         modifierFound: !!modifier
       });
+    } else if (userData) {
+      // If userData exists but missing onboarding data, use defaults
+      logger.debug('Using default journey for user missing onboarding data');
+      const defaultJourney = journeyManager.getUserJourney(['stress_management']);
+      const defaultModifier = journeyManager.getPhaseModifier('foundation');
+      
+      setUserJourney(defaultJourney);
+      setPhaseModifier(defaultModifier);
     }
-  }, [userData?.focusAreas, userData?.journeyStage]);
+  }, [userData?.focusAreas, userData?.journeyStage, userData]);
 
   // Calculate current day based on completed days using shared utility
   const completedDays = userData?.journeyProgress?.completedDays || [];
