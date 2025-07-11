@@ -101,14 +101,36 @@ const PeerSpecialistManagement = () => {
 
   const fetchUsers = async () => {
     try {
+      console.log('🔍 [DEBUG] Starting fetchUsers...');
+      console.log('🔍 [DEBUG] User authentication status:', await supabase.auth.getUser());
+      
       const { data, error } = await supabase.rpc('get_users_for_admin');
-      if (error) throw error;
+      
+      console.log('🔍 [DEBUG] RPC get_users_for_admin response:', { data, error });
+      console.log('🔍 [DEBUG] Data type:', typeof data, 'Data length:', data?.length);
+      
+      if (error) {
+        console.error('🔍 [DEBUG] RPC Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
+      
+      console.log('🔍 [DEBUG] Setting users state with data:', data);
       setUsers(data || []);
+      console.log('🔍 [DEBUG] Users state updated, count:', data?.length || 0);
+      
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('🔍 [DEBUG] Error in fetchUsers:', error);
+      console.error('🔍 [DEBUG] Error type:', typeof error);
+      console.error('🔍 [DEBUG] Error stack:', error?.stack);
+      
       toast({
         title: 'Error',
-        description: 'Failed to fetch users',
+        description: `Failed to fetch users: ${error?.message || 'Unknown error'}`,
         variant: 'destructive',
       });
     }
@@ -132,21 +154,46 @@ const PeerSpecialistManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🚀 [DEBUG] Starting form submission...');
+    console.log('🚀 [DEBUG] Form data:', formData);
+    console.log('🚀 [DEBUG] Editing specialist:', editingSpecialist);
+    console.log('🚀 [DEBUG] User authentication:', await supabase.auth.getUser());
+    
+    // Validation logging
+    const requiredFields = ['first_name', 'last_name'];
+    if (!editingSpecialist) requiredFields.push('user_id');
+    
+    const missingFields = requiredFields.filter(field => !formData[field as keyof SpecialistFormData]);
+    if (missingFields.length > 0) {
+      console.error('🚀 [DEBUG] Missing required fields:', missingFields);
+      toast({
+        title: "Validation Error",
+        description: `Missing required fields: ${missingFields.join(', ')}`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       if (editingSpecialist) {
-        // Update existing specialist
-        const { error } = await supabase
+        console.log('🚀 [DEBUG] Updating existing specialist...');
+        const updateData = {
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          bio: formData.bio,
+          specialties: formData.specialties,
+          years_experience: formData.years_experience,
+          avatar_url: formData.avatar_url || null
+        };
+        console.log('🚀 [DEBUG] Update data:', updateData);
+        
+        const { data, error } = await supabase
           .from('peer_specialists')
-          .update({
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            bio: formData.bio,
-            specialties: formData.specialties,
-            years_experience: formData.years_experience,
-            avatar_url: formData.avatar_url || null
-          })
-          .eq('id', editingSpecialist.id);
+          .update(updateData)
+          .eq('id', editingSpecialist.id)
+          .select();
 
+        console.log('🚀 [DEBUG] Update response:', { data, error });
         if (error) throw error;
         
         toast({
@@ -154,22 +201,35 @@ const PeerSpecialistManagement = () => {
           description: "Specialist updated successfully"
         });
       } else {
-        // Create new specialist
-        const { error } = await supabase
+        console.log('🚀 [DEBUG] Creating new specialist...');
+        const insertData = {
+          user_id: formData.user_id,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          bio: formData.bio,
+          specialties: formData.specialties,
+          years_experience: formData.years_experience,
+          avatar_url: formData.avatar_url || null,
+          is_verified: false,
+          is_active: true
+        };
+        console.log('🚀 [DEBUG] Insert data:', insertData);
+        
+        const { data, error } = await supabase
           .from('peer_specialists')
-          .insert({
-            user_id: formData.user_id,
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            bio: formData.bio,
-            specialties: formData.specialties,
-            years_experience: formData.years_experience,
-            avatar_url: formData.avatar_url || null,
-            is_verified: false,
-            is_active: true
-          });
+          .insert(insertData)
+          .select();
 
-        if (error) throw error;
+        console.log('🚀 [DEBUG] Insert response:', { data, error });
+        if (error) {
+          console.error('🚀 [DEBUG] Insert error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw error;
+        }
         
         toast({
           title: "Success",
@@ -177,13 +237,19 @@ const PeerSpecialistManagement = () => {
         });
       }
 
+      console.log('🚀 [DEBUG] Operation successful, refetching specialists...');
       fetchSpecialists();
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
-      console.error('Error saving specialist:', error);
-      console.error('Error details:', error?.message);
-      console.error('Full error object:', error);
+      console.error('🚀 [DEBUG] Error saving specialist:', error);
+      console.error('🚀 [DEBUG] Error type:', typeof error);
+      console.error('🚀 [DEBUG] Error details:', error?.message);
+      console.error('🚀 [DEBUG] Full error object:', error);
+      console.error('🚀 [DEBUG] Error code:', error?.code);
+      console.error('🚀 [DEBUG] Error details:', error?.details);
+      console.error('🚀 [DEBUG] Error hint:', error?.hint);
+      
       toast({
         title: "Error",
         description: `Failed to save specialist: ${error?.message || 'Unknown error'}`,
@@ -349,7 +415,7 @@ const PeerSpecialistManagement = () => {
                       <SelectContent>
                         {filteredUsers.length === 0 ? (
                           <SelectItem value="" disabled>
-                            {userSearch ? 'No users found' : 'No users available'}
+                            {userSearch ? 'No users found' : `No users available (Total: ${users.length}, Auth: ${users.length > 0 ? 'OK' : 'Failed'})`}
                           </SelectItem>
                         ) : (
                           filteredUsers.map((user) => (
@@ -365,6 +431,9 @@ const PeerSpecialistManagement = () => {
                         )}
                       </SelectContent>
                     </Select>
+                    <div className="text-xs text-steel-light mt-1">
+                      Debug: {users.length} users loaded, {filteredUsers.length} filtered
+                    </div>
                   </div>
                 </div>
               )}
