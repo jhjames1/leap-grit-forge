@@ -299,11 +299,11 @@ const englishTranslations = {
       'You\'re still standing. That counts for something.'
     ],
     toolSuggestions: {
-      breathingRoom: 'You need breathing room. Hit the breathing tool. Ten minutes. That\'s the ask.',
-      urgeTracker: 'Sounds like your brain\'s racing. Try the urge tracker. Catch the spiral early.',
-      peerChat: 'You\'re not alone, even if it feels like it. Peer chat is how we start proving that.',
-      gratitude: 'Your mind\'s stuck in the negative loop. Gratitude tool - find three things. Real ones.',
-      strengthMeter: 'Check your recovery strength. See where you really stand right now.'
+      breathingRoom: 'Here\'s what I\'m thinking - you need breathing room. Hit the breathing tool. Ten minutes. That\'s the ask.',
+      urgeTracker: 'Listen, sounds like your brain\'s racing. Try the urge tracker. Catch the spiral early.',
+      peerChat: 'You\'re not alone, even if it feels like it. Here\'s a thought - peer chat is how we start proving that.',
+      gratitude: 'Your mind\'s stuck in the negative loop. Would you try the gratitude tool? Find three things. Real ones.',
+      strengthMeter: 'Here\'s an idea - check your recovery strength. See where you really stand right now.'
     },
     responses: {
       struggling: [
@@ -328,7 +328,7 @@ const englishTranslations = {
       ]
     },
     actions: {
-      toolBelt: 'Add to Tool Belt',
+      saveWisdom: 'Save This',
       fieldStory: 'Field Story',
       talkToPeer: 'Talk to Peer'
     },
@@ -340,7 +340,9 @@ const englishTranslations = {
     placeholder: 'Type your message...',
     send: 'Send',
     listening: 'Listening...',
-    stopListening: 'Stop'
+    stopListening: 'Stop',
+    wisdomSaved: 'Saved to your wisdom collection',
+    wisdomSaveError: 'Could not save this wisdom'
   },
   
   // Journey
@@ -493,6 +495,21 @@ const englishTranslations = {
       track: 'Track',
       calm: 'Calm',
       mindset: 'Mindset'
+    },
+    savedWisdom: {
+      title: 'Saved Wisdom',
+      subtitle: 'Your collected insights from The Foreman',
+      empty: 'No saved wisdom yet. Chat with The Foreman and save meaningful messages.',
+      recentTitle: 'Recently Saved',
+      categories: {
+        all: 'All',
+        affirmation: 'Affirmations',
+        guidance: 'Guidance', 
+        story: 'Stories',
+        'tool-suggestion': 'Tool Tips'
+      },
+      remove: 'Remove',
+      confirmRemove: 'Remove this saved wisdom?'
     }
   },
   

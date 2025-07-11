@@ -3,12 +3,13 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Shield, Edit, Bell, Calendar, Phone } from 'lucide-react';
+import { User, Shield, Edit, Bell, Calendar, Phone, BookOpen } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { trackingManager } from '@/utils/trackingManager';
 import EditProfile from './EditProfile';
 import NotificationSettings from './NotificationSettings';
+import { SavedWisdom } from './SavedWisdom';
 
 interface UserProfileProps {
   onNavigate?: (page: string) => void;
@@ -16,7 +17,7 @@ interface UserProfileProps {
 
 const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const { t, language } = useLanguage();
-  const [currentView, setCurrentView] = useState<'profile' | 'edit' | 'notifications'>('profile');
+  const [currentView, setCurrentView] = useState<'profile' | 'edit' | 'notifications' | 'saved-wisdom'>('profile');
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
   const { userData, currentUser } = useUserData();
   
@@ -186,6 +187,10 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     return <NotificationSettings onBack={() => setCurrentView('profile')} />;
   }
 
+  if (currentView === 'saved-wisdom') {
+    return <SavedWisdom onBack={() => setCurrentView('profile')} />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="p-4 pb-24">
@@ -283,6 +288,14 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           >
             <Bell size={16} className="mr-2" />
             {t('profile.notificationSettings')}
+          </Button>
+          <Button 
+            onClick={() => setCurrentView('saved-wisdom')}
+            variant="outline" 
+            className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
+          >
+            <BookOpen size={16} className="mr-2" />
+            {t('toolbox.savedWisdom.title')}
           </Button>
           <Button 
             variant="outline" 

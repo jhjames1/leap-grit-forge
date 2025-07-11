@@ -15,6 +15,8 @@ import {
   Star
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useUserData } from '@/hooks/useUserData';
+import { toast } from 'sonner';
 
 interface ForemanChatProps {
   onBack: () => void;
@@ -22,7 +24,7 @@ interface ForemanChatProps {
 
 interface Message {
   id: number;
-  sender: 'user' | 'foreman';
+  sender: 'user' | 'foreman' | 'system';
   text: string;
   time: string;
   hasActions?: boolean;
@@ -54,6 +56,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { t, getArray } = useLanguage();
+  const { currentUser } = useUserData();
 
   // Initialize with direct, provocative greeting
   useEffect(() => {
@@ -187,17 +190,24 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
   };
 
   const handleSaveMessage = (messageId: number) => {
-    if (!savedAffirmations.includes(messageId)) {
-      setSavedAffirmations(prev => [...prev, messageId]);
-      
-      const confirmMessage: Message = {
-        id: messages.length + 1,
-        sender: 'foreman',
-        text: "Added to your Tool Belt. Smart thinking.",
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      
-      setMessages(prev => [...prev, confirmMessage]);
+    const message = messages.find(m => m.id === messageId);
+    if (!message || !currentUser) return;
+
+    const { SavedWisdomManager } = require('@/utils/savedWisdom');
+    const category = SavedWisdomManager.categorizeMessage(message.text);
+    
+    const success = SavedWisdomManager.saveWisdom({
+      messageId,
+      text: message.text,
+      category,
+      username: currentUser
+    });
+
+    if (success) {
+      setSavedAffirmations([...savedAffirmations, messageId]);
+      toast.success(t('foreman.wisdomSaved'));
+    } else {
+      toast.error(t('foreman.wisdomSaveError'));
     }
   };
 
@@ -279,7 +289,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
                     }`}
                   >
                     <Star size={14} />
-                    <span className="text-xs">{t('foreman.actions.toolBelt')}</span>
+                    <span className="text-xs">{t('foreman.actions.saveWisdom')}</span>
                   </Button>
                   <Button
                     size="sm"
