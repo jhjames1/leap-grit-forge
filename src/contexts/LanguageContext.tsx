@@ -142,7 +142,7 @@ const englishTranslations = {
   // Onboarding
   onboarding: {
     step1: {
-      title: 'What brings you to LEAP today?',
+      title: 'What brings you to LEAP?',
       subtitle: 'Choose what you\'d like to build strength around.'
     },
     step2: {

@@ -139,7 +139,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                   <Card
                     key={option.id}
                     onClick={() => handleFocusToggle(option.id)}
-                    className={`p-4 cursor-pointer transition-all duration-200 border rounded-lg ${
+                    className={`p-2 cursor-pointer transition-all duration-200 border rounded-lg ${
                       isSelected 
                         ? 'bg-primary/10 border-primary/20 shadow-sm' 
                         : 'bg-card border-border hover:bg-accent hover:shadow-sm'
@@ -184,7 +184,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                   <Card
                     key={option.id}
                     onClick={() => setJourneyStage(option.id)}
-                    className={`p-4 cursor-pointer transition-all duration-200 border rounded-lg ${
+                    className={`p-2 cursor-pointer transition-all duration-200 border rounded-lg ${
                       isSelected 
                         ? 'bg-primary/10 border-primary/20 shadow-sm' 
                         : 'bg-card border-border hover:bg-accent hover:shadow-sm'
@@ -229,7 +229,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                   <Card
                     key={option.id}
                     onClick={() => setSupportStyle(option.id)}
-                    className={`p-4 cursor-pointer transition-all duration-200 border rounded-lg ${
+                    className={`p-2 cursor-pointer transition-all duration-200 border rounded-lg ${
                       isSelected 
                         ? 'bg-primary/10 border-primary/20 shadow-sm' 
                         : 'bg-card border-border hover:bg-accent hover:shadow-sm'

@@ -55,16 +55,6 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
           </p>
         </div>
 
-        {/* Thriving United Logo */}
-        <div className="absolute bottom-8 right-8">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-            <img 
-              src="/lovable-uploads/d0fc56a3-44b5-42e1-8fbe-eb2156380255.png" 
-              alt="Thriving United" 
-              className="h-12 w-auto opacity-90"
-            />
-          </div>
-        </div>
       </div>
     </div>
   );
