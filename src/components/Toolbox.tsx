@@ -339,6 +339,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
                   <Icon className="text-primary-foreground" size={20} />
                 </div>
                 <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide text-center">{tool.title.toUpperCase()}</h3>
+                <p className="text-muted-foreground text-sm text-center">{tool.description}</p>
               </div>
             </Card>
           );
@@ -347,7 +348,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
 
       {/* Live Recent Activity */}
       <Card className="bg-card mt-6 p-6 border-0 shadow-sm rounded-xl" key={activityRefreshKey}>
-        <h3 className="font-semibold text-[20px] text-card-foreground mb-4">{t('toolbox.recentActivity')}</h3>
+        <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">{t('toolbox.recentActivity').toUpperCase()}</h3>
         <div className="space-y-3">
           {userData?.activityLog.length ? (
             userData.activityLog
