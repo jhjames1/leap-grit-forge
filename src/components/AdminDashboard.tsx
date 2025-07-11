@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
 import SecurityAuditPanel from './SecurityAuditPanel';
 import { adminAnalytics, type UserAnalytics } from '@/utils/adminAnalytics';
 import { 
@@ -18,7 +19,8 @@ import {
   Target,
   Activity,
   Shield,
-  UserCheck
+  UserCheck,
+  LogOut
 } from 'lucide-react';
 import PeerSpecialistManagement from './PeerSpecialistManagement';
 
@@ -28,6 +30,7 @@ interface AdminDashboardProps {
 
 const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
   const { t } = useLanguage();
+  const { signOut } = useAuth();
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
   const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +53,10 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
 
   const refreshData = () => {
     loadAnalytics();
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   // Format engagement trends for display
@@ -95,6 +102,14 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
             disabled={isLoading}
           >
             {isLoading ? 'Loading...' : 'Refresh Data'}
+          </Button>
+          <Button 
+            onClick={handleSignOut}
+            variant="outline"
+            className="border-red-500 text-red-400 hover:bg-red-500/10"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign Out
           </Button>
           <Button 
             onClick={onBack}

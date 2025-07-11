@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Flame, Target, Trophy, Calendar, MessageCircle, Bot, ChevronRight, Play, Shield, Zap } from 'lucide-react';
+import { Flame, Target, Trophy, Calendar, MessageCircle, Bot, ChevronRight, Play, Shield, Zap, UserCheck } from 'lucide-react';
 import SMSOptIn from './SMSOptIn';
 import { useUserData } from '@/hooks/useUserData';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import PhoneNumberPrompt from './PhoneNumberPrompt';
 import StreakReminder from './StreakReminder';
 import { ThemeToggle } from './ThemeToggle';
@@ -22,7 +24,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   const [showSMSOptIn, setShowSMSOptIn] = useState(false);
   const [showPhonePrompt, setShowPhonePrompt] = useState(false);
   const [showStreakReminder, setShowStreakReminder] = useState(false);
+  const [isSpecialist, setIsSpecialist] = useState(false);
   const { userData, logActivity } = useUserData();
+  const { user } = useAuth();
   const { t, language, getArray } = useLanguage();
 
   // Daily motivation logic
@@ -41,6 +45,24 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   
   // Check if the current day is locked
   const currentDayStatus = getDayStatus(userData, currentJourneyDay);
+
+  useEffect(() => {
+    // Check if current user is a peer specialist
+    const checkSpecialistStatus = async () => {
+      if (user) {
+        const { data } = await supabase
+          .from('peer_specialists')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .single();
+        
+        setIsSpecialist(!!data);
+      }
+    };
+    
+    checkSpecialistStatus();
+  }, [user]);
 
   useEffect(() => {
     // Load daily motivation based on user's day count
@@ -246,6 +268,16 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             {/* Right column: Theme toggle, Language toggle, and Trophy */}
             <div className="flex flex-col items-end">
               <div className="flex items-center space-x-3">
+                {isSpecialist && (
+                  <Button
+                    onClick={() => window.open('/specialist', '_blank')}
+                    variant="outline"
+                    size="sm"
+                    className="border-construction text-construction hover:bg-construction/10"
+                  >
+                    <UserCheck size={16} />
+                  </Button>
+                )}
                 <ThemeToggle />
                 <LanguageToggle />
               </div>
