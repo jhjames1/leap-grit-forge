@@ -226,15 +226,10 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           ))}
         </div>
 
-        <div className="space-y-4 pt-4 border-t border-border">
+        <div className="space-y-2 pt-4 border-t border-border">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground text-sm font-source">{t('profile.weeklyProgress')}</span>
             <span className="text-primary font-fjalla font-medium">{weeklyProgressPercentage}% ({weekCompletedDays}/7 {t('profile.days')})</span>
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground text-sm font-source">Urges Tracked</span>
-            <span className="text-primary font-fjalla font-medium">{liveUrgesTracked}</span>
           </div>
         </div>
       </Card>
