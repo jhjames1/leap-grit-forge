@@ -321,9 +321,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           <div className="space-y-3">
             {upcomingActivities.length > 0 ? (
               upcomingActivities.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <span className="text-card-foreground font-source text-sm">{activity.title}</span>
-                  <span className="text-primary font-source font-bold text-sm">{activity.timeLabel.toUpperCase()}</span>
+                <div key={index} className="flex items-start justify-between gap-3">
+                  <span className="text-card-foreground font-source text-sm flex-1">{activity.title}</span>
+                  <span className="text-primary font-source font-bold text-sm whitespace-nowrap">{activity.timeLabel.toUpperCase()}</span>
                 </div>
               ))
             ) : (
