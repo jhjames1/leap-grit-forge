@@ -181,22 +181,26 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
 
   // Function to get week titles
   function getWeekTitle(weekNum: number): string {
-    switch (weekNum) {
-      case 1: return t('journey.weekFoundation') || 'Foundation Week';
-      case 2: return 'Building Strength';
-      case 3: return 'Developing Resilience';
-      case 4: return 'Creating Habits';
-      case 5: return 'Milestone Month';
-      case 6: return 'Deeper Understanding';
-      case 7: return 'Social Connections';
-      case 8: return 'Mindful Living';
-      case 9: return 'Advanced Strategies';
-      case 10: return 'Integration';
-      case 11: return 'Mastery';
-      case 12: return 'Leadership';
-      case 13: return 'Transformation Complete';
-      default: return `Week ${weekNum}`;
-    }
+    const weekName = (() => {
+      switch (weekNum) {
+        case 1: return t('journey.weekFoundation') || 'Foundation Week';
+        case 2: return 'Building Strength';
+        case 3: return 'Developing Resilience';
+        case 4: return 'Creating Habits';
+        case 5: return 'Milestone Month';
+        case 6: return 'Deeper Understanding';
+        case 7: return 'Social Connections';
+        case 8: return 'Mindful Living';
+        case 9: return 'Advanced Strategies';
+        case 10: return 'Integration';
+        case 11: return 'Mastery';
+        case 12: return 'Leadership';
+        case 13: return 'Transformation Complete';
+        default: return `Week ${weekNum}`;
+      }
+    })();
+    
+    return weekNum === 1 ? weekName : `Week ${weekNum}: ${weekName}`;
   }
 
   // Navigation handlers
