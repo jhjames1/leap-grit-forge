@@ -16,6 +16,7 @@ import UrgeTracker from '@/components/UrgeTracker';
 import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { trackingManager } from '@/utils/trackingManager';
 import { logger } from '@/utils/logger';
 
 interface ToolboxProps {
@@ -26,8 +27,34 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const [showBreathing, setShowBreathing] = useState(false);
   const [showUrgeTracker, setShowUrgeTracker] = useState(false);
   const [showGratitudeLog, setShowGratitudeLog] = useState(false);
+  const [realTimeStats, setRealTimeStats] = useState<any>(null);
   const { userData, logActivity, updateToolboxStats } = useUserData();
   const { t } = useLanguage();
+
+  // Get real-time tracking data
+  useEffect(() => {
+    const updateStats = () => {
+      try {
+        const liveStats = trackingManager.getTodaysStats();
+        const streakData = trackingManager.getStreakData();
+        setRealTimeStats({ 
+          ...liveStats, 
+          currentStreak: streakData.currentStreak,
+          longestStreak: streakData.longestStreak
+        });
+      } catch (error) {
+        // Fallback to userData if tracking manager fails
+        console.warn('TrackingManager failed, using userData:', error);
+        setRealTimeStats(null);
+      }
+    };
+    
+    // Update immediately and then every 2 seconds for real-time feel
+    updateStats();
+    const interval = setInterval(updateStats, 2000);
+    
+    return () => clearInterval(interval);
+  }, [userData]);
 
   // Calculate daily reset at midnight
   useEffect(() => {
@@ -240,8 +267,10 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     // Don't log completion if closed without finishing
   };
 
-  const dayStreak = calculateDayStreak();
-  const todayToolsCount = getTodayToolsCount();
+  // Use real-time stats when available, fallback to calculated values
+  const liveToolsToday = realTimeStats?.toolsUsedToday ?? getTodayToolsCount();
+  const liveDayStreak = realTimeStats?.currentStreak ?? calculateDayStreak();
+  const liveTotalSessions = userData?.toolboxStats?.totalSessions || 0;
 
   return (
     <div className="p-4 pb-24 bg-[#F5F5F5] min-h-screen">
@@ -273,19 +302,19 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <div className="text-2xl font-bold text-primary">
-              {todayToolsCount}
+              {liveToolsToday}
             </div>
-            <div className="text-xs text-gray-600 font-source">{t('toolbox.stats.todayTools')}</div>
+            <div className="text-xs text-gray-600 font-source">Tools Today</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-primary">
-              {dayStreak}
+              {liveDayStreak}
             </div>
             <div className="text-xs text-gray-600 font-source">{t('toolbox.stats.dayStreak')}</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-primary">
-              {userData?.toolboxStats.totalSessions || 0}
+              {liveTotalSessions}
             </div>
             <div className="text-xs text-gray-600 font-source">{t('toolbox.stats.totalSessions')}</div>
           </div>
