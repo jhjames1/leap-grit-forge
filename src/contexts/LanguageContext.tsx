@@ -274,30 +274,57 @@ const englishTranslations = {
     title: 'The Foreman',
     subtitle: 'Your Recovery Mentor',
     greeting: {
-      morning: 'Morning! Ready to build something strong today?',
-      afternoon: 'Afternoon! How\'s the foundation holding up?',
-      evening: 'Evening! Time to review today\'s work and plan tomorrow.'
+      morning: 'You good, or are we faking it today?',
+      afternoon: 'You clocking in or hiding out?',
+      evening: 'What\'s pressing on you right now?'
+    },
+    initialPrompts: [
+      'You good, or are we faking it today?',
+      'You clocking in or hiding out?',
+      'What\'s pressing on you right now?',
+      'Where\'s your head at?'
+    ],
+    followUp1: [
+      'That been building for a while or just hit today?',
+      'What\'s been stopping you from dealing with it?',
+      'Who else knows what you\'re carrying?',
+      'How long you been sitting on that?',
+      'What\'s really eating at you?'
+    ],
+    followUp2: [
+      'That sounds like burnout, not failure. Big difference.',
+      'So you\'ve been pushing through alone. That ends today.',
+      'You\'re showing up, even tired. That\'s not nothing.',
+      'I hear that. But feeling like you don\'t matter and actually not mattering are two different things.',
+      'You\'re still standing. That counts for something.'
+    ],
+    toolSuggestions: {
+      breathingRoom: 'You need breathing room. Hit the breathing tool. Ten minutes. That\'s the ask.',
+      urgeTracker: 'Sounds like your brain\'s racing. Try the urge tracker. Catch the spiral early.',
+      peerChat: 'You\'re not alone, even if it feels like it. Peer chat is how we start proving that.',
+      gratitude: 'Your mind\'s stuck in the negative loop. Gratitude tool - find three things. Real ones.',
+      strengthMeter: 'Check your recovery strength. See where you really stand right now.'
     },
     responses: {
       struggling: [
-        'Tough day on the job site? That\'s normal - even the strongest beams bend before they break. Let\'s reinforce your foundation.',
-        'Every construction project has setbacks. The key is not letting one bad day tear down everything you\'ve built.',
-        'Struggling doesn\'t mean failing - it means you\'re human. Let\'s grab some tools and get back to work.'
+        'Been there. What\'s the heaviest thing you\'re carrying right now?',
+        'Rough day or rough stretch?',
+        'Talk to me straight. What\'s breaking down?'
       ],
       hopeful: [
-        'That\'s the spirit! You\'re building something incredible, one day at a time.',
-        'Love seeing that positive energy! Keep laying those bricks - your recovery is getting stronger.',
-        'You\'re showing real craftsmanship in your recovery. Keep up the excellent work!'
+        'I hear that energy. What\'s working for you?',
+        'Good. What\'s different about today?',
+        'That\'s real progress. What changed?'
       ],
       frustrated: [
-        'Frustration is like hitting a stubborn bolt - sometimes you need different tools. Let\'s find what works.',
-        'Even master builders get frustrated. The difference is they step back, reassess, and try a new approach.',
-        'That frustration shows you care about the quality of your work. Let\'s channel it into progress.'
+        'Yeah, I can hear that. What\'s got you wound up?',
+        'Frustration\'s energy. What are you gonna do with it?',
+        'What\'s pissing you off? Be honest.'
       ],
       neutral: [
-        'Steady as she goes! Consistent work builds the strongest foundations.',
-        'How can I help you on the job site today? Need any tools or advice?',
-        'Every day you show up to work on your recovery is a victory. What\'s your plan today?'
+        'Okay. Where do we start today?',
+        'I\'m listening. What\'s on your mind?',
+        'What do you need to get off your chest?'
       ]
     },
     actions: {
@@ -306,9 +333,9 @@ const englishTranslations = {
       talkToPeer: 'Talk to Peer'
     },
     fieldStories: [
-      'Worked with a crew once where a guy dropped his hammer from the third floor. Instead of getting mad, he said "Well, gravity still works!" Sometimes you gotta laugh at the setbacks.',
-      'Old-timer told me: "Measure twice, cut once." Same goes for recovery - think before you act, and you\'ll waste less material.',
-      'Saw a building that stood for 100 years get torn down in a day. But you know what? They used those same strong materials to build something even better.'
+      'Had a guy once who kept making the same mistake. Cost us three days. Finally asked him what was really going on. Turns out his kid was sick. We got him time off, came back stronger.',
+      'Worked a job where everything went wrong. Equipment broke, weather was shit, crew was fighting. Still finished on time. How? We stopped pretending everything was fine and dealt with what was actually broken.',
+      'Know a guy who\'s been sober 15 years. Asked him his secret. He said, "I stopped lying to myself about the small stuff." Real talk hits different.'
     ],
     placeholder: 'Type your message...',
     send: 'Send',
@@ -955,30 +982,57 @@ const spanishTranslations = {
     title: 'El Capataz',
     subtitle: 'Tu Mentor de Recuperación',
     greeting: {
-      morning: '¡Buenos días! ¿Listo para construir algo fuerte hoy?',
-      afternoon: '¡Buenas tardes! ¿Cómo se mantiene la base?',
-      evening: '¡Buenas noches! Es hora de revisar el trabajo de hoy y planear el mañana.'
+      morning: '¿Estás bien, o estamos fingiendo hoy?',
+      afternoon: '¿Estás trabajando o escondiéndote?',
+      evening: '¿Qué te está presionando ahora mismo?'
+    },
+    initialPrompts: [
+      '¿Estás bien, o estamos fingiendo hoy?',
+      '¿Estás trabajando o escondiéndote?',
+      '¿Qué te está presionando ahora mismo?',
+      '¿Dónde tienes la cabeza?'
+    ],
+    followUp1: [
+      '¿Eso ha estado creciendo por un tiempo o te pegó hoy?',
+      '¿Qué te ha estado impidiendo lidiar con eso?',
+      '¿Quién más sabe lo que estás cargando?',
+      '¿Cuánto tiempo has estado sentado sobre eso?',
+      '¿Qué te está carcomiendo realmente?'
+    ],
+    followUp2: [
+      'Eso suena como agotamiento, no fracaso. Gran diferencia.',
+      'Así que has estado empujando solo. Eso termina hoy.',
+      'Te estás presentando, aunque cansado. Eso no es nada.',
+      'Te escucho. Pero sentir que no importas y realmente no importar son dos cosas diferentes.',
+      'Sigues de pie. Eso cuenta para algo.'
+    ],
+    toolSuggestions: {
+      breathingRoom: 'Necesitas espacio para respirar. Usa la herramienta de respiración. Diez minutos. Eso es lo que pido.',
+      urgeTracker: 'Parece que tu cerebro está acelerado. Prueba el rastreador de impulsos. Atrapa la espiral temprano.',
+      peerChat: 'No estás solo, aunque se sienta así. El chat con compañeros es como empezamos a probarlo.',
+      gratitude: 'Tu mente está atascada en el bucle negativo. Herramienta de gratitud - encuentra tres cosas. Reales.',
+      strengthMeter: 'Revisa tu fuerza de recuperación. Ve dónde realmente estás parado ahora.'
     },
     responses: {
       struggling: [
-        '¿Día difícil en la obra? Es normal - hasta las vigas más fuertes se doblan antes de romperse. Vamos a reforzar tu base.',
-        'Todo proyecto de construcción tiene contratiempos. La clave es no dejar que un mal día derribe todo lo que has construido.',
-        'Luchar no significa fallar - significa que eres humano. Tomemos algunas herramientas y volvamos al trabajo.'
+        'He estado ahí. ¿Qué es lo más pesado que estás cargando ahora?',
+        '¿Día difícil o racha difícil?',
+        'Háblame directo. ¿Qué se está rompiendo?'
       ],
       hopeful: [
-        '¡Ese es el espíritu! Estás construyendo algo increíble, un día a la vez.',
-        '¡Me encanta ver esa energía positiva! Sigue poniendo esos ladrillos - tu recuperación se está fortaleciendo.',
-        '¡Estás mostrando verdadera maestría en tu recuperación! ¡Sigue con el excelente trabajo!'
+        'Escucho esa energía. ¿Qué te está funcionando?',
+        'Bien. ¿Qué es diferente sobre hoy?',
+        'Eso es progreso real. ¿Qué cambió?'
       ],
       frustrated: [
-        'La frustración es como golpear un tornillo terco - a veces necesitas herramientas diferentes. Encontremos lo que funciona.',
-        'Hasta los maestros constructores se frustran. La diferencia es que dan un paso atrás, reevalúan e intentan un nuevo enfoque.',
-        'Esa frustración muestra que te importa la calidad de tu trabajo. Vamos a canalizarla hacia el progreso.'
+        'Sí, puedo escuchar eso. ¿Qué te tiene tenso?',
+        'La frustración es energía. ¿Qué vas a hacer con ella?',
+        '¿Qué te está molestando? Sé honesto.'
       ],
       neutral: [
-        '¡Constante como siempre! El trabajo consistente construye las bases más fuertes.',
-        '¿Cómo puedo ayudarte en la obra hoy? ¿Necesitas herramientas o consejos?',
-        'Cada día que te presentas a trabajar en tu recuperación es una victoria. ¿Cuál es tu plan hoy?'
+        'Okay. ¿Por dónde empezamos hoy?',
+        'Estoy escuchando. ¿Qué tienes en mente?',
+        '¿Qué necesitas sacar de tu pecho?'
       ]
     },
     actions: {
@@ -987,9 +1041,9 @@ const spanishTranslations = {
       talkToPeer: 'Hablar con Compañero'
     },
     fieldStories: [
-      'Trabajé con una cuadrilla una vez donde un tipo dejó caer su martillo desde el tercer piso. En lugar de enojarse, dijo "¡Bueno, la gravedad aún funciona!" A veces tienes que reírte de los contratiempos.',
-      'Un veterano me dijo: "Mide dos veces, corta una vez." Lo mismo aplica para la recuperación - piensa antes de actuar, y desperdiciarás menos material.',
-      'Vi un edificio que duró 100 años ser demolido en un día. ¿Pero sabes qué? Usaron esos mismos materiales fuertes para construir algo aún mejor.'
+      'Tuve un tipo una vez que siguió cometiendo el mismo error. Nos costó tres días. Finalmente le pregunté qué pasaba realmente. Resultó que su hijo estaba enfermo. Le dimos tiempo libre, regresó más fuerte.',
+      'Trabajé un trabajo donde todo salió mal. El equipo se rompió, el clima era una mierda, la cuadrilla estaba peleando. Aún terminamos a tiempo. ¿Cómo? Dejamos de fingir que todo estaba bien y lidiamos con lo que realmente estaba roto.',
+      'Conozco un tipo que ha estado sobrio 15 años. Le pregunté su secreto. Dijo, "Dejé de mentirme sobre las cosas pequeñas." La verdad real pega diferente.'
     ],
     placeholder: 'Escribe tu mensaje...',
     send: 'Enviar',

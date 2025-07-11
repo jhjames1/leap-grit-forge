@@ -35,6 +35,8 @@ interface ConversationContext {
   mood: 'struggling' | 'hopeful' | 'frustrated' | 'neutral';
   topics: string[];
   sessionLength: number;
+  conversationTurn: number;
+  userMessages: string[];
 }
 
 const ForemanChat = ({ onBack }: ForemanChatProps) => {
@@ -46,23 +48,17 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
     lastUserMessage: '',
     mood: 'neutral',
     topics: [],
-    sessionLength: 0
+    sessionLength: 0,
+    conversationTurn: 0,
+    userMessages: []
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { t } = useLanguage();
+  const { t, getArray } = useLanguage();
 
-  // Initialize with time-sensitive greeting
+  // Initialize with direct, provocative greeting
   useEffect(() => {
-    const hour = new Date().getHours();
-    let greeting = '';
-    
-    if (hour < 12) {
-      greeting = t('foreman.greeting.morning');
-    } else if (hour < 17) {
-      greeting = t('foreman.greeting.afternoon');
-    } else {
-      greeting = t('foreman.greeting.evening');
-    }
+    const initialPrompts = getArray('foreman.initialPrompts');
+    const greeting = initialPrompts[Math.floor(Math.random() * initialPrompts.length)];
 
     const initialMessage: Message = {
       id: 1,
@@ -72,56 +68,8 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
     };
 
     setMessages([initialMessage]);
-  }, [t]);  // Add t dependency to refresh when language changes
+  }, [t]);
 
-  // Recovery-focused response templates
-  const responseTemplates = {
-    struggling: [
-      "I've seen concrete crack under pressure. Doesn't mean the whole foundation's gone. Let's figure out where it's weak and fix it.",
-      "Even the strongest steel bends before it breaks. You're still standing—that's what matters.",
-      "Bad days don't build bad lives. You're here, you're talking—that's step one."
-    ],
-    hopeful: [
-      "That's the spirit I like to hear. Keep that momentum going.",
-      "You're building something solid here. One good choice at a time.",
-      "Sounds like you're finding your footing. Stay with that feeling."
-    ],
-    frustrated: [
-      "Frustration means you care. Channel that energy into something that moves you forward.",
-      "Sometimes you gotta tear down the old framework to build something better.",
-      "I get it. But anger without action is just noise. What's your next move?"
-    ],
-    relapse: [
-      "You came back. That's step one. Now let's figure out what led you there so we don't repeat the same loop.",
-      "One slip doesn't tear down the whole job. We assess, we adjust, we keep building.",
-      "The fact you're here telling me means you're not giving up. That's what counts."
-    ],
-    neutral: [
-      "I hear you. What's the next right thing you can do?",
-      "Every job has tough moments. What matters is how you handle them.",
-      "You're talking to me instead of giving up. That's already a win."
-    ]
-  };
-
-  const fieldStories = [
-    "One time we drilled 300 feet through the wrong strata. Cost us two days. We still finished the job—and did it cleaner the second time.",
-    "I once watched a guy rebuild an entire foundation after it failed inspection. Took twice as long, but it's still standing 20 years later.",
-    "Had a crew that kept making the same mistake. Finally had to stop, retrain, start over. Best decision we made that year."
-  ];
-
-  const followUpPrompts = [
-    "Want to talk more about that?",
-    "Need a stronger push?",
-    "Want a field story for perspective?",
-    "Rather talk to a Peer?"
-  ];
-
-  const reflectiveQuestions = [
-    "What's been the hardest part of today?",
-    "When was the last time you felt proud of how you handled something?",
-    "Are you avoiding something—or facing it head on?",
-    "What's got you shut down? You trying to push through, or hide from it?"
-  ];
 
   const analyzeMood = (text: string): 'struggling' | 'hopeful' | 'frustrated' | 'neutral' => {
     const lowerText = text.toLowerCase();
@@ -141,27 +89,51 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
 
   const generateContextualResponse = (userMessage: string, context: ConversationContext): string => {
     const mood = analyzeMood(userMessage);
-    const lowerMessage = userMessage.toLowerCase();
+    const turn = context.conversationTurn;
     
-    // Get translated responses based on mood
-    const moodResponses = t('foreman.responses.' + mood);
-    
-    // Handle specific recovery-related topics
-    if (lowerMessage.includes('drank') || lowerMessage.includes('used') || lowerMessage.includes('relapsed')) {
-      return moodResponses[Math.floor(Math.random() * moodResponses.length)];
+    // Turn 1: Dig deeper based on user's response
+    if (turn === 1) {
+      const followUp1 = getArray('foreman.followUp1');
+      return followUp1[Math.floor(Math.random() * followUp1.length)];
     }
     
-    // Handle tone adjustment requests
-    if (lowerMessage.includes('tougher') || lowerMessage.includes('stronger') || lowerMessage.includes('tough love')) {
-      return moodResponses[Math.floor(Math.random() * moodResponses.length)];
+    // Turn 2: Validate/confirm with tough love
+    if (turn === 2) {
+      const followUp2 = getArray('foreman.followUp2');
+      return followUp2[Math.floor(Math.random() * followUp2.length)];
     }
     
-    // Handle feeling words
-    if (lowerMessage.includes('numb') || lowerMessage.includes('empty')) {
-      return moodResponses[Math.floor(Math.random() * moodResponses.length)];
+    // Turn 3+: Tool suggestions and deeper responses
+    if (turn >= 3) {
+      // Determine appropriate tool suggestion based on content
+      const lowerMessage = userMessage.toLowerCase();
+      const allMessages = context.userMessages.join(' ').toLowerCase();
+      
+      if (allMessages.includes('anxious') || allMessages.includes('panic') || allMessages.includes('breathe')) {
+        return t('foreman.toolSuggestions.breathingRoom');
+      }
+      if (allMessages.includes('urge') || allMessages.includes('craving') || allMessages.includes('want to')) {
+        return t('foreman.toolSuggestions.urgeTracker');
+      }
+      if (allMessages.includes('alone') || allMessages.includes('isolated') || allMessages.includes('nobody')) {
+        return t('foreman.toolSuggestions.peerChat');
+      }
+      if (allMessages.includes('negative') || allMessages.includes('nothing good') || allMessages.includes('hopeless')) {
+        return t('foreman.toolSuggestions.gratitude');
+      }
+      if (allMessages.includes('weak') || allMessages.includes('failing') || allMessages.includes('progress')) {
+        return t('foreman.toolSuggestions.strengthMeter');
+      }
+      
+      // Default tool suggestion based on mood
+      if (mood === 'struggling') return t('foreman.toolSuggestions.peerChat');
+      if (mood === 'frustrated') return t('foreman.toolSuggestions.breathingRoom');
+      if (mood === 'hopeful') return t('foreman.toolSuggestions.strengthMeter');
+      return t('foreman.toolSuggestions.gratitude');
     }
     
-    // Use mood-based responses
+    // Fallback to mood-based responses
+    const moodResponses = getArray('foreman.responses.' + mood);
     return moodResponses[Math.floor(Math.random() * moodResponses.length)];
   };
 
@@ -189,7 +161,9 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
         lastUserMessage: message,
         mood: analyzeMood(message),
         topics: [...conversationContext.topics, message],
-        sessionLength: conversationContext.sessionLength + 1
+        sessionLength: conversationContext.sessionLength + 1,
+        conversationTurn: conversationContext.conversationTurn + 1,
+        userMessages: [...conversationContext.userMessages, message]
       };
       setConversationContext(newContext);
       
@@ -204,25 +178,10 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
           sender: 'foreman',
           text: responseText,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          hasActions: true
+          hasActions: newContext.conversationTurn >= 3 // Only show actions after 3rd turn
         };
 
         setMessages(prev => [...prev, foremanResponse]);
-        
-        // Sometimes ask follow-up questions
-        if (Math.random() < 0.3 && newContext.sessionLength > 2) {
-          setTimeout(() => {
-            const followUpQuestion = reflectiveQuestions[Math.floor(Math.random() * reflectiveQuestions.length)];
-            const followUpMessage: Message = {
-              id: messages.length + 3,
-              sender: 'foreman',
-              text: followUpQuestion,
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              hasActions: true
-            };
-            setMessages(prev => [...prev, followUpMessage]);
-          }, 2000);
-        }
       }, 1000);
     }
   };
@@ -247,7 +206,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
   };
 
   const handleFieldStory = () => {
-    const fieldStories = t('foreman.fieldStories');
+    const fieldStories = getArray('foreman.fieldStories');
     const story = fieldStories[Math.floor(Math.random() * fieldStories.length)];
     const storyMessage: Message = {
       id: messages.length + 1,
