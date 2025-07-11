@@ -108,7 +108,7 @@ const Index = () => {
       case 'home':
         return <DashboardHome onNavigate={handleNavigation} />;
       case 'journey':
-        return <RecoveryJourney />;
+        return <RecoveryJourney onNavigateToHome={handleBackToHome} />;
       case 'toolbox':
         return <Toolbox onNavigate={handleNavigation} />;
       case 'chat':

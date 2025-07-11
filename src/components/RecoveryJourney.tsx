@@ -14,7 +14,11 @@ import { journeyManager } from '@/utils/journeyManager';
 import { trackingManager } from '@/utils/trackingManager';
 import { notificationManager } from '@/utils/notificationManager';
 
-const RecoveryJourney = () => {
+interface RecoveryJourneyProps {
+  onNavigateToHome?: () => void;
+}
+
+const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   const [currentDay, setCurrentDay] = useState(1);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [forceRender, setForceRender] = useState(0);
@@ -396,6 +400,7 @@ const RecoveryJourney = () => {
           isCompleted={completedDays.includes(selectedDay)}
           onClose={() => setSelectedDay(null)}
           onComplete={() => handleCompleteDay(selectedDay)}
+          onNavigateToHome={onNavigateToHome}
         />
       )}
       </div>

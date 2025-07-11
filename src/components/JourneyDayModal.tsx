@@ -24,6 +24,7 @@ interface JourneyDayModalProps {
   isCompleted: boolean;
   onClose: () => void;
   onComplete: () => void;
+  onNavigateToHome?: () => void;
 }
 
 interface ActivityState {
@@ -33,7 +34,7 @@ interface ActivityState {
   };
 }
 
-const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: JourneyDayModalProps) => {
+const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNavigateToHome }: JourneyDayModalProps) => {
   const [activityStates, setActivityStates] = useState<ActivityState>({});
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -606,6 +607,13 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete }: Jou
     
     logger.debug('Journey day completion callback triggered');
     onComplete();
+    
+    // Navigate to home after the completion notification disappears
+    setTimeout(() => {
+      if (onNavigateToHome) {
+        onNavigateToHome();
+      }
+    }, 2000);
   };
 
   return (
