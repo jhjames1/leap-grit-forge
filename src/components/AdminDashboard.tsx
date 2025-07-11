@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import SecurityAuditPanel from './SecurityAuditPanel';
+import { adminAnalytics, type UserAnalytics } from '@/utils/adminAnalytics';
 import { 
   Users, 
   TrendingUp, 
@@ -26,28 +27,37 @@ interface AdminDashboardProps {
 const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
   const { t } = useLanguage();
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
+  const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data - would come from backend
-  const mockData = {
-    totalUsers: 247,
-    activeUsers: 189,
-    avgStrength: 67,
-    riskUsers: 12,
-    engagementTrends: [
-      { domain: t('admin.domains.peerSupport'), avg: 72, trend: '+5%' },
-      { domain: t('admin.domains.selfCare'), avg: 68, trend: '+3%' },
-      { domain: t('admin.domains.structure'), avg: 65, trend: '+2%' },
-      { domain: t('admin.domains.mood'), avg: 61, trend: '-1%' },
-      { domain: t('admin.domains.cravingControl'), avg: 58, trend: '-3%' }
-    ],
-    heatmapData: [
-      { user: 'User001', strength: 85, lastActive: '2 hours ago', risk: 'low' },
-      { user: 'User002', strength: 42, lastActive: '3 days ago', risk: 'medium' },
-      { user: 'User003', strength: 23, lastActive: '1 week ago', risk: 'high' },
-      { user: 'User004', strength: 78, lastActive: '1 hour ago', risk: 'low' },
-      { user: 'User005', strength: 34, lastActive: '5 days ago', risk: 'high' }
-    ]
+  useEffect(() => {
+    loadAnalytics();
+  }, []);
+
+  const loadAnalytics = () => {
+    setIsLoading(true);
+    try {
+      const data = adminAnalytics.calculateUserAnalytics();
+      setAnalytics(data);
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const refreshData = () => {
+    loadAnalytics();
+  };
+
+  // Format engagement trends for display
+  const engagementTrends = analytics ? [
+    { domain: t('admin.domains.peerSupport'), avg: analytics.domainEngagement.peerSupport, trend: analytics.engagementTrends.peerSupport >= 50 ? '+' + (analytics.engagementTrends.peerSupport - 50) + '%' : '-' + (50 - analytics.engagementTrends.peerSupport) + '%' },
+    { domain: t('admin.domains.selfCare'), avg: analytics.domainEngagement.selfCare, trend: analytics.engagementTrends.selfCare >= 40 ? '+' + (analytics.engagementTrends.selfCare - 40) + '%' : '-' + (40 - analytics.engagementTrends.selfCare) + '%' },
+    { domain: t('admin.domains.structure'), avg: analytics.domainEngagement.structure, trend: analytics.engagementTrends.structure >= 30 ? '+' + (analytics.engagementTrends.structure - 30) + '%' : '-' + (30 - analytics.engagementTrends.structure) + '%' },
+    { domain: t('admin.domains.mood'), avg: analytics.domainEngagement.mood, trend: analytics.engagementTrends.mood >= 35 ? '+' + (analytics.engagementTrends.mood - 35) + '%' : '-' + (35 - analytics.engagementTrends.mood) + '%' },
+    { domain: t('admin.domains.cravingControl'), avg: analytics.domainEngagement.cravingControl, trend: analytics.engagementTrends.cravingControl >= 25 ? '+' + (analytics.engagementTrends.cravingControl - 25) + '%' : '-' + (25 - analytics.engagementTrends.cravingControl) + '%' }
+  ] : [];
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -75,13 +85,23 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
           </h1>
           <p className="text-steel-light font-oswald">{t('admin.subtitle')}</p>
         </div>
-        <Button 
-          onClick={onBack}
-          variant="outline"
-          className="border-steel text-steel-light hover:bg-steel/10"
-        >
-          {t('admin.back')}
-        </Button>
+        <div className="flex space-x-2">
+          <Button 
+            onClick={refreshData}
+            variant="outline"
+            className="border-construction text-construction hover:bg-construction/10"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Loading...' : 'Refresh Data'}
+          </Button>
+          <Button 
+            onClick={onBack}
+            variant="outline"
+            className="border-steel text-steel-light hover:bg-steel/10"
+          >
+            {t('admin.back')}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
@@ -120,7 +140,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               <Users className="text-construction" size={20} />
             </div>
             <div>
-              <div className="text-2xl font-bold text-foreground">{mockData.totalUsers}</div>
+              <div className="text-2xl font-bold text-foreground">{analytics?.totalUsers || 0}</div>
               <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.totalUsers')}</div>
             </div>
           </div>
@@ -132,7 +152,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               <Activity className="text-construction" size={20} />
             </div>
             <div>
-              <div className="text-2xl font-bold text-foreground">{mockData.activeUsers}</div>
+              <div className="text-2xl font-bold text-foreground">{analytics?.activeUsers || 0}</div>
               <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.activeUsers')}</div>
             </div>
           </div>
@@ -144,7 +164,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               <TrendingUp className="text-construction" size={20} />
             </div>
             <div>
-              <div className="text-2xl font-bold text-foreground">{mockData.avgStrength}%</div>
+              <div className="text-2xl font-bold text-foreground">{analytics?.averageRecoveryStrength || 0}%</div>
               <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.avgStrength')}</div>
             </div>
           </div>
@@ -156,7 +176,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               <AlertTriangle className="text-red-400" size={20} />
             </div>
             <div>
-              <div className="text-2xl font-bold text-foreground">{mockData.riskUsers}</div>
+              <div className="text-2xl font-bold text-foreground">{analytics?.atRiskUsers || 0}</div>
               <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.metrics.atRisk')}</div>
             </div>
           </div>
@@ -173,7 +193,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
         </div>
         
         <div className="space-y-3">
-          {mockData.engagementTrends.map((domain, index) => (
+          {engagementTrends.map((domain, index) => (
             <div key={index} className="flex items-center justify-between p-3 bg-steel-dark/30 rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className="w-3 h-3 bg-construction rounded-full"></div>
@@ -187,6 +207,9 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               </div>
             </div>
           ))}
+          {analytics && analytics.totalEngagementActions === 0 && (
+            <p className="text-steel-light text-center py-4">No user engagement data available yet.</p>
+          )}
         </div>
       </Card>
 
@@ -200,18 +223,18 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
         </div>
         
         <div className="space-y-3">
-          {mockData.heatmapData.map((user, index) => (
+          {analytics?.userRiskData.map((user, index) => (
             <div key={index} className="flex items-center justify-between p-4 bg-steel-dark/30 rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className={`w-4 h-4 ${getRiskColor(user.risk)} rounded-full`}></div>
                 <div>
-                  <span className="text-white font-medium">{user.user}</span>
+                  <span className="text-white font-medium">{user.id}</span>
                   <p className="text-steel-light text-sm">{user.lastActive}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-foreground">{user.strength}%</div>
+                  <div className="text-2xl font-bold text-foreground">{user.recoveryStrength}%</div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">{t('admin.sections.strength')}</div>
                 </div>
                 <Badge className={getRiskBadge(user.risk)}>
@@ -220,6 +243,9 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
               </div>
             </div>
           ))}
+          {analytics && analytics.userRiskData.length === 0 && (
+            <p className="text-steel-light text-center py-4">No user data available yet.</p>
+          )}
         </div>
       </Card>
         </TabsContent>
