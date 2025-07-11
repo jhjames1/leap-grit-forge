@@ -121,7 +121,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     setBadgeCount(uniqueActivities.size);
   }, [userData, language]);  // Add language dependency to refresh translations
 
-  // Get upcoming week activities
+  // Get upcoming week activities - random 3 days from next 7 in chronological order
   const getUpcomingWeekActivities = () => {
     console.log('=== DEBUG: getUpcomingWeekActivities ===');
     console.log('userData:', userData);
@@ -183,10 +183,12 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       }
     }
     
-    console.log('upcomingActivities before shuffle:', upcomingActivities);
+    console.log('upcomingActivities before selection:', upcomingActivities);
     
-    // Keep chronological order and take first 3
-    const result = upcomingActivities.slice(0, 3);
+    // Shuffle the array and take 3 random items, then sort by day to maintain chronological order
+    const shuffled = [...upcomingActivities].sort(() => Math.random() - 0.5);
+    const randomSelection = shuffled.slice(0, 3);
+    const result = randomSelection.sort((a, b) => a.day - b.day); // Sort chronologically
     
     console.log('final result:', result);
     return result;
