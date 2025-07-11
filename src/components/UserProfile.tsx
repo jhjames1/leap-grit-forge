@@ -92,39 +92,55 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const weekCompletedDays = completedDays.filter(day => day >= weekStartDay && day <= weekEndDay).length;
   const weeklyProgressPercentage = Math.round((weekCompletedDays / 7) * 100);
   
-  // Find most used tool from real-time activity tracking + activity log
-  const activityLogToolUsage = userData?.activityLog?.reduce((acc: { [key: string]: number }, entry) => {
-    if (entry.action.startsWith('Used ')) {
-      const tool = entry.action.replace('Used ', '');
-      acc[tool] = (acc[tool] || 0) + 1;
-    }
-    return acc;
-  }, {}) || {};
-  
-  // Get today's tool usage from real-time stats
-  const todaysToolActions = realTimeStats?.toolsUsedToday || 0;
-  
-  const mostUsedTool = Object.keys(activityLogToolUsage).length > 0 
-    ? Object.entries(activityLogToolUsage).sort(([,a], [,b]) => b - a)[0][0] 
-    : t('profile.tools.noneYet');
+  // Get real-time favorite tools based on actual usage
+  const getFavoriteTools = () => {
+    if (!realTimeStats || !userData?.activityLog) return [t('profile.tools.steadySteel'), t('profile.tools.peerChat')];
+    
+    // Count tool usage from activity log
+    const toolCounts = userData.activityLog.reduce((acc: { [key: string]: number }, entry) => {
+      if (entry.action.startsWith('Used ')) {
+        const tool = entry.action.replace('Used ', '');
+        acc[tool] = (acc[tool] || 0) + 1;
+      }
+      return acc;
+    }, {});
+    
+    // Get top 3 most used tools
+    const sortedTools = Object.entries(toolCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 3)
+      .map(([tool]) => translateTool(tool));
+    
+    // If less than 3 tools used, add defaults
+    const defaultTools = [t('profile.tools.steadySteel'), t('profile.tools.peerChat'), t('profile.tools.foremanChat')];
+    const favorites = [...sortedTools];
+    
+    defaultTools.forEach(tool => {
+      if (favorites.length < 3 && !favorites.includes(tool)) {
+        favorites.push(tool);
+      }
+    });
+    
+    return favorites.slice(0, 3);
+  };
 
   const profileStats = [
     { 
-      label: t('profile.recoveryStreak'), 
+      label: "Streak", 
       value: liveRecoveryStreak, 
       unit: t('profile.days'), 
       color: "text-construction" 
     },
     { 
-      label: t('profile.totalToolsUsed'), 
+      label: "Total Tools Used", 
       value: liveTotalToolsUsed, 
-      unit: t('profile.times'), 
+      unit: "", 
       color: "text-construction" 
     },
     { 
-      label: "Actions Today", 
+      label: "Actions\nToday", 
       value: liveActionsToday, 
-      unit: "today", 
+      unit: "", 
       color: "text-construction" 
     }
   ];
@@ -134,7 +150,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     joinDate: formatDate("March 1, 2024"), // Could be calculated from userData creation date
     streakDays: liveRecoveryStreak,
     totalSessions: liveTotalToolsUsed,
-    favoriteTools: mostUsedTool !== t('profile.tools.noneYet') ? [mostUsedTool, t('profile.tools.steadySteel'), t('profile.tools.peerChat')] : [t('profile.tools.steadySteel'), t('profile.tools.peerChat')],
+    favoriteTools: getFavoriteTools(),
     badges: [
       { name: t('profile.badges.weekWarrior'), earned: t('profile.earned', { time: '2 weeks ago' }), icon: "🏆" },
       { name: t('profile.badges.steadyBreather'), earned: t('profile.earned', { time: '1 week ago' }), icon: "🌬️" },
@@ -192,16 +208,12 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
             <div key={index}>
               <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
               <div className="text-xs text-muted-foreground font-source">{stat.unit}</div>
-              <div className="text-xs text-muted-foreground font-source">{stat.label}</div>
+              <div className="text-xs text-muted-foreground font-source whitespace-pre-line">{stat.label}</div>
             </div>
           ))}
         </div>
 
         <div className="space-y-2 pt-4 border-t border-border">
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground text-sm font-source">{t('profile.mostUsedTool')}</span>
-            <span className="text-primary font-fjalla font-medium">{translateTool(mostUsedTool)}</span>
-          </div>
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground text-sm font-source">{t('profile.weeklyProgress')}</span>
             <span className="text-primary font-fjalla font-medium">{weeklyProgressPercentage}% ({weekCompletedDays}/7 {t('profile.days')})</span>
