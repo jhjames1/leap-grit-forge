@@ -236,7 +236,7 @@ const RecoveryJourney = () => {
     return t('journey.locked');
   };
 
-  const progress = (actualCurrentDay / totalDays) * 100;
+  const progress = (completedDays.length / totalDays) * 100;
 
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
@@ -244,7 +244,7 @@ const RecoveryJourney = () => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-          <span className="font-oswald font-extralight tracking-tight">{t('journey.title').split(' ')[0]}</span><span className="font-fjalla font-extrabold italic">{t('journey.title').split(' ')[1]}</span>
+          <span className="font-oswald font-extralight tracking-tight">YOUR</span><span className="font-fjalla font-extrabold italic">JOURNEY</span>
         </h1>
         <p className="text-muted-foreground font-oswald">{t('journey.subtitle')}</p>
       </div>
@@ -258,7 +258,7 @@ const RecoveryJourney = () => {
           <div>
             <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">{t('journey.overallProgress').toUpperCase()}</h3>
             <p className="text-muted-foreground text-[16px]">
-              {t('journey.day')} <span className="text-primary font-bold text-lg">{actualCurrentDay}</span> {t('common.of')} {totalDays}
+              {completedDays.length} {t('common.of')} {totalDays} {t('journey.daysCompleted')}
             </p>
           </div>
         </div>
