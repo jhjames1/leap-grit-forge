@@ -299,7 +299,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             ) : (
               <div className="text-center py-2">
                 <span className="text-muted-foreground font-source text-sm italic">
-                  {t('home.noUpcomingActivities') || 'Complete your current day to see upcoming activities'}
+                  Complete your current day to see upcoming activities
                 </span>
               </div>
             )}

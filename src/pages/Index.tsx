@@ -15,6 +15,7 @@ import AdminLogin from '@/components/AdminLogin';
 import AdminDashboard from '@/components/AdminDashboard';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
+import { useUserData } from '@/hooks/useUserData';
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -25,6 +26,8 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState('home');
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  
+  const { updateUserData } = useUserData();
 
   useEffect(() => {
     // Check if user is already logged in
@@ -57,7 +60,16 @@ const Index = () => {
 
   const handleOnboardingComplete = (onboardingData: any) => {
     setShowOnboarding(false);
-    // Skip greeting completely and go straight to main app
+    
+    // Save onboarding data to userData
+    if (currentUser) {
+      updateUserData({
+        focusAreas: onboardingData.focusAreas || [],
+        journeyStage: onboardingData.journeyStage || '',
+        supportStyle: onboardingData.supportStyle || '',
+        firstName: onboardingData.firstName || currentUser
+      });
+    }
   };
 
   const handleNavigation = (page: string) => {
