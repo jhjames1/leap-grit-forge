@@ -163,20 +163,20 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
 
   const allJourneyDays = getAllJourneyDays();
 
-  // Organize days into weeks for display
-  const getWeekDays = (weekNumber: number) => {
-    const startDay = (weekNumber - 1) * 7 + 1;
-    const endDay = Math.min(weekNumber * 7, totalDays);
+  // Get the next 3 days from current progress
+  const getNext3Days = () => {
+    const startDay = actualCurrentDay;
+    const endDay = Math.min(startDay + 2, totalDays); // Show current day + next 2 days
     
     return allJourneyDays.slice(startDay - 1, endDay);
   };
 
-  // Get current week data
-  const totalWeeks = Math.ceil(totalDays / 7);
+  // Get next 3 days data
+  const next3Days = getNext3Days();
   const currentWeekData = {
     weekNumber: currentWeek,
-    days: getWeekDays(currentWeek),
-    title: getWeekTitle(currentWeek),
+    days: next3Days,
+    title: t('journey.upcomingDays') || 'Next 3 Days',
   };
 
   // Function to get week titles
@@ -203,21 +203,6 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
     return `Week ${weekNum}: ${weekName}`;
   }
 
-  // Navigation handlers
-  const canGoToPreviousWeek = currentWeek > 1;
-  const canGoToNextWeek = currentWeek < totalWeeks && completedDays.length >= (currentWeek - 1) * 7;
-  
-  const handlePreviousWeek = () => {
-    if (canGoToPreviousWeek) {
-      setCurrentWeek(currentWeek - 1);
-    }
-  };
-  
-  const handleNextWeek = () => {
-    if (canGoToNextWeek) {
-      setCurrentWeek(currentWeek + 1);
-    }
-  };
 
   const handleDayClick = (day: number) => {
     // Enhanced unlocking logic using journeyManager with completion dates
@@ -327,20 +312,19 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
         </div>
       </Card>
 
-      {/* Week Navigation and Display */}
+      {/* Next 3 Days Display */}
       {currentWeekData.days.length > 0 && (
         <Card className="bg-card p-6 rounded-xl mb-6 border-0 shadow-sm">
-          {/* Week Header with Navigation */}
+          {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div className="bg-primary p-2 rounded-lg">
                 <Trophy className="text-primary-foreground" size={20} />
               </div>
               <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                {currentWeekData.title.replace('Week 1: Week 1: ', 'Week 1: ').toUpperCase()}
+                {currentWeekData.title.toUpperCase()}
               </h3>
             </div>
-            
           </div>
           
           {/* Days List */}
@@ -436,33 +420,6 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
                 </Card>
               );
             })}
-          </div>
-          
-          {/* Navigation Controls */}
-          <div className="flex items-center justify-center space-x-2 mt-4 pt-4 border-t border-border">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePreviousWeek}
-              disabled={!canGoToPreviousWeek}
-              className="px-2"
-            >
-              <ChevronLeft size={16} />
-            </Button>
-            
-            <span className="text-sm text-muted-foreground px-2">
-              {currentWeek} / {totalWeeks}
-            </span>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextWeek}
-              disabled={!canGoToNextWeek}
-              className="px-2"
-            >
-              <ChevronRight size={16} />
-            </Button>
           </div>
         </Card>
       )}

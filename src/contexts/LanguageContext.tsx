@@ -356,6 +356,7 @@ const englishTranslations = {
     overallProgress: 'Overall Progress',
     journeyProgress: 'Journey Progress',
     weekFoundation: 'Week 1: Foundation',
+    upcomingDays: 'Next 3 Days',
     dayModules: {
       day1: {
         title: 'Starting Your Journey',
@@ -1064,6 +1065,7 @@ const spanishTranslations = {
     overallProgress: 'Progreso General',
     journeyProgress: 'Progreso del Viaje',
     weekFoundation: 'Semana 1: Fundación',
+    upcomingDays: 'Próximos 3 Días',
     dayModules: {
       day1: {
         title: 'Comenzando Tu Viaje',
