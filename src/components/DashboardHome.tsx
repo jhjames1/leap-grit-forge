@@ -373,9 +373,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
 
         {/* Bottom Action Cards */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="flex justify-center">
           <Card 
-            className="bg-card p-4 rounded-lg cursor-pointer hover:shadow-md transition-all duration-300 border-0 shadow-none"
+            className="bg-card p-4 rounded-lg cursor-pointer hover:shadow-md transition-all duration-300 border-0 shadow-none w-48"
             onClick={() => onNavigate?.('calendar')}
           >
             <div className="flex flex-col items-center space-y-2">
@@ -383,17 +383,6 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <Calendar className="text-primary-foreground" size={20} />
               </div>
               <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">{t('nav.calendar').toUpperCase()}</h3>
-            </div>
-          </Card>
-          <Card 
-            className="bg-card p-4 rounded-lg cursor-pointer hover:shadow-md transition-all duration-300 border-0 shadow-none"
-            onClick={() => onNavigate?.('recovery-strength')}
-          >
-            <div className="flex flex-col items-center space-y-2">
-              <div className="bg-primary p-3 rounded-lg">
-                <Shield className="text-primary-foreground" size={20} />
-              </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">{t('nav.strengthMeter') || 'STRENGTH METER'}</h3>
             </div>
           </Card>
         </div>
