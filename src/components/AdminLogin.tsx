@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Shield, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface AdminLoginProps {
   onLogin: () => void;
@@ -13,31 +15,59 @@ interface AdminLoginProps {
 
 const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
   const [credentials, setCredentials] = useState({
-    username: '',
+    email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError('');
     
-    // Security: Remove hardcoded credentials
-    // In production, this should authenticate against a secure backend
-    // For demo purposes, checking against environment-configured admin users
-    const validAdminUsers = [
-      { username: 'admin', password: 'SecureAdmin2024!' },
-      { username: 'support', password: 'SupportTeam2024!' }
-    ];
-    
-    const adminUser = validAdminUsers.find(user => 
-      user.username === credentials.username && user.password === credentials.password
-    );
-    
-    if (adminUser) {
+    try {
+      // Sign in with Supabase
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (signInError) {
+        throw signInError;
+      }
+
+      if (!data.user) {
+        throw new Error('Authentication failed');
+      }
+
+      // Check if user has admin role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (roleError || !roleData) {
+        // Sign out the user if they don't have admin role
+        await supabase.auth.signOut();
+        throw new Error('Access denied. Admin privileges required.');
+      }
+
+      toast({
+        title: "Success",
+        description: "Admin login successful"
+      });
+
       onLogin();
-    } else {
-      setError('Invalid credentials. Contact system administrator.');
+    } catch (error: any) {
+      console.error('Admin login error:', error);
+      setError(error.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -54,17 +84,18 @@ const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <Label htmlFor="username" className="text-white font-oswald font-medium">
-              Username
+            <Label htmlFor="email" className="text-white font-oswald font-medium">
+              Email
             </Label>
             <Input
-              id="username"
-              type="text"
-              value={credentials.username}
-              onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
+              id="email"
+              type="email"
+              value={credentials.email}
+              onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
               className="bg-steel-dark border-steel text-white placeholder:text-steel-light mt-1"
-              placeholder="Enter admin username"
+              placeholder="Enter admin email"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -81,6 +112,7 @@ const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
                 className="bg-steel-dark border-steel text-white placeholder:text-steel-light pr-10"
                 placeholder="Enter admin password"
                 required
+                disabled={isLoading}
               />
               <Button
                 type="button"
@@ -88,6 +120,7 @@ const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
                 size="icon"
                 className="absolute right-0 top-0 h-full px-3 text-steel-light hover:text-construction"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </Button>
@@ -104,14 +137,16 @@ const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
             <Button 
               type="submit"
               className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold"
+              disabled={isLoading}
             >
-              Access Dashboard
+              {isLoading ? 'Authenticating...' : 'Access Dashboard'}
             </Button>
             <Button 
               type="button"
               variant="outline"
               onClick={onBack}
               className="w-full border-steel text-steel-light hover:bg-steel/10"
+              disabled={isLoading}
             >
               Back to App
             </Button>
@@ -120,7 +155,7 @@ const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
 
         <div className="mt-6 text-center">
           <p className="text-steel-light text-xs">
-            For Thriving United staff only. Unauthorized access is prohibited.
+            For Thriving United staff only. Use your admin account credentials.
           </p>
         </div>
       </Card>
