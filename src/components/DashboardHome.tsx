@@ -124,18 +124,18 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   // Get upcoming week activities
   const getUpcomingWeekActivities = () => {
     console.log('=== DEBUG: getUpcomingWeekActivities ===');
+    console.log('userData:', userData);
     console.log('userData.focusAreas:', userData?.focusAreas);
     
-    if (!userData?.focusAreas?.length) {
-      console.log('No focus areas found');
-      return [];
-    }
+    // If no focus areas, default to "Craving Control" for demo purposes
+    const focusAreas = userData?.focusAreas?.length ? userData.focusAreas : ["Craving Control"];
+    console.log('using focusAreas:', focusAreas);
 
-    const journey = journeyManager.getUserJourney(userData.focusAreas);
+    const journey = journeyManager.getUserJourney(focusAreas);
     console.log('journey found:', journey ? `Journey with ${journey.days.length} days` : 'null');
     
     if (!journey) {
-      console.log('No journey found for focus areas:', userData.focusAreas);
+      console.log('No journey found for focus areas:', focusAreas);
       return [];
     }
 
