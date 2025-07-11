@@ -18,16 +18,19 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const [success, setSuccess] = useState<string | null>(null);
 
   const [signUpData, setSignUpData] = useState({
-    email: '',
-    password: '',
+    phone: '',
     firstName: '',
-    lastName: ''
+    lastName: '',
+    otp: ''
   });
 
   const [signInData, setSignInData] = useState({
-    email: '',
-    password: ''
+    phone: '',
+    otp: ''
   });
+
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [currentPhone, setCurrentPhone] = useState('');
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,28 +39,38 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     setSuccess(null);
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
-        email: signUpData.email,
-        password: signUpData.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            first_name: signUpData.firstName,
-            last_name: signUpData.lastName
+      if (!showOtpInput) {
+        // Send OTP for signup
+        const { error } = await supabase.auth.signInWithOtp({
+          phone: signUpData.phone,
+          options: {
+            data: {
+              first_name: signUpData.firstName,
+              last_name: signUpData.lastName
+            }
           }
-        }
-      });
+        });
 
-      if (error) {
-        if (error.message.includes('already registered')) {
-          setError('This email is already registered. Please sign in instead.');
-        } else {
+        if (error) {
           setError(error.message);
+        } else {
+          setSuccess('Check your phone for the verification code!');
+          setCurrentPhone(signUpData.phone);
+          setShowOtpInput(true);
         }
       } else {
-        setSuccess('Check your email for the confirmation link!');
+        // Verify OTP for signup
+        const { error } = await supabase.auth.verifyOtp({
+          phone: currentPhone,
+          token: signUpData.otp,
+          type: 'sms'
+        });
+
+        if (error) {
+          setError('Invalid verification code. Please try again.');
+        } else {
+          onAuthSuccess();
+        }
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -72,19 +85,31 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: signInData.email,
-        password: signInData.password
-      });
+      if (!showOtpInput) {
+        // Send OTP
+        const { error } = await supabase.auth.signInWithOtp({
+          phone: signInData.phone
+        });
 
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          setError('Invalid email or password. Please check your credentials and try again.');
-        } else {
+        if (error) {
           setError(error.message);
+        } else {
+          setSuccess('Check your phone for the verification code!');
+          setShowOtpInput(true);
         }
       } else {
-        onAuthSuccess();
+        // Verify OTP
+        const { error } = await supabase.auth.verifyOtp({
+          phone: signInData.phone,
+          token: signInData.otp,
+          type: 'sms'
+        });
+
+        if (error) {
+          setError('Invalid verification code. Please try again.');
+        } else {
+          onAuthSuccess();
+        }
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -112,30 +137,33 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label htmlFor="signin-phone">Phone Number</Label>
                   <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={signInData.email}
-                    onChange={(e) => setSignInData(prev => ({ ...prev, email: e.target.value }))}
+                    id="signin-phone"
+                    type="tel"
+                    placeholder="Enter your phone number (+1234567890)"
+                    value={signInData.phone}
+                    onChange={(e) => setSignInData(prev => ({ ...prev, phone: e.target.value }))}
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={signInData.password}
-                    onChange={(e) => setSignInData(prev => ({ ...prev, password: e.target.value }))}
-                    required
-                  />
-                </div>
+                {showOtpInput && (
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-otp">Verification Code</Label>
+                    <Input
+                      id="signin-otp"
+                      type="text"
+                      placeholder="Enter 6-digit code"
+                      value={signInData.otp}
+                      onChange={(e) => setSignInData(prev => ({ ...prev, otp: e.target.value }))}
+                      required
+                      maxLength={6}
+                    />
+                  </div>
+                )}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign In
+                  {showOtpInput ? 'Verify Code' : 'Send Code'}
                 </Button>
               </form>
             </TabsContent>
@@ -165,31 +193,33 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-phone">Phone Number</Label>
                   <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={signUpData.email}
-                    onChange={(e) => setSignUpData(prev => ({ ...prev, email: e.target.value }))}
+                    id="signup-phone"
+                    type="tel"
+                    placeholder="Enter your phone number (+1234567890)"
+                    value={signUpData.phone}
+                    onChange={(e) => setSignUpData(prev => ({ ...prev, phone: e.target.value }))}
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="Create a password"
-                    value={signUpData.password}
-                    onChange={(e) => setSignUpData(prev => ({ ...prev, password: e.target.value }))}
-                    required
-                    minLength={6}
-                  />
-                </div>
+                {showOtpInput && (
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-otp">Verification Code</Label>
+                    <Input
+                      id="signup-otp"
+                      type="text"
+                      placeholder="Enter 6-digit code"
+                      value={signUpData.otp}
+                      onChange={(e) => setSignUpData(prev => ({ ...prev, otp: e.target.value }))}
+                      required
+                      maxLength={6}
+                    />
+                  </div>
+                )}
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign Up
+                  {showOtpInput ? 'Verify Code' : 'Send Code'}
                 </Button>
               </form>
             </TabsContent>
