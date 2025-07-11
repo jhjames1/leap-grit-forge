@@ -1,11 +1,12 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, Shield, Edit, Bell, Calendar, Phone } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { trackingManager } from '@/utils/trackingManager';
 import EditProfile from './EditProfile';
 import NotificationSettings from './NotificationSettings';
 
@@ -16,7 +17,33 @@ interface UserProfileProps {
 const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const { t, language } = useLanguage();
   const [currentView, setCurrentView] = useState<'profile' | 'edit' | 'notifications'>('profile');
+  const [realTimeStats, setRealTimeStats] = useState<any>(null);
   const { userData, currentUser } = useUserData();
+  
+  // Get real-time tracking data
+  useEffect(() => {
+    const updateStats = () => {
+      try {
+        const liveStats = trackingManager.getTodaysStats();
+        const streakData = trackingManager.getStreakData();
+        setRealTimeStats({ 
+          ...liveStats, 
+          currentStreak: streakData.currentStreak,
+          longestStreak: streakData.longestStreak
+        });
+      } catch (error) {
+        // Fallback to userData if tracking manager fails
+        console.warn('TrackingManager failed, using userData:', error);
+        setRealTimeStats(null);
+      }
+    };
+    
+    // Update immediately and then every 2 seconds for real-time feel
+    updateStats();
+    const interval = setInterval(updateStats, 2000);
+    
+    return () => clearInterval(interval);
+  }, [userData]);
   
   const phoneNumber = localStorage.getItem('phoneNumber');
   const lastLogin = localStorage.getItem('lastLogin') || new Date().toDateString();
@@ -50,10 +77,10 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     return toolMap[toolName] || toolName;
   };
   
-  // Calculate user stats from real data
-  const recoveryStreak = userData?.toolboxStats?.streak || 0;
-  const totalToolsUsed = userData?.toolboxStats?.totalSessions || 0;
-  const urgesTracked = userData?.toolboxStats?.urgesThisWeek || 0;
+  // Use real-time stats when available, fallback to userData
+  const liveRecoveryStreak = realTimeStats?.currentStreak ?? userData?.toolboxStats?.streak ?? 0;
+  const liveTotalToolsUsed = realTimeStats?.toolsUsedToday ?? userData?.toolboxStats?.totalSessions ?? 0;
+  const liveActionsToday = realTimeStats?.actionsToday ?? 0;
   
   // Calculate weekly progress based on completed days this week
   const completedDays = userData?.journeyProgress?.completedDays || [];
@@ -65,8 +92,8 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const weekCompletedDays = completedDays.filter(day => day >= weekStartDay && day <= weekEndDay).length;
   const weeklyProgressPercentage = Math.round((weekCompletedDays / 7) * 100);
   
-  // Find most used tool from activity log
-  const toolUsage = userData?.activityLog?.reduce((acc: { [key: string]: number }, entry) => {
+  // Find most used tool from real-time activity tracking + activity log
+  const activityLogToolUsage = userData?.activityLog?.reduce((acc: { [key: string]: number }, entry) => {
     if (entry.action.startsWith('Used ')) {
       const tool = entry.action.replace('Used ', '');
       acc[tool] = (acc[tool] || 0) + 1;
@@ -74,21 +101,39 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     return acc;
   }, {}) || {};
   
-  const mostUsedTool = Object.keys(toolUsage).length > 0 
-    ? Object.entries(toolUsage).sort(([,a], [,b]) => b - a)[0][0] 
+  // Get today's tool usage from real-time stats
+  const todaysToolActions = realTimeStats?.toolsUsedToday || 0;
+  
+  const mostUsedTool = Object.keys(activityLogToolUsage).length > 0 
+    ? Object.entries(activityLogToolUsage).sort(([,a], [,b]) => b - a)[0][0] 
     : t('profile.tools.noneYet');
 
   const profileStats = [
-    { label: t('profile.recoveryStreak'), value: recoveryStreak, unit: t('profile.days'), color: "text-construction" },
-    { label: t('profile.totalToolsUsed'), value: totalToolsUsed, unit: t('profile.times'), color: "text-construction" },
-    { label: t('profile.urgesTracked'), value: urgesTracked, unit: t('profile.thisWeek'), color: "text-construction" }
+    { 
+      label: t('profile.recoveryStreak'), 
+      value: liveRecoveryStreak, 
+      unit: t('profile.days'), 
+      color: "text-construction" 
+    },
+    { 
+      label: t('profile.totalToolsUsed'), 
+      value: liveTotalToolsUsed, 
+      unit: t('profile.times'), 
+      color: "text-construction" 
+    },
+    { 
+      label: t('profile.actionsToday'), 
+      value: liveActionsToday, 
+      unit: t('profile.today'), 
+      color: "text-construction" 
+    }
   ];
 
   const user = {
     name: currentUser || "User",
     joinDate: formatDate("March 1, 2024"), // Could be calculated from userData creation date
-    streakDays: recoveryStreak,
-    totalSessions: totalToolsUsed,
+    streakDays: liveRecoveryStreak,
+    totalSessions: liveTotalToolsUsed,
     favoriteTools: mostUsedTool !== t('profile.tools.noneYet') ? [mostUsedTool, t('profile.tools.steadySteel'), t('profile.tools.peerChat')] : [t('profile.tools.steadySteel'), t('profile.tools.peerChat')],
     badges: [
       { name: t('profile.badges.weekWarrior'), earned: t('profile.earned', { time: '2 weeks ago' }), icon: "🏆" },
