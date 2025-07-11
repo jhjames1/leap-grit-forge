@@ -128,19 +128,6 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <OfflineIndicator />
       <div className="relative">
-        {user && (
-          <div className="absolute top-4 right-4 z-50">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
-            </Button>
-          </div>
-        )}
         {renderActivePage()}
       </div>
       {showBottomNav && (

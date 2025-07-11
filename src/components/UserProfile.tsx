@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Edit, Bell, Calendar, Phone, BookOpen } from 'lucide-react';
+import { User, Edit, Bell, Calendar, Phone, BookOpen, LogOut } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
 import { trackingManager } from '@/utils/trackingManager';
 import EditProfile from './EditProfile';
 import NotificationSettings from './NotificationSettings';
@@ -20,6 +21,12 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const [currentView, setCurrentView] = useState<'profile' | 'edit' | 'notifications' | 'saved-wisdom'>('profile');
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
   const { userData, currentUser } = useUserData();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    onNavigate?.('home');
+  };
   
   // Get real-time tracking data for all metrics
   useEffect(() => {
@@ -194,6 +201,18 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
             <span className="font-oswald font-extralight tracking-tight">{t('profile.title').split(' ')[0]}</span><span className="font-fjalla font-extrabold italic">{t('profile.title').split(' ')[1]}</span>
           </h1>
           <p className="text-muted-foreground font-oswald">{t('profile.subtitle')}</p>
+        </div>
+
+        {/* Sign Out Button */}
+        <div className="mb-4">
+          <Button 
+            onClick={handleSignOut}
+            variant="outline" 
+            className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
+          >
+            <LogOut size={16} className="mr-2" />
+            Sign Out
+          </Button>
         </div>
 
       {/* Profile Card */}
