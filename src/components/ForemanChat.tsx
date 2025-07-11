@@ -39,7 +39,10 @@ interface ConversationContext {
   sessionLength: number;
   conversationTurn: number;
   userMessages: string[];
+  invalidInputCount: number;
 }
+
+type InputType = 'valid' | 'incomprehensible' | 'belligerent' | 'minimal' | 'off-topic';
 
 const ForemanChat = ({ onBack }: ForemanChatProps) => {
   const [message, setMessage] = useState('');
@@ -52,7 +55,8 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
     topics: [],
     sessionLength: 0,
     conversationTurn: 0,
-    userMessages: []
+    userMessages: [],
+    invalidInputCount: 0
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { t, getArray } = useLanguage();
@@ -73,6 +77,95 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
     setMessages([initialMessage]);
   }, [t]);
 
+
+  const classifyInput = (text: string): InputType => {
+    const trimmed = text.trim();
+    const lowerText = trimmed.toLowerCase();
+    
+    // Check for incomprehensible input
+    if (trimmed.length === 0) return 'minimal';
+    if (trimmed.length < 3 && !['yes', 'no', 'ok'].includes(lowerText)) return 'minimal';
+    if (/^[^a-zA-Z]*$/.test(trimmed) && trimmed.length > 0) return 'incomprehensible'; // Only symbols/numbers
+    if ((/[a-zA-Z]/.test(trimmed) && trimmed.split(/\s+/).length > 3 && 
+         trimmed.split('').filter(c => /[a-zA-Z]/.test(c)).length / trimmed.length < 0.4)) {
+      return 'incomprehensible'; // Too many non-letters for meaningful text
+    }
+    
+    // Check for belligerent behavior
+    const profanity = ['fuck', 'shit', 'damn', 'bitch', 'ass', 'hell', 'crap'];
+    const threats = ['kill', 'die', 'hurt', 'destroy', 'hate you', 'screw you'];
+    const aggressive = ['shut up', 'stupid', 'idiot', 'worthless', 'useless'];
+    
+    if (profanity.some(word => lowerText.includes(word)) || 
+        threats.some(word => lowerText.includes(word)) ||
+        aggressive.some(word => lowerText.includes(word))) {
+      return 'belligerent';
+    }
+    
+    // Check for off-topic content (very basic check)
+    const recoveryKeywords = ['recovery', 'sober', 'clean', 'urge', 'craving', 'support', 'struggle', 'help', 'therapy', 'addiction'];
+    const personalKeywords = ['feel', 'think', 'want', 'need', 'can', 'will', 'should', 'trying', 'working'];
+    
+    if (trimmed.length > 20 && 
+        !recoveryKeywords.some(word => lowerText.includes(word)) &&
+        !personalKeywords.some(word => lowerText.includes(word)) &&
+        (lowerText.includes('weather') || lowerText.includes('sports') || lowerText.includes('politics'))) {
+      return 'off-topic';
+    }
+    
+    return 'valid';
+  };
+
+  const generateSpecialResponse = (inputType: InputType, count: number): string => {
+    const clarificationResponses = [
+      "Come again? I didn't catch that.",
+      "Can you run that by me again?",
+      "I'm not following. Try me again.",
+      "Say what now? Speak clear."
+    ];
+    
+    const belligerentResponses = [
+      "I hear you're frustrated. Let's take this down a notch.",
+      "That anger's real, but let's channel it better. What's really eating at you?",
+      "I've been cursed out before. What's the real problem here?",
+      "Easy there, tiger. What's got you all fired up?"
+    ];
+    
+    const offTopicResponses = [
+      "Let's keep this about your recovery. What's really on your mind?",
+      "That's not my wheelhouse. What's going on with you today?",
+      "Stay focused on what matters - your journey. Talk to me about that.",
+      "Nice try changing the subject. What's really happening with you?"
+    ];
+
+    const minimalResponses = [
+      "Give me more than that. What's really going on?",
+      "Come on, talk to me. What's eating at you?",
+      "I need more to work with here. Open up.",
+      "Don't give me the silent treatment. What's up?"
+    ];
+
+    switch (inputType) {
+      case 'incomprehensible':
+        if (count >= 2) return "Look, I need you to speak plainly. What's really going on? If you need help, I'm here.";
+        return clarificationResponses[Math.floor(Math.random() * clarificationResponses.length)];
+      
+      case 'belligerent':
+        if (count >= 2) return "We're not getting anywhere like this. You came here for a reason. Want to talk to a peer instead?";
+        return belligerentResponses[Math.floor(Math.random() * belligerentResponses.length)];
+      
+      case 'off-topic':
+        if (count >= 2) return "I'm here to help with your recovery, not chat about everything else. Focus up - what do you need?";
+        return offTopicResponses[Math.floor(Math.random() * offTopicResponses.length)];
+      
+      case 'minimal':
+        if (count >= 2) return "This isn't working if you won't talk. What brought you here today?";
+        return minimalResponses[Math.floor(Math.random() * minimalResponses.length)];
+      
+      default:
+        return "Something's not right. Let's start over - what's on your mind?";
+    }
+  };
 
   const analyzeMood = (text: string): 'struggling' | 'hopeful' | 'frustrated' | 'neutral' => {
     const lowerText = text.toLowerCase();
@@ -159,29 +252,46 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
 
       setMessages(prev => [...prev, userMessage]);
       
+      // Classify input first
+      const inputType = classifyInput(message);
+      
       // Update conversation context
+      const newInvalidCount = inputType !== 'valid' ? conversationContext.invalidInputCount + 1 : 0;
       const newContext: ConversationContext = {
         lastUserMessage: message,
-        mood: analyzeMood(message),
-        topics: [...conversationContext.topics, message],
+        mood: inputType === 'valid' ? analyzeMood(message) : conversationContext.mood,
+        topics: inputType === 'valid' ? [...conversationContext.topics, message] : conversationContext.topics,
         sessionLength: conversationContext.sessionLength + 1,
         conversationTurn: conversationContext.conversationTurn + 1,
-        userMessages: [...conversationContext.userMessages, message]
+        userMessages: inputType === 'valid' ? [...conversationContext.userMessages, message] : conversationContext.userMessages,
+        invalidInputCount: newInvalidCount
       };
       setConversationContext(newContext);
       
       setMessage('');
 
-      // Generate contextual response
+      // Generate response based on input type
       setTimeout(() => {
-        const responseText = generateContextualResponse(message, newContext);
+        let responseText: string;
+        let hasActions = false;
+
+        if (inputType !== 'valid') {
+          responseText = generateSpecialResponse(inputType, newInvalidCount);
+          // Offer peer escalation after multiple invalid inputs
+          if (newInvalidCount >= 3) {
+            hasActions = true;
+          }
+        } else {
+          responseText = generateContextualResponse(message, newContext);
+          hasActions = newContext.conversationTurn >= 3;
+        }
         
         const foremanResponse: Message = {
           id: messages.length + 2,
           sender: 'foreman',
           text: responseText,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          hasActions: newContext.conversationTurn >= 3 // Only show actions after 3rd turn
+          hasActions
         };
 
         setMessages(prev => [...prev, foremanResponse]);
