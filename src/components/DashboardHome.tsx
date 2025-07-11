@@ -123,20 +123,42 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
   // Get upcoming week activities
   const getUpcomingWeekActivities = () => {
-    if (!userData?.focusAreas?.length) return [];
+    console.log('=== DEBUG: getUpcomingWeekActivities ===');
+    console.log('userData.focusAreas:', userData?.focusAreas);
+    
+    if (!userData?.focusAreas?.length) {
+      console.log('No focus areas found');
+      return [];
+    }
 
     const journey = journeyManager.getUserJourney(userData.focusAreas);
-    if (!journey) return [];
+    console.log('journey found:', journey ? `Journey with ${journey.days.length} days` : 'null');
+    
+    if (!journey) {
+      console.log('No journey found for focus areas:', userData.focusAreas);
+      return [];
+    }
 
     const completedDays = userData?.journeyProgress?.completedDays || [];
     const today = calculateCurrentJourneyDay(userData);
     const startDay = today + 1; // Start from tomorrow
     
+    console.log('today:', today, 'startDay:', startDay, 'completedDays:', completedDays);
+    
     const upcomingActivities = [];
     const maxDay = Math.min(startDay + 6, journey.days.length); // Next 7 days from tomorrow
     
+    console.log('Looking for activities from day', startDay, 'to', maxDay);
+    
     for (let day = startDay; day <= maxDay; day++) {
       const dayData = journey.days.find(d => d.day === day);
+      console.log(`Day ${day}:`, dayData ? {
+        activity: dayData.activity,
+        tool: dayData.tool,
+        hasActivity: !!dayData.activity,
+        hasTool: !!dayData.tool
+      } : 'not found');
+      
       if (dayData) { // Remove unlock check - show all upcoming activities
         const daysUntil = day - today; // Calculate relative to today
         const timeLabel = daysUntil === 1 ? 'Tomorrow' : 
@@ -164,9 +186,14 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       }
     }
     
+    console.log('upcomingActivities before shuffle:', upcomingActivities);
+    
     // Randomly select 3-4 activities and shuffle
     const shuffled = upcomingActivities.sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 4);
+    const result = shuffled.slice(0, 4);
+    
+    console.log('final result:', result);
+    return result;
   };
 
   const upcomingActivities = getUpcomingWeekActivities();
