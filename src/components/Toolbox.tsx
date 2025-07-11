@@ -284,47 +284,32 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     <div className="p-4 pb-24 bg-[#F5F5F5] min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-5xl font-bold text-gray-900 mb-1 tracking-wide">
-          {(() => {
-            const titleParts = t('toolbox.titleParts');
-            if (Array.isArray(titleParts)) {
-              return titleParts.map((part: string, index: number) => (
-                <span key={index} className={index === 0 ? "font-oswald font-extralight tracking-tight" : "font-fjalla font-extrabold italic"}>
-                  {part}{index === 0 ? ' ' : ''}
-                </span>
-              ));
-            } else {
-              return t('toolbox.title').split(' ').map((word, index) => (
-                <span key={index} className={index === 0 ? "font-oswald font-extralight tracking-tight" : "font-fjalla font-extrabold italic"}>
-                  {word.toUpperCase()}{index === 0 ? ' ' : ''}
-                </span>
-              ));
-            }
-          })()}
+        <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+          <span className="font-oswald font-extralight tracking-tight">TOOL</span><span className="font-fjalla font-extrabold italic">BOX</span>
         </h1>
-        <p className="text-gray-600 font-oswald">{t('toolbox.subtitle')}</p>
+        <p className="text-muted-foreground font-oswald">{t('toolbox.subtitle')}</p>
       </div>
 
-      {/* Live Stats with updated tracking */}
-      <Card className="bg-white mb-6 p-4 border-0 shadow-sm rounded-xl">
+      {/* Live Stats */}
+      <Card className="bg-card border-0 p-6 rounded-xl mb-6 shadow-sm">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <div className="text-2xl font-bold text-primary">
               {liveToolsToday}
             </div>
-            <div className="text-xs text-gray-600 font-source">Tools Today</div>
+            <div className="text-xs text-muted-foreground font-source">Tools Today</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-primary">
               {liveDayStreak}
             </div>
-            <div className="text-xs text-gray-600 font-source">{t('toolbox.stats.dayStreak')}</div>
+            <div className="text-xs text-muted-foreground font-source">{t('toolbox.stats.dayStreak')}</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-primary">
               {liveTotalSessions}
             </div>
-            <div className="text-xs text-gray-600 font-source">{t('toolbox.stats.totalSessions')}</div>
+            <div className="text-xs text-muted-foreground font-source">{t('toolbox.stats.totalSessions')}</div>
           </div>
         </div>
       </Card>
@@ -346,34 +331,23 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
           return (
             <Card 
               key={tool.id}
-              className="bg-white hover:bg-gray-50 transition-all duration-200 cursor-pointer group border-0 shadow-sm rounded-xl"
+              className="bg-card p-4 rounded-lg cursor-pointer hover:shadow-md transition-all duration-300 border-0 shadow-none"
               onClick={() => handleToolClick(tool.id)}
             >
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="p-3 rounded-lg transition-all duration-200 bg-primary group-hover:bg-primary/80">
-                    <Icon className="transition-colors duration-200 text-primary-foreground" size={20} />
-                  </div>
-                  <Badge className="bg-primary text-primary-foreground text-xs font-source transition-all duration-200">
-                    {tool.badge}
-                  </Badge>
+              <div className="flex flex-col items-center space-y-2">
+                <div className="bg-primary p-3 rounded-lg">
+                  <Icon className="text-primary-foreground" size={20} />
                 </div>
-                
-                <h3 className="font-semibold text-[16px] text-gray-900 mb-2 group-hover:text-primary transition-colors duration-200">
-                  {tool.title}
-                </h3>
-                <p className="text-gray-600 text-sm leading-relaxed font-source">
-                  {tool.description}
-                </p>
+                <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide text-center">{tool.title.toUpperCase()}</h3>
               </div>
             </Card>
           );
         })}
       </div>
 
-      {/* Live Recent Activity with real-time updates */}
-      <Card className="bg-white mt-6 p-6 border-0 shadow-sm rounded-xl" key={activityRefreshKey}>
-        <h3 className="font-semibold text-[20px] text-gray-900 mb-4">{t('toolbox.recentActivity')}</h3>
+      {/* Live Recent Activity */}
+      <Card className="bg-card mt-6 p-6 border-0 shadow-sm rounded-xl" key={activityRefreshKey}>
+        <h3 className="font-semibold text-[20px] text-card-foreground mb-4">{t('toolbox.recentActivity')}</h3>
         <div className="space-y-3">
           {userData?.activityLog.length ? (
             userData.activityLog
@@ -383,17 +357,17 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
               .map((activity, index) => (
                 <div key={activity.id} className="flex items-center space-x-3 text-sm">
                   <div className={`w-3 h-3 rounded-full ${
-                    index === 0 ? 'bg-primary' : 'bg-gray-300'
+                    index === 0 ? 'bg-primary' : 'bg-muted'
                   }`}></div>
-                  <span className="text-gray-600 font-source">
+                  <span className="text-muted-foreground font-source">
                     {activity.action} - <span className={`font-medium ${
-                      index === 0 ? 'text-primary' : 'text-gray-600'
+                      index === 0 ? 'text-primary' : 'text-muted-foreground'
                     }`}>{formatTimestamp(activity.timestamp)}</span>
                   </span>
                 </div>
               ))
           ) : (
-            <div className="text-gray-600 text-sm font-source">
+            <div className="text-muted-foreground text-sm font-source">
               {t('toolbox.recentActivityEmpty')}
             </div>
           )}

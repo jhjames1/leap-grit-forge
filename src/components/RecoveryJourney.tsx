@@ -337,36 +337,10 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
                 <Trophy className="text-primary-foreground" size={20} />
               </div>
               <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                {currentWeekData.title.toUpperCase()}
+                {currentWeekData.title.replace('Week 1: Week 1: ', 'Week 1: ').toUpperCase()}
               </h3>
             </div>
             
-            {/* Navigation Controls */}
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePreviousWeek}
-                disabled={!canGoToPreviousWeek}
-                className="px-2"
-              >
-                <ChevronLeft size={16} />
-              </Button>
-              
-              <span className="text-sm text-muted-foreground px-2">
-                {currentWeek} / {totalWeeks}
-              </span>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNextWeek}
-                disabled={!canGoToNextWeek}
-                className="px-2"
-              >
-                <ChevronRight size={16} />
-              </Button>
-            </div>
           </div>
           
           {/* Days List */}
@@ -462,6 +436,33 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
                 </Card>
               );
             })}
+          </div>
+          
+          {/* Navigation Controls */}
+          <div className="flex items-center justify-center space-x-2 mt-4 pt-4 border-t border-border">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousWeek}
+              disabled={!canGoToPreviousWeek}
+              className="px-2"
+            >
+              <ChevronLeft size={16} />
+            </Button>
+            
+            <span className="text-sm text-muted-foreground px-2">
+              {currentWeek} / {totalWeeks}
+            </span>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextWeek}
+              disabled={!canGoToNextWeek}
+              className="px-2"
+            >
+              <ChevronRight size={16} />
+            </Button>
           </div>
         </Card>
       )}
