@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import SplashScreen from '@/components/SplashScreen';
-import UserAuth from '@/components/UserAuth';
+import { AuthForm } from '@/components/AuthForm';
 import OnboardingFlow from '@/components/OnboardingFlow';
 import BottomNavigation from '@/components/BottomNavigation';
 import DashboardHome from '@/components/DashboardHome';
@@ -14,56 +14,55 @@ import ForemanChat from '@/components/ForemanChat';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { useUserData } from '@/hooks/useUserData';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
-  const [showAuth, setShowAuth] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [currentPage, setCurrentPage] = useState('home');
   
+  const { user, loading, signOut, isAuthenticated } = useAuth();
   const { updateUserData } = useUserData();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const existingUser = localStorage.getItem('currentUser');
-    if (existingUser) {
-      setCurrentUser(existingUser);
-      // Update last login timestamp
-      localStorage.setItem('lastLogin', new Date().toDateString());
+    if (!loading) {
+      setShowSplash(false);
+      // Check if authenticated user needs onboarding
+      if (isAuthenticated && user) {
+        const hasCompletedOnboarding = localStorage.getItem(`leap_onboarding_${user.user_metadata?.first_name}`);
+        if (!hasCompletedOnboarding) {
+          setShowOnboarding(true);
+        }
+      }
     }
-  }, []);
+  }, [loading, isAuthenticated, user]);
 
   const handleSplashComplete = () => {
     setShowSplash(false);
-    if (!currentUser) {
-      setShowAuth(true);
-    } else {
-      // Always show onboarding for returning users too
-      setShowOnboarding(true);
-    }
   };
 
-  const handleLogin = (userData: { firstName: string; isNewUser: boolean }) => {
-    setCurrentUser(userData.firstName);
-    localStorage.setItem('currentUser', userData.firstName);
-    setShowAuth(false);
-    
-    // Always show onboarding for every user
-    setShowOnboarding(true);
+  const handleAuthSuccess = () => {
+    // Auth state will be handled by useAuth hook
   };
 
   const handleOnboardingComplete = (onboardingData: any) => {
     setShowOnboarding(false);
     
+    // Mark onboarding as complete
+    if (user?.user_metadata?.first_name) {
+      localStorage.setItem(`leap_onboarding_${user.user_metadata.first_name}`, 'completed');
+    }
+    
     // Save onboarding data to userData
-    if (currentUser) {
+    if (user) {
       updateUserData({
         focusAreas: onboardingData.focusAreas || [],
         journeyStage: onboardingData.journeyStage || '',
         supportStyle: onboardingData.supportStyle || '',
-        firstName: onboardingData.firstName || currentUser
+        firstName: user.user_metadata?.first_name || ''
       });
     }
   };
@@ -80,12 +79,18 @@ const Index = () => {
     setActiveTab('home');
   };
 
-  if (showSplash) {
+  const handleSignOut = async () => {
+    await signOut();
+    setCurrentPage('home');
+    setActiveTab('home');
+  };
+
+  if (loading || showSplash) {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
-  if (showAuth) {
-    return <UserAuth onLogin={handleLogin} />;
+  if (!isAuthenticated) {
+    return <AuthForm onAuthSuccess={handleAuthSuccess} />;
   }
 
   if (showOnboarding) {
@@ -122,7 +127,22 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <OfflineIndicator />
-      {renderActivePage()}
+      <div className="relative">
+        {user && (
+          <div className="absolute top-4 right-4 z-50">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSignOut}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
+        )}
+        {renderActivePage()}
+      </div>
       {showBottomNav && (
         <BottomNavigation activeTab={activeTab} onTabChange={handleNavigation} />
       )}
