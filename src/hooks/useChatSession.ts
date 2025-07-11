@@ -179,11 +179,13 @@ export function useChatSession(specialistId?: string) {
   const sendMessage = async ({ 
     content, 
     message_type = 'text', 
-    metadata 
+    metadata,
+    sender_type = 'user'
   }: {
     content: string;
     message_type?: 'text' | 'quick_action' | 'system';
     metadata?: any;
+    sender_type?: 'user' | 'specialist';
   }, sessionId?: string) => {
     if (!user) {
       console.error('No user found for sending message');
@@ -200,14 +202,14 @@ export function useChatSession(specialistId?: string) {
     }
 
     try {
-      console.log('Sending message:', { content, message_type, sessionId: targetSessionId });
+      console.log('Sending message:', { content, message_type, sender_type, sessionId: targetSessionId });
       
       const { error } = await supabase
         .from('chat_messages')
         .insert({
           session_id: targetSessionId,
           sender_id: user.id,
-          sender_type: 'user',
+          sender_type,
           message_type,
           content,
           metadata

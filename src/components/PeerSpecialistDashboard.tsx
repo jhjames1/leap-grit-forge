@@ -17,8 +17,10 @@ import {
   LogOut, 
   Clock,
   User,
-  Settings
+  Settings,
+  Send
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface ChatSession {
   id: string;
@@ -65,6 +67,7 @@ const PeerSpecialistDashboard = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [newMessage, setNewMessage] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -294,6 +297,55 @@ const PeerSpecialistDashboard = () => {
     }
   };
 
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedSession || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: selectedSession.id,
+          sender_id: user.id,
+          sender_type: 'specialist',
+          message_type: 'text',
+          content: newMessage.trim()
+        });
+
+      if (error) throw error;
+
+      setNewMessage('');
+      
+      // Update session to active if it was waiting
+      if (selectedSession.status === 'waiting') {
+        const { error: updateError } = await supabase
+          .from('chat_sessions')
+          .update({ status: 'active' })
+          .eq('id', selectedSession.id);
+
+        if (!updateError) {
+          setSelectedSession(prev => prev ? { ...prev, status: 'active' } : null);
+          setChatSessions(prev => prev.map(session => 
+            session.id === selectedSession.id 
+              ? { ...session, status: 'active' }
+              : session
+          ));
+        }
+      }
+
+      toast({
+        title: "Message Sent",
+        description: "Your message has been delivered"
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-4 pb-24 bg-background min-h-screen flex items-center justify-center">
@@ -510,11 +562,29 @@ const PeerSpecialistDashboard = () => {
                     )}
                   </div>
 
-                  {/* Message Input would go here */}
+                  {/* Message Input */}
                   <div className="border-t border-steel-dark pt-4">
-                    <p className="text-steel-light text-sm text-center">
-                      Use your preferred chat platform or the main app to respond to messages
-                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder="Type your response..."
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
+                        className="flex-1 bg-steel-dark/50 border-steel text-white placeholder:text-steel-light"
+                      />
+                      <Button 
+                        onClick={handleSendMessage} 
+                        disabled={!newMessage.trim()}
+                        className="bg-construction hover:bg-construction/80 text-midnight"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               ) : (

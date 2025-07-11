@@ -60,7 +60,10 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     }
 
     console.log('Sending message:', message);
-    await sendMessage({ content: message });
+    await sendMessage({ 
+      content: message,
+      sender_type: 'user'
+    });
     setMessage('');
   };
 
