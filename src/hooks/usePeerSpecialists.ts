@@ -35,11 +35,18 @@ export function usePeerSpecialists() {
           schema: 'public',
           table: 'specialist_status'
         },
-        () => {
+        (payload) => {
+          console.log('Status change detected:', payload);
           fetchSpecialists(); // Refetch when status changes
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Real-time subscription active for specialist status');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Real-time subscription error');
+        }
+      });
 
     return () => {
       supabase.removeChannel(statusChannel);
