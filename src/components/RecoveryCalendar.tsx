@@ -50,11 +50,23 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
   const getDayIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Flame className="text-orange-500" size={16} />;
+        return (
+          <div className="bg-emerald-500 p-1 rounded-sm">
+            <Flame className="text-white" size={10} />
+          </div>
+        );
       case 'missed':
-        return <X className="text-red-500" size={12} />;
+        return (
+          <div className="bg-red-500 p-1 rounded-sm">
+            <X className="text-white" size={8} />
+          </div>
+        );
       case 'today':
-        return <div className="w-3 h-3 bg-primary rounded-full" />;
+        return (
+          <div className="bg-primary p-1 rounded-sm">
+            <div className="w-2 h-2 bg-white rounded-full" />
+          </div>
+        );
       default:
         return null;
     }
@@ -90,20 +102,20 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
           <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
             <span className="font-oswald font-extralight tracking-tight">RECOVERY</span><span className="font-fjalla font-extrabold italic">CALENDAR</span>
           </h1>
-          <p className="text-muted-foreground font-oswald">{t('calendar.subtitle') || 'Track your daily progress'}</p>
+          <p className="text-muted-foreground font-oswald">{t('calendar.subtitle')}</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Card className="bg-card p-4 rounded-lg border-0 shadow-sm">
             <div className="flex items-center space-x-3">
-              <div className="bg-orange-500 p-2 rounded-lg">
-                <Flame className="text-white" size={20} />
+              <div className="bg-emerald-500 p-2 rounded-sm">
+                <Flame className="text-white" size={16} />
               </div>
               <div>
                 <div className="text-2xl font-bold text-foreground">{completedDays}</div>
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                  {t('calendar.completedDays') || 'Completed Days'}
+                  {t('calendar.completedDays')}
                 </div>
               </div>
             </div>
@@ -111,13 +123,13 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
 
           <Card className="bg-card p-4 rounded-lg border-0 shadow-sm">
             <div className="flex items-center space-x-3">
-              <div className="bg-primary p-2 rounded-lg">
-                <Target className="text-primary-foreground" size={20} />
+              <div className="bg-primary p-2 rounded-sm">
+                <Target className="text-primary-foreground" size={16} />
               </div>
               <div>
                 <div className="text-2xl font-bold text-foreground">{completionRate}%</div>
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                  {t('calendar.completionRate') || 'Success Rate'}
+                  {t('calendar.completionRate')}
                 </div>
               </div>
             </div>
@@ -185,31 +197,39 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
         {/* Legend */}
         <Card className="bg-card p-4 rounded-lg border-0 shadow-sm mb-6">
           <h3 className="font-fjalla font-bold text-base uppercase tracking-wide mb-3">
-            {t('calendar.legend') || 'Legend'}
+            {t('calendar.legend')}
           </h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center space-x-2">
-              <Flame className="text-orange-500" size={16} />
+              <div className="bg-emerald-500 p-1 rounded-sm">
+                <Flame className="text-white" size={12} />
+              </div>
               <span className="text-sm text-muted-foreground">
-                {t('calendar.completedDay') || 'Completed day'}
+                {t('calendar.completedDay')}
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              <X className="text-red-500" size={12} />
+              <div className="bg-red-500 p-1 rounded-sm">
+                <X className="text-white" size={10} />
+              </div>
               <span className="text-sm text-muted-foreground">
-                {t('calendar.missedDay') || 'Missed day'}
+                {t('calendar.missedDay')}
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-primary rounded-full" />
+              <div className="bg-primary p-1 rounded-sm">
+                <div className="w-2 h-2 bg-white rounded-full" />
+              </div>
               <span className="text-sm text-muted-foreground">
-                {t('calendar.today') || 'Today'}
+                {t('calendar.today')}
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-muted rounded-full" />
+              <div className="bg-muted p-1 rounded-sm">
+                <div className="w-2 h-2 bg-muted-foreground rounded-full" />
+              </div>
               <span className="text-sm text-muted-foreground">
-                {t('calendar.futureDay') || 'Future day'}
+                {t('calendar.futureDay')}
               </span>
             </div>
           </div>
@@ -222,10 +242,10 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
         >
           <div className="text-center">
             <h3 className="font-fjalla font-bold text-lg mb-2 uppercase tracking-wide">
-              {t('calendar.cta') || 'Take the next LEAP today'}
+              {t('calendar.cta')}
             </h3>
             <p className="text-primary-foreground/80 text-sm">
-              {t('calendar.ctaSubtitle') || 'Continue your recovery journey'}
+              {t('calendar.ctaSubtitle')}
             </p>
           </div>
         </Card>

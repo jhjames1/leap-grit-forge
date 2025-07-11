@@ -257,15 +257,26 @@ export class TrackingManager {
 
     const calendarData: Record<string, 'completed' | 'missed'> = {};
     const now = new Date();
+    const userCreatedDate = new Date(userData.createdAt || now);
     
-    // Go back specified months
+    // Go back specified months but not before user creation
     for (let i = 0; i < monthsBack * 31; i++) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      
+      // Don't include dates before user was created
+      if (date < userCreatedDate) break;
+      
       const dateString = this.getDateString(date);
       
-      const dayStats = userData.dailyStats[dateString];
-      if (dayStats) {
-        calendarData[dateString] = dayStats.actionsToday > 0 ? 'completed' : 'missed';
+      // Only include dates from the past (not today or future)
+      if (date.toDateString() !== now.toDateString() && date < now) {
+        const dayStats = userData.dailyStats[dateString];
+        if (dayStats) {
+          calendarData[dateString] = dayStats.actionsToday > 0 ? 'completed' : 'missed';
+        } else {
+          // If no stats exist for a past date, mark as missed
+          calendarData[dateString] = 'missed';
+        }
       }
     }
 

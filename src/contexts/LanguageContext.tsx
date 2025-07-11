@@ -468,6 +468,20 @@ const englishTranslations = {
     }
   },
   
+  // Calendar
+  calendar: {
+    subtitle: "Track your daily progress",
+    completedDays: "Completed Days",
+    completionRate: "Success Rate",
+    legend: "Legend",
+    completedDay: "Completed day",
+    missedDay: "Missed day",
+    today: "Today",
+    futureDay: "Future day",
+    cta: "Take the next LEAP today",
+    ctaSubtitle: "Continue your recovery journey"
+  },
+
   // Profile
   profile: {
     title: "YOUR PROFILE",
@@ -545,19 +559,6 @@ const englishTranslations = {
     }
   },
 
-  // Calendar
-  calendar: {
-    title: "RECOVERY CALENDAR",
-    subtitle: "Track your progress",
-    currentStreak: "Current Streak",
-    keepUp: "Keep up the great work!",
-    recoveryDays: "Your Recovery Days",
-    recoveryDay: "Recovery Day",
-    greatJob: "Great job staying strong!",
-    noRecoveryDay: "No recovery day logged",
-    legend: "Legend",
-    today: "Today"
-  },
 
   // Edit Profile
   editProfile: {
