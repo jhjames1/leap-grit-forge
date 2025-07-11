@@ -222,6 +222,25 @@ const PeerSpecialistManagement = () => {
 
   return (
     <div className="space-y-6">
+      {/* Info Card */}
+      <Card className="bg-blue-500/10 border-blue-500/30 p-4">
+        <div className="flex items-start space-x-3">
+          <AlertCircle className="text-blue-400 mt-1" size={20} />
+          <div>
+            <h3 className="text-blue-400 font-semibold mb-1">How to add specialists:</h3>
+            <p className="text-blue-300 text-sm">
+              1. Create a user account first (have them sign up normally)
+              <br />
+              2. Get their User ID from the auth users table 
+              <br />
+              3. Add them as a specialist here using their User ID
+              <br />
+              4. They can then access the Specialist Dashboard at /specialist
+            </p>
+          </div>
+        </div>
+      </Card>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">

@@ -305,12 +305,27 @@ const PeerSpecialistDashboard = () => {
   if (!specialist) {
     return (
       <div className="p-4 pb-24 bg-background min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-steel-light mb-4">You are not registered as a peer specialist.</p>
-          <Button onClick={handleSignOut} variant="outline">
-            Sign Out
-          </Button>
-        </div>
+        <Card className="p-8 max-w-md">
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-fjalla text-foreground">Not Registered</h2>
+            <p className="text-steel-light">
+              You are not registered as a peer specialist. Please contact an administrator 
+              to be added to the specialist program.
+            </p>
+            <div className="space-y-2">
+              <Button 
+                onClick={() => window.location.href = '/'} 
+                variant="default"
+                className="w-full"
+              >
+                Return to Home
+              </Button>
+              <Button onClick={handleSignOut} variant="outline" className="w-full">
+                Sign Out
+              </Button>
+            </div>
+          </div>
+        </Card>
       </div>
     );
   }
