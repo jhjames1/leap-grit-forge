@@ -20,7 +20,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
   const { userData, currentUser } = useUserData();
   
-  // Get real-time tracking data
+  // Get real-time tracking data for all metrics
   useEffect(() => {
     const updateStats = () => {
       try {
@@ -29,7 +29,8 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
         setRealTimeStats({ 
           ...liveStats, 
           currentStreak: streakData.currentStreak,
-          longestStreak: streakData.longestStreak
+          longestStreak: streakData.longestStreak,
+          urgesTracked: userData?.toolboxStats?.urgesThisWeek || 0
         });
       } catch (error) {
         // Fallback to userData if tracking manager fails
@@ -79,28 +80,40 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   
   // Use real-time stats when available, fallback to userData
   const liveRecoveryStreak = realTimeStats?.currentStreak ?? userData?.toolboxStats?.streak ?? 0;
-  const liveTotalToolsUsed = realTimeStats?.toolsUsedToday ?? userData?.toolboxStats?.totalSessions ?? 0;
+  const liveTotalToolsUsed = realTimeStats?.totalToolsUsed ?? userData?.toolboxStats?.totalSessions ?? 0;
   const liveActionsToday = realTimeStats?.actionsToday ?? 0;
+  const liveUrgesTracked = realTimeStats?.urgesTracked ?? userData?.toolboxStats?.urgesThisWeek ?? 0;
   
-  // Calculate weekly progress based on completed days this week
-  const completedDays = userData?.journeyProgress?.completedDays || [];
-  const currentWeekNumber = Math.ceil((completedDays.length > 0 ? Math.max(...completedDays) : 1) / 7);
-  const weekStartDay = (currentWeekNumber - 1) * 7 + 1;
-  const weekEndDay = currentWeekNumber * 7;
+  // Calculate real-time weekly progress
+  const getWeeklyProgress = () => {
+    // Fallback calculation using journey progress
+    const completedDays = userData?.journeyProgress?.completedDays || [];
+    const currentWeekNumber = Math.ceil((completedDays.length > 0 ? Math.max(...completedDays) : 1) / 7);
+    const weekStartDay = (currentWeekNumber - 1) * 7 + 1;
+    const weekEndDay = currentWeekNumber * 7;
+    
+    return completedDays.filter(day => day >= weekStartDay && day <= weekEndDay).length;
+  };
   
-  // Count completed days in current week
-  const weekCompletedDays = completedDays.filter(day => day >= weekStartDay && day <= weekEndDay).length;
+  const weekCompletedDays = getWeeklyProgress();
   const weeklyProgressPercentage = Math.round((weekCompletedDays / 7) * 100);
   
   // Get real-time favorite tools based on actual usage
   const getFavoriteTools = () => {
-    if (!realTimeStats || !userData?.activityLog) return [t('profile.tools.steadySteel'), t('profile.tools.peerChat')];
+    if (!userData?.activityLog) return [t('profile.tools.steadySteel'), t('profile.tools.peerChat'), t('profile.tools.foremanChat')];
     
-    // Count tool usage from activity log
+    // Count tool usage from activity log (completed actions)
     const toolCounts = userData.activityLog.reduce((acc: { [key: string]: number }, entry) => {
-      if (entry.action.startsWith('Used ')) {
-        const tool = entry.action.replace('Used ', '');
-        acc[tool] = (acc[tool] || 0) + 1;
+      if (entry.action.includes('Completed')) {
+        let tool = '';
+        if (entry.action.includes('SteadySteel')) tool = 'SteadySteel';
+        else if (entry.action.includes('Redline Recovery')) tool = 'Redline Recovery';
+        else if (entry.action.includes('Gratitude')) tool = 'Gratitude Log';
+        else if (entry.action.includes('Foreman')) tool = 'The Foreman';
+        
+        if (tool) {
+          acc[tool] = (acc[tool] || 0) + 1;
+        }
       }
       return acc;
     }, {});
@@ -128,11 +141,11 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     { 
       label: "Streak", 
       value: liveRecoveryStreak, 
-      unit: t('profile.days'), 
+      unit: "", 
       color: "text-construction" 
     },
     { 
-      label: "Total Tools Used", 
+      label: "Tools Used", 
       value: liveTotalToolsUsed, 
       unit: "", 
       color: "text-construction" 
@@ -213,10 +226,15 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           ))}
         </div>
 
-        <div className="space-y-2 pt-4 border-t border-border">
+        <div className="space-y-4 pt-4 border-t border-border">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground text-sm font-source">{t('profile.weeklyProgress')}</span>
             <span className="text-primary font-fjalla font-medium">{weeklyProgressPercentage}% ({weekCompletedDays}/7 {t('profile.days')})</span>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground text-sm font-source">Urges Tracked</span>
+            <span className="text-primary font-fjalla font-medium">{liveUrgesTracked}</span>
           </div>
         </div>
       </Card>
