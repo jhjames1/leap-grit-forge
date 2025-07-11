@@ -12,6 +12,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { logger } from '@/utils/logger';
 import { calculateCurrentJourneyDay, getDayStatus } from '@/utils/journeyCalculation';
 import { trackingManager } from '@/utils/trackingManager';
+import { journeyManager } from '@/utils/journeyManager';
 
 interface DashboardHomeProps {
   onNavigate?: (page: string) => void;
@@ -120,6 +121,55 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
     setBadgeCount(uniqueActivities.size);
   }, [userData, language]);  // Add language dependency to refresh translations
 
+  // Get upcoming week activities
+  const getUpcomingWeekActivities = () => {
+    if (!userData?.focusAreas?.length) return [];
+
+    const journey = journeyManager.getUserJourney(userData.focusAreas);
+    if (!journey) return [];
+
+    const completedDays = userData?.journeyProgress?.completedDays || [];
+    const currentDay = Math.max(1, ...completedDays) + 1;
+    
+    const upcomingActivities = [];
+    const maxDay = Math.min(currentDay + 6, journey.days.length); // Next 7 days max
+    
+    for (let day = currentDay; day <= maxDay; day++) {
+      const dayData = journey.days.find(d => d.day === day);
+      if (dayData && journeyManager.isDayUnlocked(completedDays, day)) {
+        const daysUntil = day - currentDay;
+        const timeLabel = daysUntil === 0 ? 'Today' : 
+                         daysUntil === 1 ? 'Tomorrow' : 
+                         `In ${daysUntil} days`;
+        
+        // Extract activity from the day
+        if (dayData.activity) {
+          upcomingActivities.push({
+            title: dayData.activity,
+            timeLabel,
+            day,
+            type: 'activity'
+          });
+        }
+        
+        // Extract tool if available
+        if (dayData.tool) {
+          upcomingActivities.push({
+            title: dayData.tool,
+            timeLabel,
+            day,
+            type: 'tool'
+          });
+        }
+      }
+    }
+    
+    // Randomly select 3-4 activities and shuffle
+    const shuffled = upcomingActivities.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 4);
+  };
+
+  const upcomingActivities = getUpcomingWeekActivities();
   const currentUser = userData?.firstName || localStorage.getItem('currentUser') || t('home.defaultWelcome');
 
   const handleToolClick = (tool: string) => {
@@ -239,18 +289,20 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             {t('home.comingUp').toUpperCase()}
           </h3>
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-card-foreground font-source text-sm">{t('home.upcomingActivities.weekend')}</span>
-              <span className="text-primary font-source font-bold text-sm">{t('home.time.tomorrow').toUpperCase()}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-card-foreground font-source text-sm">{t('home.upcomingActivities.communication')}</span>
-              <span className="text-primary font-source font-bold text-sm">{t('home.time.days', {count: 2}).toUpperCase()}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-card-foreground font-source text-sm">{t('home.upcomingActivities.milestone')}</span>
-              <span className="text-primary font-source font-bold text-sm">{t('home.time.week', {count: 1}).toUpperCase()}</span>
-            </div>
+            {upcomingActivities.length > 0 ? (
+              upcomingActivities.map((activity, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <span className="text-card-foreground font-source text-sm">{activity.title}</span>
+                  <span className="text-primary font-source font-bold text-sm">{activity.timeLabel.toUpperCase()}</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-2">
+                <span className="text-muted-foreground font-source text-sm italic">
+                  {t('home.noUpcomingActivities') || 'Complete your current day to see upcoming activities'}
+                </span>
+              </div>
+            )}
           </div>
         </Card>
 
