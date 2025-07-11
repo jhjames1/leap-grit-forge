@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, Lock, Play, Clock, Target, Trophy } from 'lucide-react';
+import { CheckCircle2, Lock, Play, Clock, Target, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -22,6 +22,7 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   const [currentDay, setCurrentDay] = useState(1);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [forceRender, setForceRender] = useState(0);
+  const [currentWeek, setCurrentWeek] = useState(1);
   const [userJourney, setUserJourney] = useState<any>(null);
   const [phaseModifier, setPhaseModifier] = useState<any>(null);
   const { userData, logActivity } = useUserData();
@@ -65,6 +66,12 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   // Calculate current day based on completed days using shared utility
   const completedDays = userData?.journeyProgress?.completedDays || [];
   const actualCurrentDay = calculateCurrentJourneyDay(userData, totalDays);
+  
+  // Set current week based on user's progress
+  useEffect(() => {
+    const userCurrentWeek = Math.ceil(actualCurrentDay / 7);
+    setCurrentWeek(userCurrentWeek);
+  }, [actualCurrentDay]);
   
   // Add useEffect to watch for userData changes and force re-render
   useEffect(() => {
@@ -164,14 +171,29 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
     return allJourneyDays.slice(startDay - 1, endDay);
   };
 
-  // Get all weeks (1-13 for 90 days)
+  // Get current week data
   const totalWeeks = Math.ceil(totalDays / 7);
-  const weeks = Array.from({ length: totalWeeks }, (_, i) => ({
-    weekNumber: i + 1,
-    days: getWeekDays(i + 1),
-    title: i === 0 ? t('journey.weekFoundation') : `${t('journey.week')} ${i + 1}`,
-    isVisible: i < 2 || completedDays.length >= (i - 1) * 7 // Show first 2 weeks, then unlock based on progress
-  }));
+  const currentWeekData = {
+    weekNumber: currentWeek,
+    days: getWeekDays(currentWeek),
+    title: currentWeek === 1 ? t('journey.weekFoundation') : `${t('journey.week')} ${currentWeek}`,
+  };
+
+  // Navigation handlers
+  const canGoToPreviousWeek = currentWeek > 1;
+  const canGoToNextWeek = currentWeek < totalWeeks && completedDays.length >= (currentWeek - 1) * 7;
+  
+  const handlePreviousWeek = () => {
+    if (canGoToPreviousWeek) {
+      setCurrentWeek(currentWeek - 1);
+    }
+  };
+  
+  const handleNextWeek = () => {
+    if (canGoToNextWeek) {
+      setCurrentWeek(currentWeek + 1);
+    }
+  };
 
   const handleDayClick = (day: number) => {
     // Enhanced unlocking logic using journeyManager with completion dates
@@ -281,115 +303,144 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
         </div>
       </Card>
 
-      {/* Dynamic Weeks */}
-      {weeks.map((week) => {
-        if (!week.isVisible || !week.days.length) return null;
-        
-        return (
-          <Card key={week.weekNumber} className="bg-card p-6 rounded-xl mb-6 border-0 shadow-sm">
-            <div className="flex items-center space-x-3 mb-4">
+      {/* Week Navigation and Display */}
+      {currentWeekData.days.length > 0 && (
+        <Card className="bg-card p-6 rounded-xl mb-6 border-0 shadow-sm">
+          {/* Week Header with Navigation */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
               <div className="bg-primary p-2 rounded-lg">
                 <Trophy className="text-primary-foreground" size={20} />
               </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">{week.title.toUpperCase()}</h3>
+              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
+                {currentWeekData.title.toUpperCase()}
+              </h3>
             </div>
             
-            <div className="space-y-3">
-              {week.days.map((dayModule: any) => {
-                const status = getDayStatusForDay(dayModule.day);
-                const isCompleted = status === 'completed';
-                const isUnlocked = status === 'unlocked' || isCompleted;
-                const buttonText = getButtonText(dayModule.day, status);
-                
-                return (
-                  <Card
-                    key={dayModule.day}
-                    onClick={() => isUnlocked && handleDayClick(dayModule.day)}
-                    className={`p-4 transition-all duration-200 border rounded-lg ${
-                      isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'
-                    } ${
-                      isCompleted
-                        ? 'bg-primary/10 border-primary/20 shadow-sm'
-                        : isUnlocked
-                          ? 'bg-card hover:bg-accent border-border shadow-sm'
-                          : 'bg-muted opacity-60 border-border'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-4">
-                      {/* Status Icon */}
-                      <div className={`p-2 rounded-lg flex-shrink-0 transition-all duration-200 ${
-                        isCompleted
-                          ? 'bg-primary'
-                          : isUnlocked
-                            ? 'bg-primary'
-                            : 'bg-muted'
-                      }`}>
-                        {isCompleted ? (
-                          <CheckCircle2 className="text-primary-foreground" size={20} />
-                        ) : isUnlocked ? (
-                          <Play className="text-primary-foreground" size={20} />
-                        ) : (
-                          <Lock className="text-muted-foreground" size={20} />
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <span className="font-fjalla font-bold text-primary text-sm">
-                            {t('common.day').toUpperCase()} {dayModule.day}
-                          </span>
-                          <span className="text-muted-foreground text-xs">•</span>
-                          <span className="text-muted-foreground text-xs font-source uppercase tracking-wide">
-                            {dayModule.tool || 'RECOVERY TOOL'}
-                          </span>
-                        </div>
-                        
-                        <h3 className={`font-medium text-[16px] mb-1 ${
-                          isUnlocked ? 'text-card-foreground' : 'text-muted-foreground'
-                        }`}>
-                          {dayModule.title}
-                        </h3>
-                        
-                        <p className={`text-sm mb-2 ${
-                          isUnlocked ? 'text-muted-foreground' : 'text-muted-foreground/70'
-                        }`}>
-                          {dayModule.keyMessage}
-                        </p>
-                        
-                        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                          <Clock size={12} className="text-primary" />
-                          <span>{dayModule.duration}</span>
-                        </div>
-                      </div>
-
-                      {/* Action Button */}
-                      <Button 
-                        className={`font-fjalla font-semibold px-4 py-2 rounded-lg transition-all duration-200 ${
-                          !isUnlocked
-                            ? 'bg-muted text-muted-foreground cursor-not-allowed border border-muted'
-                            : isCompleted 
-                              ? 'border-primary text-primary hover:bg-primary/10 bg-transparent border'
-                              : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg'
-                        }`}
-                        disabled={!isUnlocked}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isUnlocked) {
-                            handleDayClick(dayModule.day);
-                          }
-                        }}
-                      >
-                        {buttonText}
-                      </Button>
-                    </div>
-                  </Card>
-                );
-              })}
+            {/* Navigation Controls */}
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousWeek}
+                disabled={!canGoToPreviousWeek}
+                className="px-2"
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              
+              <span className="text-sm text-muted-foreground px-2">
+                {currentWeek} / {totalWeeks}
+              </span>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextWeek}
+                disabled={!canGoToNextWeek}
+                className="px-2"
+              >
+                <ChevronRight size={16} />
+              </Button>
             </div>
-          </Card>
-        );
-      })}
+          </div>
+          
+          {/* Days List */}
+          <div className="space-y-3">
+            {currentWeekData.days.map((dayModule: any) => {
+              const status = getDayStatusForDay(dayModule.day);
+              const isCompleted = status === 'completed';
+              const isUnlocked = status === 'unlocked' || isCompleted;
+              const buttonText = getButtonText(dayModule.day, status);
+              
+              return (
+                <Card
+                  key={dayModule.day}
+                  onClick={() => isUnlocked && handleDayClick(dayModule.day)}
+                  className={`p-4 transition-all duration-200 border rounded-lg ${
+                    isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'
+                  } ${
+                    isCompleted
+                      ? 'bg-primary/10 border-primary/20 shadow-sm'
+                      : isUnlocked
+                        ? 'bg-card hover:bg-accent border-border shadow-sm'
+                        : 'bg-muted opacity-60 border-border'
+                  }`}
+                >
+                  <div className="flex items-center space-x-4">
+                    {/* Status Icon */}
+                    <div className={`p-2 rounded-lg flex-shrink-0 transition-all duration-200 ${
+                      isCompleted
+                        ? 'bg-primary'
+                        : isUnlocked
+                          ? 'bg-primary'
+                          : 'bg-muted'
+                    }`}>
+                      {isCompleted ? (
+                        <CheckCircle2 className="text-primary-foreground" size={20} />
+                      ) : isUnlocked ? (
+                        <Play className="text-primary-foreground" size={20} />
+                      ) : (
+                        <Lock className="text-muted-foreground" size={20} />
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="font-fjalla font-bold text-primary text-sm">
+                          {t('common.day').toUpperCase()} {dayModule.day}
+                        </span>
+                        <span className="text-muted-foreground text-xs">•</span>
+                        <span className="text-muted-foreground text-xs font-source uppercase tracking-wide">
+                          {dayModule.tool || 'RECOVERY TOOL'}
+                        </span>
+                      </div>
+                      
+                      <h3 className={`font-medium text-[16px] mb-1 ${
+                        isUnlocked ? 'text-card-foreground' : 'text-muted-foreground'
+                      }`}>
+                        {dayModule.title}
+                      </h3>
+                      
+                      <p className={`text-sm mb-2 ${
+                        isUnlocked ? 'text-muted-foreground' : 'text-muted-foreground/70'
+                      }`}>
+                        {dayModule.keyMessage}
+                      </p>
+                      
+                      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                        <Clock size={12} className="text-primary" />
+                        <span>{dayModule.duration}</span>
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <Button 
+                      className={`font-fjalla font-semibold px-4 py-2 rounded-lg transition-all duration-200 ${
+                        !isUnlocked
+                          ? 'bg-muted text-muted-foreground cursor-not-allowed border border-muted'
+                          : isCompleted 
+                            ? 'border-primary text-primary hover:bg-primary/10 bg-transparent border'
+                            : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg'
+                      }`}
+                      disabled={!isUnlocked}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isUnlocked) {
+                          handleDayClick(dayModule.day);
+                        }
+                      }}
+                    >
+                      {buttonText}
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
 
       {/* Day Modal */}
