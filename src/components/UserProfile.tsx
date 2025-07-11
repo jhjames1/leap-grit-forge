@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Shield, Edit, Bell, Calendar, Phone, BookOpen } from 'lucide-react';
+import { User, Edit, Bell, Calendar, Phone, BookOpen } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { trackingManager } from '@/utils/trackingManager';
@@ -172,12 +172,6 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     ]
   };
 
-  const handleAdminAccess = () => {
-    const adminSequence = prompt("Enter admin access code:");
-    if (adminSequence === "THRIVING2024") {
-      onNavigate?.('admin-login');
-    }
-  };
 
   if (currentView === 'edit') {
     return <EditProfile onBack={() => setCurrentView('profile')} />;
@@ -307,16 +301,6 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
         </div>
       </Card>
 
-      {/* Hidden Admin Access */}
-      <div className="mt-8">
-        <Button
-          onClick={handleAdminAccess}
-          variant="ghost"
-          className="w-full text-muted hover:text-muted-foreground opacity-10 hover:opacity-30 transition-opacity"
-        >
-          <Shield size={16} />
-        </Button>
-      </div>
       </div>
     </div>
   );

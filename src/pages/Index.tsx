@@ -11,8 +11,6 @@ import UserProfile from '@/components/UserProfile';
 import About from '@/components/About';
 import RecoveryCalendar from '@/components/RecoveryCalendar';
 import ForemanChat from '@/components/ForemanChat';
-import AdminLogin from '@/components/AdminLogin';
-import AdminDashboard from '@/components/AdminDashboard';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { useUserData } from '@/hooks/useUserData';
@@ -24,8 +22,6 @@ const Index = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [currentPage, setCurrentPage] = useState('home');
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   
   const { updateUserData } = useUserData();
 
@@ -73,11 +69,6 @@ const Index = () => {
   };
 
   const handleNavigation = (page: string) => {
-    if (page === 'admin-login') {
-      setShowAdminLogin(true);
-      return;
-    }
-    
     setCurrentPage(page);
     if (['home', 'journey', 'toolbox', 'chat', 'profile'].includes(page)) {
       setActiveTab(page);
@@ -87,8 +78,6 @@ const Index = () => {
   const handleBackToHome = () => {
     setCurrentPage('home');
     setActiveTab('home');
-    setIsAdminLoggedIn(false);
-    setShowAdminLogin(false);
   };
 
   if (showSplash) {
@@ -103,17 +92,6 @@ const Index = () => {
     return <OnboardingFlow onComplete={handleOnboardingComplete} />;
   }
 
-  if (showAdminLogin && !isAdminLoggedIn) {
-    return (
-      <AdminLogin 
-        onLogin={() => {
-          setIsAdminLoggedIn(true);
-          setCurrentPage('admin');
-        }}
-        onBack={() => setShowAdminLogin(false)}
-      />
-    );
-  }
 
   const renderActivePage = () => {
     switch (currentPage) {
@@ -133,15 +111,13 @@ const Index = () => {
         return <RecoveryCalendar onNavigate={handleNavigation} />;
       case 'foreman':
         return <ForemanChat onBack={handleBackToHome} />;
-      case 'admin':
-        return <AdminDashboard onBack={handleBackToHome} />;
       default:
         return <DashboardHome onNavigate={handleNavigation} />;
     }
   };
 
   // Hide bottom navigation for certain pages
-  const showBottomNav = !['about', 'calendar', 'foreman', 'admin'].includes(currentPage);
+  const showBottomNav = !['about', 'calendar', 'foreman'].includes(currentPage);
 
   return (
     <div className="min-h-screen bg-background">
