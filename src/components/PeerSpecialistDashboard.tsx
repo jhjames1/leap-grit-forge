@@ -383,225 +383,260 @@ const PeerSpecialistDashboard = () => {
   }
 
   return (
-    <div className="p-4 pb-24 bg-background min-h-screen">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div>
-            <h1 className="text-4xl text-foreground mb-1 tracking-wide">
-              <span className="font-oswald font-extralight tracking-tight">Peer</span>
-              <span className="font-fjalla font-extrabold italic"> Specialist</span>
-            </h1>
-            <p className="text-steel-light font-oswald">
-              Welcome, {specialist.first_name} {specialist.last_name}
-            </p>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 ${getStatusColor(specialistStatus?.status || 'offline')} rounded-full`}></div>
-            <Badge className={getStatusBadge(specialistStatus?.status || 'offline')}>
-              {specialistStatus?.status || 'offline'}
-            </Badge>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          {/* Online/Offline Toggle */}
-          <div className="flex items-center space-x-3">
-            <span className="text-steel-light font-oswald text-sm">
-              {specialistStatus?.status === 'online' ? 'Online' : 'Offline'}
-            </span>
-            <Switch
-              checked={specialistStatus?.status === 'online'}
-              onCheckedChange={(checked) => {
-                updateStatus(checked ? 'online' : 'offline');
-              }}
-              className="data-[state=checked]:bg-construction"
-            />
-          </div>
-          
-          <div className="flex space-x-2">
-            <Button
-              onClick={() => setIsStatusDialogOpen(true)}
-              variant="outline"
-              className="border-construction text-construction hover:bg-construction/10"
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              Status
-            </Button>
-            <Button
-              onClick={handleSignOut}
-              variant="outline"
-              className="border-red-500 text-red-400 hover:bg-red-500/10"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
+    <div className="min-h-screen bg-background">
+      <div className="p-4 pb-24">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex justify-between items-start mb-6">
+            {/* Left column: Title and welcome text */}
+            <div className="flex-1">
+              <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+                <span className="font-oswald font-extralight tracking-tight">PEER</span><span className="font-fjalla font-extrabold italic">SPECIALIST</span>
+              </h1>
+              <div className="mt-8"></div>
+              <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
+                WELCOME, <span className="font-bold italic">{specialist.first_name.toUpperCase()} {specialist.last_name.toUpperCase()}</span>
+              </p>
+              <p className="text-muted-foreground text-sm">Ready to help others on their journey</p>
+            </div>
+            
+            {/* Right column: Status and Sign Out */}
+            <div className="flex flex-col items-end">
+              <div className="flex items-center space-x-3 mb-4">
+                <Button onClick={handleSignOut} variant="outline" size="sm">
+                  <LogOut size={16} />
+                </Button>
+              </div>
+              {specialistStatus && (
+                <div 
+                  className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadge(specialistStatus.status)} cursor-pointer`}
+                  onClick={() => setIsStatusDialogOpen(true)}
+                >
+                  {specialistStatus.status.toUpperCase()}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      <Tabs defaultValue="sessions" className="space-y-6">
-        <TabsList className="bg-steel-dark border-steel">
-          <TabsTrigger value="sessions">
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Chat Sessions
-          </TabsTrigger>
-        </TabsList>
+        {/* Status and Overview Cards */}
+        <div className="flex gap-4 mb-4">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[50%]">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-primary p-3 rounded-sm">
+                <MessageSquare className="text-primary-foreground" size={20} />
+              </div>
+              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
+                Active Sessions
+              </h3>
+            </div>
+            <div className="text-2xl font-bold text-card-foreground">
+              {chatSessions.filter(s => s.status === 'active').length}
+            </div>
+          </Card>
 
-        <TabsContent value="sessions">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Chat Sessions List */}
-            <div className="lg:col-span-1">
-              <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
-                <h3 className="font-oswald font-semibold text-white mb-4">Active Sessions</h3>
-                <div className="space-y-3">
-                  {chatSessions.map((session) => (
-                    <div
-                      key={session.id}
-                      onClick={() => setSelectedSession(session)}
-                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                        selectedSession?.id === session.id
-                          ? 'bg-construction/20 border border-construction/30'
-                          : 'bg-steel-dark/30 hover:bg-steel-dark/50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <User size={16} className="text-construction" />
-                          <span className="text-white text-sm">User {session.user_id.slice(-6)}</span>
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[50%]">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-primary p-3 rounded-sm">
+                <Clock className="text-primary-foreground" size={20} />
+              </div>
+              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
+                Waiting
+              </h3>
+            </div>
+            <div className="text-2xl font-bold text-card-foreground">
+              {chatSessions.filter(s => s.status === 'waiting').length}
+            </div>
+          </Card>
+        </div>
+
+        {/* Main Dashboard Content */}
+        <Tabs defaultValue="sessions" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="sessions" className="font-fjalla font-bold tracking-wide">CHAT SESSIONS</TabsTrigger>
+            <TabsTrigger value="status" className="font-fjalla font-bold tracking-wide">STATUS & SETTINGS</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="sessions" className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Chat Sessions List */}
+              <Card className="bg-card border-0 shadow-none">
+                <div className="p-4 border-b border-border">
+                  <h3 className="font-fjalla font-bold text-card-foreground text-lg uppercase tracking-wide">
+                    Chat Sessions
+                  </h3>
+                </div>
+                <div className="p-4 max-h-[400px] overflow-y-auto">
+                  {chatSessions.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">No active chat sessions</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {chatSessions.map((session) => (
+                        <div
+                          key={session.id}
+                          className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                            selectedSession?.id === session.id
+                              ? 'bg-primary/10 border border-primary/20'
+                              : 'bg-background hover:bg-background/80'
+                          }`}
+                          onClick={() => {
+                            setSelectedSession(session);
+                            loadMessages(session.id);
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-source font-medium text-card-foreground">Session {session.id.slice(0, 8)}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {new Date(session.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                            <Badge className={getStatusColor(session.status)}>
+                              {session.status}
+                            </Badge>
+                          </div>
                         </div>
-                        <Badge className={`text-xs ${
-                          session.status === 'active' 
-                            ? 'bg-green-500/20 text-green-400' 
-                            : 'bg-yellow-500/20 text-yellow-400'
-                        }`}>
-                          {session.status}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center space-x-1 mt-2 text-xs text-steel-light">
-                        <Clock size={12} />
-                        <span>{new Date(session.created_at).toLocaleTimeString()}</span>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                  
-                  {chatSessions.length === 0 && (
-                    <p className="text-steel-light text-center py-4">No active chat sessions</p>
                   )}
                 </div>
               </Card>
-            </div>
 
-            {/* Chat Window */}
-            <div className="lg:col-span-2">
+              {/* Chat Messages */}
               {selectedSession ? (
-                <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-4 h-[600px] flex flex-col">
-                  {/* Chat Header */}
-                  <div className="flex items-center justify-between border-b border-steel-dark pb-4 mb-4">
-                    <div className="flex items-center space-x-3">
-                      <User className="text-construction" size={20} />
+                <Card className="bg-card border-0 shadow-none">
+                  <div className="p-4 border-b border-border">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-semibold text-white">
-                          User {selectedSession.user_id.slice(-6)}
+                        <h3 className="font-fjalla font-bold text-card-foreground text-lg uppercase tracking-wide">
+                          Chat Messages
                         </h3>
-                        <p className="text-steel-light text-sm">
-                          Session started {new Date(selectedSession.created_at).toLocaleString()}
-                        </p>
+                        <p className="text-xs text-muted-foreground">Session {selectedSession.id.slice(0, 8)}</p>
                       </div>
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      <Button
-                        onClick={startPhoneCall}
-                        variant="outline"
-                        size="sm"
-                        className="border-green-500 text-green-400 hover:bg-green-500/10"
-                      >
-                        <Phone size={16} />
-                      </Button>
-                      <Button
-                        onClick={startVideoCall}
-                        variant="outline"
-                        size="sm"
-                        className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
-                      >
-                        <Video size={16} />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-                    {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${
-                          message.sender_type === 'specialist' ? 'justify-end' : 'justify-start'
-                        }`}
-                      >
-                        <div
-                          className={`max-w-xs p-3 rounded-lg ${
-                            message.sender_type === 'specialist'
-                              ? 'bg-construction text-midnight'
-                              : 'bg-steel-dark text-white'
-                          }`}
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={startPhoneCall}
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center space-x-1"
                         >
-                          <p className="text-sm">{message.content}</p>
-                          <p className={`text-xs mt-1 ${
-                            message.sender_type === 'specialist' ? 'text-midnight/70' : 'text-steel-light'
-                          }`}>
-                            {new Date(message.created_at).toLocaleTimeString()}
-                          </p>
-                        </div>
+                          <Phone size={16} />
+                        </Button>
+                        <Button
+                          onClick={startVideoCall}
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center space-x-1"
+                        >
+                          <Video size={16} />
+                        </Button>
                       </div>
-                    ))}
-                    
-                    {messages.length === 0 && (
-                      <p className="text-steel-light text-center py-8">No messages yet</p>
-                    )}
+                    </div>
                   </div>
+                  
+                  <div className="flex flex-col h-[400px]">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.sender_type === 'specialist' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[80%] p-3 rounded-lg ${
+                              message.sender_type === 'specialist'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-background border'
+                            }`}
+                          >
+                            <p className="text-sm">{message.content}</p>
+                            <p className="text-xs opacity-70 mt-1">
+                              {new Date(message.created_at).toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {messages.length === 0 && (
+                        <p className="text-muted-foreground text-center py-8">No messages yet</p>
+                      )}
+                    </div>
 
-                  {/* Message Input */}
-                  <div className="border-t border-steel-dark pt-4">
-                    <div className="flex gap-2">
-                      <Input
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Type your response..."
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSendMessage();
-                          }
-                        }}
-                        className="flex-1 bg-steel-dark/50 border-steel text-white placeholder:text-steel-light"
-                      />
-                      <Button 
-                        onClick={handleSendMessage} 
-                        disabled={!newMessage.trim()}
-                        className="bg-construction hover:bg-construction/80 text-midnight"
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
+                    {/* Message Input */}
+                    <div className="border-t border-border p-4">
+                      <div className="flex gap-2">
+                        <Input
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          placeholder="Type your response..."
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendMessage();
+                            }
+                          }}
+                          className="flex-1 bg-background border-border"
+                        />
+                        <Button 
+                          onClick={handleSendMessage} 
+                          disabled={!newMessage.trim()}
+                          className="bg-primary hover:bg-primary/80 text-primary-foreground"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </Card>
               ) : (
-                <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-8 h-[600px] flex items-center justify-center">
-                  <p className="text-steel-light">Select a chat session to view messages</p>
+                <Card className="bg-card border-0 shadow-none">
+                  <div className="p-8 h-[400px] flex items-center justify-center">
+                    <p className="text-muted-foreground">Select a chat session to view messages</p>
+                  </div>
                 </Card>
               )}
             </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+
+          <TabsContent value="status" className="space-y-4">
+            <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+              <h3 className="font-fjalla font-bold text-card-foreground text-lg uppercase tracking-wide mb-4">
+                Status Settings
+              </h3>
+              
+              {specialistStatus && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-source text-card-foreground">Current Status:</span>
+                    <Badge className={getStatusColor(specialistStatus.status)}>
+                      {specialistStatus.status}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="font-source text-card-foreground">Last Seen:</span>
+                    <span className="text-muted-foreground text-sm">
+                      {specialistStatus.last_seen ? new Date(specialistStatus.last_seen).toLocaleString() : 'Never'}
+                    </span>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => setIsStatusDialogOpen(true)}
+                    className="w-full bg-primary hover:bg-primary/80 text-primary-foreground"
+                  >
+                    Update Status
+                  </Button>
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* Status Dialog */}
       <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
-        <DialogContent className="bg-steel-dark border-steel">
+        <DialogContent className="bg-card border border-border">
           <DialogHeader>
-            <DialogTitle className="text-white">Update Status</DialogTitle>
+            <DialogTitle className="text-card-foreground font-fjalla font-bold uppercase tracking-wide">Update Status</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-3">
@@ -614,12 +649,10 @@ const PeerSpecialistDashboard = () => {
                   }}
                   variant="outline"
                   className={`w-full justify-start ${
-                    specialistStatus?.status === status
-                      ? 'border-construction text-construction'
-                      : 'border-steel text-steel-light hover:bg-steel/10'
+                    specialistStatus?.status === status ? 'bg-primary/10 border-primary/20' : ''
                   }`}
                 >
-                  <div className={`w-3 h-3 ${getStatusColor(status)} rounded-full mr-3`}></div>
+                  <div className={`w-3 h-3 rounded-full mr-3 ${getStatusColor(status).split(' ')[0]}`} />
                   {status.charAt(0).toUpperCase() + status.slice(1)}
                 </Button>
               ))}
