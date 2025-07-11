@@ -86,7 +86,7 @@ const GratitudeLogEnhanced = ({ onClose, onCancel }: GratitudeLogEnhancedProps) 
             <div className="w-10 h-10 bg-construction/20 rounded-full flex items-center justify-center">
               <Heart className="text-construction" size={20} />
             </div>
-            <h3 className="font-oswald font-semibold text-white text-xl">Gratitude Log</h3>
+            <h3 className="font-oswald font-semibold text-white text-xl">YOURJOURNAL</h3>
           </div>
         </div>
 
