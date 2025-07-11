@@ -200,7 +200,7 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
       }
     })();
     
-    return weekNum === 1 ? weekName : `Week ${weekNum}: ${weekName}`;
+    return `Week ${weekNum}: ${weekName}`;
   }
 
   // Navigation handlers
