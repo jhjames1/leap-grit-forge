@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   const [currentView, setCurrentView] = useState<'selection' | 'chat'>('selection');
   const [selectedPeer, setSelectedPeer] = useState<PeerSpecialist | null>(null);
   const [message, setMessage] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false);
   
   const { 
     session, 
@@ -36,19 +38,36 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   } = useChatSession(selectedPeer?.id);
 
   const handleSelectPeer = async (peer: PeerSpecialist) => {
+    console.log('Peer selected:', peer);
     setSelectedPeer(peer);
     setCurrentView('chat');
-    
-    // Start a new session if none exists
-    if (!session) {
-      await startSession();
-    }
+    setIsInitialized(false);
   };
 
+  // Initialize session when peer is selected and view changes to chat
+  useEffect(() => {
+    if (currentView === 'chat' && selectedPeer && !session && !isInitialized && !loading) {
+      console.log('Initializing chat session...');
+      setIsInitialized(true);
+      startSession();
+    }
+  }, [currentView, selectedPeer, session, isInitialized, loading, startSession]);
+
   const handleSendMessage = async () => {
-    if (message.trim()) {
-      await sendMessage({ content: message });
-      setMessage('');
+    if (!message.trim()) {
+      console.log('Empty message, not sending');
+      return;
+    }
+
+    console.log('Sending message:', message);
+    await sendMessage({ content: message });
+    setMessage('');
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
@@ -62,19 +81,15 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
 
   const handleVideoCall = () => {
     if (selectedPeer?.status.status === 'online') {
-      // Try to open Teams first, then Zoom as fallback
       const userAgent = navigator.userAgent.toLowerCase();
       const isMobile = /android|iphone|ipad|mobile/.test(userAgent);
       
       if (isMobile) {
-        // On mobile, try Teams app first
         window.location.href = 'msteams://';
         setTimeout(() => {
-          // Fallback to Zoom if Teams doesn't open
           window.location.href = 'zoomus://';
         }, 1000);
       } else {
-        // On desktop, open Teams web or Zoom web
         window.open('https://teams.microsoft.com/start', '_blank');
       }
     } else {
@@ -168,6 +183,27 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         </div>
       </div>
 
+      {/* Connection Status */}
+      {loading && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-3">
+          <p className="text-yellow-600 text-sm text-center">Connecting to chat...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-500/10 border-b border-red-500/20 p-3">
+          <p className="text-red-600 text-sm text-center">Error: {error}</p>
+        </div>
+      )}
+
+      {session && (
+        <div className="bg-green-500/10 border-b border-green-500/20 p-3">
+          <p className="text-green-600 text-sm text-center">
+            Chat session {session.status} - You can now send messages
+          </p>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => (
@@ -191,44 +227,52 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
             </div>
           </div>
         ))}
+
+        {messages.length === 0 && session && (
+          <div className="text-center text-steel-light py-8">
+            <p>Chat session started. Send a message to begin the conversation.</p>
+          </div>
+        )}
       </div>
 
       {/* Quick Actions */}
-      <div className="px-4 py-2">
-        <div className="flex space-x-2 overflow-x-auto">
-          <Button 
-            size="sm"
-            onClick={() => handleQuickAction('need-support')}
-            className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
-          >
-            Need Support
-          </Button>
-          <Button 
-            size="sm"
-            onClick={() => handleQuickAction('feeling-triggered')}
-            className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
-          >
-            Feeling Triggered
-          </Button>
-          <Button 
-            size="sm"
-            onClick={() => handleQuickAction('good-day')}
-            className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
-          >
-            Good Day Today
-          </Button>
-          <Button 
-            size="sm"
-            onClick={() => handleQuickAction('question')}
-            className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
-          >
-            Question
-          </Button>
+      {session && (
+        <div className="px-4 py-2">
+          <div className="flex space-x-2 overflow-x-auto">
+            <Button 
+              size="sm"
+              onClick={() => handleQuickAction('need-support')}
+              className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+            >
+              Need Support
+            </Button>
+            <Button 
+              size="sm"
+              onClick={() => handleQuickAction('feeling-triggered')}
+              className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+            >
+              Feeling Triggered
+            </Button>
+            <Button 
+              size="sm"
+              onClick={() => handleQuickAction('good-day')}
+              className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+            >
+              Good Day Today
+            </Button>
+            <Button 
+              size="sm"
+              onClick={() => handleQuickAction('question')}
+              className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+            >
+              Question
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Scheduled Check-in Banner - Moved to bottom */}
-      {selectedPeer?.status.status === 'online' && (
+      {/* Scheduled Check-in Banner */}
+      {selectedPeer?.status.status === 'online' && session && (
         <div className="bg-steel/90 backdrop-blur-sm border-t border-steel-dark p-3">
           <div className="flex items-center space-x-3">
             <Calendar className="text-white" size={16} />
@@ -253,13 +297,15 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your message..."
+            placeholder={session ? "Type your message..." : "Starting chat session..."}
             className="flex-1 bg-white/10 border-steel-dark text-white placeholder:text-steel-light"
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            onKeyPress={handleKeyPress}
+            disabled={!session || loading}
           />
           <Button 
             onClick={handleSendMessage}
             className="bg-steel hover:bg-steel-light text-white px-6"
+            disabled={!session || loading || !message.trim()}
           >
             <Send size={16} />
           </Button>
