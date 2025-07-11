@@ -164,7 +164,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         const timeLabel = daysUntil === 1 ? 'Tomorrow' : 
                          `${daysUntil} days`;
         
-        // Extract activity from the day
+        // Prioritize activity over tool, only one item per day
         if (dayData.activity) {
           upcomingActivities.push({
             title: dayData.activity,
@@ -172,10 +172,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             day,
             type: 'activity'
           });
-        }
-        
-        // Extract tool if available
-        if (dayData.tool) {
+        } else if (dayData.tool) {
           upcomingActivities.push({
             title: dayData.tool,
             timeLabel,
