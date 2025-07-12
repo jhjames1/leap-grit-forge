@@ -325,10 +325,10 @@ const PeerSpecialistDashboard = () => {
 
   const getSessionStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500';
-      case 'waiting': return 'bg-yellow-500';
-      case 'ended': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'active': return 'bg-green-500 text-white border-green-500';
+      case 'waiting': return 'bg-yellow-500 text-white border-yellow-500';
+      case 'ended': return 'bg-red-500 text-white border-red-500';
+      default: return 'bg-gray-500 text-white border-gray-500';
     }
   };
 
