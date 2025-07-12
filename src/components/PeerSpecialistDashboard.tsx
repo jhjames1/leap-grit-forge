@@ -23,7 +23,8 @@ import {
   X,
   BarChart3,
   Archive,
-  Heart
+  Heart,
+  Activity
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import SpecialistAnalyticsDashboard from './SpecialistAnalyticsDashboard';
@@ -745,15 +746,15 @@ const PeerSpecialistDashboard = () => {
                   <BarChart3 size={16} />
                   Analytics
                 </Button>
-                <Button
-                  onClick={() => setIsActivityLogOpen(true)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <BarChart3 size={16} />
-                  Activity
-                </Button>
+                 <Button
+                   onClick={() => setIsActivityLogOpen(true)}
+                   variant="outline"
+                   size="sm"
+                   className="flex items-center gap-2"
+                 >
+                   <Activity size={16} />
+                   Activity
+                 </Button>
                 <Button
                   onClick={() => setIsFavoritesOpen(true)}
                   variant="outline"
