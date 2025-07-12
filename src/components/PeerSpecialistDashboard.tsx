@@ -711,7 +711,7 @@ const PeerSpecialistDashboard = () => {
             {/* Left column: Title and welcome text */}
             <div className="flex-1">
               <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-                <span className="font-oswald font-extralight tracking-tight">PEER</span><span className="font-fjalla font-extrabold italic">SPECIALIST</span>
+                <span className="font-oswald font-extralight tracking-tight">PEER SUPPORT</span><span className="font-fjalla font-extrabold italic">SPECIALIST</span>
               </h1>
               <div className="mt-8"></div>
               <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
@@ -732,7 +732,7 @@ const PeerSpecialistDashboard = () => {
             {/* Right column: Actions and Status */}
             <div className="flex flex-col items-end space-y-4">
               {/* Action Buttons */}
-              <div className="flex gap-2">
+               <div className="flex gap-2">
                 <Button
                   onClick={() => setCurrentView('analytics')}
                   variant="outline"
@@ -741,6 +741,15 @@ const PeerSpecialistDashboard = () => {
                 >
                   <BarChart3 size={16} />
                   Analytics
+                </Button>
+                <Button
+                  onClick={() => setIsActivityLogOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <BarChart3 size={16} />
+                  Activity
                 </Button>
                 <Button
                   onClick={handleSignOut}
@@ -860,20 +869,17 @@ const PeerSpecialistDashboard = () => {
             </div>
           </Card>
 
-          <Card 
-            className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 cursor-pointer hover:bg-accent"
-            onClick={() => setIsActivityLogOpen(true)}
-          >
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
             <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-3 rounded-sm">
-                <BarChart3 className="text-primary-foreground" size={20} />
+                <User className="text-primary-foreground" size={20} />
               </div>
               <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                Activity Log
+                Peer Support Specialist
               </h3>
             </div>
             <div className="text-sm text-muted-foreground">
-              View specialist activity for this week
+              Your role in recovery support
             </div>
           </Card>
         </div>
@@ -882,12 +888,18 @@ const PeerSpecialistDashboard = () => {
         {/* Main Dashboard Content */}
         <div className="w-full">
           <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="active" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-2 bg-muted">
+              <TabsTrigger 
+                value="active" 
+                className="flex items-center gap-2 data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=inactive]:bg-gray-400 data-[state=inactive]:text-gray-700"
+              >
                 <MessageSquare size={16} />
                 Active Chats
               </TabsTrigger>
-              <TabsTrigger value="archive" className="flex items-center gap-2">
+              <TabsTrigger 
+                value="archive" 
+                className="flex items-center gap-2 data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=inactive]:bg-gray-400 data-[state=inactive]:text-gray-700"
+              >
                 <Archive size={16} />
                 Archive
               </TabsTrigger>
