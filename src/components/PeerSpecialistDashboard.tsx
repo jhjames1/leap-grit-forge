@@ -30,6 +30,11 @@ interface ChatSession {
   created_at: string;
   started_at: string | null;
   ended_at: string | null;
+  lastMessage?: {
+    content: string;
+    sender_type: string;
+    created_at: string;
+  };
 }
 
 interface ChatMessage {
@@ -138,14 +143,34 @@ const PeerSpecialistDashboard = () => {
     if (!specialist) return;
 
     try {
-      const { data, error } = await supabase
+      // First get all sessions for this specialist
+      const { data: sessions, error: sessionsError } = await supabase
         .from('chat_sessions')
         .select('*')
         .eq('specialist_id', specialist.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setChatSessions(data || []);
+      if (sessionsError) throw sessionsError;
+
+      // For each session, get the most recent message
+      const sessionsWithLastMessage = await Promise.all(
+        (sessions || []).map(async (session) => {
+          const { data: lastMessage } = await supabase
+            .from('chat_messages')
+            .select('content, sender_type, created_at')
+            .eq('session_id', session.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          return {
+            ...session,
+            lastMessage: lastMessage || undefined
+          };
+        })
+      );
+
+      setChatSessions(sessionsWithLastMessage);
     } catch (error) {
       console.error('Error loading chat sessions:', error);
     }
@@ -181,7 +206,8 @@ const PeerSpecialistDashboard = () => {
           filter: `specialist_id=eq.${specialist.id}`
         },
         (payload) => {
-          setChatSessions(prev => [payload.new as ChatSession, ...prev]);
+          const newSession = { ...payload.new as ChatSession, lastMessage: undefined };
+          setChatSessions(prev => [newSession, ...prev]);
           toast({
             title: "New Chat Request",
             description: "A user wants to start a chat with you"
@@ -204,7 +230,22 @@ const PeerSpecialistDashboard = () => {
             filter: `session_id=eq.${selectedSession.id}`
           },
           (payload) => {
-            setMessages(prev => [...prev, payload.new as ChatMessage]);
+            const newMessage = payload.new as ChatMessage;
+            setMessages(prev => [...prev, newMessage]);
+            
+            // Update the last message in chat sessions
+            setChatSessions(prev => prev.map(session => 
+              session.id === newMessage.session_id 
+                ? { 
+                    ...session, 
+                    lastMessage: {
+                      content: newMessage.content,
+                      sender_type: newMessage.sender_type,
+                      created_at: newMessage.created_at
+                    }
+                  }
+                : session
+            ));
           }
         )
         .subscribe();
@@ -548,18 +589,42 @@ const PeerSpecialistDashboard = () => {
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <div 
-                              className="flex-1 cursor-pointer"
-                              onClick={() => {
-                                setSelectedSession(session);
-                                loadMessages(session.id);
-                              }}
-                            >
-                              <p className="font-source font-medium text-card-foreground">Session {session.id.slice(0, 8)}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(session.created_at).toLocaleString()}
-                              </p>
-                            </div>
+                             <div 
+                               className="flex-1 cursor-pointer"
+                               onClick={() => {
+                                 setSelectedSession(session);
+                                 loadMessages(session.id);
+                               }}
+                             >
+                               <p className="font-source font-medium text-card-foreground">Session {session.id.slice(0, 8)}</p>
+                               <p className="text-xs text-muted-foreground">
+                                 {new Date(session.created_at).toLocaleString()}
+                               </p>
+                               {session.lastMessage && (
+                                 <div className="mt-1">
+                                   <p className="text-xs text-muted-foreground">
+                                     Last from: {session.lastMessage.sender_type === 'specialist' ? 'You' : 'User'} • {
+                                       (() => {
+                                         const now = new Date();
+                                         const messageTime = new Date(session.lastMessage.created_at);
+                                         const diffMs = now.getTime() - messageTime.getTime();
+                                         const diffMins = Math.floor(diffMs / 60000);
+                                         const diffHours = Math.floor(diffMs / 3600000);
+                                         const diffDays = Math.floor(diffMs / 86400000);
+                                         
+                                         if (diffMins < 1) return 'just now';
+                                         if (diffMins < 60) return `${diffMins}m ago`;
+                                         if (diffHours < 24) return `${diffHours}h ago`;
+                                         return `${diffDays}d ago`;
+                                       })()
+                                     }
+                                   </p>
+                                   <p className="text-xs text-muted-foreground/70 truncate max-w-[200px]">
+                                     {session.lastMessage.content}
+                                   </p>
+                                 </div>
+                               )}
+                             </div>
                             <div className="flex items-center space-x-2">
                               <Badge className={getSessionStatusColor(session.status)}>
                                 {session.status}
