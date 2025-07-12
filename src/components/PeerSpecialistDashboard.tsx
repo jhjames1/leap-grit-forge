@@ -20,9 +20,11 @@ import {
   User,
   Settings,
   Send,
-  X
+  X,
+  BarChart3
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import SpecialistAnalyticsDashboard from './SpecialistAnalyticsDashboard';
 
 interface ChatSession {
   id: string;
@@ -67,6 +69,7 @@ const PeerSpecialistDashboard = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   
+  const [currentView, setCurrentView] = useState<'dashboard' | 'analytics'>('dashboard');
   const [specialist, setSpecialist] = useState<PeerSpecialist | null>(null);
   const [specialistStatus, setSpecialistStatus] = useState<SpecialistStatus | null>(null);
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
@@ -584,6 +587,10 @@ const PeerSpecialistDashboard = () => {
     return `${diffDays}d ago`;
   };
 
+  if (currentView === 'analytics') {
+    return <SpecialistAnalyticsDashboard onBack={() => setCurrentView('dashboard')} />;
+  }
+
   if (loading) {
     return (
       <div className="p-4 pb-24 bg-background min-h-screen flex items-center justify-center">
@@ -683,8 +690,31 @@ const PeerSpecialistDashboard = () => {
               )}
             </div>
             
-            {/* Right column: Status */}
-            <div className="flex flex-col items-end">
+            {/* Right column: Actions and Status */}
+            <div className="flex flex-col items-end space-y-4">
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setCurrentView('analytics')}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <BarChart3 size={16} />
+                  Analytics
+                </Button>
+                <Button
+                  onClick={handleSignOut}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 text-destructive hover:text-destructive"
+                >
+                  <LogOut size={16} />
+                  Sign Out
+                </Button>
+              </div>
+              
+              {/* Status Badge */}
               {specialistStatus && (
                 <div 
                   className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadge(specialistStatus.status)} cursor-pointer`}

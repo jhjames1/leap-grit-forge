@@ -1,4 +1,16 @@
-# Welcome to your Lovable project
+# LEAP Recovery App - Peer Specialist Portal
+
+## New Feature: Specialist Analytics Dashboard
+
+A comprehensive analytics dashboard for peer specialists featuring:
+
+- **Chat Statistics**: Weekly, monthly, and yearly chat volumes
+- **Performance Metrics**: Average chat duration, response times, and session completion rates  
+- **User Insights**: Top words used by users in conversations
+- **Activity Trends**: Visual weekly activity charts and monthly trends
+- **Real-time Data**: Live session counts and satisfaction scores
+
+Access the analytics dashboard from the specialist portal by clicking the "Analytics" button.
 
 ## Project info
 
