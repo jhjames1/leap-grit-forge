@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,11 +39,11 @@ interface SpecialistFavoritesProps {
   onClose: () => void;
 }
 
-const SpecialistFavorites: React.FC<SpecialistFavoritesProps> = ({
+const SpecialistFavorites = ({
   specialistId,
   isOpen,
   onClose
-}) => {
+}: SpecialistFavoritesProps) => {
   const [favorites, setFavorites] = useState<FavoriteContent[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
