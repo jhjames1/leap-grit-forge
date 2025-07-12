@@ -435,6 +435,18 @@ const PeerSpecialistDashboard = () => {
   };
 
   const handleSignOut = async () => {
+    // Check if there are any active sessions
+    const activeSessions = chatSessions.filter(session => session.status === 'active' || session.status === 'waiting');
+    
+    if (activeSessions.length > 0) {
+      toast({
+        title: "Cannot Sign Out",
+        description: "You cannot log out because you have active sessions.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Set status to offline before signing out
     if (specialistStatus) {
       await updateStatus('offline');
@@ -647,38 +659,49 @@ const PeerSpecialistDashboard = () => {
               {/* Status Settings moved here */}
               {specialistStatus && (
                 <div className="mt-6 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-source text-card-foreground">Current Status:</span>
-                    <Badge className={getStatusColor(specialistStatus.status)}>
-                      {specialistStatus.status}
+                  <div className="flex items-start">
+                    <span className="font-oswald font-extralight tracking-wide text-foreground text-sm mr-2">CURRENT STATUS:</span>
+                    <Badge className={`${getStatusColor(specialistStatus.status)} text-white text-xs`}>
+                      {specialistStatus.status.toUpperCase()}
                     </Badge>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <span className="font-source text-card-foreground">Last Seen:</span>
-                    <span className="text-muted-foreground text-sm">
+                  <div className="flex items-start">
+                    <span className="font-oswald font-extralight tracking-wide text-foreground text-sm mr-2">LAST SEEN:</span>
+                    <span className="text-muted-foreground text-sm italic">
                       {specialistStatus.last_seen ? new Date(specialistStatus.last_seen).toLocaleString() : 'Never'}
                     </span>
                   </div>
                   
                   <Button 
                     onClick={() => setIsStatusDialogOpen(true)}
-                    className="w-full bg-primary hover:bg-primary/80 text-primary-foreground"
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
                   >
+                    <Settings size={16} />
                     Update Status
                   </Button>
                   
                   {/* Notification Settings */}
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <div className="flex items-center space-x-2">
-                      <Bell size={16} className="text-muted-foreground" />
-                      <span className="font-source text-card-foreground text-sm">Sound Notifications</span>
-                    </div>
+                  <div className="flex items-center pt-2 border-t border-border">
+                    <Bell size={16} className="text-muted-foreground mr-2" />
+                    <span className="font-oswald font-extralight tracking-wide text-foreground text-sm mr-2">SOUND NOTIFICATIONS:</span>
                     <Switch
                       checked={notificationsEnabled}
                       onCheckedChange={(checked) => {
                         setNotificationsEnabled(checked);
                         localStorage.setItem('specialist-notifications-enabled', JSON.stringify(checked));
+                        
+                        // Immediately test the notification if enabling
+                        if (checked) {
+                          try {
+                            audioNotification.playTwoToneNotification();
+                          } catch (error) {
+                            console.log('Could not play test notification:', error);
+                          }
+                        }
+                        
                         toast({
                           title: checked ? "Notifications Enabled" : "Notifications Disabled",
                           description: checked ? "You'll hear a sound when new messages arrive" : "Message notifications are now silent"

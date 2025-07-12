@@ -93,9 +93,12 @@ const SpecialistAnalyticsDashboard = ({ onNavigateToChat }: SpecialistAnalyticsD
           {onNavigateToChat && (
             <Button 
               onClick={onNavigateToChat}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-source font-bold py-2 px-4 rounded-lg tracking-wide transition-colors duration-300"
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
             >
-              CHAT
+              <MessageSquare size={16} />
+              Chat
             </Button>
           )}
         </div>
