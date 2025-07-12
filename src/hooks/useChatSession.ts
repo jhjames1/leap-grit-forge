@@ -29,15 +29,7 @@ export function useChatSession(specialistId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  console.log('🔄 useChatSession state:', { 
-    specialistId, 
-    userId: user?.id, 
-    sessionId: session?.id, 
-    messagesCount: messages.length,
-    loading, 
-    error 
-  });
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
 
   useEffect(() => {
     if (!user || !specialistId) return;
@@ -54,9 +46,16 @@ export function useChatSession(specialistId?: string) {
     // Load existing messages first
     loadMessages(session.id);
     
-    // Set up real-time subscription for messages
+    setConnectionStatus('connecting');
+    
+    // Set up real-time subscription for messages with optimized channel
     const messagesChannel = supabase
-      .channel(`chat-messages-${session.id}`)
+      .channel(`chat-messages-${session.id}`, {
+        config: {
+          broadcast: { self: false },
+          presence: { key: user?.id }
+        }
+      })
       .on(
         'postgres_changes',
         {
@@ -68,26 +67,43 @@ export function useChatSession(specialistId?: string) {
         (payload) => {
           console.log('📨 New message received via realtime:', payload);
           const newMessage = payload.new as ChatMessage;
-          console.log('📨 New message details:', newMessage);
           setMessages(prev => {
-            console.log('📨 Current messages before update:', prev.length);
-            // Avoid duplicates
+            // Avoid duplicates by checking if message already exists
             if (prev.find(msg => msg.id === newMessage.id)) {
-              console.log('📨 Message already exists, skipping');
               return prev;
             }
-            const updatedMessages = [...prev, newMessage];
-            console.log('📨 Updated messages count:', updatedMessages.length);
-            return updatedMessages;
+            return [...prev, newMessage].sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
           });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_sessions',
+          filter: `id=eq.${session.id}`
+        },
+        (payload) => {
+          console.log('📡 Session updated via realtime:', payload);
+          const updatedSession = payload.new as ChatSession;
+          setSession(updatedSession);
+        }
+      )
       .subscribe((status) => {
-        console.log('📡 Messages subscription status:', status);
+        console.log('📡 Real-time subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setConnectionStatus('disconnected');
+        }
       });
 
     return () => {
-      console.log('🔌 Cleaning up messages subscription');
+      console.log('🔌 Cleaning up real-time subscription');
+      setConnectionStatus('disconnected');
       supabase.removeChannel(messagesChannel);
     };
   }, [session]);
@@ -222,10 +238,27 @@ export function useChatSession(specialistId?: string) {
       return;
     }
 
+    // Create optimistic message for immediate UI update
+    const optimisticMessage: ChatMessage = {
+      id: `temp-${Date.now()}`,
+      sender_id: user.id,
+      sender_type,
+      message_type,
+      content,
+      metadata,
+      is_read: false,
+      created_at: new Date().toISOString()
+    };
+
+    // Add optimistic message immediately
+    if (sender_type === 'user') {
+      setMessages(prev => [...prev, optimisticMessage]);
+    }
+
     try {
       console.log('Sending message:', { content, message_type, sender_type, sessionId: targetSessionId });
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('chat_messages')
         .insert({
           session_id: targetSessionId,
@@ -234,11 +267,24 @@ export function useChatSession(specialistId?: string) {
           message_type,
           content,
           metadata
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Message send error:', error);
+        // Remove optimistic message on error
+        if (sender_type === 'user') {
+          setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+        }
         throw error;
+      }
+
+      // Replace optimistic message with real one
+      if (sender_type === 'user' && data) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === optimisticMessage.id ? data as ChatMessage : msg
+        ));
       }
 
       console.log('Message sent successfully');
@@ -287,6 +333,7 @@ export function useChatSession(specialistId?: string) {
     messages,
     loading,
     error,
+    connectionStatus,
     startSession,
     sendMessage,
     endSession

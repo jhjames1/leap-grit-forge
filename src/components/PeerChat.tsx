@@ -27,14 +27,15 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   const [message, setMessage] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
   
-  const { 
-    session, 
-    messages, 
-    loading, 
-    error, 
-    startSession, 
-    sendMessage, 
-    endSession 
+  const {
+    session,
+    messages,
+    loading,
+    error,
+    connectionStatus,
+    startSession,
+    sendMessage,
+    endSession
   } = useChatSession(selectedPeer?.id);
 
   const handleSelectPeer = async (peer: PeerSpecialist) => {
@@ -204,10 +205,18 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         </div>
       )}
 
-      {session && (
+      {connectionStatus === 'connected' && session && (
         <div className="bg-green-500/10 border-b border-green-500/20 p-3">
           <p className="text-green-600 text-sm text-center">
-            Chat session {session.status} - You can now send messages
+            ✓ Real-time chat connected - Messages will appear instantly
+          </p>
+        </div>
+      )}
+
+      {connectionStatus === 'disconnected' && session && (
+        <div className="bg-orange-500/10 border-b border-orange-500/20 p-3">
+          <p className="text-orange-600 text-sm text-center">
+            ⚠ Connection issue - Messages may be delayed
           </p>
         </div>
       )}
