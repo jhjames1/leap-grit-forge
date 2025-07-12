@@ -52,14 +52,20 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
         journeyFound: !!journey,
         modifierFound: !!modifier
       });
-    } else if (userData) {
-      // If userData exists but missing onboarding data, use defaults
-      logger.debug('Using default journey for user missing onboarding data');
+    } else {
+      // Always load default journey if user data is missing or incomplete
+      logger.debug('Loading default journey - userData missing or incomplete');
       const defaultJourney = journeyManager.getUserJourney(['stress_management']);
       const defaultModifier = journeyManager.getPhaseModifier('foundation');
       
       setUserJourney(defaultJourney);
       setPhaseModifier(defaultModifier);
+      
+      logger.debug('Default journey loaded', { 
+        journeyFound: !!defaultJourney,
+        modifierFound: !!defaultModifier,
+        daysCount: defaultJourney?.days?.length || 0
+      });
     }
   }, [userData?.focusAreas, userData?.journeyStage, userData]);
 
