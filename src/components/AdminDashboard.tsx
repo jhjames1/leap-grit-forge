@@ -142,18 +142,18 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
 
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="bg-card border-border">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-yellow-50">Overview</TabsTrigger>
-            <TabsTrigger value="specialists" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-yellow-50">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50">Overview</TabsTrigger>
+            <TabsTrigger value="specialists" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50">
               <UserCheck className="mr-2 h-4 w-4" />
               Peer Specialists
             </TabsTrigger>
-            <TabsTrigger value="content" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-yellow-50">
+            <TabsTrigger value="content" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50">
               <MessageSquare className="mr-2 h-4 w-4" />
               Content
             </TabsTrigger>
-            <TabsTrigger value="security" className="data-[state=active]:bg-yellow-500 data-[state=active]:text-yellow-50">
+            <TabsTrigger value="security" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50">
               <Shield className="mr-2 h-4 w-4" />
-              Security
+              System Security
             </TabsTrigger>
           </TabsList>
 

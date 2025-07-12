@@ -89,28 +89,14 @@ const SecurityAuditPanel = () => {
         <div className="flex justify-between items-start mb-6">
           {/* Left column: Title and description */}
           <div className="flex-1">
-            <h1 className="text-5xl text-foreground mb-1 tracking-wide">
-              <span className="font-oswald font-extralight tracking-tight">SECURITY</span><span className="font-fjalla font-extrabold italic">AUDIT</span>
-            </h1>
-            <div className="mt-8"></div>
             <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
               REAL-TIME MONITORING
             </p>
             <p className="text-muted-foreground text-sm">Track security events and system activity</p>
           </div>
           
-          {/* Right column: Action buttons */}
+          {/* Right column: Action buttons removed - now handled by main refresh */}
           <div className="flex flex-col items-end">
-            <div className="flex items-center space-x-2">
-              <Button 
-                onClick={loadSecurityData}
-                variant="outline"
-                size="sm"
-                className="border-primary text-primary hover:bg-primary/10"
-              >
-                Refresh Data
-              </Button>
-            </div>
           </div>
         </div>
       </div>
@@ -169,12 +155,12 @@ const SecurityAuditPanel = () => {
       </div>
 
       {/* Security Alert */}
-      <Card className="bg-yellow-500/10 border-yellow-500/30 p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+      <Card className="bg-red-500/10 border-red-500/30 p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
         <div className="flex items-start space-x-3">
-          <AlertTriangle className="text-yellow-400 mt-1" size={20} />
+          <AlertTriangle className="text-red-400 mt-1" size={20} />
           <div>
-            <h3 className="text-yellow-400 font-fjalla font-bold mb-1 tracking-wide">SECURITY NOTICE</h3>
-            <p className="text-yellow-300 text-sm font-source">
+            <h3 className="text-red-400 font-fjalla font-bold mb-1 tracking-wide">SECURITY NOTICE</h3>
+            <p className="text-red-300 text-sm font-source">
               This panel shows security events and system activity. In production, this data should be sent to a secure logging service.
             </p>
           </div>

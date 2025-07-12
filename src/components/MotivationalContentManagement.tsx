@@ -278,10 +278,6 @@ const MotivationalContentManagement = () => {
         <div className="flex justify-between items-start mb-6">
           {/* Left column: Title and description */}
           <div className="flex-1">
-            <h1 className="text-5xl text-foreground mb-1 tracking-wide">
-              <span className="font-oswald font-extralight tracking-tight">MOTIVATIONAL</span><span className="font-fjalla font-extrabold italic">CONTENT</span>
-            </h1>
-            <div className="mt-8"></div>
             <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
               CONTENT MANAGEMENT SYSTEM
             </p>
