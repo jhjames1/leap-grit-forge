@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   const [selectedPeer, setSelectedPeer] = useState<PeerSpecialist | null>(null);
   const [message, setMessage] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const {
     session,
@@ -53,6 +54,11 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
       startSession();
     }
   }, [currentView, selectedPeer, session, isInitialized, loading, startSession]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSendMessage = async () => {
     if (!message.trim()) {
@@ -273,6 +279,9 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
             )}
           </>
         )}
+        
+        {/* Invisible div for auto-scroll target */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Quick Actions */}
