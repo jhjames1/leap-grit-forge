@@ -23,6 +23,7 @@ import {
   LogOut
 } from 'lucide-react';
 import PeerSpecialistManagement from './PeerSpecialistManagement';
+import MotivationalContentManagement from './MotivationalContentManagement';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -145,6 +146,10 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
             <TabsTrigger value="specialists">
               <UserCheck className="mr-2 h-4 w-4" />
               Peer Specialists
+            </TabsTrigger>
+            <TabsTrigger value="content">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Content
             </TabsTrigger>
             <TabsTrigger value="security">
               <Shield className="mr-2 h-4 w-4" />
@@ -291,6 +296,10 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
 
           <TabsContent value="specialists">
             <PeerSpecialistManagement />
+          </TabsContent>
+
+          <TabsContent value="content">
+            <MotivationalContentManagement />
           </TabsContent>
 
           <TabsContent value="security">

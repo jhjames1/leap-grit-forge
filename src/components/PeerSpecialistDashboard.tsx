@@ -22,13 +22,15 @@ import {
   Send,
   X,
   BarChart3,
-  Archive
+  Archive,
+  Heart
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import SpecialistAnalyticsDashboard from './SpecialistAnalyticsDashboard';
 import ChatArchive from './ChatArchive';
 import SpecialistActivityLog from './SpecialistActivityLog';
 import MotivationalWelcome from './MotivationalWelcome';
+import SpecialistFavorites from './SpecialistFavorites';
 
 interface ChatSession {
   id: string;
@@ -86,6 +88,7 @@ const PeerSpecialistDashboard = () => {
   const [totalChatsToday, setTotalChatsToday] = useState(0);
   const [averageWaitTime, setAverageWaitTime] = useState(0);
   const [showMotivationalWelcome, setShowMotivationalWelcome] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   
   // Audio notification state
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
@@ -752,6 +755,15 @@ const PeerSpecialistDashboard = () => {
                   Activity
                 </Button>
                 <Button
+                  onClick={() => setIsFavoritesOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Heart size={16} />
+                  Favorites
+                </Button>
+                <Button
                   onClick={handleSignOut}
                   variant="outline"
                   size="sm"
@@ -1158,14 +1170,19 @@ const PeerSpecialistDashboard = () => {
         specialistId={specialist?.id || ''}
       />
 
-      {/* Motivational Welcome Modal */}
-      {specialist && (
-        <MotivationalWelcome
-          specialistId={specialist.id}
-          isOpen={showMotivationalWelcome}
-          onClose={() => setShowMotivationalWelcome(false)}
-        />
-      )}
+      {/* Motivational Welcome Dialog */}
+      <MotivationalWelcome
+        specialistId={specialist?.id || ''}
+        isOpen={showMotivationalWelcome}
+        onClose={() => setShowMotivationalWelcome(false)}
+      />
+
+      {/* Favorites Dialog */}
+      <SpecialistFavorites
+        specialistId={specialist?.id || ''}
+        isOpen={isFavoritesOpen}
+        onClose={() => setIsFavoritesOpen(false)}
+      />
     </div>
   );
 };
