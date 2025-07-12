@@ -79,10 +79,15 @@ const PeerSpecialistDashboard = () => {
   useEffect(() => {
     if (user) {
       loadSpecialistData();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (specialist) {
       loadChatSessions();
       setupRealtimeSubscriptions();
     }
-  }, [user]);
+  }, [specialist]);
 
   useEffect(() => {
     if (selectedSession) {
@@ -153,6 +158,8 @@ const PeerSpecialistDashboard = () => {
 
       if (sessionsError) throw sessionsError;
 
+      console.log('Loaded chat sessions:', sessions);
+
       // For each session, get the most recent message
       const sessionsWithLastMessage = await Promise.all(
         (sessions || []).map(async (session) => {
@@ -164,6 +171,8 @@ const PeerSpecialistDashboard = () => {
             .limit(1)
             .maybeSingle();
 
+          console.log(`Session ${session.id} - Status: ${session.status}, Last message:`, lastMessage);
+
           return {
             ...session,
             lastMessage: lastMessage || undefined
@@ -172,6 +181,7 @@ const PeerSpecialistDashboard = () => {
       );
 
       setChatSessions(sessionsWithLastMessage);
+      console.log('Sessions with last messages:', sessionsWithLastMessage);
     } catch (error) {
       console.error('Error loading chat sessions:', error);
     }
