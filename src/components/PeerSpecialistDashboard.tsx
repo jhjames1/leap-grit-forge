@@ -662,9 +662,12 @@ const PeerSpecialistDashboard = () => {
                                   Started: {new Date(session.created_at).toLocaleString()}
                                 </p>
                               </div>
-                              
-                              {/* End Chat Button - Only for active/waiting sessions */}
-                              {(session.status === 'active' || session.status === 'waiting') && (
+                            </div>
+
+                            {/* Action Buttons Row */}
+                            <div className="flex items-center justify-between pt-2 border-t border-border">
+                              <div className="flex items-center gap-2">
+                                {/* End Chat Button - Always visible but disabled for ended sessions */}
                                 <Button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -672,11 +675,36 @@ const PeerSpecialistDashboard = () => {
                                   }}
                                   size="sm"
                                   variant="destructive"
-                                  className="ml-2 h-8 px-3 text-xs font-medium"
+                                  disabled={session.status === 'ended'}
+                                  className="h-8 px-3 text-xs font-medium bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 >
-                                  End Chat
+                                  {session.status === 'ended' ? 'Chat Ended' : 'End Chat'}
                                 </Button>
-                              )}
+                                
+                                {/* View Messages Button */}
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedSession(session);
+                                    loadMessages(session.id);
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 px-3 text-xs font-medium"
+                                >
+                                  View Messages
+                                </Button>
+                              </div>
+                              
+                              {/* Session Info */}
+                              <div className="text-xs text-muted-foreground">
+                                {session.status === 'ended' && session.ended_at && (
+                                  <span>Ended: {formatTimeAgo(session.ended_at)}</span>
+                                )}
+                                {session.status !== 'ended' && (
+                                  <span>Duration: {formatTimeAgo(session.created_at)}</span>
+                                )}
+                              </div>
                             </div>
 
                             {/* Last Message Info */}
