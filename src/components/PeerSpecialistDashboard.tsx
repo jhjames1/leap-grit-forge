@@ -887,11 +887,11 @@ const PeerSpecialistDashboard = () => {
                 <User className="text-primary-foreground" size={20} />
               </div>
               <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                Peer Support Specialist
+                New Feature
               </h3>
             </div>
             <div className="text-sm text-muted-foreground">
-              Your role in recovery support
+              Placeholder for future expansion
             </div>
           </Card>
         </div>
