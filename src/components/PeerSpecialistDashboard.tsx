@@ -214,6 +214,7 @@ const PeerSpecialistDashboard = () => {
   };
 
   const loadMessages = async (sessionId: string) => {
+    console.log('Loading messages for session:', sessionId);
     try {
       const { data, error } = await supabase
         .from('chat_messages')
@@ -222,7 +223,16 @@ const PeerSpecialistDashboard = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+      console.log('Loaded messages:', data);
       setMessages(data || []);
+      
+      // Auto-scroll to bottom after loading messages
+      setTimeout(() => {
+        const messagesContainer = document.getElementById('messages-container');
+        if (messagesContainer) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+      }, 100);
     } catch (error) {
       console.error('Error loading messages:', error);
     }
@@ -265,6 +275,9 @@ const PeerSpecialistDashboard = () => {
         },
         (payload) => {
           const newMessage = payload.new as ChatMessage;
+          console.log('🔥 New message received via realtime:', newMessage);
+          console.log('🎯 Currently selected session:', selectedSession?.id);
+          console.log('🎯 Message is for session:', newMessage.session_id);
           
           // Update the last message in chat sessions for any session this specialist has
           setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
@@ -282,17 +295,23 @@ const PeerSpecialistDashboard = () => {
 
           // If this message is for the currently selected session, also update the messages
           if (selectedSession && newMessage.session_id === selectedSession.id) {
-            setMessages(prev => [...prev, newMessage]);
-          }
-
-          // Auto-scroll to show new messages if viewing this session
-          if (selectedSession && newMessage.session_id === selectedSession.id) {
+            console.log('✅ Adding message to current session messages');
+            setMessages(prev => {
+              console.log('Current messages before adding new one:', prev);
+              const newMessages = [...prev, newMessage];
+              console.log('Messages after adding new one:', newMessages);
+              return newMessages;
+            });
+            
+            // Auto-scroll to show new messages if viewing this session
             setTimeout(() => {
               const messagesContainer = document.getElementById('messages-container');
               if (messagesContainer) {
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
               }
             }, 100);
+          } else {
+            console.log('❌ Message not for current session, skipping message addition');
           }
         }
       )
