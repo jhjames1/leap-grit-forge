@@ -273,149 +273,157 @@ const MotivationalContentManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground font-fjalla tracking-wide">
-            MOTIVATIONAL CONTENT
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            Manage daily inspiration content for peer specialists
-          </p>
+      {/* Header - Matching home page style */}
+      <div className="mb-6">
+        <div className="flex justify-between items-start mb-6">
+          {/* Left column: Title and description */}
+          <div className="flex-1">
+            <h1 className="text-5xl text-foreground mb-1 tracking-wide">
+              <span className="font-oswald font-extralight tracking-tight">MOTIVATIONAL</span><span className="font-fjalla font-extrabold italic">CONTENT</span>
+            </h1>
+            <div className="mt-8"></div>
+            <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
+              CONTENT MANAGEMENT SYSTEM
+            </p>
+            <p className="text-muted-foreground text-sm">Manage daily inspiration content for peer specialists</p>
+          </div>
+          
+          {/* Right column: Action buttons */}
+          <div className="flex flex-col items-end">
+            <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+              setIsAddDialogOpen(open);
+              if (!open) resetForm();
+            }}>
+              <DialogTrigger asChild>
+                <Button className="bg-construction hover:bg-construction/90 text-midnight font-fjalla font-bold tracking-wide">
+                  <Plus className="h-4 w-4 mr-2" />
+                  ADD CONTENT
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingContent ? 'Edit Content' : 'Add New Content'}
+                  </DialogTitle>
+                </DialogHeader>
+                
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="title">Title</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="author">Author (Optional)</Label>
+                      <Input
+                        id="author"
+                        value={formData.author}
+                        onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="content_type">Content Type</Label>
+                      <Select 
+                        value={formData.content_type} 
+                        onValueChange={(value: 'quote' | 'video' | 'audio' | 'image') => 
+                          setFormData({ ...formData, content_type: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="quote">Quote</SelectItem>
+                          <SelectItem value="video">Video</SelectItem>
+                          <SelectItem value="audio">Audio</SelectItem>
+                          <SelectItem value="image">Image</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="category">Category</Label>
+                      <Select 
+                        value={formData.category} 
+                        onValueChange={(value: 'daily_inspiration' | 'success_stories' | 'professional_tips' | 'self_care') => 
+                          setFormData({ ...formData, category: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="daily_inspiration">Daily Inspiration</SelectItem>
+                          <SelectItem value="success_stories">Success Stories</SelectItem>
+                          <SelectItem value="professional_tips">Professional Tips</SelectItem>
+                          <SelectItem value="self_care">Self Care</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="content">Content</Label>
+                    <Textarea
+                      id="content"
+                      value={formData.content}
+                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  {(formData.content_type === 'video' || formData.content_type === 'audio' || formData.content_type === 'image') && (
+                    <div>
+                      <Label htmlFor="media_url">Media URL</Label>
+                      <Input
+                        id="media_url"
+                        type="url"
+                        value={formData.media_url}
+                        onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
+                        placeholder="https://..."
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="is_active"
+                      checked={formData.is_active}
+                      onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                    />
+                    <Label htmlFor="is_active">Active</Label>
+                  </div>
+
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsAddDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit"
+                      className="bg-construction hover:bg-construction/90 text-midnight"
+                    >
+                      {editingContent ? 'Update' : 'Add'} Content
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-        
-        <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
-          setIsAddDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button className="bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold tracking-wide">
-              <Plus className="h-4 w-4 mr-2" />
-              ADD CONTENT
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingContent ? 'Edit Content' : 'Add New Content'}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="author">Author (Optional)</Label>
-                  <Input
-                    id="author"
-                    value={formData.author}
-                    onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="content_type">Content Type</Label>
-                  <Select 
-                    value={formData.content_type} 
-                    onValueChange={(value: 'quote' | 'video' | 'audio' | 'image') => 
-                      setFormData({ ...formData, content_type: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="quote">Quote</SelectItem>
-                      <SelectItem value="video">Video</SelectItem>
-                      <SelectItem value="audio">Audio</SelectItem>
-                      <SelectItem value="image">Image</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select 
-                    value={formData.category} 
-                    onValueChange={(value: 'daily_inspiration' | 'success_stories' | 'professional_tips' | 'self_care') => 
-                      setFormData({ ...formData, category: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily_inspiration">Daily Inspiration</SelectItem>
-                      <SelectItem value="success_stories">Success Stories</SelectItem>
-                      <SelectItem value="professional_tips">Professional Tips</SelectItem>
-                      <SelectItem value="self_care">Self Care</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="content">Content</Label>
-                <Textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  rows={4}
-                  required
-                />
-              </div>
-
-              {(formData.content_type === 'video' || formData.content_type === 'audio' || formData.content_type === 'image') && (
-                <div>
-                  <Label htmlFor="media_url">Media URL</Label>
-                  <Input
-                    id="media_url"
-                    type="url"
-                    value={formData.media_url}
-                    onChange={(e) => setFormData({ ...formData, media_url: e.target.value })}
-                    placeholder="https://..."
-                  />
-                </div>
-              )}
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                />
-                <Label htmlFor="is_active">Active</Label>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsAddDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit"
-                  className="bg-yellow-400 hover:bg-yellow-500 text-black"
-                >
-                  {editingContent ? 'Update' : 'Add'} Content
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Content Grid */}

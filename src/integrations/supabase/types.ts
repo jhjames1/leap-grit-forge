@@ -297,6 +297,7 @@ export type Database = {
           created_at: string
           id: string
           last_seen: string | null
+          presence_data: Json | null
           specialist_id: string
           status: string
           status_message: string | null
@@ -306,6 +307,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_seen?: string | null
+          presence_data?: Json | null
           specialist_id: string
           status?: string
           status_message?: string | null
@@ -315,6 +317,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_seen?: string | null
+          presence_data?: Json | null
           specialist_id?: string
           status?: string
           status_message?: string | null

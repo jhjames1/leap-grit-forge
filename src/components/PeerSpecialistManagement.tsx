@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSpecialistPresence } from '@/hooks/useSpecialistPresence';
 import { 
   UserPlus, 
   Edit, 
@@ -17,7 +18,13 @@ import {
   X, 
   Users,
   AlertCircle,
-  Search
+  Search,
+  Activity,
+  Clock,
+  MessageSquare,
+  TrendingUp,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -55,6 +62,7 @@ interface UserOption {
 const PeerSpecialistManagement = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { specialistStatuses, analytics, loading: presenceLoading, refreshData } = useSpecialistPresence();
   const [specialists, setSpecialists] = useState<PeerSpecialist[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -323,15 +331,131 @@ const PeerSpecialistManagement = () => {
     setFormData(prev => ({ ...prev, user_id: userId }));
   };
 
+  // Helper functions for status display
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'online': return 'bg-green-500';
+      case 'away': return 'bg-yellow-500';
+      case 'busy': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'online': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'away': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case 'busy': return 'bg-red-500/20 text-red-400 border-red-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
+  };
+
+  const getSpecialistStatus = (specialistId: string) => {
+    return specialistStatuses.find(s => s.specialist_id === specialistId);
+  };
+
+  const getSpecialistAnalytics = (specialistId: string) => {
+    return analytics.find(a => a.specialist_id === specialistId);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Info Card */}
-      <Card className="bg-blue-500/10 border-blue-500/30 p-4">
+      {/* Header - Matching home page style */}
+      <div className="mb-6">
+        <div className="flex justify-between items-start mb-6">
+          {/* Left column: Title and description */}
+          <div className="flex-1">
+            <h1 className="text-5xl text-foreground mb-1 tracking-wide">
+              <span className="font-oswald font-extralight tracking-tight">PEER</span><span className="font-fjalla font-extrabold italic">SPECIALISTS</span>
+            </h1>
+            <div className="mt-8"></div>
+            <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
+              REAL-TIME STATUS & ANALYTICS
+            </p>
+            <p className="text-muted-foreground text-sm">Monitor and manage specialist activity</p>
+          </div>
+          
+          {/* Right column: Action buttons */}
+          <div className="flex flex-col items-end">
+            <div className="flex items-center space-x-2">
+              <Button 
+                onClick={refreshData}
+                variant="outline"
+                size="sm"
+                className="border-primary text-primary hover:bg-primary/10"
+                disabled={presenceLoading}
+              >
+                {presenceLoading ? 'Loading...' : 'Refresh Status'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Real-time Status Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <div className="flex items-center space-x-3">
+            <div className="bg-primary p-3 rounded-sm">
+              <Users className="text-primary-foreground" size={20} />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-card-foreground">{specialists.length}</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Specialists</div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <div className="flex items-center space-x-3">
+            <div className="bg-green-500/20 p-3 rounded-sm">
+              <Wifi className="text-green-400" size={20} />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-card-foreground">
+                {specialistStatuses.filter(s => s.status === 'online').length}
+              </div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Online Now</div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <div className="flex items-center space-x-3">
+            <div className="bg-primary p-3 rounded-sm">
+              <MessageSquare className="text-primary-foreground" size={20} />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-card-foreground">
+                {analytics.reduce((sum, a) => sum + a.active_sessions, 0)}
+              </div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Active Sessions</div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <div className="flex items-center space-x-3">
+            <div className="bg-primary p-3 rounded-sm">
+              <TrendingUp className="text-primary-foreground" size={20} />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-card-foreground">
+                {Math.round(analytics.reduce((sum, a) => sum + a.total_messages, 0) / Math.max(analytics.length, 1))}
+              </div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Avg Messages</div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* How to Add Specialists Card */}
+      <Card className="bg-blue-500/10 border-blue-500/30 p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
         <div className="flex items-start space-x-3">
           <AlertCircle className="text-blue-400 mt-1" size={20} />
           <div>
-            <h3 className="text-blue-400 font-semibold mb-1">How to add specialists:</h3>
-            <p className="text-blue-300 text-sm">
+            <h3 className="text-blue-400 font-fjalla font-bold mb-1 tracking-wide">HOW TO ADD SPECIALISTS</h3>
+            <p className="text-blue-300 text-sm font-source">
               1. Users must first create accounts by signing up normally
               <br />
               2. Search and select the user by their email address below
@@ -344,13 +468,13 @@ const PeerSpecialistManagement = () => {
         </div>
       </Card>
 
-      {/* Header */}
+      {/* Add Specialist Section */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="bg-construction/20 p-2 rounded-lg">
-            <Users className="text-construction" size={20} />
+          <div className="bg-construction/20 p-3 rounded-lg">
+            <UserPlus className="text-construction" size={20} />
           </div>
-          <h2 className="font-oswald font-semibold text-white text-xl">Peer Specialists</h2>
+          <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">MANAGE SPECIALISTS</h3>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
