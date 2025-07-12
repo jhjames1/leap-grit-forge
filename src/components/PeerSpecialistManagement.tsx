@@ -360,15 +360,11 @@ const PeerSpecialistManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header - Matching home page style */}
+      {/* Real-time Status Header */}
       <div className="mb-6">
         <div className="flex justify-between items-start mb-6">
           {/* Left column: Title and description */}
           <div className="flex-1">
-            <h1 className="text-5xl text-foreground mb-1 tracking-wide">
-              <span className="font-oswald font-extralight tracking-tight">PEER</span><span className="font-fjalla font-extrabold italic">SPECIALISTS</span>
-            </h1>
-            <div className="mt-8"></div>
             <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
               REAL-TIME STATUS & ANALYTICS
             </p>
@@ -449,22 +445,20 @@ const PeerSpecialistManagement = () => {
         </Card>
       </div>
 
-      {/* How to Add Specialists Card - Home page styling */}
-      <Card className="bg-muted/50 p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+      {/* How to Add Specialists Card - Light grey background with black text */}
+      <Card className="bg-gray-100 p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
         <div className="flex items-start space-x-3">
           <div className="bg-primary p-3 rounded-sm">
             <AlertCircle className="text-primary-foreground" size={20} />
           </div>
           <div>
-            <h3 className="text-foreground font-fjalla font-bold mb-2 tracking-wide text-lg">HOW TO ADD SPECIALISTS</h3>
-            <p className="text-foreground text-sm font-source">
-              1. Users must first create accounts by signing up normally
+            <h3 className="text-black font-fjalla font-bold mb-2 tracking-wide text-lg">HOW TO ADD A NEW PEER SUPPORT SPECIALIST</h3>
+            <p className="text-black text-sm font-source">
+              1. Peer Support Specialists must first create sign up in the LEAP app
               <br />
-              2. Search and select the user by their email address below
+              2. The administrator using this portal then click Add Specialist and complete their details
               <br />
-              3. Fill in their specialist details and add them to the program
-              <br />
-              4. They can then access the Specialist Dashboard at /specialist
+              3. Once added, the Peer Support Specialist can then access the Peer Support Dashboard at leap.app/specialist
             </p>
           </div>
         </div>
@@ -767,22 +761,24 @@ const PeerSpecialistManagement = () => {
                   
                   {/* Action buttons - right side */}
                   <div className="flex items-start space-x-4">
-                    <div className="flex flex-col space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={specialist.is_active}
-                          onCheckedChange={() => handleStatusToggle(specialist, 'is_active')}
-                        />
-                        <span className="text-sm text-muted-foreground">Active</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={specialist.is_verified}
-                          onCheckedChange={() => handleStatusToggle(specialist, 'is_verified')}
-                        />
-                        <span className="text-sm text-muted-foreground">Verified</span>
-                      </div>
-                    </div>
+                     <div className="flex flex-col space-y-3">
+                       <div className="flex items-center space-x-2">
+                         <Switch
+                           checked={specialist.is_active}
+                           onCheckedChange={() => handleStatusToggle(specialist, 'is_active')}
+                           className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted scale-75"
+                         />
+                         <span className="text-xs text-muted-foreground">Active</span>
+                       </div>
+                       <div className="flex items-center space-x-2">
+                         <Switch
+                           checked={specialist.is_verified}
+                           onCheckedChange={() => handleStatusToggle(specialist, 'is_verified')}
+                           className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted scale-75"
+                         />
+                         <span className="text-xs text-muted-foreground">Verified</span>
+                       </div>
+                     </div>
                     
                     <div className="flex items-center space-x-2">
                       {specialist.is_verified && (
