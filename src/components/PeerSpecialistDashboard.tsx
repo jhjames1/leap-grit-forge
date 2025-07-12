@@ -284,6 +284,16 @@ const PeerSpecialistDashboard = () => {
           if (selectedSession && newMessage.session_id === selectedSession.id) {
             setMessages(prev => [...prev, newMessage]);
           }
+
+          // Auto-scroll to show new messages if viewing this session
+          if (selectedSession && newMessage.session_id === selectedSession.id) {
+            setTimeout(() => {
+              const messagesContainer = document.getElementById('messages-container');
+              if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+              }
+            }, 100);
+          }
         }
       )
       .subscribe();
@@ -812,7 +822,7 @@ const PeerSpecialistDashboard = () => {
                 </div>
                 
                 <div className="flex flex-col h-[400px]">
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <div id="messages-container" className="flex-1 overflow-y-auto p-4 space-y-3">
                     {messages.map((message) => (
                       <div
                         key={message.id}
