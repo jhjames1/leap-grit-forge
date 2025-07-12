@@ -9,7 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAudio } from '@/hooks/useAudio';
+import { audioNotification } from '@/utils/audioNotification';
 import { 
   MessageSquare, 
   Phone, 
@@ -82,8 +82,6 @@ const PeerSpecialistDashboard = () => {
     return saved !== null ? JSON.parse(saved) : true;
   });
   
-  // Use a simple notification sound
-  const { play: playNotificationSound } = useAudio('/lovable-uploads/Welcome-to-LEAP.mp3');
 
   useEffect(() => {
     if (user) {
@@ -298,7 +296,7 @@ const PeerSpecialistDashboard = () => {
               notificationsEnabled) {
             console.log('🔊 Playing notification sound for new user message');
             try {
-              playNotificationSound();
+              audioNotification.playTwoToneNotification();
             } catch (error) {
               console.log('Could not play notification sound:', error);
             }
