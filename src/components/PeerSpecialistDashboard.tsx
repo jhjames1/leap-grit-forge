@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -352,10 +353,10 @@ const PeerSpecialistDashboard = () => {
 
   const getSessionStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500 text-white border-green-500';
-      case 'waiting': return 'bg-yellow-500 text-white border-yellow-500';
-      case 'ended': return 'bg-red-500 text-white border-red-500';
-      default: return 'bg-gray-500 text-white border-gray-500';
+      case 'active': return 'bg-green-500 text-white';
+      case 'waiting': return 'bg-yellow-500 text-white';
+      case 'ended': return 'bg-red-500 text-white';
+      default: return 'bg-gray-500 text-white';
     }
   };
 
@@ -479,6 +480,20 @@ const PeerSpecialistDashboard = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const messageTime = new Date(timestamp);
+    const diffMs = now.getTime() - messageTime.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
   };
 
   if (loading) {
@@ -609,67 +624,65 @@ const PeerSpecialistDashboard = () => {
                       {chatSessions.map((session) => (
                         <div
                           key={session.id}
-                          className={`p-3 rounded-lg transition-colors ${
+                          className={`p-4 rounded-lg border transition-colors ${
                             selectedSession?.id === session.id
-                              ? 'bg-primary/10 border border-primary/20'
-                              : 'bg-background hover:bg-background/80'
+                              ? 'bg-primary/10 border-primary/20'
+                              : 'bg-background hover:bg-background/80 border-border'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                             <div 
-                               className="flex-1 cursor-pointer"
-                               onClick={() => {
-                                 setSelectedSession(session);
-                                 loadMessages(session.id);
-                               }}
-                             >
-                               <p className="font-source font-medium text-card-foreground">Session {session.id.slice(0, 8)}</p>
-                               <p className="text-xs text-muted-foreground">
-                                 {new Date(session.created_at).toLocaleString()}
-                               </p>
-                               {session.lastMessage && (
-                                 <div className="mt-1">
-                                   <p className="text-xs text-muted-foreground">
-                                     Last from: {session.lastMessage.sender_type === 'specialist' ? 'You' : 'User'} • {
-                                       (() => {
-                                         const now = new Date();
-                                         const messageTime = new Date(session.lastMessage.created_at);
-                                         const diffMs = now.getTime() - messageTime.getTime();
-                                         const diffMins = Math.floor(diffMs / 60000);
-                                         const diffHours = Math.floor(diffMs / 3600000);
-                                         const diffDays = Math.floor(diffMs / 86400000);
-                                         
-                                         if (diffMins < 1) return 'just now';
-                                         if (diffMins < 60) return `${diffMins}m ago`;
-                                         if (diffHours < 24) return `${diffHours}h ago`;
-                                         return `${diffDays}d ago`;
-                                       })()
-                                     }
-                                   </p>
-                                   <p className="text-xs text-muted-foreground/70 truncate max-w-[200px]">
-                                     {session.lastMessage.content}
-                                   </p>
-                                 </div>
-                               )}
-                             </div>
-                            <div className="flex items-center space-x-2">
-                              <Badge className={getSessionStatusColor(session.status)}>
-                                {session.status}
-                              </Badge>
-                               {session.status !== 'ended' && (
-                                 <Button
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     handleEndChat(session.id);
-                                   }}
-                                   size="sm"
-                                   variant="destructive"
-                                   className="h-8 px-3 text-xs font-medium"
-                                 >
-                                   End Chat
-                                 </Button>
-                               )}
+                          <div className="space-y-3">
+                            {/* Session Header */}
+                            <div className="flex items-center justify-between">
+                              <div 
+                                className="flex-1 cursor-pointer"
+                                onClick={() => {
+                                  setSelectedSession(session);
+                                  loadMessages(session.id);
+                                }}
+                              >
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-source font-medium text-card-foreground">
+                                    Session {session.id.slice(0, 8)}
+                                  </p>
+                                  <Badge className={`text-xs px-2 py-0.5 ${getSessionStatusColor(session.status)}`}>
+                                    {session.status.toUpperCase()}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Started: {new Date(session.created_at).toLocaleString()}
+                                </p>
+                              </div>
+                              
+                              {/* End Chat Button - Only for active/waiting sessions */}
+                              {(session.status === 'active' || session.status === 'waiting') && (
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEndChat(session.id);
+                                  }}
+                                  size="sm"
+                                  variant="destructive"
+                                  className="ml-2 h-8 px-3 text-xs font-medium"
+                                >
+                                  End Chat
+                                </Button>
+                              )}
                             </div>
+
+                            {/* Last Message Info */}
+                            {session.lastMessage && (
+                              <div className="border-t border-border pt-2">
+                                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                                  <span className="font-medium">
+                                    Last from: {session.lastMessage.sender_type === 'specialist' ? 'You' : 'User'}
+                                  </span>
+                                  <span>{formatTimeAgo(session.lastMessage.created_at)}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground/80 truncate">
+                                  {session.lastMessage.content}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
