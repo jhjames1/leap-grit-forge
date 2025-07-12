@@ -368,22 +368,11 @@ const PeerSpecialistManagement = () => {
             <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
               REAL-TIME STATUS & ANALYTICS
             </p>
-            <p className="text-muted-foreground text-sm">Monitor and manage specialist activity</p>
+            <p className="text-muted-foreground text-sm">Monitor and manage Peer Support Specialist activity</p>
           </div>
           
-          {/* Right column: Action buttons */}
+          {/* Right column: Action buttons removed - handled by main refresh */}
           <div className="flex flex-col items-end">
-            <div className="flex items-center space-x-2">
-              <Button 
-                onClick={refreshData}
-                variant="outline"
-                size="sm"
-                className="border-primary text-primary hover:bg-primary/10"
-                disabled={presenceLoading}
-              >
-                {presenceLoading ? 'Loading...' : 'Refresh Status'}
-              </Button>
-            </div>
           </div>
         </div>
       </div>

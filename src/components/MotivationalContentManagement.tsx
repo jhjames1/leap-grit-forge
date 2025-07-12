@@ -291,9 +291,9 @@ const MotivationalContentManagement = () => {
               if (!open) resetForm();
             }}>
               <DialogTrigger asChild>
-                <Button className="bg-construction hover:bg-construction/90 text-midnight font-fjalla font-bold tracking-wide">
-                  <Plus className="h-4 w-4 mr-2" />
-                  ADD CONTENT
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Content
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">

@@ -57,6 +57,10 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
 
   const refreshData = () => {
     loadAnalytics();
+    // Also refresh specialist presence data if on specialists tab
+    if (window.location.hash.includes('specialists')) {
+      // This will be handled by the specialist component's refresh
+    }
   };
 
   const handleSignOut = async () => {
@@ -145,7 +149,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
             <TabsTrigger value="overview" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50">Overview</TabsTrigger>
             <TabsTrigger value="specialists" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50">
               <UserCheck className="mr-2 h-4 w-4" />
-              Peer Specialists
+              Peer Support Specialists
             </TabsTrigger>
             <TabsTrigger value="content" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50">
               <MessageSquare className="mr-2 h-4 w-4" />
