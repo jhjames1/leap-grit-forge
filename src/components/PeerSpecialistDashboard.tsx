@@ -18,7 +18,8 @@ import {
   Clock,
   User,
   Settings,
-  Send
+  Send,
+  X
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
@@ -281,6 +282,15 @@ const PeerSpecialistDashboard = () => {
     await signOut();
   };
 
+  const getSessionStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-500';
+      case 'waiting': return 'bg-yellow-500';
+      case 'ended': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online': return 'bg-green-500';
@@ -341,6 +351,63 @@ const PeerSpecialistDashboard = () => {
       toast({
         title: "Error",
         description: "Failed to send message",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEndChat = async (sessionId: string) => {
+    if (!user) return;
+
+    try {
+      // Send a kind farewell message first
+      const { error: messageError } = await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: sessionId,
+          sender_id: user.id,
+          sender_type: 'specialist',
+          message_type: 'text',
+          content: "Thank you for reaching out today. Remember, you're not alone on this journey, and every step forward is a victory. Take care of yourself, and don't hesitate to reach out again if you need support. You've got this! 💪"
+        });
+
+      if (messageError) throw messageError;
+
+      // Then end the session
+      const { error } = await supabase
+        .from('chat_sessions')
+        .update({ 
+          status: 'ended',
+          ended_at: new Date().toISOString()
+        })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      // Update local state
+      setChatSessions(prev => prev.map(session => 
+        session.id === sessionId 
+          ? { ...session, status: 'ended', ended_at: new Date().toISOString() }
+          : session
+      ));
+
+      if (selectedSession?.id === sessionId) {
+        setSelectedSession(prev => prev ? { 
+          ...prev, 
+          status: 'ended', 
+          ended_at: new Date().toISOString() 
+        } : null);
+      }
+
+      toast({
+        title: "Chat Ended",
+        description: "The chat session has been ended and a farewell message was sent"
+      });
+    } catch (error) {
+      console.error('Error ending chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to end chat session",
         variant: "destructive"
       });
     }
@@ -474,26 +541,43 @@ const PeerSpecialistDashboard = () => {
                       {chatSessions.map((session) => (
                         <div
                           key={session.id}
-                          className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                          className={`p-3 rounded-lg transition-colors ${
                             selectedSession?.id === session.id
                               ? 'bg-primary/10 border border-primary/20'
                               : 'bg-background hover:bg-background/80'
                           }`}
-                          onClick={() => {
-                            setSelectedSession(session);
-                            loadMessages(session.id);
-                          }}
                         >
                           <div className="flex items-center justify-between">
-                            <div>
+                            <div 
+                              className="flex-1 cursor-pointer"
+                              onClick={() => {
+                                setSelectedSession(session);
+                                loadMessages(session.id);
+                              }}
+                            >
                               <p className="font-source font-medium text-card-foreground">Session {session.id.slice(0, 8)}</p>
                               <p className="text-xs text-muted-foreground">
                                 {new Date(session.created_at).toLocaleString()}
                               </p>
                             </div>
-                            <Badge className={getStatusColor(session.status)}>
-                              {session.status}
-                            </Badge>
+                            <div className="flex items-center space-x-2">
+                              <Badge className={getSessionStatusColor(session.status)}>
+                                {session.status}
+                              </Badge>
+                              {session.status !== 'ended' && (
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEndChat(session.id);
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <X size={12} />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}
