@@ -613,8 +613,7 @@ const PeerSpecialistDashboard = () => {
         .from('chat_sessions')
         .update({ 
           status: 'ended',
-          ended_at: new Date().toISOString(),
-          end_reason: 'manual'
+          ended_at: new Date().toISOString()
         })
         .eq('id', sessionId);
 

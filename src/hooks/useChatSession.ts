@@ -317,8 +317,7 @@ export function useChatSession(specialistId?: string) {
         .from('chat_sessions')
         .update({ 
           status: 'ended',
-          ended_at: new Date().toISOString(),
-          end_reason: reason
+          ended_at: new Date().toISOString()
         })
         .eq('id', session.id);
 
