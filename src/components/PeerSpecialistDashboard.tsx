@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAudio } from '@/hooks/useAudio';
 import { 
   MessageSquare, 
   Phone, 
@@ -74,6 +75,15 @@ const PeerSpecialistDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [newMessage, setNewMessage] = useState('');
+  
+  // Audio notification state
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    const saved = localStorage.getItem('specialist-notifications-enabled');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  
+  // Use a simple notification sound
+  const { play: playNotificationSound } = useAudio('/lovable-uploads/Welcome-to-LEAP.mp3');
 
   useEffect(() => {
     if (user) {
@@ -278,6 +288,21 @@ const PeerSpecialistDashboard = () => {
           console.log('🔥 New message received via realtime:', newMessage);
           console.log('🎯 Currently selected session:', selectedSession?.id);
           console.log('🎯 Message is for session:', newMessage.session_id);
+          
+          // Check if this message is for this specialist's sessions
+          const isForThisSpecialist = chatSessions.some(session => session.id === newMessage.session_id);
+          
+          // Play notification sound for new user messages (not from specialist)
+          if (isForThisSpecialist && 
+              newMessage.sender_type === 'user' && 
+              notificationsEnabled) {
+            console.log('🔊 Playing notification sound for new user message');
+            try {
+              playNotificationSound();
+            } catch (error) {
+              console.log('Could not play notification sound:', error);
+            }
+          }
           
           // Update the last message in chat sessions for any session this specialist has
           setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
@@ -637,6 +662,25 @@ const PeerSpecialistDashboard = () => {
                   >
                     Update Status
                   </Button>
+                  
+                  {/* Notification Settings */}
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <div className="flex items-center space-x-2">
+                      <Bell size={16} className="text-muted-foreground" />
+                      <span className="font-source text-card-foreground text-sm">Sound Notifications</span>
+                    </div>
+                    <Switch
+                      checked={notificationsEnabled}
+                      onCheckedChange={(checked) => {
+                        setNotificationsEnabled(checked);
+                        localStorage.setItem('specialist-notifications-enabled', JSON.stringify(checked));
+                        toast({
+                          title: checked ? "Notifications Enabled" : "Notifications Disabled",
+                          description: checked ? "You'll hear a sound when new messages arrive" : "Message notifications are now silent"
+                        });
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
