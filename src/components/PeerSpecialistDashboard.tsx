@@ -588,7 +588,7 @@ const PeerSpecialistDashboard = () => {
   };
 
   if (currentView === 'analytics') {
-    return <SpecialistAnalyticsDashboard onBack={() => setCurrentView('dashboard')} />;
+    return <SpecialistAnalyticsDashboard onNavigateToChat={() => setCurrentView('dashboard')} />;
   }
 
   if (loading) {

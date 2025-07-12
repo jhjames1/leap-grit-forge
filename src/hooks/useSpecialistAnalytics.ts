@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -23,24 +23,22 @@ export const useSpecialistAnalytics = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      if (!user) return;
+  const fetchAnalytics = useCallback(async () => {
+    if (!user) return;
 
-      try {
-        setLoading(true);
-        setError(null);
+    try {
+      setError(null);
 
-        // Get specialist data
-        const { data: specialist } = await supabase
-          .from('peer_specialists')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
+      // Get specialist data
+      const { data: specialist } = await supabase
+        .from('peer_specialists')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
 
-        if (!specialist) {
-          throw new Error('Specialist not found');
-        }
+      if (!specialist) {
+        throw new Error('Specialist not found');
+      }
 
         const now = new Date();
         const startOfWeek = new Date(now);
@@ -201,17 +199,49 @@ export const useSpecialistAnalytics = () => {
           monthlyTrend
         };
 
-        setAnalytics(analyticsData);
-      } catch (err) {
-        console.error('Error fetching specialist analytics:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch analytics');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAnalytics();
+      setAnalytics(analyticsData);
+    } catch (err) {
+      console.error('Error fetching specialist analytics:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch analytics');
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
+
+  useEffect(() => {
+    fetchAnalytics();
+
+    // Set up real-time subscription for chat sessions and messages
+    const channel = supabase
+      .channel('specialist-analytics')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_sessions'
+        },
+        () => {
+          fetchAnalytics(); // Refresh analytics when sessions change
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_messages'
+        },
+        () => {
+          fetchAnalytics(); // Refresh analytics when messages change
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchAnalytics]);
 
   return { analytics, loading, error };
 };
