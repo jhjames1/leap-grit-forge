@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import SpecialistAnalyticsDashboard from './SpecialistAnalyticsDashboard';
 import ChatArchive from './ChatArchive';
 import SpecialistActivityLog from './SpecialistActivityLog';
+import MotivationalWelcome from './MotivationalWelcome';
 
 interface ChatSession {
   id: string;
@@ -84,6 +85,7 @@ const PeerSpecialistDashboard = () => {
   const [newMessage, setNewMessage] = useState('');
   const [totalChatsToday, setTotalChatsToday] = useState(0);
   const [averageWaitTime, setAverageWaitTime] = useState(0);
+  const [showMotivationalWelcome, setShowMotivationalWelcome] = useState(false);
   
   // Audio notification state
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
@@ -103,6 +105,17 @@ const PeerSpecialistDashboard = () => {
       loadChatSessions();
       loadTodayMetrics();
       setupRealtimeSubscriptions();
+      
+      // Show motivational welcome once per day
+      const today = new Date().toDateString();
+      const lastWelcomeShown = localStorage.getItem('lastMotivationalWelcome');
+      
+      if (lastWelcomeShown !== today) {
+        setTimeout(() => {
+          setShowMotivationalWelcome(true);
+          localStorage.setItem('lastMotivationalWelcome', today);
+        }, 1000); // Show after 1 second to allow dashboard to load
+      }
     }
   }, [specialist]);
 
@@ -1132,6 +1145,15 @@ const PeerSpecialistDashboard = () => {
         onClose={() => setIsActivityLogOpen(false)}
         specialistId={specialist?.id || ''}
       />
+
+      {/* Motivational Welcome Modal */}
+      {specialist && (
+        <MotivationalWelcome
+          specialistId={specialist.id}
+          isOpen={showMotivationalWelcome}
+          onClose={() => setShowMotivationalWelcome(false)}
+        />
+      )}
     </div>
   );
 };

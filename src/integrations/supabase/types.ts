@@ -180,6 +180,77 @@ export type Database = {
         }
         Relationships: []
       }
+      specialist_content_views: {
+        Row: {
+          content_id: string
+          id: string
+          is_favorite: boolean | null
+          specialist_id: string
+          viewed_at: string
+        }
+        Insert: {
+          content_id: string
+          id?: string
+          is_favorite?: boolean | null
+          specialist_id: string
+          viewed_at?: string
+        }
+        Update: {
+          content_id?: string
+          id?: string
+          is_favorite?: boolean | null
+          specialist_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_content_views_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "specialist_motivational_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_motivational_content: {
+        Row: {
+          author: string | null
+          category: string
+          content: string
+          content_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          media_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author?: string | null
+          category: string
+          content: string
+          content_type: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          media_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string | null
+          category?: string
+          content?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          media_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       specialist_schedules: {
         Row: {
           created_at: string
