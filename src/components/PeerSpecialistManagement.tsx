@@ -449,13 +449,15 @@ const PeerSpecialistManagement = () => {
         </Card>
       </div>
 
-      {/* How to Add Specialists Card */}
-      <Card className="bg-blue-500/10 border-blue-500/30 p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+      {/* How to Add Specialists Card - Home page styling */}
+      <Card className="bg-muted/50 p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
         <div className="flex items-start space-x-3">
-          <AlertCircle className="text-blue-400 mt-1" size={20} />
+          <div className="bg-primary p-3 rounded-sm">
+            <AlertCircle className="text-primary-foreground" size={20} />
+          </div>
           <div>
-            <h3 className="text-blue-400 font-fjalla font-bold mb-1 tracking-wide">HOW TO ADD SPECIALISTS</h3>
-            <p className="text-blue-300 text-sm font-source">
+            <h3 className="text-foreground font-fjalla font-bold mb-2 tracking-wide text-lg">HOW TO ADD SPECIALISTS</h3>
+            <p className="text-foreground text-sm font-source">
               1. Users must first create accounts by signing up normally
               <br />
               2. Search and select the user by their email address below
@@ -468,11 +470,11 @@ const PeerSpecialistManagement = () => {
         </div>
       </Card>
 
-      {/* Add Specialist Section */}
+      {/* Add Specialist Section - Home page icon styling */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="bg-construction/20 p-3 rounded-lg">
-            <UserPlus className="text-construction" size={20} />
+          <div className="bg-primary p-3 rounded-sm">
+            <UserPlus className="text-primary-foreground" size={20} />
           </div>
           <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">MANAGE SPECIALISTS</h3>
         </div>
@@ -481,7 +483,7 @@ const PeerSpecialistManagement = () => {
           <DialogTrigger asChild>
             <Button 
               onClick={resetForm}
-              className="bg-construction text-midnight hover:bg-construction/90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <UserPlus className="mr-2 h-4 w-4" />
               Add Specialist
@@ -646,94 +648,168 @@ const PeerSpecialistManagement = () => {
 
       {/* Specialists List */}
       {loading ? (
-        <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
-          <p className="text-steel-light text-center">Loading specialists...</p>
+        <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <p className="text-muted-foreground text-center">Loading specialists...</p>
         </Card>
       ) : (
         <div className="space-y-4">
-          {specialists.map((specialist) => (
-            <Card key={specialist.id} className="bg-white/10 backdrop-blur-sm border-steel-dark p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-construction/20 rounded-full flex items-center justify-center">
-                    {specialist.avatar_url ? (
-                      <img 
-                        src={specialist.avatar_url} 
-                        alt={`${specialist.first_name} ${specialist.last_name}`}
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <Users className="text-construction" size={20} />
-                    )}
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-white">
-                      {specialist.first_name} {specialist.last_name}
-                    </h3>
-                    <p className="text-steel-light text-sm">
-                      {specialist.years_experience} years experience
-                    </p>
-                    {specialist.bio && (
-                      <p className="text-steel-light text-sm mt-1 max-w-md truncate">
-                        {specialist.bio}
-                      </p>
-                    )}
-                    {specialist.specialties && specialist.specialties.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {specialist.specialties.map((specialty, index) => (
-                          <Badge key={index} className="bg-construction/20 text-construction border-construction/30 text-xs">
-                            {specialty}
-                          </Badge>
-                        ))}
+          {specialists.map((specialist) => {
+            const status = getSpecialistStatus(specialist.id);
+            const analyticsData = getSpecialistAnalytics(specialist.id);
+            
+            return (
+              <Card key={specialist.id} className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-4 flex-1">
+                    {/* Avatar with home page styling */}
+                    <div className="bg-primary p-3 rounded-sm">
+                      {specialist.avatar_url ? (
+                        <img 
+                          src={specialist.avatar_url} 
+                          alt={`${specialist.first_name} ${specialist.last_name}`}
+                          className="w-8 h-8 rounded object-cover"
+                        />
+                      ) : (
+                        <Users className="text-primary-foreground" size={20} />
+                      )}
+                    </div>
+                    
+                    <div className="flex-1">
+                      {/* Specialist Info */}
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="font-fjalla font-bold text-card-foreground text-lg tracking-wide">
+                          {specialist.first_name} {specialist.last_name}
+                        </h3>
+                        {/* Real-time status indicator */}
+                        {status && (
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-3 h-3 rounded-full ${getStatusColor(status.status)}`}></div>
+                            <Badge className={`${getStatusBadge(status.status)} text-xs uppercase font-oswald tracking-wide`}>
+                              {status.status}
+                            </Badge>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-4">
-                  <div className="flex flex-col space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={specialist.is_active}
-                        onCheckedChange={() => handleStatusToggle(specialist, 'is_active')}
-                      />
-                      <span className="text-sm text-steel-light">Active</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={specialist.is_verified}
-                        onCheckedChange={() => handleStatusToggle(specialist, 'is_verified')}
-                      />
-                      <span className="text-sm text-steel-light">Verified</span>
+                      
+                      <p className="text-muted-foreground text-sm mb-2">
+                        {specialist.years_experience} years experience
+                      </p>
+                      
+                      {specialist.bio && (
+                        <p className="text-muted-foreground text-sm mb-3 max-w-2xl">
+                          {specialist.bio}
+                        </p>
+                      )}
+                      
+                      {/* Specialties */}
+                      {specialist.specialties && specialist.specialties.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {specialist.specialties.map((specialty, index) => (
+                            <Badge key={index} className="bg-primary/20 text-primary border-primary/30 text-xs">
+                              {specialty}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Individual Specialist Real-time Analytics */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-muted/50 p-3 rounded-sm">
+                          <div className="flex items-center space-x-2">
+                            <Activity className="text-primary" size={14} />
+                            <div>
+                              <div className="text-sm font-bold text-card-foreground">
+                                {analyticsData?.total_sessions || 0}
+                              </div>
+                              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Sessions</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-muted/50 p-3 rounded-sm">
+                          <div className="flex items-center space-x-2">
+                            <MessageSquare className="text-primary" size={14} />
+                            <div>
+                              <div className="text-sm font-bold text-card-foreground">
+                                {analyticsData?.active_sessions || 0}
+                              </div>
+                              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Active Now</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-muted/50 p-3 rounded-sm">
+                          <div className="flex items-center space-x-2">
+                            <TrendingUp className="text-primary" size={14} />
+                            <div>
+                              <div className="text-sm font-bold text-card-foreground">
+                                {analyticsData?.total_messages || 0}
+                              </div>
+                              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Messages</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-muted/50 p-3 rounded-sm">
+                          <div className="flex items-center space-x-2">
+                            <Clock className="text-primary" size={14} />
+                            <div>
+                              <div className="text-sm font-bold text-card-foreground">
+                                {status?.last_seen ? new Date(status.last_seen).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--'}
+                              </div>
+                              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Last Seen</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
-                    {specialist.is_verified && (
-                      <Check className="text-green-400" size={16} />
-                    )}
-                    {!specialist.is_active && (
-                      <AlertCircle className="text-red-400" size={16} />
-                    )}
+                  {/* Action buttons - right side */}
+                  <div className="flex items-start space-x-4">
+                    <div className="flex flex-col space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={specialist.is_active}
+                          onCheckedChange={() => handleStatusToggle(specialist, 'is_active')}
+                        />
+                        <span className="text-sm text-muted-foreground">Active</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={specialist.is_verified}
+                          onCheckedChange={() => handleStatusToggle(specialist, 'is_verified')}
+                        />
+                        <span className="text-sm text-muted-foreground">Verified</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      {specialist.is_verified && (
+                        <Check className="text-green-400" size={16} />
+                      )}
+                      {!specialist.is_active && (
+                        <AlertCircle className="text-red-400" size={16} />
+                      )}
+                    </div>
+                    
+                    <Button
+                      onClick={() => handleEdit(specialist)}
+                      variant="outline"
+                      size="sm"
+                      className="border-primary text-primary hover:bg-primary/10"
+                    >
+                      <Edit size={16} />
+                    </Button>
                   </div>
-                  
-                  <Button
-                    onClick={() => handleEdit(specialist)}
-                    variant="outline"
-                    size="sm"
-                    className="border-steel text-steel-light hover:bg-steel/10"
-                  >
-                    <Edit size={16} />
-                  </Button>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
           
           {specialists.length === 0 && (
-            <Card className="bg-white/10 backdrop-blur-sm border-steel-dark p-6">
-              <p className="text-steel-light text-center">No peer specialists found. Add your first specialist to get started.</p>
+            <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+              <p className="text-muted-foreground text-center">No peer specialists found. Add your first specialist to get started.</p>
             </Card>
           )}
         </div>
