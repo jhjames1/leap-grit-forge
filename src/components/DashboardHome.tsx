@@ -268,16 +268,6 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             {/* Right column: Theme toggle, Language toggle, and Trophy */}
             <div className="flex flex-col items-end">
               <div className="flex items-center space-x-3">
-                {isSpecialist && (
-                  <Button
-                    onClick={() => window.open('/specialist', '_blank')}
-                    variant="outline"
-                    size="sm"
-                    className="border-construction text-construction hover:bg-construction/10"
-                  >
-                    <UserCheck size={16} />
-                  </Button>
-                )}
                 <ThemeToggle />
                 <LanguageToggle />
               </div>
