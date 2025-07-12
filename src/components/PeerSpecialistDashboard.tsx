@@ -216,44 +216,71 @@ const PeerSpecialistDashboard = () => {
       )
       .subscribe();
 
-    // Subscribe to messages in selected session
-    let messageChannel: any = null;
-    if (selectedSession) {
-      messageChannel = supabase
-        .channel('chat-messages')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'chat_messages',
-            filter: `session_id=eq.${selectedSession.id}`
-          },
-          (payload) => {
-            const newMessage = payload.new as ChatMessage;
-            setMessages(prev => [...prev, newMessage]);
-            
-            // Update the last message in chat sessions
-            setChatSessions(prev => prev.map(session => 
-              session.id === newMessage.session_id 
-                ? { 
-                    ...session, 
-                    lastMessage: {
-                      content: newMessage.content,
-                      sender_type: newMessage.sender_type,
-                      created_at: newMessage.created_at
-                    }
+    // Subscribe to ALL messages for this specialist's sessions to update last message info
+    const allMessagesChannel = supabase
+      .channel('all-chat-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages'
+        },
+        (payload) => {
+          const newMessage = payload.new as ChatMessage;
+          
+          // Update the last message in chat sessions for any session this specialist has
+          setChatSessions(prev => prev.map(session => 
+            session.id === newMessage.session_id 
+              ? { 
+                  ...session, 
+                  lastMessage: {
+                    content: newMessage.content,
+                    sender_type: newMessage.sender_type,
+                    created_at: newMessage.created_at
                   }
-                : session
-            ));
+                }
+              : session
+          ));
+
+          // If this message is for the currently selected session, also update the messages
+          if (selectedSession && newMessage.session_id === selectedSession.id) {
+            setMessages(prev => [...prev, newMessage]);
           }
-        )
-        .subscribe();
-    }
+        }
+      )
+      .subscribe();
+
+    // Subscribe to session status updates
+    const sessionUpdatesChannel = supabase
+      .channel('session-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_sessions',
+          filter: `specialist_id=eq.${specialist.id}`
+        },
+        (payload) => {
+          const updatedSession = payload.new as ChatSession;
+          setChatSessions(prev => prev.map(session => 
+            session.id === updatedSession.id 
+              ? { ...session, ...updatedSession }
+              : session
+          ));
+
+          if (selectedSession?.id === updatedSession.id) {
+            setSelectedSession(updatedSession);
+          }
+        }
+      )
+      .subscribe();
 
     return () => {
       supabase.removeChannel(sessionChannel);
-      if (messageChannel) supabase.removeChannel(messageChannel);
+      supabase.removeChannel(allMessagesChannel);
+      supabase.removeChannel(sessionUpdatesChannel);
     };
   };
 
