@@ -144,6 +144,31 @@ const PeerSpecialistDashboard = () => {
     }
   };
 
+  const sortSessionsByPriority = (sessions: ChatSession[]) => {
+    return sessions.sort((a, b) => {
+      // Assign priority values: waiting = 1, active = 2, ended = 3
+      const getStatusPriority = (status: string) => {
+        switch (status) {
+          case 'waiting': return 1;
+          case 'active': return 2;
+          case 'ended': return 3;
+          default: return 4;
+        }
+      };
+
+      const aPriority = getStatusPriority(a.status);
+      const bPriority = getStatusPriority(b.status);
+
+      // First sort by status priority
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+
+      // Within same status, sort by created_at descending (newest first)
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  };
+
   const loadChatSessions = async () => {
     if (!specialist) return;
 
@@ -179,8 +204,10 @@ const PeerSpecialistDashboard = () => {
         })
       );
 
-      setChatSessions(sessionsWithLastMessage);
-      console.log('Sessions with last messages:', sessionsWithLastMessage);
+      // Sort sessions by priority before setting state
+      const sortedSessions = sortSessionsByPriority(sessionsWithLastMessage);
+      setChatSessions(sortedSessions);
+      console.log('Sessions with last messages (sorted):', sortedSessions);
     } catch (error) {
       console.error('Error loading chat sessions:', error);
     }
@@ -217,7 +244,7 @@ const PeerSpecialistDashboard = () => {
         },
         (payload) => {
           const newSession = { ...payload.new as ChatSession, lastMessage: undefined };
-          setChatSessions(prev => [newSession, ...prev]);
+          setChatSessions(prev => sortSessionsByPriority([newSession, ...prev]));
           toast({
             title: "New Chat Request",
             description: "A user wants to start a chat with you"
@@ -240,7 +267,7 @@ const PeerSpecialistDashboard = () => {
           const newMessage = payload.new as ChatMessage;
           
           // Update the last message in chat sessions for any session this specialist has
-          setChatSessions(prev => prev.map(session => 
+          setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
             session.id === newMessage.session_id 
               ? { 
                   ...session, 
@@ -251,7 +278,7 @@ const PeerSpecialistDashboard = () => {
                   }
                 }
               : session
-          ));
+          )));
 
           // If this message is for the currently selected session, also update the messages
           if (selectedSession && newMessage.session_id === selectedSession.id) {
@@ -274,11 +301,11 @@ const PeerSpecialistDashboard = () => {
         },
         (payload) => {
           const updatedSession = payload.new as ChatSession;
-          setChatSessions(prev => prev.map(session => 
+          setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
             session.id === updatedSession.id 
               ? { ...session, ...updatedSession }
               : session
-          ));
+          )));
 
           if (selectedSession?.id === updatedSession.id) {
             setSelectedSession(updatedSession);
@@ -412,11 +439,11 @@ const PeerSpecialistDashboard = () => {
 
         if (!updateError) {
           setSelectedSession(prev => prev ? { ...prev, status: 'active' } : null);
-          setChatSessions(prev => prev.map(session => 
+          setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
             session.id === selectedSession.id 
               ? { ...session, status: 'active' }
               : session
-          ));
+          )));
         }
       }
 
@@ -463,11 +490,11 @@ const PeerSpecialistDashboard = () => {
       if (error) throw error;
 
       // Update local state
-      setChatSessions(prev => prev.map(session => 
+      setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
         session.id === sessionId 
           ? { ...session, status: 'ended', ended_at: new Date().toISOString() }
           : session
-      ));
+      )));
 
       if (selectedSession?.id === sessionId) {
         setSelectedSession(prev => prev ? { 
