@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, Clock } from 'lucide-react';
+import { useUserData } from '@/hooks/useUserData';
 
 interface GratitudeEntry {
   id: string;
@@ -18,19 +19,14 @@ interface GratitudeLogEnhancedProps {
 const GratitudeLogEnhanced = ({ onClose, onCancel }: GratitudeLogEnhancedProps) => {
   const [newEntry, setNewEntry] = useState('');
   const [entries, setEntries] = useState<GratitudeEntry[]>([]);
+  const { userData, logActivity } = useUserData();
 
   useEffect(() => {
-    // Load existing entries for current user
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser) {
-      const userKey = `user_${currentUser.toLowerCase()}`;
-      const userData = localStorage.getItem(userKey);
-      if (userData) {
-        const parsed = JSON.parse(userData);
-        setEntries(parsed.gratitudeEntries || []);
-      }
+    // Load existing entries from userData
+    if (userData?.gratitudeEntries) {
+      setEntries(userData.gratitudeEntries);
     }
-  }, []);
+  }, [userData]);
 
   const handleCancel = () => {
     if (onCancel) {
@@ -61,16 +57,19 @@ const GratitudeLogEnhanced = ({ onClose, onCancel }: GratitudeLogEnhancedProps) 
     const updatedEntries = [entry, ...entries];
     setEntries(updatedEntries);
 
-    // Save to user data
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser) {
-      const userKey = `user_${currentUser.toLowerCase()}`;
-      const userData = localStorage.getItem(userKey);
-      if (userData) {
-        const parsed = JSON.parse(userData);
-        parsed.gratitudeEntries = updatedEntries;
-        localStorage.setItem(userKey, JSON.stringify(parsed));
-      }
+    // Save to userData using the logActivity hook
+    if (userData) {
+      // Update userData with new gratitude entry
+      const updatedUserData = {
+        ...userData,
+        gratitudeEntries: updatedEntries
+      };
+      
+      // Save to localStorage as backup
+      localStorage.setItem('userData', JSON.stringify(updatedUserData));
+      
+      // Log the activity
+      logActivity(`Added gratitude entry: "${entry.text.substring(0, 50)}${entry.text.length > 50 ? '...' : ''}"`);
     }
 
     setNewEntry('');
