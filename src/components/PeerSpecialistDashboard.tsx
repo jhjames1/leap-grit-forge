@@ -676,42 +676,6 @@ const PeerSpecialistDashboard = () => {
                     </span>
                   </div>
                   
-                  <Button 
-                    onClick={() => setIsStatusDialogOpen(true)}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <Settings size={16} />
-                    Update Status
-                  </Button>
-                  
-                  {/* Notification Settings */}
-                  <div className="flex items-center pt-2 border-t border-border">
-                    <Bell size={16} className="text-muted-foreground mr-2" />
-                    <span className="font-oswald font-extralight tracking-wide text-foreground text-sm mr-2">SOUND NOTIFICATIONS:</span>
-                    <Switch
-                      checked={notificationsEnabled}
-                      onCheckedChange={(checked) => {
-                        setNotificationsEnabled(checked);
-                        localStorage.setItem('specialist-notifications-enabled', JSON.stringify(checked));
-                        
-                        // Immediately test the notification if enabling
-                        if (checked) {
-                          try {
-                            audioNotification.playTwoToneNotification();
-                          } catch (error) {
-                            console.log('Could not play test notification:', error);
-                          }
-                        }
-                        
-                        toast({
-                          title: checked ? "Notifications Enabled" : "Notifications Disabled",
-                          description: checked ? "You'll hear a sound when new messages arrive" : "Message notifications are now silent"
-                        });
-                      }}
-                    />
-                  </div>
                 </div>
               )}
             </div>
@@ -740,36 +704,13 @@ const PeerSpecialistDashboard = () => {
                 </Button>
               </div>
               
-              {/* Status Badge */}
-              {specialistStatus && (
-                <div 
-                  className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadge(specialistStatus.status)} cursor-pointer`}
-                  onClick={() => setIsStatusDialogOpen(true)}
-                >
-                  {specialistStatus.status.toUpperCase()}
-                </div>
-              )}
             </div>
           </div>
         </div>
 
         {/* Status and Overview Cards */}
         <div className="flex gap-4 mb-4">
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[50%]">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-primary p-3 rounded-sm">
-                <MessageSquare className="text-primary-foreground" size={20} />
-              </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                Active Sessions
-              </h3>
-            </div>
-            <div className="text-2xl font-bold text-card-foreground">
-              {chatSessions.filter(s => s.status === 'active').length}
-            </div>
-          </Card>
-
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[50%]">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[33.33%]">
             <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-3 rounded-sm">
                 <Clock className="text-primary-foreground" size={20} />
@@ -780,6 +721,65 @@ const PeerSpecialistDashboard = () => {
             </div>
             <div className="text-2xl font-bold text-card-foreground">
               {chatSessions.filter(s => s.status === 'waiting').length}
+            </div>
+          </Card>
+
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[33.33%]">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-primary p-3 rounded-sm">
+                <Bell className="text-primary-foreground" size={20} />
+              </div>
+              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
+                Notifications
+              </h3>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold text-card-foreground">
+                {notificationsEnabled ? 'ON' : 'OFF'}
+              </span>
+              <Switch
+                checked={notificationsEnabled}
+                onCheckedChange={(checked) => {
+                  setNotificationsEnabled(checked);
+                  localStorage.setItem('specialist-notifications-enabled', JSON.stringify(checked));
+                  
+                  if (checked) {
+                    try {
+                      audioNotification.playTwoToneNotification();
+                    } catch (error) {
+                      console.log('Could not play test notification:', error);
+                    }
+                  }
+                  
+                  toast({
+                    title: checked ? "Notifications Enabled" : "Notifications Disabled",
+                    description: checked ? "You'll hear a sound when new messages arrive" : "Message notifications are now silent"
+                  });
+                }}
+              />
+            </div>
+          </Card>
+
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[33.33%]">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-primary p-3 rounded-sm">
+                <Settings className="text-primary-foreground" size={20} />
+              </div>
+              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
+                Status
+              </h3>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold text-card-foreground">
+                {specialistStatus?.status.toUpperCase()}
+              </span>
+              <Button 
+                onClick={() => setIsStatusDialogOpen(true)}
+                variant="outline"
+                size="sm"
+              >
+                Change
+              </Button>
             </div>
           </Card>
         </div>

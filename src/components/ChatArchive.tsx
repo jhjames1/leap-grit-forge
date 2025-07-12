@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Search, Filter, Clock, MessageSquare, User } from 'lucide-react';
+import { Search, Filter, Clock, MessageSquare, User, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,12 +22,24 @@ interface ChatSession {
   duration_minutes?: number;
 }
 
+interface ChatMessage {
+  id: string;
+  session_id: string;
+  sender_id: string;
+  sender_type: string;
+  content: string;
+  created_at: string;
+}
+
 const ChatArchive = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBy, setFilterBy] = useState('all');
+  const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const { toast } = useToast();
 
   const fetchArchivedSessions = async () => {
@@ -120,6 +133,34 @@ const ChatArchive = () => {
     setFilteredSessions(filtered);
   }, [searchTerm, filterBy, sessions]);
 
+  const loadMessages = async (sessionId: string) => {
+    try {
+      setLoadingMessages(true);
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load chat messages",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const handleSessionClick = (session: ChatSession) => {
+    setSelectedSession(session);
+    loadMessages(session.id);
+  };
+
   const getEndReasonBadge = (reason: string) => {
     const variants = {
       'auto_timeout': 'destructive',
@@ -200,7 +241,11 @@ const ChatArchive = () => {
           </Card>
         ) : (
           filteredSessions.map((session) => (
-            <Card key={session.id} className="hover:bg-muted/50 transition-colors">
+            <Card 
+              key={session.id} 
+              className="hover:bg-muted/50 transition-colors cursor-pointer"
+              onClick={() => handleSessionClick(session)}
+            >
               <CardContent className="p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="space-y-2">
@@ -234,6 +279,71 @@ const ChatArchive = () => {
           ))
         )}
       </div>
+
+      {/* Messages Dialog */}
+      <Dialog open={!!selectedSession} onOpenChange={() => setSelectedSession(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Chat Messages - Session {selectedSession?.id.slice(0, 8)}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedSession && (
+            <div className="space-y-4">
+              {/* Session Info */}
+              <div className="bg-muted p-3 rounded-lg text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span>Started: {format(new Date(selectedSession.started_at), 'MMM d, yyyy h:mm a')}</span>
+                  <span>Ended: {format(new Date(selectedSession.ended_at), 'MMM d, yyyy h:mm a')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Duration: {selectedSession.duration_minutes}m</span>
+                  <span>Messages: {selectedSession.message_count}</span>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="border rounded-lg max-h-96 overflow-y-auto p-4 space-y-3">
+                {loadingMessages ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading messages...</p>
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No messages in this session</p>
+                  </div>
+                ) : (
+                  messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.sender_type === 'specialist' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[70%] p-3 rounded-lg ${
+                          message.sender_type === 'specialist'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted'
+                        }`}
+                      >
+                        <p className="text-sm">{message.content}</p>
+                        <p className={`text-xs mt-1 ${
+                          message.sender_type === 'specialist' 
+                            ? 'text-primary-foreground/70' 
+                            : 'text-muted-foreground'
+                        }`}>
+                          {message.sender_type === 'specialist' ? 'You' : 'User'} • {format(new Date(message.created_at), 'h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
