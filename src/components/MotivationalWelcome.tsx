@@ -76,97 +76,109 @@ const MotivationalWelcome: React.FC<MotivationalWelcomeProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
-            <Heart className="h-6 w-6 text-red-500" />
-            Today's Inspiration
-          </DialogTitle>
-        </DialogHeader>
-
-        <Card className="border-none shadow-none">
-          <CardContent className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {getContentIcon(todaysContent.content_type)}
-                <h3 className="text-xl font-semibold">{todaysContent.title}</h3>
-              </div>
-              <Badge className={getCategoryColor(todaysContent.category)}>
-                {formatCategoryName(todaysContent.category)}
-              </Badge>
+      <DialogContent className="max-w-2xl bg-background">
+        {/* Header matching HOME page style */}
+        <div className="mb-6">
+          <div className="flex justify-between items-start mb-6">
+            {/* Left column: Title */}
+            <div className="flex-1">
+              <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+                <span className="font-oswald font-extralight tracking-tight">TODAY'S</span><span className="font-fjalla font-extrabold italic">INSPIRATION</span>
+              </h1>
+              <div className="mt-4"></div>
+              <p className="text-muted-foreground text-sm">{formatCategoryName(todaysContent.category)}</p>
             </div>
-
-            <div className="relative">
-              <div className="text-lg leading-relaxed text-muted-foreground italic">
-                "{todaysContent.content}"
-              </div>
-              <div className="absolute -top-2 -left-2">
-                <Quote className="h-6 w-6 text-primary/20" />
+            
+            {/* Right column: Content type icon */}
+            <div className="flex flex-col items-end">
+              <div className="flex items-end space-x-2 mt-8">
+                <div className="bg-primary p-3 rounded-lg">
+                  {getContentIcon(todaysContent.content_type)}
+                </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            {todaysContent.author && (
-              <div className="text-right text-sm text-muted-foreground">
-                — {todaysContent.author}
-              </div>
-            )}
+        {/* Content Card matching HOME page style */}
+        <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 mb-4">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="bg-primary p-3 rounded-sm">
+              <Quote className="text-primary-foreground" size={20} />
+            </div>
+            <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
+              {todaysContent.title.toUpperCase()}
+            </h3>
+          </div>
+          
+          <div className="text-card-foreground text-sm leading-tight mb-4">
+            <p className="italic">"{todaysContent.content}"</p>
+          </div>
 
-            {todaysContent.media_url && (
-              <div className="mt-4">
-                {todaysContent.content_type === 'video' && (
-                  <div className="aspect-video rounded-lg overflow-hidden">
-                    <iframe
-                      src={todaysContent.media_url}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                )}
-                {todaysContent.content_type === 'audio' && (
-                  <audio controls className="w-full">
-                    <source src={todaysContent.media_url} />
-                    Your browser does not support the audio element.
-                  </audio>
-                )}
-                {todaysContent.content_type === 'image' && (
-                  <img
+          {todaysContent.author && (
+            <div className="text-right text-xs text-muted-foreground mb-4">
+              — {todaysContent.author}
+            </div>
+          )}
+
+          {todaysContent.media_url && (
+            <div className="mt-4 mb-4">
+              {todaysContent.content_type === 'video' && (
+                <div className="aspect-video rounded-lg overflow-hidden">
+                  <iframe
                     src={todaysContent.media_url}
-                    alt={todaysContent.title}
-                    className="w-full rounded-lg"
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
                   />
-                )}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={handleToggleFavorite}
-                className={`flex items-center gap-2 ${
-                  isFavorite ? 'text-red-500 border-red-200' : ''
-                }`}
-              >
-                <Star className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
-                {isFavorite ? 'Favorited' : 'Add to Favorites'}
-              </Button>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleClose}
-                  className="flex items-center gap-2"
-                >
-                  <SkipForward className="h-4 w-4" />
-                  Skip for Today
-                </Button>
-                <Button onClick={handleClose}>
-                  Start My Day
-                </Button>
-              </div>
+                </div>
+              )}
+              {todaysContent.content_type === 'audio' && (
+                <audio controls className="w-full rounded-lg">
+                  <source src={todaysContent.media_url} />
+                  Your browser does not support the audio element.
+                </audio>
+              )}
+              {todaysContent.content_type === 'image' && (
+                <img
+                  src={todaysContent.media_url}
+                  alt={todaysContent.title}
+                  className="w-full rounded-lg"
+                />
+              )}
             </div>
-          </CardContent>
+          )}
         </Card>
+
+        {/* Action Buttons matching HOME page button style */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleToggleFavorite}
+            className={`flex items-center gap-2 font-source font-bold tracking-wide transition-colors duration-300 ${
+              isFavorite ? 'bg-yellow-400 hover:bg-yellow-500 text-black border-yellow-400' : 'hover:bg-accent'
+            }`}
+          >
+            <Star className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+            {isFavorite ? 'FAVORITED' : 'ADD TO FAVORITES'}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            className="flex items-center gap-2 font-source font-bold tracking-wide transition-colors duration-300 hover:bg-accent"
+          >
+            <SkipForward className="h-4 w-4" />
+            SKIP FOR TODAY
+          </Button>
+          
+          <Button 
+            onClick={handleClose}
+            className="bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold tracking-wide transition-colors duration-300 flex items-center justify-center gap-2"
+          >
+            START MY DAY
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
