@@ -656,19 +656,19 @@ const PeerSpecialistDashboard = () => {
                               <Badge className={getSessionStatusColor(session.status)}>
                                 {session.status}
                               </Badge>
-                              {session.status !== 'ended' && (
-                                <Button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEndChat(session.id);
-                                  }}
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <X size={12} />
-                                </Button>
-                              )}
+                               {session.status !== 'ended' && (
+                                 <Button
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     handleEndChat(session.id);
+                                   }}
+                                   size="sm"
+                                   variant="destructive"
+                                   className="h-8 px-3 text-xs font-medium"
+                                 >
+                                   End Chat
+                                 </Button>
+                               )}
                             </div>
                           </div>
                         </div>
