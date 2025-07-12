@@ -27,6 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import SpecialistAnalyticsDashboard from './SpecialistAnalyticsDashboard';
 import ChatArchive from './ChatArchive';
+import SpecialistActivityLog from './SpecialistActivityLog';
 
 interface ChatSession {
   id: string;
@@ -79,6 +80,7 @@ const PeerSpecialistDashboard = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   
   // Audio notification state
@@ -710,7 +712,21 @@ const PeerSpecialistDashboard = () => {
 
         {/* Status and Overview Cards */}
         <div className="flex gap-4 mb-4">
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[33.33%]">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[25%]">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-primary p-3 rounded-sm">
+                <MessageSquare className="text-primary-foreground" size={20} />
+              </div>
+              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
+                Active Sessions
+              </h3>
+            </div>
+            <div className="text-2xl font-bold text-card-foreground">
+              {chatSessions.filter(s => s.status === 'active').length}
+            </div>
+          </Card>
+
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[25%]">
             <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-3 rounded-sm">
                 <Clock className="text-primary-foreground" size={20} />
@@ -724,7 +740,7 @@ const PeerSpecialistDashboard = () => {
             </div>
           </Card>
 
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[33.33%]">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[25%]">
             <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-3 rounded-sm">
                 <Bell className="text-primary-foreground" size={20} />
@@ -760,7 +776,7 @@ const PeerSpecialistDashboard = () => {
             </div>
           </Card>
 
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[33.33%]">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[25%]">
             <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-3 rounded-sm">
                 <Settings className="text-primary-foreground" size={20} />
@@ -782,6 +798,18 @@ const PeerSpecialistDashboard = () => {
               </Button>
             </div>
           </Card>
+        </div>
+
+        {/* Action Buttons Row */}
+        <div className="flex gap-4 mb-4">
+          <Button
+            onClick={() => setIsActivityLogOpen(true)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <BarChart3 size={16} />
+            Activity Log
+          </Button>
         </div>
 
         {/* Main Dashboard Content */}
@@ -1043,6 +1071,13 @@ const PeerSpecialistDashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Activity Log Dialog */}
+      <SpecialistActivityLog 
+        isOpen={isActivityLogOpen}
+        onClose={() => setIsActivityLogOpen(false)}
+        specialistId={specialist?.id || ''}
+      />
     </div>
   );
 };
