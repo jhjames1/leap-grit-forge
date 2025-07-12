@@ -308,16 +308,17 @@ export function useChatSession(specialistId?: string) {
     }
   };
 
-  const endSession = async () => {
+  const endSession = async (reason: string = 'manual') => {
     if (!session) return;
 
     try {
-      console.log('Ending session:', session.id);
+      console.log('Ending session:', session.id, 'with reason:', reason);
       await supabase
         .from('chat_sessions')
         .update({ 
           status: 'ended',
-          ended_at: new Date().toISOString()
+          ended_at: new Date().toISOString(),
+          end_reason: reason
         })
         .eq('id', session.id);
 
