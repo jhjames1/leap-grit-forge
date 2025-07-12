@@ -166,9 +166,9 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   // Get the next 3 days from current progress
   const getNext3Days = () => {
     const startDay = actualCurrentDay;
-    const endDay = Math.min(startDay + 2, totalDays); // Show current day + next 2 days
+    const endDay = Math.min(startDay + 3, totalDays + 1); // Show current day + next 3 days
     
-    return allJourneyDays.slice(startDay - 1, endDay);
+    return allJourneyDays.slice(startDay - 1, endDay - 1);
   };
 
   // Get next 3 days data
