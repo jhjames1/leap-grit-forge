@@ -82,6 +82,8 @@ const PeerSpecialistDashboard = () => {
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [newMessage, setNewMessage] = useState('');
+  const [totalChatsToday, setTotalChatsToday] = useState(0);
+  const [averageWaitTime, setAverageWaitTime] = useState(0);
   
   // Audio notification state
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
@@ -99,6 +101,7 @@ const PeerSpecialistDashboard = () => {
   useEffect(() => {
     if (specialist) {
       loadChatSessions();
+      loadTodayMetrics();
       setupRealtimeSubscriptions();
     }
   }, [specialist]);
@@ -156,6 +159,44 @@ const PeerSpecialistDashboard = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadTodayMetrics = async () => {
+    if (!specialist) return;
+
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      // Get total chats today
+      const { data: todayChats, error: chatsError } = await supabase
+        .from('chat_sessions')
+        .select('id, created_at, started_at')
+        .eq('specialist_id', specialist.id)
+        .gte('created_at', today.toISOString())
+        .lt('created_at', tomorrow.toISOString());
+
+      if (chatsError) throw chatsError;
+      setTotalChatsToday(todayChats?.length || 0);
+
+      // Calculate average wait time for sessions that started today
+      const startedSessions = todayChats?.filter(chat => chat.started_at) || [];
+      if (startedSessions.length > 0) {
+        const totalWaitTime = startedSessions.reduce((sum, session) => {
+          const waitTime = new Date(session.started_at).getTime() - new Date(session.created_at).getTime();
+          return sum + waitTime;
+        }, 0);
+        const avgWaitTimeMs = totalWaitTime / startedSessions.length;
+        const avgWaitTimeMin = Math.round(avgWaitTimeMs / (1000 * 60));
+        setAverageWaitTime(avgWaitTimeMin);
+      } else {
+        setAverageWaitTime(0);
+      }
+    } catch (error) {
+      console.error('Error loading today metrics:', error);
     }
   };
 
@@ -270,6 +311,7 @@ const PeerSpecialistDashboard = () => {
         (payload) => {
           const newSession = { ...payload.new as ChatSession, lastMessage: undefined };
           setChatSessions(prev => sortSessionsByPriority([newSession, ...prev]));
+          loadTodayMetrics(); // Refresh metrics when new session arrives
           toast({
             title: "New Chat Request",
             description: "A user wants to start a chat with you"
@@ -561,20 +603,23 @@ const PeerSpecialistDashboard = () => {
 
       if (error) throw error;
 
-      // Update local state
-      setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
-        session.id === sessionId 
-          ? { ...session, status: 'ended', ended_at: new Date().toISOString() }
-          : session
-      )));
+        // Update local state
+        setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
+          session.id === sessionId 
+            ? { ...session, status: 'ended', ended_at: new Date().toISOString() }
+            : session
+        )));
 
-      if (selectedSession?.id === sessionId) {
-        setSelectedSession(prev => prev ? { 
-          ...prev, 
-          status: 'ended', 
-          ended_at: new Date().toISOString() 
-        } : null);
-      }
+        if (selectedSession?.id === sessionId) {
+          setSelectedSession(prev => prev ? { 
+            ...prev, 
+            status: 'ended', 
+            ended_at: new Date().toISOString() 
+          } : null);
+        }
+
+        // Refresh today's metrics
+        loadTodayMetrics();
 
       toast({
         title: "Chat Ended",
@@ -658,28 +703,17 @@ const PeerSpecialistDashboard = () => {
               <div className="mt-8"></div>
               <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
                 WELCOME, <span className="font-bold italic">{specialist.first_name.toUpperCase()} {specialist.last_name.toUpperCase()}</span>
+                {specialistStatus && (
+                  <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
+                    specialistStatus.status === 'online' ? 'text-green-500' :
+                    specialistStatus.status === 'busy' ? 'text-yellow-500' :
+                    'text-red-500'
+                  }`}>
+                    {specialistStatus.status.toUpperCase()}
+                  </span>
+                )}
               </p>
               <p className="text-muted-foreground text-sm">Ready to help others on their journey</p>
-              
-              {/* Status Settings moved here */}
-              {specialistStatus && (
-                <div className="mt-6 space-y-4">
-                  <div className="flex items-start">
-                    <span className="font-oswald font-extralight tracking-wide text-foreground text-sm mr-2">CURRENT STATUS:</span>
-                    <Badge className={`${getStatusColor(specialistStatus.status)} text-white text-xs`}>
-                      {specialistStatus.status.toUpperCase()}
-                    </Badge>
-                  </div>
-                  
-                  <div className="flex items-start">
-                    <span className="font-oswald font-extralight tracking-wide text-foreground text-sm mr-2">LAST SEEN:</span>
-                    <span className="text-muted-foreground text-sm italic">
-                      {specialistStatus.last_seen ? new Date(specialistStatus.last_seen).toLocaleString() : 'Never'}
-                    </span>
-                  </div>
-                  
-                </div>
-              )}
             </div>
             
             {/* Right column: Actions and Status */}
@@ -711,8 +745,8 @@ const PeerSpecialistDashboard = () => {
         </div>
 
         {/* Status and Overview Cards */}
-        <div className="flex gap-4 mb-4">
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[25%]">
+        <div className="grid grid-cols-5 gap-4 mb-4">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
             <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-3 rounded-sm">
                 <MessageSquare className="text-primary-foreground" size={20} />
@@ -724,9 +758,12 @@ const PeerSpecialistDashboard = () => {
             <div className="text-2xl font-bold text-card-foreground">
               {chatSessions.filter(s => s.status === 'active').length}
             </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {totalChatsToday} total chats today
+            </div>
           </Card>
 
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[25%]">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
             <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-3 rounded-sm">
                 <Clock className="text-primary-foreground" size={20} />
@@ -738,9 +775,12 @@ const PeerSpecialistDashboard = () => {
             <div className="text-2xl font-bold text-card-foreground">
               {chatSessions.filter(s => s.status === 'waiting').length}
             </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {averageWaitTime} min. avg wait time
+            </div>
           </Card>
 
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[25%]">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
             <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-3 rounded-sm">
                 <Bell className="text-primary-foreground" size={20} />
@@ -776,7 +816,7 @@ const PeerSpecialistDashboard = () => {
             </div>
           </Card>
 
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[25%]">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
             <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-3 rounded-sm">
                 <Settings className="text-primary-foreground" size={20} />
@@ -785,32 +825,46 @@ const PeerSpecialistDashboard = () => {
                 Status
               </h3>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-card-foreground">
+            <div className="flex flex-col space-y-2">
+              <span className={`text-lg font-bold ${
+                specialistStatus?.status === 'online' ? 'text-green-500' :
+                specialistStatus?.status === 'busy' ? 'text-yellow-500' :
+                'text-red-500'
+              }`}>
                 {specialistStatus?.status.toUpperCase()}
               </span>
+              <div className="text-xs text-muted-foreground">
+                Last seen: {specialistStatus?.last_seen ? new Date(specialistStatus.last_seen).toLocaleTimeString() : 'Never'}
+              </div>
               <Button 
                 onClick={() => setIsStatusDialogOpen(true)}
                 variant="outline"
                 size="sm"
+                className="mt-1"
               >
                 Change
               </Button>
             </div>
           </Card>
+
+          <Card 
+            className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 cursor-pointer hover:bg-accent"
+            onClick={() => setIsActivityLogOpen(true)}
+          >
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-primary p-3 rounded-sm">
+                <BarChart3 className="text-primary-foreground" size={20} />
+              </div>
+              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
+                Activity Log
+              </h3>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              View specialist activity for this week
+            </div>
+          </Card>
         </div>
 
-        {/* Action Buttons Row */}
-        <div className="flex gap-4 mb-4">
-          <Button
-            onClick={() => setIsActivityLogOpen(true)}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <BarChart3 size={16} />
-            Activity Log
-          </Button>
-        </div>
 
         {/* Main Dashboard Content */}
         <div className="w-full">
