@@ -159,7 +159,7 @@ const PeerSpecialistDashboard = () => {
       const aPriority = getStatusPriority(a.status);
       const bPriority = getStatusPriority(b.status);
 
-      // First sort by status priority
+      // First sort by status priority (ascending: waiting first)
       if (aPriority !== bPriority) {
         return aPriority - bPriority;
       }
