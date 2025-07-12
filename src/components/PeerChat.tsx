@@ -241,8 +241,8 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                   ? 'bg-steel text-white' 
                   : msg.message_type === 'system'
                   ? 'bg-construction/20 text-construction border border-construction/30'
-                  : 'bg-white/10 backdrop-blur-sm text-white'
-              } rounded-2xl p-4`}>
+                  : 'bg-white/10 backdrop-blur-sm text-muted-foreground'
+               } rounded-2xl p-4`}>
                 <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
                 <p className={`text-xs ${
                   msg.sender_type === 'user' ? 'text-white/70' : msg.message_type === 'system' ? 'text-construction/70' : 'text-steel-light'
