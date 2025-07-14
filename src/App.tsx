@@ -23,10 +23,10 @@ const App = () => (
         enableSystem={true}
         storageKey="leap-theme"
       >
-        <Toaster />
-        <Sonner />
-        <AppUpdateNotification />
         <BrowserRouter>
+          <Toaster />
+          <Sonner />
+          <AppUpdateNotification />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/admin" element={<AdminPortal />} />
