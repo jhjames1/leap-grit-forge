@@ -17,6 +17,7 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserData } from '@/hooks/useUserData';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ForemanChatProps {
   onBack: () => void;
@@ -245,7 +246,31 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = () => {
+  const getOpenAIResponse = async (userMessage: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('foreman-chat', {
+        body: {
+          message: userMessage,
+          conversationHistory: messages,
+          userProfile: {
+            firstName: userName
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      return null;
+    }
+  };
+
+  const handleSendMessage = async () => {
     if (message.trim()) {
       const userMessage: Message = {
         id: messages.length + 1,
@@ -256,7 +281,7 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
 
       setMessages(prev => [...prev, userMessage]);
       
-      // Classify input first
+      // Classify input first for fallback system
       const inputType = classifyInput(message);
       
       // Update conversation context
@@ -272,34 +297,57 @@ const ForemanChat = ({ onBack }: ForemanChatProps) => {
       };
       setConversationContext(newContext);
       
+      const currentMessage = message;
       setMessage('');
 
-      // Generate response based on input type
-      setTimeout(() => {
-        let responseText: string;
-        let hasActions = false;
-
-        if (inputType !== 'valid') {
-          responseText = generateSpecialResponse(inputType, newInvalidCount);
-          // Offer peer escalation after multiple invalid inputs
-          if (newInvalidCount >= 3) {
-            hasActions = true;
-          }
-        } else {
-          responseText = generateContextualResponse(message, newContext);
-          hasActions = newContext.conversationTurn >= 3;
-        }
+      // Try OpenAI first, fall back to rule-based system
+      try {
+        const aiResponse = await getOpenAIResponse(currentMessage);
         
-        const foremanResponse: Message = {
-          id: messages.length + 2,
-          sender: 'foreman',
-          text: responseText,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          hasActions
-        };
+        if (aiResponse && aiResponse.response) {
+          // Use OpenAI response
+          const foremanResponse: Message = {
+            id: messages.length + 2,
+            sender: 'foreman',
+            text: aiResponse.response,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            hasActions: aiResponse.hasActions || false
+          };
 
-        setMessages(prev => [...prev, foremanResponse]);
-      }, 1000);
+          setMessages(prev => [...prev, foremanResponse]);
+        } else {
+          throw new Error('No response from OpenAI');
+        }
+      } catch (error) {
+        console.error('OpenAI failed, using fallback:', error);
+        
+        // Fallback to rule-based system
+        setTimeout(() => {
+          let responseText: string;
+          let hasActions = false;
+
+          if (inputType !== 'valid') {
+            responseText = generateSpecialResponse(inputType, newInvalidCount);
+            // Offer peer escalation after multiple invalid inputs
+            if (newInvalidCount >= 3) {
+              hasActions = true;
+            }
+          } else {
+            responseText = generateContextualResponse(currentMessage, newContext);
+            hasActions = newContext.conversationTurn >= 3;
+          }
+          
+          const foremanResponse: Message = {
+            id: messages.length + 2,
+            sender: 'foreman',
+            text: responseText,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            hasActions
+          };
+
+          setMessages(prev => [...prev, foremanResponse]);
+        }, 1000);
+      }
     }
   };
 
