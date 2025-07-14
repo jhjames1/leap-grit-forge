@@ -75,7 +75,15 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Foreman chat function called');
     const { message, conversationHistory, userProfile, previousConversationSummary, previousSessions, streakData, journeyProgress, todaysActivity } = await req.json();
+
+    console.log('Request data:', {
+      message: message ? 'present' : 'missing',
+      userProfile: userProfile ? 'present' : 'missing',
+      streakData: streakData ? streakData : 'missing',
+      journeyProgress: journeyProgress ? 'present' : 'missing'
+    });
 
     if (!message) {
       throw new Error('Message is required');
@@ -184,9 +192,11 @@ serve(async (req) => {
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
+      console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
+    console.log('Calling OpenAI with', messages.length, 'messages');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -205,11 +215,12 @@ serve(async (req) => {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('OpenAI API error:', error);
-      throw new Error('Failed to get response from OpenAI');
+      console.error('OpenAI API error:', response.status, error);
+      throw new Error(`OpenAI API failed with status ${response.status}: ${error}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI response received:', data.choices?.[0]?.message?.content ? 'success' : 'no content');
     const generatedText = data.choices[0].message.content;
 
     // Analyze response for specific tool recommendations
@@ -249,21 +260,37 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in foreman-chat function:', error);
     
-    // Fallback response if OpenAI fails
-    const fallbackResponses = [
-      "I'm having trouble connecting right now. Can you tell me what's going on?",
-      "Something's not working on my end. What's on your mind?",
-      "Technical difficulties here. Talk to me - what's happening?",
-      "I'm having system issues. What brought you here today?"
-    ];
+    // Enhanced contextual fallback responses that incorporate user data
+    const { message, userProfile, streakData, journeyProgress } = await req.json().catch(() => ({}));
+    const userName = userProfile?.firstName || 'friend';
+    const currentStreak = streakData?.currentStreak || 0;
     
-    const fallbackResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+    let contextualFallback = "";
+    
+    // Create conversational fallbacks based on available context
+    if (currentStreak > 0) {
+      contextualFallback = `${userName}, I'm having connection issues but I see you're ${currentStreak} days strong. What's on your mind today?`;
+    } else if (userName && userName !== 'friend') {
+      contextualFallback = `${userName}, system's acting up on my end, but I'm here. What brought you to chat today?`;
+    } else if (journeyProgress && !journeyProgress.isTodayCompleted) {
+      contextualFallback = `Having tech troubles, but I'm here to help. Noticed you haven't finished today's journey yet - what's going on?`;
+    } else {
+      // More conversational general fallbacks
+      const conversationalFallbacks = [
+        "System's giving me grief, but I'm still here. What's weighing on you?",
+        "Tech issues on my end, but talk to me - what's happening in your world?",
+        "Connection's wonky but I can still listen. What's on your mind?",
+        "Having some technical difficulties, but I'm here for you. What's going on?"
+      ];
+      contextualFallback = conversationalFallbacks[Math.floor(Math.random() * conversationalFallbacks.length)];
+    }
     
     return new Response(JSON.stringify({ 
-      response: fallbackResponse,
-      recommendedTools: ['peer'],
+      response: contextualFallback,
+      recommendedTools: currentStreak > 0 ? ['journey'] : ['peer'],
       hasActions: true,
-      error: true
+      error: true,
+      fallbackUsed: true
     }), {
       status: 200, // Return 200 so the frontend can handle the fallback
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

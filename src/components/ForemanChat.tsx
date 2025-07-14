@@ -287,6 +287,58 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
     return moodResponses[Math.floor(Math.random() * moodResponses.length)];
   };
 
+  // Enhanced contextual response generator that incorporates user data and streak info
+  const generateEnhancedContextualResponse = (userMessage: string, context: ConversationContext, userData: any, userName: string): string => {
+    const mood = analyzeMood(userMessage);
+    const lowerMessage = userMessage.toLowerCase();
+    
+    // Get current streak and journey info
+    const trackingManager = require('@/utils/trackingManager').trackingManager;
+    const streakData = trackingManager.getStreakData();
+    const currentStreak = streakData.currentStreak || 0;
+    
+    // Build contextual response based on user's situation
+    let response = "";
+    const name = userName ? `${userName}, ` : "";
+    
+    // Mood-based responses with streak context
+    if (mood === 'struggling') {
+      if (currentStreak > 0) {
+        response = `${name}I hear you struggling, but look - you're ${currentStreak} days strong. That's not nothing. What's hitting you hardest right now?`;
+      } else {
+        response = `${name}I hear you. Struggling is part of this journey. Want to talk about what's making it tough right now?`;
+      }
+    } else if (mood === 'frustrated') {
+      response = `${name}That frustration is real. I've been there. Let's work through what's got you fired up. Try a breathing exercise to cool down first?`;
+    } else if (mood === 'hopeful') {
+      if (currentStreak > 0) {
+        response = `${name}I like that energy. You're ${currentStreak} days in and feeling good - that's how recovery builds. Keep pushing forward.`;
+      } else {
+        response = `${name}Good to hear some hope in your voice. That's where recovery starts. What's got you feeling positive?`;
+      }
+    } else {
+      // Neutral or general responses with context
+      if (currentStreak > 0) {
+        response = `${name}You're ${currentStreak} days into this journey. What's on your mind today?`;
+      } else {
+        response = `${name}I'm here and listening. What brought you to talk today?`;
+      }
+    }
+    
+    // Add tool suggestions based on message content
+    if (lowerMessage.includes('anxious') || lowerMessage.includes('panic')) {
+      response += " Maybe try the breathing room to settle your nerves?";
+    } else if (lowerMessage.includes('urge') || lowerMessage.includes('craving')) {
+      response += " Sounds like you could use the urge tracker to work through this.";
+    } else if (lowerMessage.includes('alone') || lowerMessage.includes('isolated')) {
+      response += " You're not alone in this. Want to connect with a peer specialist?";
+    } else if (context.conversationTurn >= 3) {
+      response += " Let's get you some tools to work with this.";
+    }
+    
+    return response;
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -377,7 +429,12 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
 
       if (error) {
         console.error('Edge function error:', error);
+        console.log('Full error details:', JSON.stringify(error, null, 2));
         throw error;
+      }
+
+      if (data?.fallbackUsed) {
+        console.warn('OpenAI fallback was used in edge function');
       }
 
       return data;
@@ -437,22 +494,23 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
           throw new Error('No response from OpenAI');
         }
       } catch (error) {
-        console.error('OpenAI failed, using fallback:', error);
+        console.error('OpenAI failed, using enhanced fallback:', error);
+        console.log('Error type:', typeof error, 'Message:', error?.message);
         
-        // Fallback to rule-based system
+        // Enhanced contextual fallback system
         setTimeout(() => {
           let responseText: string;
           let hasActions = false;
 
           if (inputType !== 'valid') {
             responseText = generateSpecialResponse(inputType, newInvalidCount);
-            // Offer peer escalation after multiple invalid inputs
             if (newInvalidCount >= 3) {
               hasActions = true;
             }
           } else {
-            responseText = generateContextualResponse(currentMessage, newContext);
-            hasActions = newContext.conversationTurn >= 3;
+            // Replace robotic rule-based responses with contextual ones
+            responseText = generateEnhancedContextualResponse(currentMessage, newContext, userData, userName);
+            hasActions = true; // Always offer tools in fallback mode
           }
           
           const foremanResponse: Message = {
@@ -460,7 +518,8 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
             sender: 'foreman',
             text: responseText,
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            hasActions
+            hasActions,
+            recommendedTools: ['journey', 'peer'] // Default tools for fallback
           };
 
           setMessages(prev => [...prev, foremanResponse]);
