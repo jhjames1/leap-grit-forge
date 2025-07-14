@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,8 @@ interface ConversationContext {
 
 type InputType = 'valid' | 'incomprehensible' | 'belligerent' | 'minimal' | 'off-topic';
 
-const ForemanChat = ({ onBack }: ForemanChatProps) => {
+const ForemanChat: React.FC<ForemanChatProps> = ({ onBack }) => {
+  console.log('ForemanChat component initializing...');
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isListening, setIsListening] = useState(false);
