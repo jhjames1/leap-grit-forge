@@ -292,10 +292,8 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
     const mood = analyzeMood(userMessage);
     const lowerMessage = userMessage.toLowerCase();
     
-    // Get current streak and journey info
-    const trackingManager = require('@/utils/trackingManager').trackingManager;
-    const streakData = trackingManager.getStreakData();
-    const currentStreak = streakData.currentStreak || 0;
+    // Get current streak info from userData if available
+    const currentStreak = userData?.streakData?.currentStreak || 0;
     
     // Build contextual response based on user's situation
     let response = "";
