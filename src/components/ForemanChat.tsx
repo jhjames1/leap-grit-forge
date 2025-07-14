@@ -58,6 +58,8 @@ type InputType = 'valid' | 'incomprehensible' | 'belligerent' | 'minimal' | 'off
 
 const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
   console.log('ForemanChat component initializing...');
+  console.log('Props received:', { onBack: !!onBack, onNavigate: !!onNavigate });
+  
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isListening, setIsListening] = useState(false);
@@ -78,57 +80,100 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
   const [showGratitudeLog, setShowGratitudeLog] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { t, getArray } = useLanguage();
+  
+  // Add error boundary for language context
+  let languageContext;
+  try {
+    languageContext = useLanguage();
+    console.log('Language context loaded successfully:', languageContext.language);
+  } catch (error) {
+    console.error('Language context error:', error);
+    // Fallback values
+    languageContext = {
+      t: (key: string) => key,
+      getArray: (key: string) => []
+    };
+  }
+  const { t, getArray } = languageContext;
+  
   const { userData, logActivity } = useUserData();
+  console.log('User data:', userData);
   const userName = userData?.firstName || localStorage.getItem('currentUser') || 'friend';
+  console.log('Using userName:', userName);
 
   // Initialize with personalized greeting based on conversation history
   useEffect(() => {
-    const lastConversation = ConversationMemoryManager.getLastConversationSummary(userName);
-    let greeting = '';
+    console.log('Initializing greeting for user:', userName);
     
-    if (lastConversation && lastConversation.lastConversationDate) {
-      const timeSince = ConversationMemoryManager.getTimeSinceLastConversation(userName);
-      const contextualGreetings = getArray('foreman.contextualGreetings');
+    try {
+      const lastConversation = ConversationMemoryManager.getLastConversationSummary(userName);
+      console.log('Last conversation summary:', lastConversation);
       
-      // Choose greeting type based on previous conversation
-      let greetingArray = getArray('foreman.contextualGreetings.returning');
-      if (timeSince.includes('day') && parseInt(timeSince) >= 7) {
-        greetingArray = getArray('foreman.contextualGreetings.longGap');
-      } else if (lastConversation.userEmotionalState === 'crisis') {
-        greetingArray = getArray('foreman.contextualGreetings.crisisReturn');
-      } else if (lastConversation.userEmotionalState === 'struggling') {
-        greetingArray = getArray('foreman.contextualGreetings.strugglingReturn');
-      } else if (lastConversation.userEmotionalState === 'hopeful') {
-        greetingArray = getArray('foreman.contextualGreetings.hopefulReturn');
-      } else if (lastConversation.toolsRecommended.length > 0) {
-        greetingArray = getArray('foreman.contextualGreetings.toolFollowUp');
+      let greeting = '';
+      
+      if (lastConversation && lastConversation.lastConversationDate) {
+        console.log('Using contextual greeting for returning user');
+        const timeSince = ConversationMemoryManager.getTimeSinceLastConversation(userName);
+        const contextualGreetings = getArray('foreman.contextualGreetings');
+        console.log('Contextual greetings array:', contextualGreetings);
+        
+        // Choose greeting type based on previous conversation
+        let greetingArray = getArray('foreman.contextualGreetings.returning');
+        if (timeSince.includes('day') && parseInt(timeSince) >= 7) {
+          greetingArray = getArray('foreman.contextualGreetings.longGap');
+        } else if (lastConversation.userEmotionalState === 'crisis') {
+          greetingArray = getArray('foreman.contextualGreetings.crisisReturn');
+        } else if (lastConversation.userEmotionalState === 'struggling') {
+          greetingArray = getArray('foreman.contextualGreetings.strugglingReturn');
+        } else if (lastConversation.userEmotionalState === 'hopeful') {
+          greetingArray = getArray('foreman.contextualGreetings.hopefulReturn');
+        } else if (lastConversation.toolsRecommended?.length > 0) {
+          greetingArray = getArray('foreman.contextualGreetings.toolFollowUp');
+        }
+        
+        console.log('Selected greeting array:', greetingArray);
+        const greetingOptions = greetingArray.length > 0 ? greetingArray : getArray('foreman.contextualGreetings.returning');
+        greeting = greetingOptions[Math.floor(Math.random() * greetingOptions.length)] || 'Hey there, how are you doing?';
+        
+        // Replace placeholders with actual data
+        greeting = greeting.replace(/{name}/g, userName);
+        greeting = greeting.replace(/{timeSince}/g, timeSince);
+        greeting = greeting.replace(/{topic}/g, lastConversation.mainTopics?.[0] || 'your situation');
+        greeting = greeting.replace(/{mood}/g, lastConversation.userEmotionalState);
+        greeting = greeting.replace(/{tool}/g, lastConversation.toolsRecommended?.[0] || 'breathing exercise');
+      } else {
+        console.log('Using initial prompt for new user');
+        // First time user - use initial prompts
+        const initialPrompts = getArray('foreman.initialPrompts');
+        console.log('Initial prompts array:', initialPrompts);
+        greeting = initialPrompts.length > 0 
+          ? initialPrompts[Math.floor(Math.random() * initialPrompts.length)]
+          : "Hey there! What's on your mind today?";
+        greeting = greeting.replace(/{name}/g, userName);
       }
-      
-      const greetingOptions = greetingArray.length > 0 ? greetingArray : getArray('foreman.contextualGreetings.returning');
-      greeting = greetingOptions[Math.floor(Math.random() * greetingOptions.length)];
-      
-      // Replace placeholders with actual data
-      greeting = greeting.replace(/{name}/g, userName);
-      greeting = greeting.replace(/{timeSince}/g, timeSince);
-      greeting = greeting.replace(/{topic}/g, lastConversation.mainTopics[0] || 'your situation');
-      greeting = greeting.replace(/{mood}/g, lastConversation.userEmotionalState);
-      greeting = greeting.replace(/{tool}/g, lastConversation.toolsRecommended[0] || 'breathing exercise');
-    } else {
-      // First time user - use initial prompts
-      const initialPrompts = getArray('foreman.initialPrompts');
-      greeting = initialPrompts[Math.floor(Math.random() * initialPrompts.length)];
-      greeting = greeting.replace(/{name}/g, userName);
+
+      console.log('Final greeting:', greeting);
+
+      const initialMessage: Message = {
+        id: 1,
+        sender: 'foreman',
+        text: greeting,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setMessages([initialMessage]);
+      console.log('Initial message set:', initialMessage);
+    } catch (error) {
+      console.error('Error initializing greeting:', error);
+      // Fallback greeting
+      const fallbackMessage: Message = {
+        id: 1,
+        sender: 'foreman',
+        text: `Hey ${userName}, what brings you here today?`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages([fallbackMessage]);
     }
-
-    const initialMessage: Message = {
-      id: 1,
-      sender: 'foreman',
-      text: greeting,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setMessages([initialMessage]);
   }, [t, userName, getArray]);
 
 
@@ -332,47 +377,61 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
   }, [messages.length, userName]);
 
   const getOpenAIResponse = async (userMessage: string) => {
+    console.log('Getting OpenAI response for message:', userMessage);
+    
     try {
       const lastConversation = ConversationMemoryManager.getLastConversationSummary(userName);
+      console.log('Last conversation summary:', lastConversation);
+      
       const conversationHistory = ConversationMemoryManager.getConversationHistory(userName);
+      console.log('Conversation history length:', conversationHistory.length);
       
       // Get streak and journey data
       const trackingManager = (await import('@/utils/trackingManager')).trackingManager;
       const journeyCalc = await import('@/utils/journeyCalculation');
       
       const streakData = trackingManager.getStreakData();
+      console.log('Streak data:', streakData);
+      
       const currentJourneyDay = journeyCalc.calculateCurrentJourneyDay(userData);
       const isTodayCompleted = journeyCalc.isDayCompleted(userData, currentJourneyDay);
+      console.log('Journey data - Current day:', currentJourneyDay, 'Today completed:', isTodayCompleted);
+      
       const todaysStats = trackingManager.getTodaysStats();
+      console.log('Today\'s stats:', todaysStats);
+      
+      const requestBody = {
+        message: userMessage,
+        conversationHistory: messages,
+        userProfile: {
+          firstName: userName,
+          recoveryStartDate: userData?.journeyProgress?.completionDates?.[1] // Use first journey completion as start date
+        },
+        previousConversationSummary: lastConversation,
+        previousSessions: conversationHistory.slice(0, 3), // Last 3 sessions
+        streakData: {
+          currentStreak: streakData.currentStreak,
+          longestStreak: streakData.longestStreak,
+          lastActivityDate: streakData.lastActivityDate
+        },
+        journeyProgress: {
+          currentDay: currentJourneyDay,
+          isTodayCompleted,
+          completedDays: userData?.journeyProgress?.completedDays || [],
+          totalDays: 90
+        },
+        todaysActivity: {
+          actionsToday: todaysStats.actionsToday,
+          toolsUsedToday: todaysStats.toolsUsedToday,
+          journeyActivitiesCompleted: todaysStats.journeyActivitiesCompleted,
+          recoveryStrength: todaysStats.recoveryStrength
+        }
+      };
+      
+      console.log('Sending request to foreman-chat edge function with body:', requestBody);
       
       const { data, error } = await supabase.functions.invoke('foreman-chat', {
-        body: {
-          message: userMessage,
-          conversationHistory: messages,
-          userProfile: {
-            firstName: userName,
-            recoveryStartDate: userData?.journeyProgress?.completionDates?.[1] // Use first journey completion as start date
-          },
-          previousConversationSummary: lastConversation,
-          previousSessions: conversationHistory.slice(0, 3), // Last 3 sessions
-          streakData: {
-            currentStreak: streakData.currentStreak,
-            longestStreak: streakData.longestStreak,
-            lastActivityDate: streakData.lastActivityDate
-          },
-          journeyProgress: {
-            currentDay: currentJourneyDay,
-            isTodayCompleted,
-            completedDays: userData?.journeyProgress?.completedDays || [],
-            totalDays: 90
-          },
-          todaysActivity: {
-            actionsToday: todaysStats.actionsToday,
-            toolsUsedToday: todaysStats.toolsUsedToday,
-            journeyActivitiesCompleted: todaysStats.journeyActivitiesCompleted,
-            recoveryStrength: todaysStats.recoveryStrength
-          }
-        }
+        body: requestBody
       });
 
       if (error) {
@@ -380,6 +439,7 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
         throw error;
       }
 
+      console.log('Edge function response:', data);
       return data;
     } catch (error) {
       console.error('OpenAI API error:', error);
@@ -388,6 +448,8 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
   };
 
   const handleSendMessage = async () => {
+    console.log('handleSendMessage called with message:', message);
+    
     if (message.trim()) {
       const userMessage: Message = {
         id: messages.length + 1,
@@ -396,10 +458,12 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
+      console.log('Adding user message:', userMessage);
       setMessages(prev => [...prev, userMessage]);
       
       // Classify input first for fallback system
       const inputType = classifyInput(message);
+      console.log('Message classified as:', inputType);
       
       // Update conversation context
       const newInvalidCount = inputType !== 'valid' ? conversationContext.invalidInputCount + 1 : 0;
@@ -413,15 +477,19 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
         invalidInputCount: newInvalidCount
       };
       setConversationContext(newContext);
+      console.log('Updated conversation context:', newContext);
       
       const currentMessage = message;
       setMessage('');
 
       // Try OpenAI first, fall back to rule-based system
       try {
+        console.log('Attempting to get OpenAI response...');
         const aiResponse = await getOpenAIResponse(currentMessage);
+        console.log('OpenAI response received:', aiResponse);
         
         if (aiResponse && aiResponse.response) {
+          console.log('Using AI response');
           // Use OpenAI response
           const foremanResponse: Message = {
             id: messages.length + 2,
@@ -431,6 +499,9 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
             hasActions: aiResponse.hasActions || false,
             recommendedTools: aiResponse.recommendedTools || []
           };
+          
+          console.log('Adding foreman response:', foremanResponse);
+          setMessages(prev => [...prev, foremanResponse]);
 
           setMessages(prev => [...prev, foremanResponse]);
         } else {

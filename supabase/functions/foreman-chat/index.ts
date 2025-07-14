@@ -74,12 +74,22 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log('Foreman chat function called');
+  console.log('Request method:', req.method);
+  console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+
   try {
-    const { message, conversationHistory, userProfile, previousConversationSummary, previousSessions, streakData, journeyProgress, todaysActivity } = await req.json();
+    const requestBody = await req.json();
+    console.log('Request body received:', JSON.stringify(requestBody, null, 2));
+    
+    const { message, conversationHistory, userProfile, previousConversationSummary, previousSessions, streakData, journeyProgress, todaysActivity } = requestBody;
 
     if (!message) {
+      console.error('No message provided in request');
       throw new Error('Message is required');
     }
+    
+    console.log('Processing message:', message);
 
     // Build the conversation context with previous conversation memory
     let systemPrompt = FOREMAN_SYSTEM_PROMPT;
@@ -184,8 +194,12 @@ serve(async (req) => {
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
+      console.error('OpenAI API key not found in environment variables');
       throw new Error('OpenAI API key not configured');
     }
+    
+    console.log('OpenAI API key found, making request...');
+    console.log('Sending messages to OpenAI:', JSON.stringify(messages, null, 2));
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -205,12 +219,15 @@ serve(async (req) => {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('OpenAI API error:', error);
-      throw new Error('Failed to get response from OpenAI');
+      console.error('OpenAI API error response:', response.status, response.statusText);
+      console.error('OpenAI API error details:', error);
+      throw new Error(`Failed to get response from OpenAI: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI response data:', data);
     const generatedText = data.choices[0].message.content;
+    console.log('Generated text:', generatedText);
 
     // Analyze response for specific tool recommendations
     const lowerResponse = generatedText.toLowerCase();
@@ -237,17 +254,22 @@ serve(async (req) => {
       recommendedTools.push('peer');
     }
 
-    return new Response(JSON.stringify({ 
+    const responseData = { 
       response: generatedText,
       recommendedTools,
       hasActions: recommendedTools.length > 0,
       needsPeerSupport
-    }), {
+    };
+    
+    console.log('Sending response:', responseData);
+    
+    return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in foreman-chat function:', error);
+    console.error('Error stack:', error.stack);
     
     // Fallback response if OpenAI fails
     const fallbackResponses = [
@@ -259,12 +281,16 @@ serve(async (req) => {
     
     const fallbackResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
     
-    return new Response(JSON.stringify({ 
+    const fallbackData = { 
       response: fallbackResponse,
       recommendedTools: ['peer'],
       hasActions: true,
       error: true
-    }), {
+    };
+    
+    console.log('Sending fallback response:', fallbackData);
+    
+    return new Response(JSON.stringify(fallbackData), {
       status: 200, // Return 200 so the frontend can handle the fallback
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

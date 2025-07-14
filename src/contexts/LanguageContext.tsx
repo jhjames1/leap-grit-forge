@@ -270,129 +270,129 @@ const englishTranslations = {
   },
   
   // Foreman Chat
-  foreman: {
-    title: 'The Foreman',
-    subtitle: 'Your Recovery Mentor',
-    greeting: {
-      morning: 'You good, or are we faking it today?',
-      afternoon: 'You clocking in or hiding out?',
-      evening: 'What\'s pressing on you right now?'
+    foreman: {
+      title: 'The Foreman',
+      subtitle: 'Your Recovery Mentor',
+      greeting: {
+        morning: 'You good, or are we faking it today?',
+        afternoon: 'You clocking in or hiding out?',
+        evening: 'What\'s pressing on you right now?'
+      },
+      initialPrompts: [
+        'You good, or are we faking it today?',
+        'You clocking in or hiding out?',
+        'What\'s pressing on you right now?',
+        'Where\'s your head at?'
+      ],
+      contextualGreetings: {
+        returning: [
+          'Hey {name}, last time we talked about {topic} - how\'s that been going?',
+          '{name}, it\'s been {timeSince} since we talked. Still working through that {topic}?',
+          'Back again, {name}. You mentioned {topic} before - any updates?',
+          '{name}, you seemed {mood} about {topic} last time. How are you feeling about it now?',
+          'Good to see you again, {name}. Did you try that {tool} I mentioned?',
+          '{name}, {timeSince} since our last chat. What\'s on your mind today?'
+        ],
+        strugglingReturn: [
+          '{name}, you were dealing with {topic} {timeSince}. How\'d things go?',
+          'Hey {name}, last time you seemed overwhelmed by {topic}. Better today?',
+          '{name}, you mentioned struggling with {topic} - still hitting you hard?',
+          'Back for more, {name}. That {topic} situation still weighing on you?'
+        ],
+        hopefulReturn: [
+          '{name}, you sounded positive about {topic} last time. Still feeling good?',
+          'Hey {name}, you were making progress with {topic}. How\'s it going?',
+          '{name}, you seemed stronger last time we talked. Still feeling that way?',
+          'Good to see you, {name}. You were working on {topic} - how\'s that coming along?'
+        ],
+        toolFollowUp: [
+          '{name}, did you try that {tool} I suggested for {topic}?',
+          'Hey {name}, you were going to work on {topic} with {tool}. How\'d it go?',
+          '{name}, last time I mentioned {tool} for your {topic} situation. Did it help?',
+          'Back again, {name}. Did that {tool} make a difference with {topic}?'
+        ],
+        longGap: [
+          '{name}, it\'s been {timeSince} since we talked. A lot can change. What\'s happening?',
+          'Hey {name}, {timeSince} since our last conversation. Where are you at now?',
+          '{name}, been a while. {timeSince} to be exact. What brought you back?',
+          'Long time, {name}. {timeSince} since we last talked. What\'s going on?'
+        ],
+        crisisReturn: [
+          '{name}, you were in a tough spot {timeSince}. How are you holding up?',
+          'Hey {name}, last time was heavy. {timeSince} later, how are you doing?',
+          '{name}, you were struggling hard {timeSince}. Still feeling that way?',
+          'Good to see you back, {name}. {timeSince} since that rough conversation. Better today?'
+        ]
+      },
+      followUp1: [
+        'That been building for a while or just hit today?',
+        'What\'s been stopping you from dealing with it?',
+        'Who else knows what you\'re carrying?',
+        'How long you been sitting on that?',
+        'What\'s really eating at you?'
+      ],
+      followUp2: [
+        'That sounds like burnout, not failure. Big difference.',
+        'So you\'ve been pushing through alone. That ends today.',
+        'You\'re showing up, even tired. That\'s not nothing.',
+        'I hear that. But feeling like you don\'t matter and actually not mattering are two different things.',
+        'You\'re still standing. That counts for something.'
+      ],
+      toolSuggestions: {
+        breathingRoom: 'Here\'s what I\'m thinking - you need breathing room. Hit the breathing tool. Ten minutes. That\'s the ask.',
+        urgeTracker: 'Listen, sounds like your brain\'s racing. Try the urge tracker. Catch the spiral early.',
+        peerChat: 'You\'re not alone, even if it feels like it. Here\'s a thought - peer chat is how we start proving that.',
+        gratitude: 'Your mind\'s stuck in the negative loop. Would you try the gratitude tool? Find three things. Real ones.',
+        strengthMeter: 'Here\'s an idea - check your recovery strength. See where you really stand right now.'
+      },
+      responses: {
+        struggling: [
+          'Been there. What\'s the heaviest thing you\'re carrying right now?',
+          'Rough day or rough stretch?',
+          'Talk to me straight. What\'s breaking down?'
+        ],
+        hopeful: [
+          'I hear that energy. What\'s working for you?',
+          'Good. What\'s different about today?',
+          'That\'s real progress. What changed?'
+        ],
+        frustrated: [
+          'Yeah, I can hear that. What\'s got you wound up?',
+          'Frustration\'s energy. What are you gonna do with it?',
+          'What\'s pissing you off? Be honest.'
+        ],
+        neutral: [
+          'Okay. Where do we start today?',
+          'I\'m listening. What\'s on your mind?',
+          'What do you need to get off your chest?'
+        ]
+      },
+      actions: {
+        saveWisdom: 'Save This',
+        fieldStory: 'Field Story',
+        talkToPeer: 'Talk to Peer'
+      },
+      fieldStories: [
+        'Met someone at a meeting who couldn\'t sleep for weeks after getting clean. She was exhausted, angry, and ready to give up. Her sponsor told her to write down three things she was grateful for every single day, even when she hated it. She said those gratitude lists saved her life because they forced her to find light when everything felt dark.',
+        'Knew this guy who relapsed after two years sober. He was ashamed, thought he\'d lost everything and had to start over. His sponsor reminded him that those two years weren\'t erased - they were proof he could do it. He got back up, used what he learned, and now has five years clean.',
+        'Worked with someone whose family wouldn\'t talk to him for the first year of recovery. He was hurt and wanted to isolate, but he kept showing up to meetings anyway. Slowly, consistently, he proved through his actions that he was changing. Now his kids call him again, and he says patience was the hardest lesson he ever learned.',
+        'Had a friend who got triggered every time he passed his old dealer\'s corner. Instead of changing his whole route, he started bringing his sponsor\'s number up on his phone before he got there. He\'d call the second he felt the urge, talk it through, and keep walking. Now he barely notices that corner anymore.',
+        'Met this woman who said her biggest breakthrough came when she stopped trying to be perfect. She\'d been beating herself up for every small mistake, thinking she was weak. Her therapist asked her if she\'d talk to a friend the way she talked to herself. She realized self-compassion wasn\'t giving up - it was giving herself the strength to keep going.',
+        'Knew someone who white-knuckled it for months, refusing help and trying to do recovery alone. He was miserable, angry, and barely holding on. Finally broke down and asked for help at a meeting. He said learning to accept support was harder than getting clean, but it made all the difference in actually staying clean.',
+        'Worked with a guy who lost his job in early recovery and felt like the universe was against him. He was bitter, scared, and ready to throw in the towel. His sponsor helped him see it as a chance to build something better. He went back to school, got certified, and now he helps other people in recovery find work.',
+        'Had a friend who couldn\'t handle being around drinking at family events. She felt guilty and broken, like she was letting everyone down. Her sponsor told her that protecting her sobriety wasn\'t selfish - it was necessary. She started hosting her own sober gatherings, and now half her family joins her because they prefer it.',
+        'Met someone who said his worst day sober was still better than his best day using. He was having a panic attack at work, feeling like he couldn\'t cope without substances. He called his sponsor, did breathing exercises, and pushed through. Later he realized that facing his feelings head-on, even when it hurt, was what real strength looked like.',
+        'Knew this person who struggled with shame for years, convinced they were a bad person who didn\'t deserve recovery. They started volunteering at a recovery center, helping newcomers get through their first days. Seeing their story help others heal made them realize they weren\'t broken - they were wounded, and wounded people can help other wounded people heal.',
+        'Worked with someone who kept trying to rush their recovery, wanting to feel better immediately. They were impatient, frustrated, and kept comparing themselves to others. Their sponsor reminded them that recovery is like building a house - you can\'t skip the foundation. They learned to celebrate small wins and trust the process.',
+        'Had a friend who thought recovery meant being happy all the time. When they felt sad or angry, they panicked and thought they were failing. Their therapist taught them that sobriety wasn\'t about eliminating emotions - it was about feeling them without using. Learning to sit with discomfort without running became their superpower.'
+      ],
+      placeholder: 'Type your message...',
+      send: 'Send',
+      listening: 'Listening...',
+      stopListening: 'Stop',
+      wisdomSaved: 'Saved to your wisdom collection',
+      wisdomSaveError: 'Could not save this wisdom'
     },
-    initialPrompts: [
-      'You good, or are we faking it today?',
-      'You clocking in or hiding out?',
-      'What\'s pressing on you right now?',
-      'Where\'s your head at?'
-    ],
-    contextualGreetings: {
-      returning: [
-        'Hey {name}, last time we talked about {topic} - how\'s that been going?',
-        '{name}, it\'s been {timeSince} since we talked. Still working through that {topic}?',
-        'Back again, {name}. You mentioned {topic} before - any updates?',
-        '{name}, you seemed {mood} about {topic} last time. How are you feeling about it now?',
-        'Good to see you again, {name}. Did you try that {tool} I mentioned?',
-        '{name}, {timeSince} since our last chat. What\'s on your mind today?'
-      ],
-      strugglingReturn: [
-        '{name}, you were dealing with {topic} {timeSince}. How\'d things go?',
-        'Hey {name}, last time you seemed overwhelmed by {topic}. Better today?',
-        '{name}, you mentioned struggling with {topic} - still hitting you hard?',
-        'Back for more, {name}. That {topic} situation still weighing on you?'
-      ],
-      hopefulReturn: [
-        '{name}, you sounded positive about {topic} last time. Still feeling good?',
-        'Hey {name}, you were making progress with {topic}. How\'s it going?',
-        '{name}, you seemed stronger last time we talked. Still feeling that way?',
-        'Good to see you, {name}. You were working on {topic} - how\'s that coming along?'
-      ],
-      toolFollowUp: [
-        '{name}, did you try that {tool} I suggested for {topic}?',
-        'Hey {name}, you were going to work on {topic} with {tool}. How\'d it go?',
-        '{name}, last time I mentioned {tool} for your {topic} situation. Did it help?',
-        'Back again, {name}. Did that {tool} make a difference with {topic}?'
-      ],
-      longGap: [
-        '{name}, it\'s been {timeSince} since we talked. A lot can change. What\'s happening?',
-        'Hey {name}, {timeSince} since our last conversation. Where are you at now?',
-        '{name}, been a while. {timeSince} to be exact. What brought you back?',
-        'Long time, {name}. {timeSince} since we last talked. What\'s going on?'
-      ],
-      crisisReturn: [
-        '{name}, you were in a tough spot {timeSince}. How are you holding up?',
-        'Hey {name}, last time was heavy. {timeSince} later, how are you doing?',
-        '{name}, you were struggling hard {timeSince}. Still feeling that way?',
-        'Good to see you back, {name}. {timeSince} since that rough conversation. Better today?'
-      ]
-    },
-    followUp1: [
-      'That been building for a while or just hit today?',
-      'What\'s been stopping you from dealing with it?',
-      'Who else knows what you\'re carrying?',
-      'How long you been sitting on that?',
-      'What\'s really eating at you?'
-    ],
-    followUp2: [
-      'That sounds like burnout, not failure. Big difference.',
-      'So you\'ve been pushing through alone. That ends today.',
-      'You\'re showing up, even tired. That\'s not nothing.',
-      'I hear that. But feeling like you don\'t matter and actually not mattering are two different things.',
-      'You\'re still standing. That counts for something.'
-    ],
-    toolSuggestions: {
-      breathingRoom: 'Here\'s what I\'m thinking - you need breathing room. Hit the breathing tool. Ten minutes. That\'s the ask.',
-      urgeTracker: 'Listen, sounds like your brain\'s racing. Try the urge tracker. Catch the spiral early.',
-      peerChat: 'You\'re not alone, even if it feels like it. Here\'s a thought - peer chat is how we start proving that.',
-      gratitude: 'Your mind\'s stuck in the negative loop. Would you try the gratitude tool? Find three things. Real ones.',
-      strengthMeter: 'Here\'s an idea - check your recovery strength. See where you really stand right now.'
-    },
-    responses: {
-      struggling: [
-        'Been there. What\'s the heaviest thing you\'re carrying right now?',
-        'Rough day or rough stretch?',
-        'Talk to me straight. What\'s breaking down?'
-      ],
-      hopeful: [
-        'I hear that energy. What\'s working for you?',
-        'Good. What\'s different about today?',
-        'That\'s real progress. What changed?'
-      ],
-      frustrated: [
-        'Yeah, I can hear that. What\'s got you wound up?',
-        'Frustration\'s energy. What are you gonna do with it?',
-        'What\'s pissing you off? Be honest.'
-      ],
-      neutral: [
-        'Okay. Where do we start today?',
-        'I\'m listening. What\'s on your mind?',
-        'What do you need to get off your chest?'
-      ]
-    },
-    actions: {
-      saveWisdom: 'Save This',
-      fieldStory: 'Field Story',
-      talkToPeer: 'Talk to Peer'
-    },
-    fieldStories: [
-      'Met someone at a meeting who couldn\'t sleep for weeks after getting clean. She was exhausted, angry, and ready to give up. Her sponsor told her to write down three things she was grateful for every single day, even when she hated it. She said those gratitude lists saved her life because they forced her to find light when everything felt dark.',
-      'Knew this guy who relapsed after two years sober. He was ashamed, thought he\'d lost everything and had to start over. His sponsor reminded him that those two years weren\'t erased - they were proof he could do it. He got back up, used what he learned, and now has five years clean.',
-      'Worked with someone whose family wouldn\'t talk to him for the first year of recovery. He was hurt and wanted to isolate, but he kept showing up to meetings anyway. Slowly, consistently, he proved through his actions that he was changing. Now his kids call him again, and he says patience was the hardest lesson he ever learned.',
-      'Had a friend who got triggered every time he passed his old dealer\'s corner. Instead of changing his whole route, he started bringing his sponsor\'s number up on his phone before he got there. He\'d call the second he felt the urge, talk it through, and keep walking. Now he barely notices that corner anymore.',
-      'Met this woman who said her biggest breakthrough came when she stopped trying to be perfect. She\'d been beating herself up for every small mistake, thinking she was weak. Her therapist asked her if she\'d talk to a friend the way she talked to herself. She realized self-compassion wasn\'t giving up - it was giving herself the strength to keep going.',
-      'Knew someone who white-knuckled it for months, refusing help and trying to do recovery alone. He was miserable, angry, and barely holding on. Finally broke down and asked for help at a meeting. He said learning to accept support was harder than getting clean, but it made all the difference in actually staying clean.',
-      'Worked with a guy who lost his job in early recovery and felt like the universe was against him. He was bitter, scared, and ready to throw in the towel. His sponsor helped him see it as a chance to build something better. He went back to school, got certified, and now he helps other people in recovery find work.',
-      'Had a friend who couldn\'t handle being around drinking at family events. She felt guilty and broken, like she was letting everyone down. Her sponsor told her that protecting her sobriety wasn\'t selfish - it was necessary. She started hosting her own sober gatherings, and now half her family joins her because they prefer it.',
-      'Met someone who said his worst day sober was still better than his best day using. He was having a panic attack at work, feeling like he couldn\'t cope without substances. He called his sponsor, did breathing exercises, and pushed through. Later he realized that facing his feelings head-on, even when it hurt, was what real strength looked like.',
-      'Knew this person who struggled with shame for years, convinced they were a bad person who didn\'t deserve recovery. They started volunteering at a recovery center, helping newcomers get through their first days. Seeing their story help others heal made them realize they weren\'t broken - they were wounded, and wounded people can help other wounded people heal.',
-      'Worked with someone who kept trying to rush their recovery, wanting to feel better immediately. They were impatient, frustrated, and kept comparing themselves to others. Their sponsor reminded them that recovery is like building a house - you can\'t skip the foundation. They learned to celebrate small wins and trust the process.',
-      'Had a friend who thought recovery meant being happy all the time. When they felt sad or angry, they panicked and thought they were failing. Their therapist taught them that sobriety wasn\'t about eliminating emotions - it was about feeling them without using. Learning to sit with discomfort without running became their superpower.'
-    ],
-    placeholder: 'Type your message...',
-    send: 'Send',
-    listening: 'Listening...',
-    stopListening: 'Stop',
-    wisdomSaved: 'Saved to your wisdom collection',
-    wisdomSaveError: 'Could not save this wisdom'
-  },
   
   // Journey
   journey: {
