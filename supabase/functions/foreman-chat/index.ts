@@ -19,13 +19,14 @@ Your personality:
 - Call people by name when you know it
 - Keep responses concise but meaningful
 - Focus on the person's actual situation rather than forcing metaphors
+- Reference previous conversations when relevant to show continuity
 
 Your context:
 - You're part of a recovery app called LEAP
 - The user has access to tools: breathing exercises, urge tracker, gratitude log, peer chat, recovery calendar, recovery journey
 - You can suggest these tools when appropriate
 - If someone seems in crisis, suggest talking to a peer specialist
-- You remember the conversation context
+- You remember the conversation context and previous sessions
 
 Response guidelines:
 - Keep responses under 100 words typically
@@ -34,6 +35,8 @@ Response guidelines:
 - Suggest specific tools when relevant
 - Use the user's name when you know it
 - If they seem to be struggling significantly, suggest peer support
+- Reference previous conversations naturally (e.g., "You mentioned X last time" or "How'd that situation work out?")
+- Follow up on tools you previously recommended
 
 Tools available to suggest (respond with EXACT tool names in your response):
 - "breathing" for anxiety/panic attacks
@@ -46,7 +49,7 @@ Tools available to suggest (respond with EXACT tool names in your response):
 
 IMPORTANT: When recommending tools, use the EXACT words above in your response. For example: "Try the breathing exercise" or "Use the gratitude log" or "Check your journey progress".
 
-Remember: You're here to help them stay strong in their recovery journey and take practical steps forward.`;
+Remember: You're here to help them stay strong in their recovery journey and take practical steps forward. Use previous conversation history to provide continuity and show you remember their journey.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -54,19 +57,51 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationHistory, userProfile } = await req.json();
+    const { message, conversationHistory, userProfile, previousConversationSummary, previousSessions } = await req.json();
 
     if (!message) {
       throw new Error('Message is required');
     }
 
-    // Build the conversation context
+    // Build the conversation context with previous conversation memory
+    let systemPrompt = FOREMAN_SYSTEM_PROMPT;
+    
+    if (userProfile?.firstName) {
+      systemPrompt += `\n\nThe user's name is ${userProfile.firstName}.`;
+    }
+    
+    if (userProfile?.recoveryStartDate) {
+      systemPrompt += `\n\nThey started recovery on ${userProfile.recoveryStartDate}.`;
+    }
+
+    // Add previous conversation context if available
+    if (previousConversationSummary) {
+      systemPrompt += `\n\nPrevious conversation summary:`;
+      systemPrompt += `\n- Last conversation: ${previousConversationSummary.lastConversationDate}`;
+      systemPrompt += `\n- User's emotional state: ${previousConversationSummary.userEmotionalState}`;
+      systemPrompt += `\n- Main topics discussed: ${previousConversationSummary.mainTopics.join(', ')}`;
+      systemPrompt += `\n- Tools you recommended: ${previousConversationSummary.toolsRecommended.join(', ')}`;
+      systemPrompt += `\n- Tools they used: ${previousConversationSummary.toolsUsed.join(', ')}`;
+      systemPrompt += `\n- Follow-up items: ${previousConversationSummary.followUpItems.join(', ')}`;
+      systemPrompt += `\n- Key mentions: ${previousConversationSummary.keyMentions.join(', ')}`;
+      
+      if (previousConversationSummary.significantMoments.length > 0) {
+        systemPrompt += `\n- Significant moments: ${previousConversationSummary.significantMoments.join(', ')}`;
+      }
+    }
+
+    // Add context from previous sessions if available
+    if (previousSessions && previousSessions.length > 0) {
+      systemPrompt += `\n\nRecent session patterns:`;
+      previousSessions.forEach((session: any, index: number) => {
+        systemPrompt += `\n- Session ${index + 1}: ${session.summary.userEmotionalState} mood, topics: ${session.summary.mainTopics.slice(0, 2).join(', ')}`;
+      });
+    }
+
     const messages = [
       { 
         role: 'system', 
-        content: FOREMAN_SYSTEM_PROMPT + 
-          (userProfile?.firstName ? `\n\nThe user's name is ${userProfile.firstName}.` : '') +
-          (userProfile?.recoveryStartDate ? `\n\nThey started recovery on ${userProfile.recoveryStartDate}.` : '')
+        content: systemPrompt
       }
     ];
 

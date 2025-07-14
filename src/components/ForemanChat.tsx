@@ -26,6 +26,7 @@ import { supabase } from '@/integrations/supabase/client';
 import BreathingExercise from '@/components/BreathingExercise';
 import UrgeTracker from '@/components/UrgeTracker';
 import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
+import { ConversationMemoryManager } from '@/utils/conversationMemory';
 
 interface ForemanChatProps {
   onBack: () => void;
@@ -81,13 +82,44 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
   const { userData, logActivity } = useUserData();
   const userName = userData?.firstName || localStorage.getItem('currentUser') || 'friend';
 
-  // Initialize with direct, provocative greeting
+  // Initialize with personalized greeting based on conversation history
   useEffect(() => {
-    const initialPrompts = getArray('foreman.initialPrompts');
-    let greeting = initialPrompts[Math.floor(Math.random() * initialPrompts.length)];
+    const lastConversation = ConversationMemoryManager.getLastConversationSummary(userName);
+    let greeting = '';
     
-    // Personalize the greeting with the user's name
-    greeting = greeting.replace(/{name}/g, userName);
+    if (lastConversation && lastConversation.lastConversationDate) {
+      const timeSince = ConversationMemoryManager.getTimeSinceLastConversation(userName);
+      const contextualGreetings = getArray('foreman.contextualGreetings');
+      
+      // Choose greeting type based on previous conversation
+      let greetingArray = getArray('foreman.contextualGreetings.returning');
+      if (timeSince.includes('day') && parseInt(timeSince) >= 7) {
+        greetingArray = getArray('foreman.contextualGreetings.longGap');
+      } else if (lastConversation.userEmotionalState === 'crisis') {
+        greetingArray = getArray('foreman.contextualGreetings.crisisReturn');
+      } else if (lastConversation.userEmotionalState === 'struggling') {
+        greetingArray = getArray('foreman.contextualGreetings.strugglingReturn');
+      } else if (lastConversation.userEmotionalState === 'hopeful') {
+        greetingArray = getArray('foreman.contextualGreetings.hopefulReturn');
+      } else if (lastConversation.toolsRecommended.length > 0) {
+        greetingArray = getArray('foreman.contextualGreetings.toolFollowUp');
+      }
+      
+      const greetingOptions = greetingArray.length > 0 ? greetingArray : getArray('foreman.contextualGreetings.returning');
+      greeting = greetingOptions[Math.floor(Math.random() * greetingOptions.length)];
+      
+      // Replace placeholders with actual data
+      greeting = greeting.replace(/{name}/g, userName);
+      greeting = greeting.replace(/{timeSince}/g, timeSince);
+      greeting = greeting.replace(/{topic}/g, lastConversation.mainTopics[0] || 'your situation');
+      greeting = greeting.replace(/{mood}/g, lastConversation.userEmotionalState);
+      greeting = greeting.replace(/{tool}/g, lastConversation.toolsRecommended[0] || 'breathing exercise');
+    } else {
+      // First time user - use initial prompts
+      const initialPrompts = getArray('foreman.initialPrompts');
+      greeting = initialPrompts[Math.floor(Math.random() * initialPrompts.length)];
+      greeting = greeting.replace(/{name}/g, userName);
+    }
 
     const initialMessage: Message = {
       id: 1,
@@ -97,7 +129,7 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
     };
 
     setMessages([initialMessage]);
-  }, [t, userName]);
+  }, [t, userName, getArray]);
 
 
   const classifyInput = (text: string): InputType => {
@@ -263,15 +295,56 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
     scrollToBottom();
   }, [messages]);
 
+  // Save conversation memory when component unmounts or user leaves
+  useEffect(() => {
+    const saveConversationMemory = () => {
+      if (messages.length > 1) { // Only save if there was actual conversation
+        const conversationMessages = messages.map(msg => ({
+          sender: msg.sender as 'user' | 'foreman',
+          text: msg.text,
+          time: msg.time
+        }));
+        
+        const toolsUsed: string[] = [];
+        // Track tools that were actually used (you could enhance this by tracking actual tool usage)
+        
+        ConversationMemoryManager.saveConversationSession(userName, conversationMessages, toolsUsed);
+      }
+    };
+
+    // Save on component unmount
+    return () => {
+      saveConversationMemory();
+    };
+  }, [messages, userName]);
+
+  // Also save periodically during long conversations
+  useEffect(() => {
+    if (messages.length > 10 && messages.length % 10 === 0) {
+      const conversationMessages = messages.map(msg => ({
+        sender: msg.sender as 'user' | 'foreman',
+        text: msg.text,
+        time: msg.time
+      }));
+      
+      ConversationMemoryManager.saveConversationSession(userName, conversationMessages, []);
+    }
+  }, [messages.length, userName]);
+
   const getOpenAIResponse = async (userMessage: string) => {
     try {
+      const lastConversation = ConversationMemoryManager.getLastConversationSummary(userName);
+      const conversationHistory = ConversationMemoryManager.getConversationHistory(userName);
+      
       const { data, error } = await supabase.functions.invoke('foreman-chat', {
         body: {
           message: userMessage,
           conversationHistory: messages,
           userProfile: {
             firstName: userName
-          }
+          },
+          previousConversationSummary: lastConversation,
+          previousSessions: conversationHistory.slice(0, 3) // Last 3 sessions
         }
       });
 

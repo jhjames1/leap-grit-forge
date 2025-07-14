@@ -284,6 +284,46 @@ const englishTranslations = {
       'What\'s pressing on you right now?',
       'Where\'s your head at?'
     ],
+    contextualGreetings: {
+      returning: [
+        'Hey {name}, last time we talked about {topic} - how\'s that been going?',
+        '{name}, it\'s been {timeSince} since we talked. Still working through that {topic}?',
+        'Back again, {name}. You mentioned {topic} before - any updates?',
+        '{name}, you seemed {mood} about {topic} last time. How are you feeling about it now?',
+        'Good to see you again, {name}. Did you try that {tool} I mentioned?',
+        '{name}, {timeSince} since our last chat. What\'s on your mind today?'
+      ],
+      strugglingReturn: [
+        '{name}, you were dealing with {topic} {timeSince}. How\'d things go?',
+        'Hey {name}, last time you seemed overwhelmed by {topic}. Better today?',
+        '{name}, you mentioned struggling with {topic} - still hitting you hard?',
+        'Back for more, {name}. That {topic} situation still weighing on you?'
+      ],
+      hopefulReturn: [
+        '{name}, you sounded positive about {topic} last time. Still feeling good?',
+        'Hey {name}, you were making progress with {topic}. How\'s it going?',
+        '{name}, you seemed stronger last time we talked. Still feeling that way?',
+        'Good to see you, {name}. You were working on {topic} - how\'s that coming along?'
+      ],
+      toolFollowUp: [
+        '{name}, did you try that {tool} I suggested for {topic}?',
+        'Hey {name}, you were going to work on {topic} with {tool}. How\'d it go?',
+        '{name}, last time I mentioned {tool} for your {topic} situation. Did it help?',
+        'Back again, {name}. Did that {tool} make a difference with {topic}?'
+      ],
+      longGap: [
+        '{name}, it\'s been {timeSince} since we talked. A lot can change. What\'s happening?',
+        'Hey {name}, {timeSince} since our last conversation. Where are you at now?',
+        '{name}, been a while. {timeSince} to be exact. What brought you back?',
+        'Long time, {name}. {timeSince} since we last talked. What\'s going on?'
+      ],
+      crisisReturn: [
+        '{name}, you were in a tough spot {timeSince}. How are you holding up?',
+        'Hey {name}, last time was heavy. {timeSince} later, how are you doing?',
+        '{name}, you were struggling hard {timeSince}. Still feeling that way?',
+        'Good to see you back, {name}. {timeSince} since that rough conversation. Better today?'
+      ]
+    },
     followUp1: [
       'That been building for a while or just hit today?',
       'What\'s been stopping you from dealing with it?',
