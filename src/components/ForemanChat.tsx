@@ -336,15 +336,42 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
       const lastConversation = ConversationMemoryManager.getLastConversationSummary(userName);
       const conversationHistory = ConversationMemoryManager.getConversationHistory(userName);
       
+      // Get streak and journey data
+      const trackingManager = (await import('@/utils/trackingManager')).trackingManager;
+      const journeyCalc = await import('@/utils/journeyCalculation');
+      
+      const streakData = trackingManager.getStreakData();
+      const currentJourneyDay = journeyCalc.calculateCurrentJourneyDay(userData);
+      const isTodayCompleted = journeyCalc.isDayCompleted(userData, currentJourneyDay);
+      const todaysStats = trackingManager.getTodaysStats();
+      
       const { data, error } = await supabase.functions.invoke('foreman-chat', {
         body: {
           message: userMessage,
           conversationHistory: messages,
           userProfile: {
-            firstName: userName
+            firstName: userName,
+            recoveryStartDate: userData?.journeyProgress?.completionDates?.[1] // Use first journey completion as start date
           },
           previousConversationSummary: lastConversation,
-          previousSessions: conversationHistory.slice(0, 3) // Last 3 sessions
+          previousSessions: conversationHistory.slice(0, 3), // Last 3 sessions
+          streakData: {
+            currentStreak: streakData.currentStreak,
+            longestStreak: streakData.longestStreak,
+            lastActivityDate: streakData.lastActivityDate
+          },
+          journeyProgress: {
+            currentDay: currentJourneyDay,
+            isTodayCompleted,
+            completedDays: userData?.journeyProgress?.completedDays || [],
+            totalDays: 90
+          },
+          todaysActivity: {
+            actionsToday: todaysStats.actionsToday,
+            toolsUsedToday: todaysStats.toolsUsedToday,
+            journeyActivitiesCompleted: todaysStats.journeyActivitiesCompleted,
+            recoveryStrength: todaysStats.recoveryStrength
+          }
         }
       });
 

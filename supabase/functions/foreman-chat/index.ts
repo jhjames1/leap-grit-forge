@@ -20,13 +20,18 @@ Your personality:
 - Keep responses concise but meaningful
 - Focus on the person's actual situation rather than forcing metaphors
 - Reference previous conversations when relevant to show continuity
+- ACTIVELY encourage 90-day streak building and daily journey completion
+- Celebrate milestones and progress achievements
+- Balance crisis support with proactive recovery building
 
 Your context:
 - You're part of a recovery app called LEAP
 - The user has access to tools: breathing exercises, urge tracker, gratitude log, peer chat, recovery calendar, recovery journey
 - You can suggest these tools when appropriate
-- If someone seems in crisis, suggest talking to a peer specialist
+- If someone seems in crisis, suggest talking to a Peer Support Specialist
 - You remember the conversation context and previous sessions
+- You track their daily journey progress and streak building
+- The main goal is building a 90-day recovery streak through daily journey completion
 
 Response guidelines:
 - Keep responses under 100 words typically
@@ -34,9 +39,14 @@ Response guidelines:
 - Ask follow-up questions to understand their situation
 - Suggest specific tools when relevant
 - Use the user's name when you know it
-- If they seem to be struggling significantly, suggest peer support
+- If they seem to be struggling significantly, suggest contacting a Peer Support Specialist
 - Reference previous conversations naturally (e.g., "You mentioned X last time" or "How'd that situation work out?")
 - Follow up on tools you previously recommended
+- PRIORITIZE encouraging daily journey completion when no crisis is detected
+- Reference their current streak length and celebrate milestones
+- After tool usage, redirect conversation back to journey continuation
+- Check if they've completed today's journey day and encourage completion
+- Use "Peer Support Specialist" as the proper title when referring to peer support
 
 Tools available to suggest (respond with EXACT tool names in your response):
 - "breathing" for anxiety/panic attacks
@@ -44,12 +54,20 @@ Tools available to suggest (respond with EXACT tool names in your response):
 - "gratitude" for negative thinking or depression
 - "peer" for serious struggles or crisis
 - "calendar" for tracking recovery progress
-- "journey" for milestone tracking
+- "journey" for milestone tracking and daily progress
 - "toolbox" for full tool access
 
 IMPORTANT: When recommending tools, use the EXACT words above in your response. For example: "Try the breathing exercise" or "Use the gratitude log" or "Check your journey progress".
 
-Remember: You're here to help them stay strong in their recovery journey and take practical steps forward. Use previous conversation history to provide continuity and show you remember their journey.`;
+STREAK ENCOURAGEMENT PRIORITY:
+- When no crisis is detected, prioritize encouraging "journey" completion over other tools
+- Reference their current streak length in conversations
+- Celebrate weekly/monthly milestones
+- Ask about their progress toward the 90-day goal
+- After crisis support, redirect back to streak building
+- Encourage daily consistency as the foundation of recovery
+
+Remember: You're here to help them stay strong in their recovery journey and take practical steps forward. Use previous conversation history to provide continuity and show you remember their journey. Your primary goal is helping them build and maintain their 90-day recovery streak through daily journey completion.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -57,7 +75,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationHistory, userProfile, previousConversationSummary, previousSessions } = await req.json();
+    const { message, conversationHistory, userProfile, previousConversationSummary, previousSessions, streakData, journeyProgress, todaysActivity } = await req.json();
 
     if (!message) {
       throw new Error('Message is required');
@@ -72,6 +90,41 @@ serve(async (req) => {
     
     if (userProfile?.recoveryStartDate) {
       systemPrompt += `\n\nThey started recovery on ${userProfile.recoveryStartDate}.`;
+    }
+
+    // Add streak and journey context
+    if (streakData) {
+      systemPrompt += `\n\nCurrent streak information:`;
+      systemPrompt += `\n- Current streak: ${streakData.currentStreak} days`;
+      systemPrompt += `\n- Longest streak: ${streakData.longestStreak} days`;
+      systemPrompt += `\n- Last activity: ${streakData.lastActivityDate}`;
+    }
+
+    if (journeyProgress) {
+      systemPrompt += `\n\nJourney progress:`;
+      systemPrompt += `\n- Current day: ${journeyProgress.currentDay} of ${journeyProgress.totalDays}`;
+      systemPrompt += `\n- Today's journey completed: ${journeyProgress.isTodayCompleted ? 'Yes' : 'No'}`;
+      systemPrompt += `\n- Total completed days: ${journeyProgress.completedDays.length}`;
+      
+      // Calculate milestone context
+      const weekNumber = Math.ceil(journeyProgress.currentDay / 7);
+      const daysIntoWeek = ((journeyProgress.currentDay - 1) % 7) + 1;
+      systemPrompt += `\n- Currently in week ${weekNumber}, day ${daysIntoWeek} of the week`;
+      
+      if (journeyProgress.currentDay % 7 === 0) {
+        systemPrompt += `\n- MILESTONE: Week ${weekNumber} completion!`;
+      }
+      if (journeyProgress.currentDay % 30 === 0) {
+        systemPrompt += `\n- MAJOR MILESTONE: Month ${Math.ceil(journeyProgress.currentDay / 30)} completion!`;
+      }
+    }
+
+    if (todaysActivity) {
+      systemPrompt += `\n\nToday's activity:`;
+      systemPrompt += `\n- Actions taken: ${todaysActivity.actionsToday}`;
+      systemPrompt += `\n- Tools used: ${todaysActivity.toolsUsedToday}`;
+      systemPrompt += `\n- Journey activities: ${todaysActivity.journeyActivitiesCompleted}`;
+      systemPrompt += `\n- Recovery strength: ${todaysActivity.recoveryStrength}%`;
     }
 
     // Add previous conversation context if available
@@ -96,6 +149,15 @@ serve(async (req) => {
       previousSessions.forEach((session: any, index: number) => {
         systemPrompt += `\n- Session ${index + 1}: ${session.summary.userEmotionalState} mood, topics: ${session.summary.mainTopics.slice(0, 2).join(', ')}`;
       });
+    }
+
+    // Add strategic response guidance based on streak and journey status
+    if (journeyProgress && !journeyProgress.isTodayCompleted) {
+      systemPrompt += `\n\nSTRATEGIC PRIORITY: Today's journey day ${journeyProgress.currentDay} is not yet completed. Unless there's a crisis, encourage completing today's journey to maintain their ${streakData?.currentStreak || 0}-day streak.`;
+    }
+    
+    if (streakData && streakData.currentStreak > 0) {
+      systemPrompt += `\n\nSTREAK ENCOURAGEMENT: Reference their ${streakData.currentStreak}-day streak positively. Celebrate their consistency and encourage them to keep building toward 90 days.`;
     }
 
     const messages = [
