@@ -27,6 +27,8 @@ import BreathingExercise from '@/components/BreathingExercise';
 import UrgeTracker from '@/components/UrgeTracker';
 import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
 import { ConversationMemoryManager } from '@/utils/conversationMemory';
+import { trackingManager } from '@/utils/trackingManager';
+import { calculateCurrentJourneyDay, isDayCompleted } from '@/utils/journeyCalculation';
 
 interface ForemanChatProps {
   onBack: () => void;
@@ -387,12 +389,9 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
       const conversationHistory = ConversationMemoryManager.getConversationHistory(userName);
       
       // Get streak and journey data
-      const trackingManager = (await import('@/utils/trackingManager')).trackingManager;
-      const journeyCalc = await import('@/utils/journeyCalculation');
-      
       const streakData = trackingManager.getStreakData();
-      const currentJourneyDay = journeyCalc.calculateCurrentJourneyDay(userData);
-      const isTodayCompleted = journeyCalc.isDayCompleted(userData, currentJourneyDay);
+      const currentJourneyDay = calculateCurrentJourneyDay(userData);
+      const isTodayCompleted = isDayCompleted(userData, currentJourneyDay);
       const todaysStats = trackingManager.getTodaysStats();
       
       const { data, error } = await supabase.functions.invoke('foreman-chat', {
@@ -472,9 +471,11 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
       const currentMessage = message;
       setMessage('');
 
-      // Try OpenAI first, fall back to rule-based system
+      // Try OpenAI first, fall back to enhanced system
       try {
+        console.log('Attempting OpenAI call for message:', currentMessage);
         const aiResponse = await getOpenAIResponse(currentMessage);
+        console.log('OpenAI response received:', aiResponse);
         
         if (aiResponse && aiResponse.response) {
           // Use OpenAI response
@@ -493,9 +494,9 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
         }
       } catch (error) {
         console.error('OpenAI failed, using enhanced fallback:', error);
-        console.log('Error type:', typeof error, 'Message:', error?.message);
+        console.log('Fallback triggered for turn:', newContext.conversationTurn);
         
-        // Enhanced contextual fallback system
+        // Enhanced contextual fallback system - always conversational
         setTimeout(() => {
           let responseText: string;
           let hasActions = false;
@@ -506,7 +507,7 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
               hasActions = true;
             }
           } else {
-            // Replace robotic rule-based responses with contextual ones
+            // Always use enhanced contextual response for valid inputs
             responseText = generateEnhancedContextualResponse(currentMessage, newContext, userData, userName);
             hasActions = true; // Always offer tools in fallback mode
           }
