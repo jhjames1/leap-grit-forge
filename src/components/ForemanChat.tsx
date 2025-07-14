@@ -12,15 +12,24 @@ import {
   Mic,
   MicOff,
   Users,
-  Star
+  Star,
+  Wind,
+  TrendingUp,
+  Calendar,
+  Map,
+  Wrench
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserData } from '@/hooks/useUserData';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import BreathingExercise from '@/components/BreathingExercise';
+import UrgeTracker from '@/components/UrgeTracker';
+import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
 
 interface ForemanChatProps {
   onBack: () => void;
+  onNavigate?: (page: string) => void;
 }
 
 interface Message {
@@ -31,6 +40,7 @@ interface Message {
   hasActions?: boolean;
   isSaved?: boolean;
   context?: string;
+  recommendedTools?: string[];
 }
 
 interface ConversationContext {
@@ -45,7 +55,7 @@ interface ConversationContext {
 
 type InputType = 'valid' | 'incomprehensible' | 'belligerent' | 'minimal' | 'off-topic';
 
-const ForemanChat: React.FC<ForemanChatProps> = ({ onBack }) => {
+const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
   console.log('ForemanChat component initializing...');
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -60,9 +70,15 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack }) => {
     userMessages: [],
     invalidInputCount: 0
   });
+  
+  // Tool modal states
+  const [showBreathing, setShowBreathing] = useState(false);
+  const [showUrgeTracker, setShowUrgeTracker] = useState(false);
+  const [showGratitudeLog, setShowGratitudeLog] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { t, getArray } = useLanguage();
-  const { userData } = useUserData();
+  const { userData, logActivity } = useUserData();
   const userName = userData?.firstName || localStorage.getItem('currentUser') || 'friend';
 
   // Initialize with direct, provocative greeting
@@ -312,7 +328,8 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack }) => {
             sender: 'foreman',
             text: aiResponse.response,
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            hasActions: aiResponse.hasActions || false
+            hasActions: aiResponse.hasActions || false,
+            recommendedTools: aiResponse.recommendedTools || []
           };
 
           setMessages(prev => [...prev, foremanResponse]);
@@ -386,9 +403,83 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack }) => {
       sender: 'foreman',
       text: story,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      hasActions: true
+      hasActions: true,
+      recommendedTools: ['peer']
     };
     setMessages(prev => [...prev, storyMessage]);
+  };
+
+  // Tool handlers
+  const handleToolAction = (tool: string) => {
+    switch (tool) {
+      case 'breathing':
+        setShowBreathing(true);
+        logActivity('Started Breathing Exercise', 'Opened breathing exercise from Foreman');
+        break;
+      case 'urge':
+        setShowUrgeTracker(true);
+        logActivity('Started Urge Tracker', 'Opened urge tracker from Foreman');
+        break;
+      case 'gratitude':
+        setShowGratitudeLog(true);
+        logActivity('Started Gratitude Log', 'Opened gratitude log from Foreman');
+        break;
+      case 'peer':
+        handlePeerEscalation();
+        break;
+      case 'calendar':
+        onNavigate?.('calendar');
+        logActivity('Opened Recovery Calendar', 'Navigated to calendar from Foreman');
+        break;
+      case 'journey':
+        onNavigate?.('journey');
+        logActivity('Opened Recovery Journey', 'Navigated to journey from Foreman');
+        break;
+      case 'toolbox':
+        onNavigate?.('toolbox');
+        logActivity('Opened Toolbox', 'Navigated to toolbox from Foreman');
+        break;
+      default:
+        console.warn('Unknown tool:', tool);
+    }
+  };
+
+  // Tool completion handlers
+  const handleBreathingComplete = () => {
+    setShowBreathing(false);
+    logActivity('Completed Breathing Exercise', 'Finished breathing exercise from Foreman');
+  };
+
+  const handleUrgeComplete = () => {
+    setShowUrgeTracker(false);
+    logActivity('Completed Urge Tracker', 'Finished urge tracking from Foreman');
+  };
+
+  const handleGratitudeComplete = () => {
+    setShowGratitudeLog(false);
+    logActivity('Completed Gratitude Log', 'Added gratitude entry from Foreman');
+  };
+
+  // Get tool button configuration
+  const getToolButtonConfig = (tool: string) => {
+    switch (tool) {
+      case 'breathing':
+        return { icon: Wind, label: 'Breathing Exercise', variant: 'outline' as const };
+      case 'urge':
+        return { icon: TrendingUp, label: 'Urge Tracker', variant: 'outline' as const };
+      case 'gratitude':
+        return { icon: Heart, label: 'Gratitude Log', variant: 'outline' as const };
+      case 'peer':
+        return { icon: Users, label: 'Talk to Peer', variant: 'default' as const };
+      case 'calendar':
+        return { icon: Calendar, label: 'Recovery Calendar', variant: 'outline' as const };
+      case 'journey':
+        return { icon: Map, label: 'Recovery Journey', variant: 'outline' as const };
+      case 'toolbox':
+        return { icon: Wrench, label: 'Full Toolbox', variant: 'outline' as const };
+      default:
+        return { icon: Star, label: tool, variant: 'outline' as const };
+    }
   };
 
   const toggleListening = () => {
@@ -439,10 +530,11 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack }) => {
               </div>
             </div>
 
-            {/* Action buttons for Foreman messages */}
+            {/* Dynamic action buttons for Foreman messages */}
             {msg.sender === 'foreman' && msg.hasActions && (
               <div className="flex justify-start mt-2">
                 <div className="flex flex-wrap gap-2">
+                  {/* Always show save wisdom button */}
                   <Button
                     size="sm"
                     variant="outline"
@@ -454,22 +546,41 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack }) => {
                     <Star size={14} />
                     <span className="text-xs">{t('foreman.actions.saveWisdom')}</span>
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleFieldStory}
-                    className="border-border text-card-foreground hover:bg-accent text-xs font-source"
-                  >
-                    {t('foreman.actions.fieldStory')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handlePeerEscalation}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-source"
-                  >
-                    <Users size={14} className="mr-1" />
-                    {t('foreman.actions.talkToPeer')}
-                  </Button>
+                  
+                  {/* Dynamic tool buttons based on AI recommendations */}
+                  {msg.recommendedTools?.map((tool, index) => {
+                    const config = getToolButtonConfig(tool);
+                    const Icon = config.icon;
+                    
+                    return (
+                      <Button
+                        key={index}
+                        size="sm"
+                        variant={config.variant}
+                        onClick={() => handleToolAction(tool)}
+                        className={`${
+                          config.variant === 'default' 
+                            ? 'bg-primary hover:bg-primary/90 text-primary-foreground' 
+                            : 'border-border text-card-foreground hover:bg-accent'
+                        } text-xs font-source`}
+                      >
+                        <Icon size={14} className="mr-1" />
+                        {config.label}
+                      </Button>
+                    );
+                  })}
+                  
+                  {/* Field story button if no specific tools recommended */}
+                  {(!msg.recommendedTools || msg.recommendedTools.length === 0) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleFieldStory}
+                      className="border-border text-card-foreground hover:bg-accent text-xs font-source"
+                    >
+                      {t('foreman.actions.fieldStory')}
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -509,6 +620,29 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack }) => {
           </Button>
         </div>
       </div>
+
+      {/* Tool Modals */}
+      {showBreathing && (
+        <BreathingExercise 
+          onClose={handleBreathingComplete}
+          onCancel={() => setShowBreathing(false)}
+        />
+      )}
+
+      {showUrgeTracker && (
+        <UrgeTracker 
+          onClose={handleUrgeComplete}
+          onCancel={() => setShowUrgeTracker(false)}
+          onNavigate={onNavigate}
+        />
+      )}
+
+      {showGratitudeLog && (
+        <GratitudeLogEnhanced 
+          onClose={handleGratitudeComplete}
+          onCancel={() => setShowGratitudeLog(false)}
+        />
+      )}
     </div>
   );
 };

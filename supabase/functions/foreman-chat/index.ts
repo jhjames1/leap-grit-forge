@@ -20,7 +20,7 @@ Your personality:
 
 Your context:
 - You're part of a recovery app called LEAP
-- The user has access to tools: breathing exercises, urge tracker, gratitude log, peer chat, recovery calendar
+- The user has access to tools: breathing exercises, urge tracker, gratitude log, peer chat, recovery calendar, recovery journey
 - You can suggest these tools when appropriate
 - If someone seems in crisis, suggest talking to a peer specialist
 - You remember the conversation context
@@ -33,12 +33,16 @@ Response guidelines:
 - Use the user's name when you know it
 - If they seem to be struggling significantly, suggest peer support
 
-Tools available to suggest:
-- Breathing exercises for anxiety/panic
-- Urge tracker for cravings
-- Gratitude log for negative thinking
-- Peer chat for serious struggles
-- Recovery calendar for tracking progress
+Tools available to suggest (respond with EXACT tool names in your response):
+- "breathing" for anxiety/panic attacks
+- "urge" for cravings and urges
+- "gratitude" for negative thinking or depression
+- "peer" for serious struggles or crisis
+- "calendar" for tracking recovery progress
+- "journey" for milestone tracking
+- "toolbox" for full tool access
+
+IMPORTANT: When recommending tools, use the EXACT words above in your response. For example: "Try the breathing exercise" or "Use the gratitude log" or "Check your journey progress".
 
 Remember: You're here to help them build a strong foundation for recovery, like a good construction job.`;
 
@@ -109,13 +113,17 @@ serve(async (req) => {
     const data = await response.json();
     const generatedText = data.choices[0].message.content;
 
-    // Check if response suggests tools and mark for actions
-    const toolSuggestions = [
-      'breathing', 'urge tracker', 'gratitude', 'peer', 'calendar'
-    ];
-    const hasToolSuggestion = toolSuggestions.some(tool => 
-      generatedText.toLowerCase().includes(tool)
-    );
+    // Analyze response for specific tool recommendations
+    const lowerResponse = generatedText.toLowerCase();
+    const recommendedTools = [];
+    
+    if (lowerResponse.includes('breathing')) recommendedTools.push('breathing');
+    if (lowerResponse.includes('urge')) recommendedTools.push('urge');
+    if (lowerResponse.includes('gratitude')) recommendedTools.push('gratitude');
+    if (lowerResponse.includes('peer')) recommendedTools.push('peer');
+    if (lowerResponse.includes('calendar')) recommendedTools.push('calendar');
+    if (lowerResponse.includes('journey')) recommendedTools.push('journey');
+    if (lowerResponse.includes('toolbox')) recommendedTools.push('toolbox');
 
     // Check for crisis indicators
     const crisisIndicators = [
@@ -125,9 +133,15 @@ serve(async (req) => {
       message.toLowerCase().includes(indicator)
     );
 
+    // Always include peer option for crisis
+    if (needsPeerSupport && !recommendedTools.includes('peer')) {
+      recommendedTools.push('peer');
+    }
+
     return new Response(JSON.stringify({ 
       response: generatedText,
-      hasActions: hasToolSuggestion || needsPeerSupport,
+      recommendedTools,
+      hasActions: recommendedTools.length > 0,
       needsPeerSupport
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -148,6 +162,7 @@ serve(async (req) => {
     
     return new Response(JSON.stringify({ 
       response: fallbackResponse,
+      recommendedTools: ['peer'],
       hasActions: true,
       error: true
     }), {

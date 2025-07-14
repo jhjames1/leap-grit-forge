@@ -125,7 +125,7 @@ const Index = () => {
       case 'calendar':
         return <RecoveryCalendar onNavigate={handleNavigation} />;
       case 'foreman':
-        return <ForemanChat onBack={handleBackToHome} />;
+        return <ForemanChat onBack={handleBackToHome} onNavigate={handleNavigation} />;
       default:
         return <DashboardHome onNavigate={handleNavigation} />;
     }
