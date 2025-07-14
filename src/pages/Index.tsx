@@ -95,15 +95,20 @@ const Index = () => {
     setActiveTab('home');
   };
 
+  console.log('Index render state:', { loading, showSplash, isAuthenticated, showOnboarding, user: user?.id });
+
   if (loading || showSplash) {
+    console.log('Showing splash screen');
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
   if (!isAuthenticated) {
+    console.log('Showing auth form');
     return <AuthForm onAuthSuccess={handleAuthSuccess} />;
   }
 
   if (showOnboarding) {
+    console.log('Showing onboarding');
     return <OnboardingFlow onComplete={handleOnboardingComplete} />;
   }
 
