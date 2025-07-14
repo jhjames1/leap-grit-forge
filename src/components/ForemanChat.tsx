@@ -392,7 +392,7 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
   };
 
   const handlePeerEscalation = () => {
-    window.location.href = 'sms:+14327018678?body=I need to talk to a peer specialist.';
+    onNavigate?.('chat');
   };
 
   const handleFieldStory = () => {
