@@ -8,12 +8,14 @@ import {
   Wind, 
   Heart, 
   TrendingUp,
-  Bot
+  Bot,
+  Radar
 } from 'lucide-react';
 
 import BreathingExercise from '@/components/BreathingExercise';
 import UrgeTracker from '@/components/UrgeTracker';
 import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
+import TriggerIdentifier from '@/components/TriggerIdentifier';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { trackingManager } from '@/utils/trackingManager';
@@ -27,6 +29,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const [showBreathing, setShowBreathing] = useState(false);
   const [showUrgeTracker, setShowUrgeTracker] = useState(false);
   const [showGratitudeLog, setShowGratitudeLog] = useState(false);
+  const [showTriggerIdentifier, setShowTriggerIdentifier] = useState(false);
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const { userData, logActivity, updateToolboxStats } = useUserData();
@@ -203,6 +206,15 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
       badge: t('toolbox.tools.gratitudeLog.badge'),
       badgeColor: 'bg-construction'
+    },
+    {
+      id: 'trigger',
+      title: 'Trigger Identifier',
+      description: 'Discover and manage your triggers',
+      icon: Radar,
+      color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
+      badge: 'Analysis',
+      badgeColor: 'bg-construction'
     }
   ];
 
@@ -223,6 +235,9 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         break;
       case 'gratitude':
         setShowGratitudeLog(true);
+        break;
+      case 'trigger':
+        setShowTriggerIdentifier(true);
         break;
       default:
         logger.debug('Tool opened', { toolId });
@@ -272,6 +287,21 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
 
   const handleGratitudeClose = () => {
     setShowGratitudeLog(false);
+    // Don't log completion if closed without finishing
+  };
+
+  const handleTriggerIdentifierComplete = () => {
+    setShowTriggerIdentifier(false);
+    logActivity('Completed Trigger Identifier', 'Mapped personal triggers to coping strategies');
+    if (userData) {
+      updateToolboxStats({
+        totalSessions: userData.toolboxStats.totalSessions + 1
+      });
+    }
+  };
+
+  const handleTriggerIdentifierClose = () => {
+    setShowTriggerIdentifier(false);
     // Don't log completion if closed without finishing
   };
 
@@ -395,6 +425,14 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         <GratitudeLogEnhanced 
           onClose={handleGratitudeComplete}
           onCancel={handleGratitudeClose}
+        />
+      )}
+
+      {showTriggerIdentifier && (
+        <TriggerIdentifier 
+          onClose={handleTriggerIdentifierComplete}
+          onCancel={handleTriggerIdentifierClose}
+          onNavigate={onNavigate}
         />
       )}
     </div>
