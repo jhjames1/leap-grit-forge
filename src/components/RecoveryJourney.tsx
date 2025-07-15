@@ -475,14 +475,16 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
       <div className="p-4 pb-24">
-        {/* Testing Mode Controls */}
-        <TestingModeControls
-          onResetProgress={handleResetProgress}
-          onCompleteDay={handleTestingCompleteDay}
-          onSkipToDay={handleSkipToDay}
-          currentDay={actualCurrentDay}
-          maxDays={90}
-        />
+        {/* Testing Mode Controls - Only show in development */}
+        {import.meta.env.DEV && (
+          <TestingModeControls
+            onResetProgress={handleResetProgress}
+            onCompleteDay={handleTestingCompleteDay}
+            onSkipToDay={handleSkipToDay}
+            currentDay={actualCurrentDay}
+            maxDays={90}
+          />
+        )}
 
         {/* Header */}
         <div className="mb-6">

@@ -35,13 +35,32 @@ const Index = () => {
       if (isAuthenticated && user) {
         console.log('Auth state changed - checking onboarding status for user:', user.id);
         const hasCompletedOnboarding = localStorage.getItem(`leap_onboarding_completed_${user.id}`);
-        console.log('Onboarding completion status:', hasCompletedOnboarding);
         
-        if (!hasCompletedOnboarding) {
+        // Also check if user has existing data (focus areas) indicating previous setup
+        const existingUserData = localStorage.getItem('leap_user_data');
+        let hasExistingSetup = false;
+        
+        if (existingUserData) {
+          try {
+            const userData = JSON.parse(existingUserData);
+            hasExistingSetup = userData?.focusAreas?.length > 0;
+          } catch (error) {
+            console.error('Error parsing existing user data:', error);
+          }
+        }
+        
+        console.log('Onboarding completion status:', hasCompletedOnboarding);
+        console.log('Has existing setup:', hasExistingSetup);
+        
+        if (!hasCompletedOnboarding && !hasExistingSetup) {
           console.log('Triggering onboarding flow for user:', user.id);
           setShowOnboarding(true);
         } else {
-          console.log('User has already completed onboarding');
+          console.log('User has already completed onboarding or has existing setup');
+          // Mark as completed if they have existing setup but no completion flag
+          if (!hasCompletedOnboarding && hasExistingSetup) {
+            localStorage.setItem(`leap_onboarding_completed_${user.id}`, 'completed');
+          }
         }
       } else if (!isAuthenticated && !loading) {
         console.log('User not authenticated, hiding onboarding');
