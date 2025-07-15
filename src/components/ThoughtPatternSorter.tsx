@@ -86,32 +86,25 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
         }
       });
 
-      // Handle 429 status specifically for daily limit
-      if (response.error && response.error.message === 'FunctionsHttpError') {
-        // This is likely a 429 error, try to get the actual response data
-        try {
-          const errorResponse = await fetch(`https://xefypnmvsikrdxzepgqf.supabase.co/functions/v1/thought-packs`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (errorResponse.status === 429) {
-            const errorData = await errorResponse.json();
-            setDailyLimitReached(true);
-            setNextResetTime(errorData.nextResetTime || new Date().setHours(24, 0, 0, 0));
-            setLoading(false);
-            return;
-          }
-        } catch (fetchError) {
-          console.error('Error handling 429 response:', fetchError);
-        }
-      }
+      console.log('Supabase function response:', response);
 
+      // Better error handling for daily limit
       if (response.error) {
-        throw new Error(response.error.message);
+        const errorMsg = response.error.message || '';
+        console.error('Function error:', response.error);
+        
+        // Check for daily limit indicators
+        if (errorMsg.includes('daily limit') || 
+            errorMsg.includes('limit reached') ||
+            errorMsg.includes('429')) {
+          setDailyLimitReached(true);
+          setNextResetTime(new Date().setHours(24, 0, 0, 0));
+          setLoading(false);
+          return;
+        }
+        
+        // For other errors, show generic error
+        throw new Error('Unable to load activity');
       }
 
       const gameDataResult = response.data as GameData;
@@ -395,8 +388,8 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
         <Card className="w-80 p-6">
           <div className="text-center">
             <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Failed to Load Game</h3>
-            <p className="text-muted-foreground mb-4">Unable to load today's thought pack</p>
+            <h3 className="text-lg font-semibold mb-2">Unable to Load Activity</h3>
+            <p className="text-muted-foreground mb-4">Please check your connection and try again</p>
             <Button onClick={onClose} className="w-full">
               Back to Toolbox
             </Button>
