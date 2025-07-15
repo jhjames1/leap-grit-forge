@@ -96,16 +96,33 @@ serve(async (req) => {
 
   try {
     const requestBody = await req.json();
-    console.log('Request body received:', JSON.stringify(requestBody, null, 2));
+    console.log('✅ Request body received successfully');
+    console.log('📨 Request body size:', JSON.stringify(requestBody).length, 'characters');
+    console.log('📝 Request body details:', {
+      hasMessage: !!requestBody.message,
+      messageLength: requestBody.message?.length || 0,
+      hasConversationHistory: !!requestBody.conversationHistory,
+      historyLength: requestBody.conversationHistory?.length || 0,
+      hasUserProfile: !!requestBody.userProfile,
+      userFirstName: requestBody.userProfile?.firstName || 'none',
+      hasStreakData: !!requestBody.streakData,
+      currentStreak: requestBody.streakData?.currentStreak || 0,
+      hasJourneyProgress: !!requestBody.journeyProgress,
+      isTodayCompleted: requestBody.journeyProgress?.isTodayCompleted || false
+    });
     
     const { message, conversationHistory, userProfile, previousConversationSummary, previousSessions, streakData, journeyProgress, todaysActivity } = requestBody;
 
     if (!message) {
-      console.error('No message provided in request');
+      console.error('❌ No message provided in request');
       throw new Error('Message is required');
     }
     
-    console.log('Processing message:', message);
+    console.log('📱 Processing user message:', {
+      text: message,
+      length: message.length,
+      hasSpecialChars: /[^a-zA-Z0-9\s.,!?]/.test(message)
+    });
 
     // Build the conversation context with previous conversation memory
     let systemPrompt = FOREMAN_SYSTEM_PROMPT;
@@ -229,12 +246,35 @@ serve(async (req) => {
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
-      console.error('OpenAI API key not found in environment variables');
+      console.error('❌ OpenAI API key not found in environment variables');
+      console.error('🔑 Available env vars:', Object.keys(Deno.env.toObject()));
       throw new Error('OpenAI API key not configured');
     }
     
-    console.log('OpenAI API key found, making request...');
-    console.log('Sending messages to OpenAI:', JSON.stringify(messages, null, 2));
+    console.log('✅ OpenAI API key found, length:', openAIApiKey.length);
+    console.log('🤖 Preparing OpenAI request with', messages.length, 'messages');
+    console.log('📋 System prompt length:', messages[0]?.content?.length || 0);
+    console.log('💬 Conversation history messages:', messages.slice(1, -1).length);
+    console.log('📝 Final user message:', messages[messages.length - 1]?.content || 'none');
+
+    console.log('🚀 Making OpenAI API request...');
+    const startTime = Date.now();
+    
+    const requestPayload = {
+      model: 'gpt-4o-mini',
+      messages: messages,
+      max_tokens: 200,
+      temperature: 0.7,
+      presence_penalty: 0.6,
+      frequency_penalty: 0.5,
+    };
+    
+    console.log('📤 OpenAI request payload:', {
+      model: requestPayload.model,
+      messageCount: requestPayload.messages.length,
+      totalTokensEstimate: JSON.stringify(requestPayload.messages).length / 4,
+      maxTokens: requestPayload.max_tokens
+    });
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -242,27 +282,45 @@ serve(async (req) => {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: messages,
-        max_tokens: 200,
-        temperature: 0.7,
-        presence_penalty: 0.6,
-        frequency_penalty: 0.5,
-      }),
+      body: JSON.stringify(requestPayload),
     });
+
+    const responseTime = Date.now() - startTime;
+    console.log('⏱️ OpenAI API response time:', responseTime, 'ms');
+    console.log('📥 OpenAI response status:', response.status, response.statusText);
+    console.log('📊 OpenAI response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('OpenAI API error response:', response.status, response.statusText);
-      console.error('OpenAI API error details:', error);
-      throw new Error(`Failed to get response from OpenAI: ${response.status} ${response.statusText}`);
+      console.error('❌ OpenAI API error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: error
+      });
+      throw new Error(`Failed to get response from OpenAI: ${response.status} ${response.statusText} - ${error}`);
     }
 
     const data = await response.json();
-    console.log('OpenAI response data:', data);
-    const generatedText = data.choices[0].message.content;
-    console.log('Generated text:', generatedText);
+    console.log('✅ OpenAI response received successfully');
+    console.log('📈 OpenAI usage stats:', {
+      promptTokens: data.usage?.prompt_tokens || 'unknown',
+      completionTokens: data.usage?.completion_tokens || 'unknown',
+      totalTokens: data.usage?.total_tokens || 'unknown',
+      finishReason: data.choices?.[0]?.finish_reason || 'unknown'
+    });
+    
+    const generatedText = data.choices?.[0]?.message?.content;
+    if (!generatedText) {
+      console.error('❌ No generated text in OpenAI response:', data);
+      throw new Error('No content in OpenAI response');
+    }
+    
+    console.log('💭 Generated text:', {
+      length: generatedText.length,
+      preview: generatedText.substring(0, 100) + (generatedText.length > 100 ? '...' : ''),
+      fullText: generatedText
+    });
 
     // Analyze response for specific tool recommendations
     const lowerResponse = generatedText.toLowerCase();
@@ -296,15 +354,37 @@ serve(async (req) => {
       needsPeerSupport
     };
     
-    console.log('Sending response:', responseData);
+    console.log('🎯 Final response data:', {
+      responseLength: responseData.response.length,
+      toolCount: responseData.recommendedTools.length,
+      recommendedTools: responseData.recommendedTools,
+      hasActions: responseData.hasActions,
+      needsPeerSupport: responseData.needsPeerSupport
+    });
+    
+    console.log('✅ Sending successful response to client');
     
     return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in foreman-chat function:', error);
-    console.error('Error stack:', error.stack);
+    console.error('❌ CRITICAL ERROR in foreman-chat function:');
+    console.error('🔍 Error type:', error.constructor.name);
+    console.error('💥 Error message:', error.message);
+    console.error('📍 Error stack:', error.stack);
+    console.error('🔧 Error details:', {
+      name: error.name,
+      cause: error.cause,
+      toString: error.toString()
+    });
+    
+    // Log the request that caused the error for debugging
+    console.error('🚨 Failed request details:', {
+      method: req.method,
+      headers: Object.fromEntries(req.headers.entries()),
+      url: req.url
+    });
     
     // Fallback response if OpenAI fails
     const fallbackResponses = [
@@ -320,10 +400,15 @@ serve(async (req) => {
       response: fallbackResponse,
       recommendedTools: ['peer'],
       hasActions: true,
-      error: true
+      error: true,
+      errorDetails: {
+        type: error.constructor.name,
+        message: error.message,
+        timestamp: new Date().toISOString()
+      }
     };
     
-    console.log('Sending fallback response:', fallbackData);
+    console.log('🔄 Sending fallback response due to error:', fallbackData);
     
     return new Response(JSON.stringify(fallbackData), {
       status: 200, // Return 200 so the frontend can handle the fallback

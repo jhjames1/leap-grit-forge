@@ -428,21 +428,53 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
         }
       };
       
-      console.log('Sending request to foreman-chat edge function with body:', requestBody);
+      console.log('🚀 Sending request to foreman-chat edge function');
+      console.log('📊 Request payload summary:', {
+        messageLength: requestBody.message.length,
+        conversationHistoryCount: requestBody.conversationHistory.length,
+        hasUserProfile: !!requestBody.userProfile,
+        currentStreak: requestBody.streakData.currentStreak,
+        journeyDay: requestBody.journeyProgress.currentDay,
+        isTodayCompleted: requestBody.journeyProgress.isTodayCompleted
+      });
+      
+      const requestStartTime = Date.now();
       
       const { data, error } = await supabase.functions.invoke('foreman-chat', {
         body: requestBody
       });
 
+      const requestTime = Date.now() - requestStartTime;
+      console.log('⏱️ Edge function request completed in', requestTime, 'ms');
+
       if (error) {
-        console.error('Edge function error:', error);
+        console.error('❌ Edge function error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
 
-      console.log('Edge function response:', data);
+      console.log('✅ Edge function response received successfully');
+      console.log('📝 Response details:', {
+        hasResponse: !!data?.response,
+        responseLength: data?.response?.length || 0,
+        hasError: !!data?.error,
+        recommendedToolsCount: data?.recommendedTools?.length || 0,
+        recommendedTools: data?.recommendedTools || [],
+        hasActions: data?.hasActions,
+        needsPeerSupport: data?.needsPeerSupport
+      });
+      console.log('💬 Full response content:', data);
       return data;
     } catch (error) {
-      console.error('OpenAI API error:', error);
+      console.error('❌ OpenAI/Edge function integration error:');
+      console.error('🔍 Error type:', error.constructor.name);
+      console.error('💥 Error message:', error.message);
+      console.error('📍 Error stack:', error.stack);
+      console.error('🔧 Full error object:', error);
       return null;
     }
   };
@@ -484,12 +516,20 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
 
       // Try OpenAI first, fall back to rule-based system
       try {
-        console.log('Attempting to get OpenAI response...');
+        console.log('🤖 Attempting to get OpenAI response for message:', currentMessage);
         const aiResponse = await getOpenAIResponse(currentMessage);
-        console.log('OpenAI response received:', aiResponse);
+        console.log('📨 OpenAI API call completed, response:', aiResponse);
         
         if (aiResponse && aiResponse.response) {
-          console.log('Using AI response');
+          console.log('✅ Using AI response from OpenAI');
+          console.log('🎯 AI response details:', {
+            responseText: aiResponse.response,
+            hasError: aiResponse.error,
+            hasActions: aiResponse.hasActions,
+            toolsRecommended: aiResponse.recommendedTools,
+            needsPeerSupport: aiResponse.needsPeerSupport
+          });
+          
           // Use OpenAI response
           const foremanResponse: Message = {
             id: messages.length + 2,
@@ -500,15 +540,22 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
             recommendedTools: aiResponse.recommendedTools || []
           };
           
-          console.log('Adding foreman response:', foremanResponse);
+          console.log('💬 Adding Foreman response to messages:', foremanResponse);
           setMessages(prev => [...prev, foremanResponse]);
-
-          setMessages(prev => [...prev, foremanResponse]);
+          
+          // Show error notification if the response came from a fallback
+          if (aiResponse.error) {
+            console.warn('⚠️ Response came from edge function fallback due to error');
+          }
         } else {
-          throw new Error('No response from OpenAI');
+          console.error('❌ Invalid response from OpenAI - falling back to rule-based system');
+          console.error('🔍 Response was:', aiResponse);
+          throw new Error('No valid response from OpenAI');
         }
       } catch (error) {
-        console.error('OpenAI failed, using fallback:', error);
+        console.error('❌ OpenAI integration failed completely, using local fallback:');
+        console.error('🔍 Failure reason:', error.message);
+        console.error('📍 Full error:', error);
         
         // Fallback to rule-based system
         setTimeout(() => {
