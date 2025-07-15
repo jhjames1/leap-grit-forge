@@ -20,10 +20,12 @@ import {
   Activity,
   Shield,
   UserCheck,
-  LogOut
+  LogOut,
+  Bot
 } from 'lucide-react';
 import PeerSpecialistManagement from './PeerSpecialistManagement';
 import MotivationalContentManagement from './MotivationalContentManagement';
+import ForemanContentManagement from './ForemanContentManagement';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -154,6 +156,10 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
             <TabsTrigger value="content" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">
               <MessageSquare className="mr-2 h-4 w-4" />
               Content
+            </TabsTrigger>
+            <TabsTrigger value="foreman-content" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">
+              <Bot className="mr-2 h-4 w-4" />
+              Foreman Content
             </TabsTrigger>
             <TabsTrigger value="security" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">
               <Shield className="mr-2 h-4 w-4" />
@@ -304,6 +310,10 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
 
           <TabsContent value="content">
             <MotivationalContentManagement />
+          </TabsContent>
+
+          <TabsContent value="foreman-content">
+            <ForemanContentManagement />
           </TabsContent>
 
           <TabsContent value="security">

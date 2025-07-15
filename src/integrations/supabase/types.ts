@@ -99,6 +99,63 @@ export type Database = {
           },
         ]
       }
+      foreman_content: {
+        Row: {
+          author: string | null
+          category: string
+          content: string
+          content_type: string
+          created_at: string
+          effectiveness_score: number | null
+          id: string
+          is_active: boolean
+          media_url: string | null
+          mood_targeting: string[] | null
+          priority: number | null
+          recovery_stage: string[] | null
+          title: string
+          trigger_keywords: string[] | null
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          author?: string | null
+          category: string
+          content: string
+          content_type: string
+          created_at?: string
+          effectiveness_score?: number | null
+          id?: string
+          is_active?: boolean
+          media_url?: string | null
+          mood_targeting?: string[] | null
+          priority?: number | null
+          recovery_stage?: string[] | null
+          title: string
+          trigger_keywords?: string[] | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          author?: string | null
+          category?: string
+          content?: string
+          content_type?: string
+          created_at?: string
+          effectiveness_score?: number | null
+          id?: string
+          is_active?: boolean
+          media_url?: string | null
+          mood_targeting?: string[] | null
+          priority?: number | null
+          recovery_stage?: string[] | null
+          title?: string
+          trigger_keywords?: string[] | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
       peer_specialists: {
         Row: {
           avatar_url: string | null

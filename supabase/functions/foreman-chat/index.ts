@@ -109,35 +109,71 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // Function to get relevant resources based on user context
 async function getRelevantResources(userEmotionalState: string, messageContent: string, category?: string) {
   try {
-    // Determine category based on emotional state and message content if not provided
-    let targetCategory = category;
-    
-    if (!targetCategory) {
-      const lowerMessage = messageContent.toLowerCase();
-      if (lowerMessage.includes('inspired') || lowerMessage.includes('motivated') || userEmotionalState === 'hopeful') {
-        targetCategory = 'daily_inspiration';
-      } else if (lowerMessage.includes('struggling') || lowerMessage.includes('difficult') || userEmotionalState === 'struggling') {
-        targetCategory = 'success_stories';
-      } else if (lowerMessage.includes('stress') || lowerMessage.includes('overwhelmed') || userEmotionalState === 'frustrated') {
-        targetCategory = 'self_care';
-      } else if (lowerMessage.includes('advice') || lowerMessage.includes('help')) {
-        targetCategory = 'professional_tips';
-      } else {
-        targetCategory = 'daily_inspiration'; // Default fallback
-      }
-    }
-
-    console.log('🔍 Fetching resources for category:', targetCategory);
+    console.log('🔍 Fetching resources for emotional state:', userEmotionalState, 'and message:', messageContent.substring(0, 50) + '...');
 
     const { data: resources } = await supabase
-      .from('specialist_motivational_content')
+      .from('foreman_content')
       .select('*')
       .eq('is_active', true)
-      .eq('category', targetCategory)
-      .order('created_at', { ascending: false })
-      .limit(3);
+      .order('priority', { ascending: false });
 
-    return resources || [];
+    if (!resources || resources.length === 0) {
+      console.log('📚 No resources found in database');
+      return [];
+    }
+
+    console.log('📚 Found', resources.length, 'total resources in database');
+
+    // Enhanced matching using trigger keywords, mood targeting, and content relevance
+    const keywords = messageContent.toLowerCase().split(' ').filter(word => word.length > 2);
+    const emotionalKeywords = userEmotionalState.toLowerCase().split(' ');
+    const allKeywords = [...keywords, ...emotionalKeywords];
+
+    console.log('🔍 Analyzing keywords:', allKeywords.slice(0, 10));
+
+    // Score resources based on multiple factors
+    const scoredResources = resources.map((resource: any) => {
+      let score = resource.priority || 1; // Start with priority score
+      const resourceText = `${resource.title} ${resource.content}`.toLowerCase();
+      
+      // Check trigger keywords (high weight)
+      (resource.trigger_keywords || []).forEach((keyword: string) => {
+        if (allKeywords.some(k => k.includes(keyword.toLowerCase()) || keyword.toLowerCase().includes(k))) {
+          score += 10;
+          console.log('🎯 Trigger keyword match:', keyword, 'boosting score by 10');
+        }
+      });
+
+      // Check mood targeting (medium weight)
+      (resource.mood_targeting || []).forEach((mood: string) => {
+        if (emotionalKeywords.some(k => k.includes(mood.toLowerCase()) || mood.toLowerCase().includes(k))) {
+          score += 5;
+          console.log('😊 Mood match:', mood, 'boosting score by 5');
+        }
+      });
+
+      // General content matching (low weight)
+      allKeywords.forEach(keyword => {
+        if (resourceText.includes(keyword)) {
+          score += 1;
+        }
+      });
+
+      // Boost effectiveness score
+      score += (resource.effectiveness_score || 0) / 2;
+
+      return { ...resource, relevanceScore: score };
+    });
+
+    // Sort by relevance and return top matches
+    const topResources = scoredResources
+      .sort((a: any, b: any) => b.relevanceScore - a.relevanceScore)
+      .slice(0, 3);
+
+    console.log('🏆 Top resources selected:', topResources.map(r => ({ title: r.title, score: r.relevanceScore })));
+
+    return topResources;
+      
   } catch (error) {
     console.error('❌ Error fetching resources:', error);
     return [];
