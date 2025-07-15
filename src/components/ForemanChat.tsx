@@ -795,6 +795,9 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
 
   // Resource display component
   const ResourceDisplay = ({ resource }: { resource: any }) => {
+    const [videoError, setVideoError] = useState(false);
+    const [showVideo, setShowVideo] = useState(false);
+    
     const getResourceIcon = (contentType: string) => {
       switch (contentType) {
         case 'quote': return Quote;
@@ -811,7 +814,32 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
       }
     };
 
+    const convertToYouTubeEmbedUrl = (url: string): string | null => {
+      if (!url) return null;
+
+      const patterns = [
+        /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/,
+        /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]+)/,
+        /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
+        /(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([a-zA-Z0-9_-]+)/
+      ];
+
+      for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+          return `https://www.youtube.com/embed/${match[1]}`;
+        }
+      }
+      return null;
+    };
+
+    const isYouTubeUrl = (url: string): boolean => {
+      return convertToYouTubeEmbedUrl(url) !== null;
+    };
+
     const Icon = getResourceIcon(resource.content_type);
+    const isVideo = resource.content_type === 'video';
+    const youtubeEmbedUrl = isVideo && resource.media_url ? convertToYouTubeEmbedUrl(resource.media_url) : null;
 
     return (
       <div className="mt-3 bg-accent/50 border border-border rounded-lg p-3 max-w-md">
@@ -831,21 +859,62 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
                 - {resource.author}
               </p>
             )}
+            
+            {/* YouTube Video Embed */}
+            {isVideo && youtubeEmbedUrl && showVideo && !videoError && (
+              <div className="mt-3 mb-2">
+                <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                  <iframe
+                    src={youtubeEmbedUrl}
+                    title={resource.title}
+                    className="absolute top-0 left-0 w-full h-full rounded-lg"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    onError={() => setVideoError(true)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {videoError && (
+              <div className="mt-3 mb-2 p-2 bg-destructive/10 border border-destructive/20 rounded text-xs text-destructive">
+                Video unavailable. Click below to open in YouTube.
+              </div>
+            )}
+
             <div className="flex items-center justify-between mt-2">
               <Badge variant="secondary" className="text-xs">
                 {resource.category.replace('_', ' ')}
               </Badge>
-              {resource.media_url && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleResourceClick}
-                  className="h-6 px-2 text-xs"
-                >
-                  <ExternalLink size={12} className="mr-1" />
-                  View
-                </Button>
-              )}
+              
+              <div className="flex gap-1">
+                {/* YouTube embed toggle button */}
+                {isVideo && youtubeEmbedUrl && !videoError && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowVideo(!showVideo)}
+                    className="h-6 px-2 text-xs"
+                  >
+                    <PlayCircle size={12} className="mr-1" />
+                    {showVideo ? 'Hide' : 'Play'}
+                  </Button>
+                )}
+                
+                {/* External link button */}
+                {resource.media_url && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleResourceClick}
+                    className="h-6 px-2 text-xs"
+                  >
+                    <ExternalLink size={12} className="mr-1" />
+                    {isVideo && youtubeEmbedUrl ? 'YouTube' : 'View'}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>

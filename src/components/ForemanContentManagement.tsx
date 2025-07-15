@@ -315,6 +315,11 @@ const ForemanContentManagement = () => {
                     onChange={(e) => setFormData({...formData, media_url: e.target.value})}
                     placeholder="https://..."
                   />
+                  {formData.content_type === 'video' && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      💡 YouTube videos will be embedded inline. Supports: youtube.com/watch?v=, youtu.be/, youtube.com/embed/
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="author">Author (optional)</Label>
