@@ -17,7 +17,12 @@ import {
   TrendingUp,
   Calendar,
   Map,
-  Wrench
+  Wrench,
+  Quote,
+  PlayCircle,
+  Volume2,
+  Image,
+  ExternalLink
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUserData } from '@/hooks/useUserData';
@@ -42,6 +47,15 @@ interface Message {
   isSaved?: boolean;
   context?: string;
   recommendedTools?: string[];
+  resources?: Array<{
+    id: string;
+    title: string;
+    content: string;
+    content_type: 'quote' | 'video' | 'audio' | 'image';
+    category: string;
+    media_url?: string;
+    author?: string;
+  }>;
 }
 
 interface ConversationContext {
@@ -577,7 +591,8 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
             text: aiResponse.response,
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             hasActions: aiResponse.hasActions || false,
-            recommendedTools: aiResponse.recommendedTools || []
+            recommendedTools: aiResponse.recommendedTools || [],
+            resources: aiResponse.resources || []
           };
           
           console.log('💬 Adding Foreman response to messages:', foremanResponse);
@@ -778,6 +793,66 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
     setIsListening(!isListening);
   };
 
+  // Resource display component
+  const ResourceDisplay = ({ resource }: { resource: any }) => {
+    const getResourceIcon = (contentType: string) => {
+      switch (contentType) {
+        case 'quote': return Quote;
+        case 'video': return PlayCircle;
+        case 'audio': return Volume2;
+        case 'image': return Image;
+        default: return Quote;
+      }
+    };
+
+    const handleResourceClick = () => {
+      if (resource.media_url) {
+        window.open(resource.media_url, '_blank');
+      }
+    };
+
+    const Icon = getResourceIcon(resource.content_type);
+
+    return (
+      <div className="mt-3 bg-accent/50 border border-border rounded-lg p-3 max-w-md">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Icon size={16} className="text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-sm text-card-foreground mb-1 font-fjalla">
+              {resource.title}
+            </h4>
+            <p className="text-xs text-muted-foreground mb-2 font-source line-clamp-2">
+              {resource.content}
+            </p>
+            {resource.author && (
+              <p className="text-xs text-muted-foreground font-source italic">
+                - {resource.author}
+              </p>
+            )}
+            <div className="flex items-center justify-between mt-2">
+              <Badge variant="secondary" className="text-xs">
+                {resource.category.replace('_', ' ')}
+              </Badge>
+              {resource.media_url && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleResourceClick}
+                  className="h-6 px-2 text-xs"
+                >
+                  <ExternalLink size={12} className="mr-1" />
+                  View
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Header */}
@@ -821,6 +896,17 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
                 </p>
               </div>
             </div>
+
+            {/* Show resources if any are included */}
+            {msg.sender === 'foreman' && msg.resources && msg.resources.length > 0 && (
+              <div className="flex justify-start">
+                <div className="max-w-[85%] space-y-2">
+                  {msg.resources.map((resource, index) => (
+                    <ResourceDisplay key={index} resource={resource} />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Dynamic action buttons for Foreman messages */}
             {msg.sender === 'foreman' && msg.hasActions && (

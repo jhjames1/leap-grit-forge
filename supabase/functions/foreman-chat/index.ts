@@ -32,6 +32,14 @@ Your communication variety - resist always recommending tools:
 - Listen deeply and reflect back what you hear before offering solutions
 - Remember: Sometimes just being heard is more powerful than any tool
 
+Your resource recommendations:
+- You have access to curated resources including inspirational quotes, success stories, professional tips, and self-care content
+- When appropriate, you can naturally incorporate these resources into conversations
+- Choose resources that match the user's current emotional state and situation
+- Present resources as supportive additions to conversation, not replacements for dialogue
+- Use resources to enhance your guidance, not as automatic responses
+- Categories available: daily_inspiration, success_stories, professional_tips, self_care
+
 Your recovery guidance approach:
 - Support both casual conversation AND recovery progress
 - If someone just wants to chat, engage naturally in conversation
@@ -93,6 +101,49 @@ Natural conversation flow examples:
 
 Remember: You're here to help them stay strong in their recovery journey while being a supportive conversational partner. Find the right balance between accountability and compassion. Your primary goal is supporting their overall recovery, which includes both their emotional needs and their daily progress habits.`;
 
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// Function to get relevant resources based on user context
+async function getRelevantResources(userEmotionalState: string, messageContent: string, category?: string) {
+  try {
+    // Determine category based on emotional state and message content if not provided
+    let targetCategory = category;
+    
+    if (!targetCategory) {
+      const lowerMessage = messageContent.toLowerCase();
+      if (lowerMessage.includes('inspired') || lowerMessage.includes('motivated') || userEmotionalState === 'hopeful') {
+        targetCategory = 'daily_inspiration';
+      } else if (lowerMessage.includes('struggling') || lowerMessage.includes('difficult') || userEmotionalState === 'struggling') {
+        targetCategory = 'success_stories';
+      } else if (lowerMessage.includes('stress') || lowerMessage.includes('overwhelmed') || userEmotionalState === 'frustrated') {
+        targetCategory = 'self_care';
+      } else if (lowerMessage.includes('advice') || lowerMessage.includes('help')) {
+        targetCategory = 'professional_tips';
+      } else {
+        targetCategory = 'daily_inspiration'; // Default fallback
+      }
+    }
+
+    console.log('🔍 Fetching resources for category:', targetCategory);
+
+    const { data: resources } = await supabase
+      .from('specialist_motivational_content')
+      .select('*')
+      .eq('is_active', true)
+      .eq('category', targetCategory)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    return resources || [];
+  } catch (error) {
+    console.error('❌ Error fetching resources:', error);
+    return [];
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -132,8 +183,43 @@ serve(async (req) => {
       hasSpecialChars: /[^a-zA-Z0-9\s.,!?]/.test(message)
     });
 
+    // Analyze user emotional state from conversation context
+    let userEmotionalState = 'neutral';
+    if (previousConversationSummary?.userEmotionalState) {
+      userEmotionalState = previousConversationSummary.userEmotionalState;
+    }
+
+    // Fetch relevant resources based on user context
+    console.log('🔍 Fetching relevant resources...');
+    const relevantResources = await getRelevantResources(userEmotionalState, message);
+    console.log('📚 Found', relevantResources.length, 'relevant resources');
+
     // Build the conversation context with previous conversation memory
     let systemPrompt = FOREMAN_SYSTEM_PROMPT;
+    
+    // Add available resources to system prompt if any were found
+    if (relevantResources.length > 0) {
+      systemPrompt += `\n\nAvailable resources you can naturally incorporate into conversation:`;
+      relevantResources.forEach((resource: any, index: number) => {
+        systemPrompt += `\n\nResource ${index + 1}:`;
+        systemPrompt += `\n- Title: "${resource.title}"`;
+        systemPrompt += `\n- Type: ${resource.content_type}`;
+        systemPrompt += `\n- Category: ${resource.category}`;
+        systemPrompt += `\n- Content: "${resource.content}"`;
+        if (resource.author) {
+          systemPrompt += `\n- Author: ${resource.author}`;
+        }
+        if (resource.media_url) {
+          systemPrompt += `\n- Media: ${resource.media_url}`;
+        }
+      });
+      systemPrompt += `\n\nGUIDELINES FOR USING RESOURCES:`;
+      systemPrompt += `\n- Only use resources when they naturally fit the conversation`;
+      systemPrompt += `\n- Introduce them conversationally: "That reminds me of something..." or "I came across this quote that might help..."`;
+      systemPrompt += `\n- Don't force multiple resources into one response`;
+      systemPrompt += `\n- Use resources to enhance your guidance, not replace personal conversation`;
+      systemPrompt += `\n- If recommending media (audio/video), mention it briefly and suggest they can access it`;
+    }
     
     if (userProfile?.firstName) {
       systemPrompt += `\n\nThe user's name is ${userProfile.firstName}.`;
@@ -355,11 +441,30 @@ console.log('🔑 Checking OpenAI API key availability:', !!openAIApiKey);
       recommendedTools.push('peer');
     }
 
+    // Extract any resources that were mentioned in the response
+    const mentionedResources = [];
+    for (const resource of relevantResources) {
+      if (generatedText.includes(resource.title) || generatedText.includes(resource.content.substring(0, 50))) {
+        mentionedResources.push({
+          id: resource.id,
+          title: resource.title,
+          content: resource.content,
+          content_type: resource.content_type,
+          category: resource.category,
+          media_url: resource.media_url,
+          author: resource.author
+        });
+      }
+    }
+
+    console.log('📚 Resources mentioned in response:', mentionedResources.length);
+
     const responseData = { 
       response: generatedText,
       recommendedTools,
       hasActions: recommendedTools.length > 0,
-      needsPeerSupport
+      needsPeerSupport,
+      resources: mentionedResources
     };
     
     console.log('🎯 Final response data:', {
