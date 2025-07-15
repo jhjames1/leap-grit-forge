@@ -244,7 +244,8 @@ serve(async (req) => {
       content: message
     });
 
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+console.log('🔑 Checking OpenAI API key availability:', !!openAIApiKey);
     if (!openAIApiKey) {
       console.error('❌ OpenAI API key not found in environment variables');
       console.error('🔑 Available env vars:', Object.keys(Deno.env.toObject()));

@@ -380,39 +380,79 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
     console.log('Getting OpenAI response for message:', userMessage);
     
     try {
-      const lastConversation = ConversationMemoryManager.getLastConversationSummary(userName);
-      console.log('Last conversation summary:', lastConversation);
-      
-      const conversationHistory = ConversationMemoryManager.getConversationHistory(userName);
-      console.log('Conversation history length:', conversationHistory.length);
-      
-      // Get streak and journey data
+      // Initialize tracking manager with current user
       const trackingManager = (await import('@/utils/trackingManager')).trackingManager;
-      const journeyCalc = await import('@/utils/journeyCalculation');
+      if (userName && userName !== 'friend') {
+        try {
+          trackingManager.setUser(userName);
+          console.log('✅ TrackingManager initialized for user:', userName);
+        } catch (error) {
+          console.warn('⚠️ Could not initialize tracking manager:', error);
+        }
+      }
+
+      // Get conversation data safely
+      let lastConversation, conversationHistory;
+      try {
+        lastConversation = ConversationMemoryManager.getLastConversationSummary(userName);
+        conversationHistory = ConversationMemoryManager.getConversationHistory(userName);
+        console.log('✅ Conversation data loaded');
+      } catch (error) {
+        console.warn('⚠️ Using fallback conversation data:', error);
+        lastConversation = null;
+        conversationHistory = [];
+      }
       
-      const streakData = trackingManager.getStreakData();
-      console.log('Streak data:', streakData);
+      // Get streak and journey data with fallbacks
+      let streakData = { currentStreak: 0, longestStreak: 0, lastActivityDate: null };
+      let todaysStats = { 
+        actionsToday: 0, 
+        toolsUsedToday: [], 
+        journeyActivitiesCompleted: 0, 
+        recoveryStrength: 50 
+      };
       
-      const currentJourneyDay = journeyCalc.calculateCurrentJourneyDay(userData);
-      const isTodayCompleted = journeyCalc.isDayCompleted(userData, currentJourneyDay);
-      console.log('Journey data - Current day:', currentJourneyDay, 'Today completed:', isTodayCompleted);
+      try {
+        streakData = trackingManager.getStreakData();
+        const rawStats = trackingManager.getTodaysStats();
+        // Convert tracking data to expected format
+        todaysStats = {
+          actionsToday: rawStats.actionsToday || 0,
+          toolsUsedToday: [], // Convert number to array for compatibility
+          journeyActivitiesCompleted: rawStats.journeyActivitiesCompleted || 0,
+          recoveryStrength: rawStats.recoveryStrength || 50
+        };
+        console.log('✅ Tracking data loaded:', { streakData, todaysStats });
+      } catch (error) {
+        console.warn('⚠️ Using fallback tracking data:', error);
+      }
       
-      const todaysStats = trackingManager.getTodaysStats();
-      console.log('Today\'s stats:', todaysStats);
+      // Get journey data with fallbacks
+      let currentJourneyDay = 1;
+      let isTodayCompleted = false;
+      
+      try {
+        const journeyCalc = await import('@/utils/journeyCalculation');
+        currentJourneyDay = journeyCalc.calculateCurrentJourneyDay(userData);
+        isTodayCompleted = journeyCalc.isDayCompleted(userData, currentJourneyDay);
+        console.log('✅ Journey data loaded - Current day:', currentJourneyDay, 'Today completed:', isTodayCompleted);
+      } catch (error) {
+        console.warn('⚠️ Using fallback journey data:', error);
+      }
       
       const requestBody = {
         message: userMessage,
         conversationHistory: messages,
         userProfile: {
           firstName: userName,
-          recoveryStartDate: userData?.journeyProgress?.completionDates?.[1] // Use first journey completion as start date
+          recoveryStartDate: userData?.journeyProgress?.completionDates?.[1]
         },
         previousConversationSummary: lastConversation,
-        previousSessions: conversationHistory.slice(0, 3), // Last 3 sessions
+        previousSessions: conversationHistory?.slice(0, 3) || [],
         streakData: {
-          currentStreak: streakData.currentStreak,
-          longestStreak: streakData.longestStreak,
-          lastActivityDate: streakData.lastActivityDate
+          currentStreak: streakData?.currentStreak || 0,
+          longestStreak: streakData?.longestStreak || 0,
+          lastActivityDate: streakData?.lastActivityDate || null
         },
         journeyProgress: {
           currentDay: currentJourneyDay,
@@ -421,10 +461,10 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
           totalDays: 90
         },
         todaysActivity: {
-          actionsToday: todaysStats.actionsToday,
-          toolsUsedToday: todaysStats.toolsUsedToday,
-          journeyActivitiesCompleted: todaysStats.journeyActivitiesCompleted,
-          recoveryStrength: todaysStats.recoveryStrength
+          actionsToday: todaysStats?.actionsToday || 0,
+          toolsUsedToday: todaysStats?.toolsUsedToday || [],
+          journeyActivitiesCompleted: todaysStats?.journeyActivitiesCompleted || 0,
+          recoveryStrength: todaysStats?.recoveryStrength || 50
         }
       };
       
