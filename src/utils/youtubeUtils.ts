@@ -16,10 +16,14 @@ export function convertToYouTubeEmbedUrl(url: string): string | null {
     /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/,
     // youtu.be/VIDEO_ID
     /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]+)/,
+    // youtube.com/shorts/VIDEO_ID (YouTube Shorts)
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/,
     // youtube.com/embed/VIDEO_ID (already embed format)
     /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
     // youtube.com/v/VIDEO_ID
-    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([a-zA-Z0-9_-]+)/
+    /(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([a-zA-Z0-9_-]+)/,
+    // music.youtube.com/watch?v=VIDEO_ID
+    /(?:https?:\/\/)?(?:www\.)?music\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/
   ];
 
   for (const pattern of patterns) {
