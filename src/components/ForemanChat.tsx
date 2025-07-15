@@ -616,19 +616,53 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
   };
 
   // Tool completion handlers
+  const handleToolCompletion = (toolName: string) => {
+    console.log(`Tool completed: ${toolName}`);
+    
+    // Add a message acknowledging tool completion and redirecting to journey
+    const journeyCalc = require('@/utils/journeyCalculation');
+    const currentJourneyDay = journeyCalc.calculateCurrentJourneyDay(userData);
+    const isTodayCompleted = journeyCalc.isDayCompleted(userData, currentJourneyDay);
+    
+    let redirectMessage = '';
+    if (!isTodayCompleted) {
+      const streakRedirects = [
+        `Good work on the ${toolName}, ${userName}. Now let's keep that momentum going - have you done today's journey (day ${currentJourneyDay})?`,
+        `${toolName} completed, ${userName}. That's the support work. Now for the main event - your daily journey. Day ${currentJourneyDay} done?`,
+        `Nice job with ${toolName}, ${userName}. Tools help, but your streak builds with daily journey work. Today's completed?`,
+        `${toolName} done, ${userName}. Now get back to building that streak - day ${currentJourneyDay} of your journey awaits.`
+      ];
+      redirectMessage = streakRedirects[Math.floor(Math.random() * streakRedirects.length)];
+    } else {
+      redirectMessage = `Good work on the ${toolName}, ${userName}. You've already completed today's journey - that's how you build a real streak.`;
+    }
+    
+    const redirectMsg: Message = {
+      id: Date.now(),
+      sender: 'foreman',
+      text: redirectMessage,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    
+    setMessages(prev => [...prev, redirectMsg]);
+  };
+
   const handleBreathingComplete = () => {
     setShowBreathing(false);
     logActivity('Completed Breathing Exercise', 'Finished breathing exercise from Foreman');
+    handleToolCompletion('breathing exercise');
   };
 
   const handleUrgeComplete = () => {
     setShowUrgeTracker(false);
     logActivity('Completed Urge Tracker', 'Finished urge tracking from Foreman');
+    handleToolCompletion('urge tracker');
   };
 
   const handleGratitudeComplete = () => {
     setShowGratitudeLog(false);
     logActivity('Completed Gratitude Log', 'Added gratitude entry from Foreman');
+    handleToolCompletion('gratitude log');
   };
 
   // Get tool button configuration

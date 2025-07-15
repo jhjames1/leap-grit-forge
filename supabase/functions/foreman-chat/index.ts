@@ -55,6 +55,14 @@ Response guidelines:
 - Use "Peer Support Specialist" as the proper title when referring to peer support
 - When returning users mention new problems, connect them to previous struggles when relevant
 - Remember their wins and remind them of progress they've made
+- PRIORITIZE 90-day streak building above all else when no crisis is present
+- After tool usage, ALWAYS redirect back to daily journey completion
+- If they haven't completed today's journey, that should be your main focus
+- Don't let users use chat as an avoidance mechanism for their daily work
+- Be direct about journey completion: "Tools are good, but your streak is what matters"
+- When no urgent issue exists, redirect to journey: "Talking is fine, but have you done today's journey work?"
+- Celebrate streak milestones but immediately refocus on continuing the streak
+- If they're using tools instead of doing journey work, call it out: "Tools help, but they're not the main event"
 
 Tools available to suggest (respond with EXACT tool names in your response):
 - "breathing" for anxiety/panic attacks
@@ -156,6 +164,14 @@ serve(async (req) => {
       systemPrompt += `\n- Follow-up items: ${previousConversationSummary.followUpItems.join(', ')}`;
       systemPrompt += `\n- Key mentions: ${previousConversationSummary.keyMentions.join(', ')}`;
       
+      // Add specific instruction based on previous conversation
+      if (previousConversationSummary.toolsUsed.length > 0) {
+        systemPrompt += `\n\nIMPORTANT: Last time they used tools (${previousConversationSummary.toolsUsed.join(', ')}). Acknowledge this and redirect them to their daily journey if they haven't completed it today.`;
+      }
+      if (previousConversationSummary.userEmotionalState !== 'crisis') {
+        systemPrompt += `\n\nIMPORTANT: Since they weren't in crisis last time, prioritize their 90-day streak building and today's journey completion over extended chatting.`;
+      }
+      
       if (previousConversationSummary.significantMoments.length > 0) {
         systemPrompt += `\n- Significant moments: ${previousConversationSummary.significantMoments.join(', ')}`;
       }
@@ -168,6 +184,17 @@ serve(async (req) => {
         systemPrompt += `\n- Session ${index + 1}: ${session.summary.userEmotionalState} mood, topics: ${session.summary.mainTopics.slice(0, 2).join(', ')}`;
       });
     }
+
+    // Critical streak-building focus instructions
+    if (journeyProgress && !journeyProgress.isTodayCompleted) {
+      systemPrompt += `\n\nCRITICAL PRIORITY: They have NOT completed today's journey (day ${journeyProgress.currentDay}). This should be your main focus unless they're in crisis. Direct them back to their journey work.`;
+    }
+    
+    if (streakData && streakData.currentStreak > 0) {
+      systemPrompt += `\n\nSTREAK MOTIVATION: They're on a ${streakData.currentStreak}-day streak. Use this to motivate continued journey completion. Don't let them break momentum by avoiding daily work.`;
+    }
+    
+    systemPrompt += `\n\nGENERAL RULE: If no crisis is detected, prioritize 90-day streak building over tools or extended conversation. Tools are supplementary to daily journey work, not replacements.`;
 
     // Add strategic response guidance based on streak and journey status
     if (journeyProgress && !journeyProgress.isTodayCompleted) {

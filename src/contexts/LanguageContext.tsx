@@ -340,6 +340,22 @@ const englishTranslations = {
           'Alright {name}, last time you were hurting bad. {timeSince} later and you\'re here. That takes guts. How are you really doing?'
         ]
       },
+      streakFocus: [
+        'Tools are good, {name}, but your streak is what matters. Have you done today\'s journey?',
+        'Alright {name}, you\'ve used the tool - now get back to building that streak. Today\'s journey done?',
+        '{name}, we can talk all day, but have you completed day {currentDay} of your journey?',
+        'Tools help, {name}, but they\'re not the main event. Your 90-day streak is. Today\'s work done?',
+        '{name}, you\'re at day {currentDay} of 90. Don\'t let talking replace doing. Journey completed today?',
+        'Good on using tools, {name}, but your streak doesn\'t build itself. What about today\'s journey?',
+        '{name}, {currentStreak} days strong. Keep that momentum - have you done today\'s journey work?'
+      ],
+      avoidanceCheck: [
+        '{name}, are we talking because you\'re avoiding today\'s journey work?',
+        'Hold up, {name}. You here to chat or to build your streak? Today\'s journey done?',
+        '{name}, talking\'s fine, but not if you\'re dodging day {currentDay} of your journey.',
+        'Real talk, {name} - are you using this chat to avoid doing the actual work?',
+        '{name}, I see you here chatting. Your streak sees you too. Today\'s journey completed?'
+      ],
       followUp1: [
         'That been building for a while or just hit today?',
         'What\'s been stopping you from dealing with it?',
