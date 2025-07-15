@@ -221,10 +221,10 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
     {
       id: 'thought-pattern-sorter',
       title: 'Thought Pattern Sorter',
-      description: 'CBT game: sort distorted vs realistic thoughts',
+      description: 'Practice identifying healthy vs unhelpful thinking patterns',
       icon: Bot,
       color: 'bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary',
-      badge: 'CBT Arcade',
+      badge: 'Mind Training',
       badgeColor: 'bg-primary'
     }
   ];
