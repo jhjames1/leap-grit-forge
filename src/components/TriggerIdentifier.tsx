@@ -344,13 +344,15 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold mb-2">What kind of triggers do you face?</h2>
-        <p className="text-muted-foreground">Select all that apply, or add your own.</p>
+        <h2 className="font-fjalla font-bold text-2xl text-foreground mb-2 tracking-wide">
+          WHAT KIND OF TRIGGERS DO YOU FACE?
+        </h2>
+        <p className="text-muted-foreground font-source">Select all that apply, or add your own.</p>
       </div>
 
       <div className="space-y-4">
         {categories.map(category => (
-          <Card key={category.id} className="border-2 hover:border-primary/50 transition-colors">
+          <Card key={category.id} className="bg-card border-0 shadow-none hover:shadow-md transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <Checkbox 
@@ -359,21 +361,23 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
                   onCheckedChange={(checked) => handleCategoryChange(category.id, checked as boolean)}
                 />
                 <div className="flex-1">
-                  <Label htmlFor={category.id} className="text-base font-medium cursor-pointer">
-                    {category.label}
+                  <Label htmlFor={category.id} className="font-fjalla font-bold text-base text-card-foreground cursor-pointer tracking-wide">
+                    {category.label.toUpperCase()}
                   </Label>
-                  <p className="text-sm text-muted-foreground">{category.description}</p>
+                  <p className="text-sm text-muted-foreground font-source">{category.description}</p>
                 </div>
-                <Badge className={`${category.color} text-white`}>
-                  {category.label}
-                </Badge>
+                <div className="bg-primary p-2 rounded-sm">
+                  <span className="text-primary-foreground font-source text-xs font-bold tracking-wide">
+                    {category.label.toUpperCase()}
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card className="border-2 border-dashed">
+      <Card className="bg-card border-0 shadow-none border-dashed border-2 border-muted">
         <CardContent className="p-4">
           <div className="flex items-center space-x-3">
             <Input
@@ -382,7 +386,7 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
               onChange={(e) => setCustomCategory(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleAddCustomCategory()}
             />
-            <Button onClick={handleAddCustomCategory} disabled={!customCategory.trim()}>
+            <Button onClick={handleAddCustomCategory} disabled={!customCategory.trim()} className="bg-yellow-400 hover:bg-yellow-500 text-black">
               <Plus className="w-4 h-4" />
             </Button>
           </div>
@@ -394,8 +398,10 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
   const renderStep2 = () => (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold mb-2">What specifically sets off each one?</h2>
-        <p className="text-muted-foreground">Add up to 10 total triggers</p>
+        <h2 className="font-fjalla font-bold text-2xl text-foreground mb-2 tracking-wide">
+          WHAT SPECIFICALLY SETS OFF EACH ONE?
+        </h2>
+        <p className="text-muted-foreground font-source">Add up to 10 total triggers</p>
       </div>
 
       {selectedCategories.map(categoryId => {
@@ -403,13 +409,15 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
         const categoryTriggers = triggers.filter(t => t.category === categoryId);
         
         return (
-          <Card key={categoryId} className="border-2">
+          <Card key={categoryId} className="bg-card border-0 shadow-none">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Badge className={`${category.color} text-white`}>
-                  {category.label}
-                </Badge>
-                <span className="text-sm text-muted-foreground">
+                <div className="bg-primary p-2 rounded-sm">
+                  <span className="text-primary-foreground font-source text-xs font-bold tracking-wide">
+                    {category.label.toUpperCase()}
+                  </span>
+                </div>
+                <span className="text-sm text-muted-foreground font-source">
                   ({categoryTriggers.length} triggers)
                 </span>
               </CardTitle>
@@ -418,7 +426,7 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
               {/* Common triggers */}
               {commonTriggers[categoryId as keyof typeof commonTriggers] && (
                 <div>
-                  <Label className="text-sm font-medium">Common examples:</Label>
+                  <Label className="text-sm font-fjalla font-bold text-card-foreground tracking-wide">COMMON EXAMPLES:</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {commonTriggers[categoryId as keyof typeof commonTriggers].map(trigger => (
                       <Button
@@ -427,6 +435,7 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
                         size="sm"
                         onClick={() => handleCommonTriggerClick(categoryId, trigger)}
                         disabled={triggers.some(t => t.text === trigger) || triggers.length >= 10}
+                        className="font-source"
                       >
                         {trigger}
                       </Button>
@@ -447,6 +456,7 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
                 <Button 
                   onClick={() => handleAddTrigger(categoryId, currentTriggerInputs[categoryId] || '')}
                   disabled={!currentTriggerInputs[categoryId]?.trim() || triggers.length >= 10}
+                  className="bg-yellow-400 hover:bg-yellow-500 text-black"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -482,7 +492,9 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
   const renderStep3 = () => (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold mb-2">How strong is each trigger?</h2>
+        <h2 className="font-fjalla font-bold text-2xl text-foreground mb-2 tracking-wide">
+          HOW STRONG IS EACH TRIGGER?
+        </h2>
         <p className="text-muted-foreground">Rate the intensity of each trigger</p>
       </div>
 

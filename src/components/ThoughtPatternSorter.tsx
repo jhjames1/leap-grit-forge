@@ -281,24 +281,24 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden bg-card border-0 shadow-none">
         <CardHeader className="bg-primary text-primary-foreground">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Brain className="h-6 w-6" />
               <div>
-                <CardTitle className="text-xl">Thought Pattern Sorter</CardTitle>
-                <p className="text-sm opacity-90">{gameData.pack.title}</p>
+                <CardTitle className="text-xl font-fjalla font-bold tracking-wide">THOUGHT PATTERN SORTER</CardTitle>
+                <p className="text-sm opacity-90 font-source">{gameData.pack.title}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-1">
                 <Coins className="h-4 w-4" />
-                <span className="font-bold">{coinsEarned}</span>
+                <span className="font-bold font-source">{coinsEarned}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Trophy className="h-4 w-4" />
-                <span className="font-bold">{score}/{gameData.items.length}</span>
+                <span className="font-bold font-source">{score}/{gameData.items.length}</span>
               </div>
               <Button
                 variant="ghost"
@@ -317,22 +317,22 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
             <div className="text-center space-y-6">
               <div className="space-y-4">
                 <Trophy className="h-16 w-16 text-primary mx-auto" />
-                <h2 className="text-2xl font-bold">Congratulations!</h2>
-                <p className="text-lg">
+                <h2 className="text-2xl font-fjalla font-bold text-foreground tracking-wide">CONGRATULATIONS!</h2>
+                <p className="text-lg font-source">
                   You sorted {score}/{gameData.items.length} correctly!
                 </p>
                 <div className="flex items-center justify-center space-x-2">
                   <Coins className="h-6 w-6 text-primary" />
-                  <span className="text-xl font-bold">+{coinsEarned} Courage Coins earned</span>
+                  <span className="text-xl font-bold font-source">+{coinsEarned} Courage Coins earned</span>
                 </div>
               </div>
               
               <div className="flex space-x-4 justify-center">
-                <Button onClick={resetGame} variant="outline" className="flex items-center space-x-2">
+                <Button onClick={resetGame} variant="outline" className="flex items-center space-x-2 font-source">
                   <RotateCcw className="h-4 w-4" />
                   <span>Play Again</span>
                 </Button>
-                <Button onClick={onClose} className="flex items-center space-x-2">
+                <Button onClick={onClose} className="flex items-center space-x-2 bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold">
                   <Home className="h-4 w-4" />
                   <span>Back to Toolbox</span>
                 </Button>
@@ -354,7 +354,7 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
 
               {/* Draggable bubbles */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Drag each thought to the correct category:</h3>
+                <h3 className="text-lg font-fjalla font-bold text-foreground tracking-wide">DRAG EACH THOUGHT TO THE CORRECT CATEGORY:</h3>
                 <div className="grid grid-cols-2 gap-4 min-h-[200px]">
                   {gameData.items.map(item => {
                     const isCompleted = sortedItems[item.id] !== null;
@@ -378,7 +378,7 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
                         `}
                       >
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium">{item.text}</p>
+                          <p className="text-sm font-source font-medium">{item.text}</p>
                           {isCompleted && (
                             <div className="flex items-center space-x-1">
                               {feedbackType === 'correct' ? (
@@ -386,9 +386,9 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
                               ) : (
                                 <X className="h-4 w-4 text-red-600" />
                               )}
-                              <span className="text-xs">
-                                {feedbackType === 'correct' ? '+10' : '0'}
-                              </span>
+                               <span className="text-xs font-source font-bold">
+                                 {feedbackType === 'correct' ? '+10' : '0'}
+                               </span>
                             </div>
                           )}
                         </div>
@@ -406,8 +406,8 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
                   className="border-2 border-dashed border-red-300 bg-red-50 dark:bg-red-900/20 rounded-lg p-6 text-center min-h-[120px] flex flex-col items-center justify-center space-y-2"
                 >
                   <AlertTriangle className="h-8 w-8 text-red-600" />
-                  <h4 className="font-semibold text-red-700 dark:text-red-300">Distortions</h4>
-                  <p className="text-sm text-red-600 dark:text-red-400">Unhelpful thinking patterns</p>
+                  <h4 className="font-fjalla font-bold text-red-700 dark:text-red-300 tracking-wide">DISTORTIONS</h4>
+                  <p className="text-sm text-red-600 dark:text-red-400 font-source">Unhelpful thinking patterns</p>
                 </div>
 
                 <div
@@ -416,8 +416,8 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
                   className="border-2 border-dashed border-green-300 bg-green-50 dark:bg-green-900/20 rounded-lg p-6 text-center min-h-[120px] flex flex-col items-center justify-center space-y-2"
                 >
                   <CheckCircle className="h-8 w-8 text-green-600" />
-                  <h4 className="font-semibold text-green-700 dark:text-green-300">Realistic</h4>
-                  <p className="text-sm text-green-600 dark:text-green-400">Balanced, helpful thoughts</p>
+                  <h4 className="font-fjalla font-bold text-green-700 dark:text-green-300 tracking-wide">REALISTIC</h4>
+                  <p className="text-sm text-green-600 dark:text-green-400 font-source">Balanced, helpful thoughts</p>
                 </div>
               </div>
             </div>
