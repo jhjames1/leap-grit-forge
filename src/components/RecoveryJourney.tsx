@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import JourneyDayModal from './JourneyDayModal';
+import Week1DataCollection from './Week1DataCollection';
+import { useAIJourney } from '@/hooks/useAIJourney';
 import { logger } from '@/utils/logger';
 import { calculateCurrentJourneyDay, getDayStatus } from '@/utils/journeyCalculation';
 import { journeyManager } from '@/utils/journeyManager';
@@ -25,10 +27,25 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   const [currentWeek, setCurrentWeek] = useState(1);
   const [userJourney, setUserJourney] = useState<any>(null);
   const [phaseModifier, setPhaseModifier] = useState<any>(null);
+  const [showWeek1Collection, setShowWeek1Collection] = useState(false);
+  const [week1CollectionDay, setWeek1CollectionDay] = useState<number | null>(null);
   const { userData, logActivity } = useUserData();
   const { toast } = useToast();
   const { t } = useLanguage();
   const totalDays = 90;
+  
+  // AI Journey hooks
+  const { 
+    assignment, 
+    isAssignmentLoading, 
+    assignJourney, 
+    getJourneyDay, 
+    week1Data, 
+    hasAIJourney, 
+    isWeek1Complete, 
+    recoveryPlan,
+    refresh
+  } = useAIJourney();
   
   // Initialize user's journey based on their onboarding data
   useEffect(() => {
@@ -36,10 +53,19 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
       userData: !!userData,
       focusAreas: userData?.focusAreas,
       journeyStage: userData?.journeyStage,
-      hasUserData: !!userData
+      hasUserData: !!userData,
+      hasAIJourney,
+      isAssignmentLoading
     });
 
-    if (userData?.focusAreas && userData?.journeyStage) {
+    // Use AI journey if available, otherwise fall back to static journey
+    if (hasAIJourney && assignment) {
+      logger.debug('Using AI journey', { 
+        assignmentId: assignment.id,
+        journeyId: assignment.journey_id 
+      });
+      // AI journey data will be loaded dynamically via getJourneyDay
+    } else if (userData?.focusAreas && userData?.journeyStage) {
       const journey = journeyManager.getUserJourney(userData.focusAreas);
       const modifier = journeyManager.getPhaseModifier(userData.journeyStage);
       
@@ -67,7 +93,7 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
         daysCount: defaultJourney?.days?.length || 0
       });
     }
-  }, [userData?.focusAreas, userData?.journeyStage, userData]);
+  }, [userData?.focusAreas, userData?.journeyStage, userData, hasAIJourney, assignment, isAssignmentLoading]);
 
   // Calculate current day based on completed days using shared utility
   const completedDays = userData?.journeyProgress?.completedDays || [];
@@ -148,6 +174,20 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
 
   // Get journey days dynamically from loaded data
   const getAllJourneyDays = () => {
+    if (hasAIJourney && assignment) {
+      // For AI journey, we'll load days dynamically
+      // For now, return a placeholder structure for the UI
+      return Array.from({ length: totalDays }, (_, index) => ({
+        day: index + 1,
+        title: `Day ${index + 1}`,
+        keyMessage: 'Loading...',
+        activity: 'Loading...',
+        tool: 'Loading...',
+        duration: '5 min',
+        isAI: true
+      }));
+    }
+    
     if (!userJourney?.days) return [];
     
     return userJourney.days.map((dayData: any) => {
@@ -210,7 +250,7 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   }
 
 
-  const handleDayClick = (day: number) => {
+  const handleDayClick = async (day: number) => {
     // Enhanced unlocking logic using journeyManager with completion dates
     const completionDates = userData?.journeyProgress?.completionDates;
     const completionDatesMap = completionDates ? Object.fromEntries(
@@ -221,9 +261,31 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
     const isCompleted = completedDays.includes(day);
     
     if (isUnlocked || isCompleted) {
-      setSelectedDay(day);
-      const dayData = allJourneyDays[day - 1];
-      logActivity(`Opened Day ${day}: ${dayData?.title || 'Unknown'}`);
+      // Check if this is a Week 1 day (2-7) that needs data collection
+      if (day >= 2 && day <= 7 && !isCompleted) {
+        setWeek1CollectionDay(day);
+        setShowWeek1Collection(true);
+        return;
+      }
+      
+      // For AI journey, load day data dynamically
+      if (hasAIJourney && assignment) {
+        const aiDayData = await getJourneyDay(day);
+        if (aiDayData) {
+          setSelectedDay(day);
+          logActivity(`Opened AI Day ${day}: ${aiDayData.title}`);
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to load day content. Please try again.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        setSelectedDay(day);
+        const dayData = allJourneyDays[day - 1];
+        logActivity(`Opened Day ${day}: ${dayData?.title || 'Unknown'}`);
+      }
     } else {
       let reason = "";
       const isPreviousDayCompleted = day === 1 || completedDays.includes(day - 1);
@@ -259,11 +321,40 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
         title: t('journey.notifications.week1Complete'),
         description: t('journey.notifications.week1CompleteMsg'),
       });
+      
+      // Check if we have an AI journey and Week 1 is complete
+      if (hasAIJourney && isWeek1Complete) {
+        toast({
+          title: "Recovery Plan Generated!",
+          description: "Your personalized recovery plan has been created based on your Week 1 responses.",
+        });
+      }
     } else {
       toast({
         title: t('journey.notifications.dayComplete', { day }),
         description: t('journey.notifications.dayCompleteMsg'),
       });
+    }
+  };
+
+  const handleWeek1DataComplete = (day: number, data: any) => {
+    setShowWeek1Collection(false);
+    setWeek1CollectionDay(null);
+    
+    // Mark the day as completed
+    handleCompleteDay(day);
+    
+    toast({
+      title: "Foundation Data Saved",
+      description: `Your Day ${day} foundation data has been added to your recovery profile.`,
+    });
+  };
+
+  const handleWeek1DataSkip = () => {
+    if (week1CollectionDay) {
+      setShowWeek1Collection(false);
+      handleCompleteDay(week1CollectionDay);
+      setWeek1CollectionDay(null);
     }
   };
 
@@ -440,6 +531,15 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
           onClose={() => setSelectedDay(null)}
           onComplete={() => handleCompleteDay(selectedDay)}
           onNavigateToHome={onNavigateToHome}
+        />
+      )}
+
+      {/* Week 1 Data Collection Modal */}
+      {showWeek1Collection && week1CollectionDay && (
+        <Week1DataCollection
+          day={week1CollectionDay}
+          onComplete={(data) => handleWeek1DataComplete(week1CollectionDay, data)}
+          onSkip={handleWeek1DataSkip}
         />
       )}
       </div>
