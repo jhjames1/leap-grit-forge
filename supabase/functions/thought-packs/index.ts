@@ -44,6 +44,32 @@ serve(async (req) => {
     }
 
     if (req.method === 'GET') {
+      // Check daily limit (2 games per day)
+      const today = new Date().toISOString().split('T')[0]
+      const { data: todaySessions, error: sessionError } = await supabase
+        .from('cbt_game_sessions')
+        .select('id')
+        .eq('user_id', user.id)
+        .gte('completed_at', `${today}T00:00:00.000Z`)
+        .lt('completed_at', `${today}T23:59:59.999Z`)
+
+      if (sessionError) {
+        console.error('Error checking daily sessions:', sessionError)
+      }
+
+      const todaySessionCount = todaySessions?.length || 0
+      if (todaySessionCount >= 2) {
+        return new Response(JSON.stringify({ 
+          error: 'Daily limit reached',
+          message: 'You have already played 2 games today. Come back tomorrow!',
+          remainingPlays: 0,
+          nextResetTime: new Date(`${today}T23:59:59.999Z`).getTime()
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       // If requesting today's pack, get the base pack (for daily fresh content)
       // In a real app, you'd rotate through different packs based on date
       const targetTheme = isToday ? 'base' : theme
@@ -95,7 +121,9 @@ serve(async (req) => {
           is_distortion: item.is_distortion,
           category: item.category,
           difficulty: item.difficulty,
-        }))
+        })),
+        remainingPlays: 2 - todaySessionCount,
+        nextResetTime: new Date(`${today}T23:59:59.999Z`).getTime()
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })

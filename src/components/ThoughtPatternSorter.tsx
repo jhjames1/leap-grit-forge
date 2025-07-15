@@ -36,6 +36,8 @@ interface ThoughtPack {
 interface GameData {
   pack: ThoughtPack;
   items: ThoughtItem[];
+  remainingPlays?: number;
+  nextResetTime?: number;
 }
 
 interface ThoughtPatternSorterProps {
@@ -79,6 +81,16 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
       });
 
       if (error) {
+        // Handle daily limit error
+        if (error.message === 'Daily limit reached') {
+          toast({
+            title: "Daily Limit Reached",
+            description: "You've played 2 games today. Come back tomorrow for more!",
+            variant: "destructive",
+          });
+          onClose();
+          return;
+        }
         throw new Error(error.message);
       }
 
@@ -231,27 +243,25 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
     }
   };
 
-  // Reset game
-  const resetGame = () => {
-    if (!gameData) return;
-
-    const initialSorted: { [key: string]: 'distortion' | 'realistic' | null } = {};
-    gameData.items.forEach(item => {
-      initialSorted[item.id] = null;
-    });
-    
-    setSortedItems(initialSorted);
-    setFeedback({});
+  // Reset game and fetch new thoughts
+  const resetGame = useCallback(() => {
+    setLoading(true);
     setGameCompleted(false);
     setScore(0);
     setCoinsEarned(0);
     setDraggedItem(null);
     setIsProcessing(false);
-  };
+    
+    // Fetch new set of thoughts
+    fetchTodaysPack().catch(err => {
+      console.error('Error refetching thought pack:', err);
+      setLoading(false);
+    });
+  }, [fetchTodaysPack]);
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
         <Card className="w-80 p-6">
           <div className="flex items-center justify-center space-x-2">
             <Brain className="h-6 w-6 animate-pulse text-primary" />
@@ -264,7 +274,7 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
 
   if (!gameData) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
         <Card className="w-80 p-6">
           <div className="text-center">
             <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -280,8 +290,8 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden bg-card border-0 shadow-none">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+      <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-0 shadow-none">
         <CardHeader className="bg-primary text-primary-foreground">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -292,6 +302,12 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {gameData.remainingPlays !== undefined && (
+                <div className="flex items-center space-x-1">
+                  <span className="text-xs font-source">Plays left:</span>
+                  <Badge variant="secondary" className="text-xs">{gameData.remainingPlays}</Badge>
+                </div>
+              )}
               <div className="flex items-center space-x-1">
                 <Coins className="h-4 w-4" />
                 <span className="font-bold font-source">{coinsEarned}</span>
@@ -312,7 +328,7 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
           </div>
         </CardHeader>
 
-        <CardContent className="p-6">
+        <CardContent className="p-6 pb-20 md:pb-6">
           {gameCompleted ? (
             <div className="text-center space-y-6">
               <div className="space-y-4">
@@ -327,10 +343,15 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
                 </div>
               </div>
               
-              <div className="flex space-x-4 justify-center">
-                <Button onClick={resetGame} variant="outline" className="flex items-center space-x-2 font-source">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 justify-center">
+                <Button 
+                  onClick={resetGame} 
+                  variant="outline" 
+                  className="flex items-center space-x-2 font-source"
+                  disabled={gameData.remainingPlays === 0}
+                >
                   <RotateCcw className="h-4 w-4" />
-                  <span>Play Again</span>
+                  <span>{gameData.remainingPlays === 0 ? 'No plays left today' : 'Play Again'}</span>
                 </Button>
                 <Button onClick={onClose} className="flex items-center space-x-2 bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold">
                   <Home className="h-4 w-4" />
