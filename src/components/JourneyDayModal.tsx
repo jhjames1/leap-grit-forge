@@ -578,42 +578,91 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
   };
 
   const handleCompleteDay = () => {
-    if (!allActivitiesComplete) return;
+    logger.debug('Starting day completion', { day, allActivitiesComplete, userData: !!userData });
     
-    logger.debug('Journey day completion initiated', { day });
-    
-    if (!userData?.journeyProgress) {
-      logger.warn('No journey progress data available');
+    if (!allActivitiesComplete) {
+      logger.warn('Attempted to complete day with incomplete activities', { 
+        day, 
+        completedActivities, 
+        totalActivities: activities.length 
+      });
+      
+      toast({
+        title: "Activities Incomplete",
+        description: "Please complete all activities before finishing the day.",
+        variant: "destructive",
+      });
       return;
     }
+    
+    try {
+      // Log the completion
+      logActivity(`Completed Day ${day}: ${dayData.title}`, `All activities completed for ${dayData.tool}`, 'journey');
+      logger.debug('Activity logged successfully');
+      
+      // Update journey progress with better error handling
+      const currentProgress = userData?.journeyProgress || {
+        completedDays: [],
+        currentWeek: 1,
+        badges: [],
+        completionDates: {}
+      };
+      
+      // Check if day is already completed
+      if (currentProgress.completedDays.includes(day)) {
+        logger.debug('Day already completed', { day });
+        toast({
+          title: "Day Already Completed",
+          description: "This day has already been marked as complete.",
+        });
+        onComplete();
+        return;
+      }
+      
+      const updatedProgress = {
+        ...currentProgress,
+        completedDays: [...currentProgress.completedDays, day].sort((a, b) => a - b),
+        completionDates: {
+          ...currentProgress.completionDates,
+          [day]: new Date().toISOString()
+        }
+      };
 
-    const isAlreadyCompleted = userData.journeyProgress.completedDays.includes(day);
-    if (isAlreadyCompleted) {
-      logger.debug('Day already completed, skipping');
-      return;
+      logger.debug('Updating journey progress', { 
+        previousCompletedDays: currentProgress.completedDays,
+        newCompletedDays: updatedProgress.completedDays
+      });
+      
+      updateUserData({ journeyProgress: updatedProgress });
+      
+      logger.debug('Journey progress updated successfully');
+      
+      // Show success toast
+      toast({
+        title: `Day ${day} Complete!`,
+        description: "Great job! Your progress has been saved.",
+      });
+      
+      // Call completion callback
+      logger.debug('Calling onComplete callback');
+      onComplete();
+      
+      // Navigate to home after the completion notification disappears
+      setTimeout(() => {
+        if (onNavigateToHome) {
+          logger.debug('Navigating to home');
+          onNavigateToHome();
+        }
+      }, 2000);
+      
+    } catch (error) {
+      logger.error('Error completing day', error);
+      toast({
+        title: "Error",
+        description: "Failed to save progress. Please try again.",
+        variant: "destructive",
+      });
     }
-
-    const updatedProgress = {
-      ...userData.journeyProgress,
-      completedDays: [...userData.journeyProgress.completedDays, day].sort((a, b) => a - b),
-      completionDates: {
-        ...userData.journeyProgress.completionDates,
-        [day]: new Date().toISOString()
-      }
-    };
-
-    logger.debug('Updating journey progress');
-    updateUserData({ journeyProgress: updatedProgress });
-    
-    logger.debug('Journey day completion callback triggered');
-    onComplete();
-    
-    // Navigate to home after the completion notification disappears
-    setTimeout(() => {
-      if (onNavigateToHome) {
-        onNavigateToHome();
-      }
-    }, 2000);
   };
 
   return (

@@ -211,15 +211,29 @@ export const useUserData = () => {
   };
 
   const updateUserData = (updates: Partial<UserData>) => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      logger.error('updateUserData called without currentUser');
+      return;
+    }
     
     try {
       const existing = SecureStorage.getUserData(currentUser);
       if (existing) {
         const updated = { ...existing, ...updates, lastAccess: Date.now() };
+        
+        logger.debug('Updating user data', { 
+          username: currentUser, 
+          updates: Object.keys(updates),
+          journeyProgress: updates.journeyProgress
+        });
+        
         SecureStorage.setUserData(currentUser, updated);
         setUserData(updated);
         logSecurityEvent('user_data_updated', { username: currentUser });
+        
+        logger.debug('User data updated successfully');
+      } else {
+        logger.error('No existing user data found for update');
       }
     } catch (error) {
       logger.error('Failed to update user data', error);

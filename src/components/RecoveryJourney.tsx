@@ -312,18 +312,25 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   };
 
   const handleCompleteDay = (day: number) => {
-    logger.debug('Recovery journey day completion', { day, completedDaysCount: completedDays.length });
+    logger.debug('Recovery journey day completion handler', { 
+      day, 
+      completedDaysCount: completedDays.length,
+      actualCurrentDay,
+      totalDays
+    });
+    
+    // Close the modal
+    setSelectedDay(null);
+    
+    // Force re-render to update UI immediately
+    setForceRender(prev => prev + 1);
     
     // Update current day if this was the active day
     if (day === actualCurrentDay && day < totalDays) {
       setCurrentDay(day + 1);
     }
     
-    setSelectedDay(null);
-    
-    // Force re-render to update UI
-    setForceRender(prev => prev + 1);
-    
+    // Show completion messages
     if (day === 7) {
       toast({
         title: t('journey.notifications.week1Complete'),
@@ -346,12 +353,9 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
           });
         }
       }
-    } else {
-      toast({
-        title: t('journey.notifications.dayComplete', { day }),
-        description: t('journey.notifications.dayCompleteMsg'),
-      });
     }
+    
+    logger.debug('Journey day completion handler completed');
   };
 
   const handleWeek1DataComplete = (day: number, data: any) => {
