@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { aiJourneyManager, UserJourneyAssignment, AIJourneyDay, Week1Data, UserRecoveryPlan } from '@/utils/aiJourneyManager';
 import { useUserData } from './useUserData';
+import { testingMode } from '@/utils/testingMode';
 
 export interface UseAIJourneyReturn {
   // Journey assignment
@@ -139,8 +140,8 @@ export const useAIJourney = (): UseAIJourneyReturn => {
         const updatedData = await aiJourneyManager.getWeek1Data(userId);
         setWeek1Data(updatedData);
         
-        // If Day 7 was completed, refresh recovery plan
-        if (dayNumber === 7) {
+        // If Day 7 was completed or testing mode skips requirements, refresh recovery plan
+        if (dayNumber === 7 || testingMode.shouldSkipWeek1Requirements()) {
           setTimeout(async () => {
             const plan = await aiJourneyManager.getCurrentRecoveryPlan(userId);
             setRecoveryPlan(plan);

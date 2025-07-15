@@ -9,12 +9,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import JourneyDayModal from './JourneyDayModal';
 import Week1DataCollection from './Week1DataCollection';
+import { TestingModeControls } from './TestingModeControls';
 import { useAIJourney } from '@/hooks/useAIJourney';
 import { logger } from '@/utils/logger';
 import { calculateCurrentJourneyDay, getDayStatus } from '@/utils/journeyCalculation';
 import { journeyManager } from '@/utils/journeyManager';
 import { trackingManager } from '@/utils/trackingManager';
 import { notificationManager } from '@/utils/notificationManager';
+import { testingMode } from '@/utils/testingMode';
 
 interface RecoveryJourneyProps {
   onNavigateToHome?: () => void;
@@ -257,12 +259,18 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
       Object.entries(completionDates).map(([k, v]) => [parseInt(k), new Date(v as string)])
     ) : undefined;
     
-    const isUnlocked = journeyManager.isDayUnlocked(completedDays, day, new Date(), completionDatesMap);
+    const isUnlocked = journeyManager.isDayUnlocked(
+      completedDays, 
+      day, 
+      new Date(), 
+      completionDatesMap,
+      testingMode.shouldBypassTimeRestrictions()
+    );
     const isCompleted = completedDays.includes(day);
     
     if (isUnlocked || isCompleted) {
-      // Check if this is a Week 1 day (2-7) that needs data collection
-      if (day >= 2 && day <= 7 && !isCompleted) {
+      // Check if this is a Week 1 day (2-7) that needs data collection (unless testing mode skips it)
+      if (day >= 2 && day <= 7 && !isCompleted && !testingMode.shouldSkipWeek1Requirements()) {
         setWeek1CollectionDay(day);
         setShowWeek1Collection(true);
         return;
@@ -377,18 +385,61 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
     return t('journey.locked');
   };
 
+  // Testing mode handlers
+  const handleResetProgress = () => {
+    // Reset journey progress in userData
+    const resetData = {
+      ...userData,
+      journeyProgress: {
+        completedDays: [],
+        currentWeek: 1,
+        badges: [],
+        completionDates: {}
+      }
+    };
+    
+    // This would typically update the user data through the useUserData hook
+    setForceRender(prev => prev + 1);
+    
+    toast({
+      title: "Progress Reset",
+      description: "Journey progress has been reset for testing.",
+    });
+  };
+
+  const handleTestingCompleteDay = (day: number) => {
+    handleCompleteDay(day);
+  };
+
+  const handleSkipToDay = (day: number) => {
+    // This would typically update the user data to mark all days before 'day' as completed
+    toast({
+      title: "Skipped to Day " + day,
+      description: `Progress updated to day ${day} for testing.`,
+    });
+  };
+
   const progress = (completedDays.length / totalDays) * 100;
 
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
       <div className="p-4 pb-24">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-          <span className="font-oswald font-extralight tracking-tight">YOUR</span><span className="font-fjalla font-extrabold italic">JOURNEY</span>
-        </h1>
-        <p className="text-muted-foreground font-oswald">{t('journey.subtitle')}</p>
-      </div>
+        {/* Testing Mode Controls */}
+        <TestingModeControls
+          onResetProgress={handleResetProgress}
+          onCompleteDay={handleTestingCompleteDay}
+          onSkipToDay={handleSkipToDay}
+          currentDay={actualCurrentDay}
+          maxDays={90}
+        />
+
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+            <span className="font-oswald font-extralight tracking-tight">YOUR</span><span className="font-fjalla font-extrabold italic">JOURNEY</span>
+          </h1>
+          <p className="text-muted-foreground font-oswald">{t('journey.subtitle')}</p>
+        </div>
 
       {/* Overall Progress Card */}
       <Card className="bg-card border-0 p-6 rounded-xl mb-6 shadow-sm">

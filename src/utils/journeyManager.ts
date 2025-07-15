@@ -141,8 +141,14 @@ export class JourneyManager {
     completedDays: number[], 
     dayNumber: number, 
     currentTime: Date = new Date(),
-    completionDates?: Record<number, Date>
+    completionDates?: Record<number, Date>,
+    testingMode: boolean = false
   ): boolean {
+    // Testing mode bypasses all restrictions
+    if (testingMode) {
+      return true;
+    }
+
     // Day 1 is always unlocked
     if (dayNumber === 1) return true;
 

@@ -1,5 +1,6 @@
 import { logger } from './logger';
 import { journeyManager } from './journeyManager';
+import { testingMode } from './testingMode';
 
 interface JourneyProgress {
   completedDays: number[];
@@ -85,12 +86,23 @@ export const getDayStatus = (userData: UserData | null, day: number): 'completed
     return 'completed';
   }
   
+  // Testing mode unlocks all days
+  if (testingMode.shouldUnlockAllDays()) {
+    return 'unlocked';
+  }
+  
   // Use journeyManager for consistent unlocking logic
   const completionDates = userData.journeyProgress?.completionDates;
   const completionDatesMap = completionDates ? Object.fromEntries(
     Object.entries(completionDates).map(([k, v]) => [parseInt(k), new Date(v)])
   ) : undefined;
   
-  const isUnlocked = journeyManager.isDayUnlocked(completedDays, day, new Date(), completionDatesMap);
+  const isUnlocked = journeyManager.isDayUnlocked(
+    completedDays, 
+    day, 
+    new Date(), 
+    completionDatesMap,
+    testingMode.shouldBypassTimeRestrictions()
+  );
   return isUnlocked ? 'unlocked' : 'locked';
 };
