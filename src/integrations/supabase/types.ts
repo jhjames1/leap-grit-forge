@@ -249,6 +249,7 @@ export type Database = {
           effectiveness_score: number | null
           id: string
           is_active: boolean
+          language: string
           media_url: string | null
           mood_targeting: string[] | null
           priority: number | null
@@ -267,6 +268,7 @@ export type Database = {
           effectiveness_score?: number | null
           id?: string
           is_active?: boolean
+          language?: string
           media_url?: string | null
           mood_targeting?: string[] | null
           priority?: number | null
@@ -285,6 +287,7 @@ export type Database = {
           effectiveness_score?: number | null
           id?: string
           is_active?: boolean
+          language?: string
           media_url?: string | null
           mood_targeting?: string[] | null
           priority?: number | null

@@ -239,10 +239,16 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
   useEffect(() => {
     const fetchAudioContent = async () => {
       try {
+        // Get user's preferred language (defaulting to 'en' for now)
+        // This could be enhanced to use a language context or user preferences
+        const userLanguage = 'en'; // TODO: Get from language context/user preferences
+
         const { data, error } = await supabase
           .from('foreman_content')
           .select('id, title, media_url')
           .eq('category', 'breathing_exercises')
+          .eq('content_type', 'audio')
+          .eq('language', userLanguage)
           .eq('is_active', true)
           .not('media_url', 'is', null)
           .not('media_url', 'eq', '');

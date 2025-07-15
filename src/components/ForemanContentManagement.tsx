@@ -19,6 +19,7 @@ interface ForemanContent {
   content: string;
   content_type: string;
   category: string;
+  language: string;
   media_url?: string;
   author?: string;
   mood_targeting: string[];
@@ -71,6 +72,7 @@ const ForemanContentManagement = () => {
     content: '',
     content_type: 'quote',
     category: 'daily_motivation',
+    language: 'en',
     media_url: '',
     author: '',
     mood_targeting: [] as string[],
@@ -155,6 +157,7 @@ const ForemanContentManagement = () => {
       content: item.content,
       content_type: item.content_type,
       category: item.category,
+      language: item.language || 'en',
       media_url: item.media_url || '',
       author: item.author || '',
       mood_targeting: item.mood_targeting,
@@ -242,6 +245,7 @@ const ForemanContentManagement = () => {
       content: '',
       content_type: 'quote',
       category: 'daily_motivation',
+      language: 'en',
       media_url: '',
       author: '',
       mood_targeting: [],
@@ -318,7 +322,7 @@ const ForemanContentManagement = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="content_type">Content Type</Label>
                   <Select 
@@ -352,6 +356,21 @@ const ForemanContentManagement = () => {
                           {cat.label}
                         </SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="language">Language</Label>
+                  <Select 
+                    value={formData.language} 
+                    onValueChange={(value) => setFormData({...formData, language: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="es">Spanish</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
