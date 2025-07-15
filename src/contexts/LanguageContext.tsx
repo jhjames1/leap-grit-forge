@@ -279,49 +279,65 @@ const englishTranslations = {
         evening: 'What\'s pressing on you right now?'
       },
       initialPrompts: [
-        'You good, or are we faking it today?',
-        'You clocking in or hiding out?',
-        'What\'s pressing on you right now?',
-        'Where\'s your head at?'
+        'Alright {name}, what\'s the situation?',
+        'Hey {name}, you good or are we faking it today?',
+        '{name}, where\'s your head at right now?',
+        'What\'s going on, {name}? Talk straight with me.',
+        '{name}, you clocking in or hiding out?',
+        'What\'s pressing on you, {name}?',
+        'Alright {name}, let\'s get to work. What do you need?',
+        '{name}, I can see you\'re here for a reason. What is it?'
       ],
       contextualGreetings: {
         returning: [
-          'Hey {name}, last time we talked about {topic} - how\'s that been going?',
-          '{name}, it\'s been {timeSince} since we talked. Still working through that {topic}?',
-          'Back again, {name}. You mentioned {topic} before - any updates?',
-          '{name}, you seemed {mood} about {topic} last time. How are you feeling about it now?',
-          'Good to see you again, {name}. Did you try that {tool} I mentioned?',
-          '{name}, {timeSince} since our last chat. What\'s on your mind today?'
+          'Hey {name}, last time we talked about {topic} - how\'s that been sitting with you?',
+          '{name}, it\'s been {timeSince} since we talked. Still chewing on that {topic}?',
+          'Back again, {name}. You mentioned {topic} before - any progress or still stuck?',
+          '{name}, you seemed {mood} about {topic} last time. How\'s your head about it now?',
+          'Good to see you again, {name}. Did you actually try that {tool} I mentioned?',
+          '{name}, {timeSince} since our last chat. What\'s eating at you today?',
+          'Alright {name}, last time was about {topic}. We moving forward or going in circles?',
+          '{name}, been {timeSince}. That {topic} situation still got you wound up?'
         ],
         strugglingReturn: [
-          '{name}, you were dealing with {topic} {timeSince}. How\'d things go?',
-          'Hey {name}, last time you seemed overwhelmed by {topic}. Better today?',
-          '{name}, you mentioned struggling with {topic} - still hitting you hard?',
-          'Back for more, {name}. That {topic} situation still weighing on you?'
+          '{name}, you were dealing with {topic} {timeSince}. How\'d that work out?',
+          'Hey {name}, last time you seemed overwhelmed by {topic}. We making progress?',
+          '{name}, you mentioned struggling with {topic} - still hitting you hard or you fighting back?',
+          'Back for more, {name}. That {topic} situation still weighing heavy?',
+          '{name}, {timeSince} since you were wrestling with {topic}. Win any rounds yet?',
+          'Alright {name}, last time {topic} had you down. You getting back up or staying on the mat?'
         ],
         hopefulReturn: [
-          '{name}, you sounded positive about {topic} last time. Still feeling good?',
-          'Hey {name}, you were making progress with {topic}. How\'s it going?',
-          '{name}, you seemed stronger last time we talked. Still feeling that way?',
-          'Good to see you, {name}. You were working on {topic} - how\'s that coming along?'
+          '{name}, you sounded positive about {topic} last time. Still riding that wave?',
+          'Hey {name}, you were making real progress with {topic}. How\'s momentum?',
+          '{name}, you seemed stronger last time we talked. Still feeling that fire?',
+          'Good to see you, {name}. You were working on {topic} - still building on it?',
+          '{name}, last time you had some fight in you about {topic}. Still swinging?',
+          'Alright {name}, {timeSince} since you sounded hopeful about {topic}. Reality matching the hope?'
         ],
         toolFollowUp: [
-          '{name}, did you try that {tool} I suggested for {topic}?',
-          'Hey {name}, you were going to work on {topic} with {tool}. How\'d it go?',
-          '{name}, last time I mentioned {tool} for your {topic} situation. Did it help?',
-          'Back again, {name}. Did that {tool} make a difference with {topic}?'
+          '{name}, did you actually try that {tool} I suggested for {topic}?',
+          'Hey {name}, you were going to work on {topic} with {tool}. You follow through or just talk?',
+          '{name}, last time I mentioned {tool} for your {topic} situation. Did it make a difference or waste your time?',
+          'Back again, {name}. Did that {tool} actually help with {topic} or should we try something else?',
+          '{name}, {timeSince} since I suggested {tool} for {topic}. You use it or ignore it?',
+          'Alright {name}, be straight with me - did you try {tool} for {topic} or are we still talking instead of doing?'
         ],
         longGap: [
-          '{name}, it\'s been {timeSince} since we talked. A lot can change. What\'s happening?',
-          'Hey {name}, {timeSince} since our last conversation. Where are you at now?',
-          '{name}, been a while. {timeSince} to be exact. What brought you back?',
-          'Long time, {name}. {timeSince} since we last talked. What\'s going on?'
+          '{name}, it\'s been {timeSince} since we talked. That\'s a long stretch. What\'s happening in your world?',
+          'Hey {name}, {timeSince} since our last conversation. A lot changes in that time. Where are you at?',
+          '{name}, been a while. {timeSince} to be exact. What brought you back to the table?',
+          'Long time, {name}. {timeSince} since we last talked. You been handling things or avoiding them?',
+          '{name}, {timeSince} gap there. That\'s either really good or really concerning. Which is it?',
+          'Alright {name}, {timeSince} since we talked. You been building or just surviving?'
         ],
         crisisReturn: [
-          '{name}, you were in a tough spot {timeSince}. How are you holding up?',
-          'Hey {name}, last time was heavy. {timeSince} later, how are you doing?',
-          '{name}, you were struggling hard {timeSince}. Still feeling that way?',
-          'Good to see you back, {name}. {timeSince} since that rough conversation. Better today?'
+          '{name}, you were in a real tough spot {timeSince}. How you holding up now?',
+          'Hey {name}, last time was heavy stuff. {timeSince} later, you still standing?',
+          '{name}, you were struggling hard {timeSince}. Made it through - that\'s something. How\'s today?',
+          'Good to see you back, {name}. {timeSince} since that rough conversation. You in a better place?',
+          '{name}, {timeSince} since things were really dark. You fought through it. What\'s your status now?',
+          'Alright {name}, last time you were hurting bad. {timeSince} later and you\'re here. That takes guts. How are you really doing?'
         ]
       },
       followUp1: [
