@@ -17,6 +17,7 @@ interface ToolboxStats {
   streak: number;
   totalSessions: number;
   urgesThisWeek: number;
+  courageCoins: number;
 }
 
 interface JourneyProgress {
@@ -88,6 +89,7 @@ export const useUserData = () => {
             streak: 0,
             totalSessions: 0,
             urgesThisWeek: 0,
+            courageCoins: 0,
             ...data.toolboxStats
           },
           journeyProgress: data.journeyProgress || {
@@ -116,7 +118,8 @@ export const useUserData = () => {
             toolsToday: 0,
             streak: 0,
             totalSessions: 0,
-            urgesThisWeek: 0
+            urgesThisWeek: 0,
+            courageCoins: 0
           },
           journeyProgress: {
             completedDays: [],
@@ -144,7 +147,8 @@ export const useUserData = () => {
           toolsToday: 0,
           streak: 0,
           totalSessions: 0,
-          urgesThisWeek: 0
+          urgesThisWeek: 0,
+          courageCoins: 0
         },
         journeyProgress: {
           completedDays: [],

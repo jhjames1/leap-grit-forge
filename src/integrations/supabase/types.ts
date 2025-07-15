@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      cbt_game_sessions: {
+        Row: {
+          coins_earned: number
+          completed_at: string
+          correct_items: number
+          id: string
+          pack_id: string
+          score: number
+          total_items: number
+          user_id: string
+        }
+        Insert: {
+          coins_earned?: number
+          completed_at?: string
+          correct_items?: number
+          id?: string
+          pack_id: string
+          score?: number
+          total_items?: number
+          user_id: string
+        }
+        Update: {
+          coins_earned?: number
+          completed_at?: string
+          correct_items?: number
+          id?: string
+          pack_id?: string
+          score?: number
+          total_items?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cbt_game_sessions_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "thought_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cbt_game_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_played_date: string | null
+          longest_streak: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_played_date?: string | null
+          longest_streak?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_played_date?: string | null
+          longest_streak?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           content: string
@@ -389,6 +460,80 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      thought_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          difficulty: number | null
+          id: string
+          is_distortion: boolean
+          pack_id: string
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          difficulty?: number | null
+          id?: string
+          is_distortion: boolean
+          pack_id: string
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          difficulty?: number | null
+          id?: string
+          is_distortion?: boolean
+          pack_id?: string
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "thought_items_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "thought_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      thought_packs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          theme: string
+          title: string
+          unlock_requirement: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          theme?: string
+          title: string
+          unlock_requirement?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          theme?: string
+          title?: string
+          unlock_requirement?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

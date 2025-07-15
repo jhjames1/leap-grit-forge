@@ -16,6 +16,7 @@ import BreathingExercise from '@/components/BreathingExercise';
 import UrgeTracker from '@/components/UrgeTracker';
 import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
 import TriggerIdentifier from '@/components/TriggerIdentifier';
+import ThoughtPatternSorter from '@/components/ThoughtPatternSorter';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { trackingManager } from '@/utils/trackingManager';
@@ -30,6 +31,7 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const [showUrgeTracker, setShowUrgeTracker] = useState(false);
   const [showGratitudeLog, setShowGratitudeLog] = useState(false);
   const [showTriggerIdentifier, setShowTriggerIdentifier] = useState(false);
+  const [showThoughtPatternSorter, setShowThoughtPatternSorter] = useState(false);
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const { userData, logActivity, updateToolboxStats } = useUserData();
@@ -215,6 +217,15 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       color: 'bg-gradient-to-br from-steel to-steel-light hover:from-construction/80 hover:to-construction',
       badge: 'Analysis',
       badgeColor: 'bg-construction'
+    },
+    {
+      id: 'thought-pattern-sorter',
+      title: 'Thought Pattern Sorter',
+      description: 'CBT game: sort distorted vs realistic thoughts',
+      icon: Bot,
+      color: 'bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary',
+      badge: 'CBT Arcade',
+      badgeColor: 'bg-primary'
     }
   ];
 
@@ -238,6 +249,9 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         break;
       case 'trigger':
         setShowTriggerIdentifier(true);
+        break;
+      case 'thought-pattern-sorter':
+        setShowThoughtPatternSorter(true);
         break;
       default:
         logger.debug('Tool opened', { toolId });
@@ -302,6 +316,16 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
 
   const handleTriggerIdentifierClose = () => {
     setShowTriggerIdentifier(false);
+    // Don't log completion if closed without finishing
+  };
+
+  const handleThoughtPatternSorterComplete = () => {
+    setShowThoughtPatternSorter(false);
+    // Game handles its own completion logging
+  };
+
+  const handleThoughtPatternSorterClose = () => {
+    setShowThoughtPatternSorter(false);
     // Don't log completion if closed without finishing
   };
 
@@ -433,6 +457,13 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
           onClose={handleTriggerIdentifierComplete}
           onCancel={handleTriggerIdentifierClose}
           onNavigate={onNavigate}
+        />
+      )}
+
+      {showThoughtPatternSorter && (
+        <ThoughtPatternSorter 
+          onClose={handleThoughtPatternSorterComplete}
+          onCancel={handleThoughtPatternSorterClose}
         />
       )}
     </div>
