@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit, Trash2, Heart, Target, Lightbulb, Users, Star, Shield, Brain, Activity } from 'lucide-react';
+import { Plus, Edit, Trash2, Heart, Target, Lightbulb, Users, Star, Shield, Brain, Activity, Wind, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ForemanContent {
@@ -50,7 +50,8 @@ const categories = [
   { value: 'milestone_celebrations', label: 'Milestone Celebrations', icon: Activity, color: 'bg-green-100 text-green-800' },
   { value: 'self_care', label: 'Self Care', icon: Heart, color: 'bg-purple-100 text-purple-800' },
   { value: 'coping_strategies', label: 'Coping Strategies', icon: Target, color: 'bg-indigo-100 text-indigo-800' },
-  { value: 'inspiration', label: 'Inspiration', icon: Lightbulb, color: 'bg-orange-100 text-orange-800' }
+  { value: 'inspiration', label: 'Inspiration', icon: Lightbulb, color: 'bg-orange-100 text-orange-800' },
+  { value: 'breathing_exercises', label: 'Breathing Exercises', icon: Wind, color: 'bg-cyan-100 text-cyan-800' }
 ];
 
 const moodOptions = ['hopeful', 'anxious', 'determined', 'struggling', 'proud', 'lonely', 'confident', 'overwhelmed', 'grateful', 'frustrated', 'peaceful', 'crisis', 'desperate'];
@@ -62,6 +63,7 @@ const ForemanContentManagement = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingContent, setEditingContent] = useState<ForemanContent | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -181,6 +183,55 @@ const ForemanContentManagement = () => {
         description: "Failed to delete content",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (50MB limit)
+    if (file.size > 50 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "File size must be under 50MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `audio-content/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('audio-content')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('audio-content')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, media_url: publicUrl });
+      
+      toast({
+        title: "Success",
+        description: "Audio file uploaded successfully"
+      });
+    } catch (error) {
+      console.error('Error uploading audio:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload audio file",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -306,7 +357,7 @@ const ForemanContentManagement = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="media_url">Media URL (optional)</Label>
                   <Input
@@ -330,6 +381,32 @@ const ForemanContentManagement = () => {
                   />
                 </div>
               </div>
+
+              {/* Audio File Upload for Breathing Exercises */}
+              {formData.content_type === 'audio' && formData.category === 'breathing_exercises' && (
+                <div>
+                  <Label htmlFor="audio_file">Upload Audio File</Label>
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-4">
+                    <Input
+                      id="audio_file"
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleAudioUpload}
+                      className="mb-2"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Upload audio files (MP3, WAV, OGG, M4A) up to 50MB for breathing exercises.
+                      Use titles like "Background Sound - Ocean Waves" or "Voice Guidance - Deep Breathing".
+                    </p>
+                    {uploading && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                        <span className="text-sm">Uploading...</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="trigger_keywords">Trigger Keywords (comma-separated)</Label>

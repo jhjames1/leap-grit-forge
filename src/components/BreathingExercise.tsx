@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Wind, Volume2, VolumeX, Play, Pause, RotateCcw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BreathingExerciseProps {
   onClose: () => void;
@@ -13,22 +14,26 @@ interface BreathingExerciseProps {
 const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
   const [isStarted, setIsStarted] = useState(false);
   const [sessionLength, setSessionLength] = useState(90);
-  const [backgroundSound, setBackgroundSound] = useState('Workshop Hum');
+  const [backgroundSound, setBackgroundSound] = useState('');
   const [voiceGuideEnabled, setVoiceGuideEnabled] = useState(true);
   const [currentPhase, setCurrentPhase] = useState<'inhale' | 'hold' | 'exhale' | 'rest'>('inhale');
   const [breathCount, setBreathCount] = useState(0);
   const [timeLeft, setTimeLeft] = useState(90);
   const [isPlaying, setIsPlaying] = useState(false);
   const [circleScale, setCircleScale] = useState(1);
+  const [backgroundSounds, setBackgroundSounds] = useState<Array<{id: string, title: string, media_url: string}>>([]);
+  const [voiceGuidance, setVoiceGuidance] = useState<Array<{id: string, title: string, media_url: string}>>([]);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   
   const timerRef = useRef<NodeJS.Timeout>();
   const breathTimerRef = useRef<NodeJS.Timeout>();
 
-  const backgroundSounds = [
-    'Workshop Hum',
-    'West Texas Wind', 
-    'Campfire Crackle',
-    'Silent Mode'
+  // Fallback background sounds if no database content is available
+  const fallbackBackgroundSounds = [
+    { id: 'workshop', title: 'Workshop Hum', media_url: '' },
+    { id: 'wind', title: 'West Texas Wind', media_url: '' },
+    { id: 'campfire', title: 'Campfire Crackle', media_url: '' },
+    { id: 'silent', title: 'Silent Mode', media_url: '' }
   ];
 
   const breathingPattern = {
@@ -50,6 +55,7 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
     setIsPlaying(true);
     setTimeLeft(sessionLength);
     setBreathCount(0);
+    startBackgroundAudio();
     startBreathingCycle();
     
     // Main session timer
@@ -62,6 +68,27 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
         return prev - 1;
       });
     }, 1000);
+  };
+
+  const startBackgroundAudio = () => {
+    const selectedSound = backgroundSounds.find(sound => sound.id === backgroundSound);
+    if (selectedSound && selectedSound.media_url && selectedSound.id !== 'silent') {
+      const audio = new Audio(selectedSound.media_url);
+      audio.loop = true;
+      audio.volume = 0.3;
+      audio.play().catch(error => {
+        console.log('Audio autoplay prevented:', error);
+      });
+      setAudioElement(audio);
+    }
+  };
+
+  const stopBackgroundAudio = () => {
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+      setAudioElement(null);
+    }
   };
 
   const startBreathingCycle = () => {
@@ -162,6 +189,7 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
 
   const endSession = () => {
     setIsPlaying(false);
+    stopBackgroundAudio();
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
@@ -207,14 +235,61 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
     }
   };
 
+  // Fetch audio content from database
+  useEffect(() => {
+    const fetchAudioContent = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('foreman_content')
+          .select('id, title, media_url')
+          .eq('category', 'breathing_exercises')
+          .eq('is_active', true)
+          .not('media_url', 'is', null)
+          .not('media_url', 'eq', '');
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          // Separate background sounds and voice guidance based on title
+          const backgroundAudio = data.filter(item => 
+            item.title.toLowerCase().includes('background') || 
+            item.title.toLowerCase().includes('sound')
+          );
+          const voiceAudio = data.filter(item => 
+            item.title.toLowerCase().includes('voice') || 
+            item.title.toLowerCase().includes('guidance')
+          );
+
+          setBackgroundSounds(backgroundAudio.length > 0 ? backgroundAudio : fallbackBackgroundSounds);
+          setVoiceGuidance(voiceAudio);
+          
+          // Set default background sound
+          if (backgroundAudio.length > 0) {
+            setBackgroundSound(backgroundAudio[0].id);
+          }
+        } else {
+          setBackgroundSounds(fallbackBackgroundSounds);
+        }
+      } catch (error) {
+        console.error('Error fetching audio content:', error);
+        setBackgroundSounds(fallbackBackgroundSounds);
+      }
+    };
+
+    fetchAudioContent();
+  }, []);
+
   useEffect(() => {
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
       speechSynthesis.cancel();
+      if (audioElement) {
+        audioElement.pause();
+      }
     };
-  }, []);
+  }, [audioElement]);
 
   if (!isStarted) {
     return (
@@ -258,16 +333,16 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
               <div className="grid grid-cols-2 gap-2">
                 {backgroundSounds.map((sound) => (
                   <Button
-                    key={sound}
-                    variant={backgroundSound === sound ? "default" : "outline"}
-                    onClick={() => setBackgroundSound(sound)}
+                    key={sound.id}
+                    variant={backgroundSound === sound.id ? "default" : "outline"}
+                    onClick={() => setBackgroundSound(sound.id)}
                     className={`text-xs ${
-                      backgroundSound === sound 
+                      backgroundSound === sound.id 
                         ? 'bg-construction text-midnight' 
                         : 'border-steel text-steel-light hover:bg-steel/10'
                     }`}
                   >
-                    {sound}
+                    {sound.title}
                   </Button>
                 ))}
               </div>
