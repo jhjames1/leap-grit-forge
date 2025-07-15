@@ -32,6 +32,7 @@ import BreathingExercise from '@/components/BreathingExercise';
 import UrgeTracker from '@/components/UrgeTracker';
 import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
 import { ConversationMemoryManager } from '@/utils/conversationMemory';
+import { convertToYouTubeEmbedUrl, isYouTubeUrl } from '@/utils/youtubeUtils';
 
 interface ForemanChatProps {
   onBack: () => void;
@@ -814,28 +815,6 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
       }
     };
 
-    const convertToYouTubeEmbedUrl = (url: string): string | null => {
-      if (!url) return null;
-
-      const patterns = [
-        /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/,
-        /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]+)/,
-        /(?:https?:\/\/)?(?:www\.)?youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
-        /(?:https?:\/\/)?(?:www\.)?youtube\.com\/v\/([a-zA-Z0-9_-]+)/
-      ];
-
-      for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match && match[1]) {
-          return `https://www.youtube.com/embed/${match[1]}`;
-        }
-      }
-      return null;
-    };
-
-    const isYouTubeUrl = (url: string): boolean => {
-      return convertToYouTubeEmbedUrl(url) !== null;
-    };
 
     const Icon = getResourceIcon(resource.content_type);
     const isVideo = resource.content_type === 'video';
