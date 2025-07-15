@@ -79,35 +79,32 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
         return;
       }
 
-      const response = await supabase.functions.invoke('thought-packs', {
+      // Use direct fetch to properly handle 429 responses
+      const response = await fetch(`https://xefypnmvsikrdxzepgqf.supabase.co/functions/v1/thought-packs?theme=base`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
 
-      console.log('Supabase function response:', response);
+      console.log('Direct fetch response status:', response.status);
 
-      // Better error handling for daily limit
-      if (response.error) {
-        const errorMsg = response.error.message || '';
-        console.error('Function error:', response.error);
-        
-        // Check for daily limit indicators
-        if (errorMsg.includes('daily limit') || 
-            errorMsg.includes('limit reached') ||
-            errorMsg.includes('429')) {
-          setDailyLimitReached(true);
-          setNextResetTime(new Date().setHours(24, 0, 0, 0));
-          setLoading(false);
-          return;
-        }
-        
-        // For other errors, show generic error
+      // Handle 429 status for daily limit
+      if (response.status === 429) {
+        const errorData = await response.json();
+        console.log('Daily limit reached, response:', errorData);
+        setDailyLimitReached(true);
+        setNextResetTime(errorData.nextResetTime || new Date().setHours(24, 0, 0, 0));
+        setLoading(false);
+        return;
+      }
+
+      if (!response.ok) {
         throw new Error('Unable to load activity');
       }
 
-      const gameDataResult = response.data as GameData;
+      const gameDataResult = await response.json() as GameData;
       setGameData(gameDataResult);
       setCurrentItems(gameDataResult.items);
       
