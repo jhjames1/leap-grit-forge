@@ -47,22 +47,39 @@ export const useUserData = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check for secure session first
-    const session = getSecureSession();
-    if (session) {
-      setCurrentUser(session.username);
-      loadUserData(session.username);
-    } else {
+    const initializeUser = () => {
+      // Check for secure session first
+      const session = getSecureSession();
+      if (session) {
+        logger.debug('Found secure session', { username: session.username });
+        setCurrentUser(session.username);
+        loadUserData(session.username);
+        return;
+      }
+
       // Fallback to localStorage for backwards compatibility
       const user = localStorage.getItem('currentUser');
       if (user) {
+        logger.debug('Found localStorage user', { user });
         setCurrentUser(user);
         loadUserData(user);
+        return;
       }
-    }
-    
-    // Initialize tracking and notifications
-    if (currentUser) {
+
+      // If no user found, create a guest user for testing
+      logger.debug('No user found, creating guest user');
+      const guestUser = 'guest-user';
+      localStorage.setItem('currentUser', guestUser);
+      setCurrentUser(guestUser);
+      loadUserData(guestUser);
+    };
+
+    initializeUser();
+  }, []);
+
+  useEffect(() => {
+    // Initialize tracking and notifications when user is set
+    if (currentUser && userData) {
       trackingManager.setUser(currentUser);
       
       // Check and reset daily stats if it's a new day
@@ -74,12 +91,21 @@ export const useUserData = () => {
     
     // Cleanup old data on app start
     SecureStorage.cleanupOldData();
-  }, [currentUser]);
+  }, [currentUser, userData]);
 
   const loadUserData = (username: string) => {
     try {
+      logger.debug('Loading user data for', { username });
       const data = SecureStorage.getUserData(username);
+      
       if (data) {
+        logger.debug('Found existing user data', { 
+          username,
+          completedDaysCount: data.journeyProgress?.completedDays?.length || 0,
+          hasJourneyResponses: !!data.journeyResponses,
+          journeyResponsesCount: Object.keys(data.journeyResponses || {}).length
+        });
+        
         // Ensure data has required structure
         const normalizedData = {
           firstName: data.firstName || username,
@@ -96,9 +122,12 @@ export const useUserData = () => {
           journeyProgress: data.journeyProgress || {
             completedDays: [],
             currentWeek: 1,
-            badges: []
+            badges: [],
+            completionDates: {}
           },
           journeyResponses: data.journeyResponses || {},
+          focusAreas: data.focusAreas || ['stress_management'],
+          journeyStage: data.journeyStage || 'foundation',
           lastAccess: Date.now()
         };
         
@@ -110,6 +139,8 @@ export const useUserData = () => {
         SecureStorage.updateLastAccess(username);
         logSecurityEvent('user_data_accessed', { username });
       } else {
+        logger.debug('Creating new user data for', { username });
+        
         // Create initial user data if none exists
         const initialData = {
           firstName: username,
@@ -125,9 +156,12 @@ export const useUserData = () => {
           journeyProgress: {
             completedDays: [],
             currentWeek: 1,
-            badges: []
+            badges: [],
+            completionDates: {}
           },
           journeyResponses: {},
+          focusAreas: ['stress_management'],
+          journeyStage: 'foundation',
           lastAccess: Date.now()
         };
         
@@ -154,9 +188,12 @@ export const useUserData = () => {
         journeyProgress: {
           completedDays: [],
           currentWeek: 1,
-          badges: []
+          badges: [],
+          completionDates: {}
         },
         journeyResponses: {},
+        focusAreas: ['stress_management'],
+        journeyStage: 'foundation',
         lastAccess: Date.now()
       };
       setUserData(fallbackData);
@@ -229,7 +266,7 @@ export const useUserData = () => {
           journeyResponses: updates.journeyResponses ? Object.keys(updates.journeyResponses) : undefined
         });
         
-        // Save to storage first
+        // Save to storage first - this is critical for persistence
         SecureStorage.setUserData(currentUser, updated);
         
         // Then update state with validation
@@ -257,6 +294,14 @@ export const useUserData = () => {
     } catch (error) {
       logger.error('Failed to update user data', error);
       logSecurityEvent('user_data_update_error', { username: currentUser, error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  };
+
+  // Force refresh user data from storage
+  const refreshUserData = () => {
+    if (currentUser) {
+      logger.debug('Force refreshing user data from storage');
+      loadUserData(currentUser);
     }
   };
 
@@ -302,6 +347,7 @@ export const useUserData = () => {
     updateToolboxStats,
     loadUserData,
     logout,
-    setUserData // Export setUserData for manual state updates
+    setUserData, // Export setUserData for manual state updates
+    refreshUserData // Export refresh function
   };
 };

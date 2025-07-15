@@ -32,7 +32,7 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   const [phaseModifier, setPhaseModifier] = useState<any>(null);
   const [showWeek1Collection, setShowWeek1Collection] = useState(false);
   const [week1CollectionDay, setWeek1CollectionDay] = useState<number | null>(null);
-  const { userData, logActivity, currentUser, updateUserData, setUserData } = useUserData();
+  const { userData, logActivity, currentUser, updateUserData, setUserData, refreshUserData } = useUserData();
   const { toast } = useToast();
   const { t } = useLanguage();
   const totalDays = 90;
@@ -58,8 +58,15 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
       journeyStage: userData?.journeyStage,
       hasUserData: !!userData,
       hasAIJourney,
-      isAssignmentLoading
+      isAssignmentLoading,
+      currentUser
     });
+
+    // Wait for userData to be loaded
+    if (!userData && currentUser) {
+      logger.debug('Waiting for userData to load...');
+      return;
+    }
 
     // Use AI journey if available, otherwise fall back to static journey
     if (hasAIJourney && assignment) {
@@ -96,7 +103,7 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
         daysCount: defaultJourney?.days?.length || 0
       });
     }
-  }, [userData?.focusAreas, userData?.journeyStage, userData, hasAIJourney, assignment, isAssignmentLoading]);
+  }, [userData?.focusAreas, userData?.journeyStage, userData, hasAIJourney, assignment, isAssignmentLoading, currentUser]);
 
   // Calculate current day based on completed days using shared utility
   const completedDays = userData?.journeyProgress?.completedDays || [];
@@ -114,7 +121,8 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
       completedDaysCount: completedDays.length, 
       currentDay: actualCurrentDay,
       userDataLastAccess: userData?.lastAccess,
-      completedDays: completedDays
+      completedDays: completedDays,
+      hasUserData: !!userData
     });
     
     // Force re-render when userData changes to ensure UI is in sync
@@ -133,26 +141,22 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
         );
       }
     }
-  }, [userData?.journeyProgress?.completedDays, userData?.lastAccess, actualCurrentDay]);
+  }, [userData?.journeyProgress?.completedDays, userData?.lastAccess, actualCurrentDay, userData]);
 
   // Additional effect to ensure component refreshes when returning from navigation
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && userData && currentUser) {
         logger.debug('Page became visible, refreshing user data');
-        // Reload user data to ensure we have the latest state
-        const refreshedData = SecureStorage.getUserData(currentUser);
-        if (refreshedData) {
-          // Force re-render by updating the forceRender state
-          setForceRender(prev => prev + 1);
-          updateUserData(refreshedData);
-        }
+        // Force refresh user data to ensure we have the latest state
+        refreshUserData();
+        setForceRender(prev => prev + 1);
       }
     };
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [userData, currentUser, updateUserData]);
+  }, [userData, currentUser, refreshUserData]);
 
   // Check if it's past 12:01 AM
   const isPast1201AM = () => {
@@ -350,18 +354,13 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
     // Close the modal
     setSelectedDay(null);
     
+    // Force immediate refresh of user data from storage
+    refreshUserData();
+    
     // Force multiple re-renders to ensure state sync
     setForceRender(prev => prev + 1);
     setTimeout(() => setForceRender(prev => prev + 1), 100);
     setTimeout(() => setForceRender(prev => prev + 1), 300);
-    
-    // Refresh user data from storage to ensure we have latest state
-    if (currentUser) {
-      const refreshedData = SecureStorage.getUserData(currentUser);
-      if (refreshedData) {
-        setUserData(refreshedData);
-      }
-    }
     
     // Update current day if this was the active day
     if (day === actualCurrentDay && day < totalDays) {
@@ -438,26 +437,19 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
     return t('journey.locked');
   };
 
-  // Testing mode handlers
+  // Testing mode handlers that work with actual user data
   const handleResetProgress = () => {
-    // Reset journey progress in userData
-    const resetData = {
-      ...userData,
-      journeyProgress: {
-        completedDays: [],
-        currentWeek: 1,
-        badges: [],
-        completionDates: {}
-      }
-    };
-    
-    // This would typically update the user data through the useUserData hook
-    setForceRender(prev => prev + 1);
-    
+    // This will be handled by TestingModeControls
     toast({
       title: "Progress Reset",
       description: "Journey progress has been reset for testing.",
     });
+    
+    // Force refresh after reset
+    setTimeout(() => {
+      refreshUserData();
+      setForceRender(prev => prev + 1);
+    }, 100);
   };
 
   const handleTestingCompleteDay = (day: number) => {
@@ -465,11 +457,17 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   };
 
   const handleSkipToDay = (day: number) => {
-    // This would typically update the user data to mark all days before 'day' as completed
+    // This will be handled by TestingModeControls
     toast({
       title: "Skipped to Day " + day,
       description: `Progress updated to day ${day} for testing.`,
     });
+    
+    // Force refresh after skip
+    setTimeout(() => {
+      refreshUserData();
+      setForceRender(prev => prev + 1);
+    }, 100);
   };
 
   const progress = (completedDays.length / totalDays) * 100;

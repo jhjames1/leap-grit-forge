@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Settings, Zap, RotateCcw } from 'lucide-react';
 import { testingMode, TestingModeConfig } from '@/utils/testingMode';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useUserData } from '@/hooks/useUserData';
 
 interface TestingModeControlsProps {
   onResetProgress?: () => void;
@@ -26,6 +28,7 @@ export function TestingModeControls({
 }: TestingModeControlsProps) {
   const [config, setConfig] = useState<TestingModeConfig>(testingMode.getConfig());
   const [isVisible, setIsVisible] = useState(false);
+  const { userData, updateUserData } = useUserData();
 
   useEffect(() => {
     const updateConfig = () => {
@@ -39,9 +42,83 @@ export function TestingModeControls({
     return () => clearInterval(interval);
   }, []);
 
+  const handleResetProgress = () => {
+    if (userData) {
+      const resetProgress = {
+        completedDays: [],
+        currentWeek: 1,
+        badges: [],
+        completionDates: {}
+      };
+      
+      updateUserData({ 
+        journeyProgress: resetProgress,
+        journeyResponses: {}
+      });
+      
+      onResetProgress?.();
+    }
+  };
+
+  const handleCompleteCurrentDay = () => {
+    if (userData && currentDay) {
+      const currentProgress = userData.journeyProgress || {
+        completedDays: [],
+        currentWeek: 1,
+        badges: [],
+        completionDates: {}
+      };
+      
+      if (!currentProgress.completedDays.includes(currentDay)) {
+        const updatedProgress = {
+          ...currentProgress,
+          completedDays: [...currentProgress.completedDays, currentDay].sort((a, b) => a - b),
+          completionDates: {
+            ...currentProgress.completionDates,
+            [currentDay]: new Date().toISOString()
+          }
+        };
+        
+        updateUserData({ journeyProgress: updatedProgress });
+        onCompleteDay?.(currentDay);
+      }
+    }
+  };
+
+  const handleSkipToDay = (targetDay: number) => {
+    if (userData) {
+      const currentProgress = userData.journeyProgress || {
+        completedDays: [],
+        currentWeek: 1,
+        badges: [],
+        completionDates: {}
+      };
+      
+      // Complete all days up to the target day
+      const completedDays = [];
+      const completionDates: Record<number, string> = { ...currentProgress.completionDates };
+      
+      for (let i = 1; i < targetDay; i++) {
+        if (!currentProgress.completedDays.includes(i)) {
+          completedDays.push(i);
+          completionDates[i] = new Date().toISOString();
+        }
+      }
+      
+      const updatedProgress = {
+        ...currentProgress,
+        completedDays: [...currentProgress.completedDays, ...completedDays].sort((a, b) => a - b),
+        completionDates
+      };
+      
+      updateUserData({ journeyProgress: updatedProgress });
+      onSkipToDay?.(targetDay);
+    }
+  };
+
   if (!testingMode.isEnabled()) {
     return (
-      <Card className="border-dashed border-muted">
+      <Card className="border-dashed border-muted mb-4">
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Settings className="h-4 w-4" />
@@ -60,7 +137,7 @@ export function TestingModeControls({
   }
 
   return (
-    <Card className="border-warning bg-warning/5">
+    <Card className="border-warning bg-warning/5 mb-4">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -118,24 +195,21 @@ export function TestingModeControls({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onCompleteDay?.(currentDay)}
-                  disabled={!onCompleteDay}
+                  onClick={handleCompleteCurrentDay}
                 >
                   Complete Day {currentDay}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onSkipToDay?.(7)}
-                  disabled={!onSkipToDay}
+                  onClick={() => handleSkipToDay(7)}
                 >
                   Skip to Day 7
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onSkipToDay?.(14)}
-                  disabled={!onSkipToDay}
+                  onClick={() => handleSkipToDay(14)}
                 >
                   Skip to Day 14
                 </Button>
@@ -150,8 +224,7 @@ export function TestingModeControls({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={onResetProgress}
-                disabled={!onResetProgress}
+                onClick={handleResetProgress}
                 className="flex items-center gap-2"
               >
                 <RotateCcw className="h-3 w-3" />
@@ -210,6 +283,10 @@ export function TestingModeControls({
             {/* Status */}
             <div className="text-xs text-muted-foreground">
               Current Day: {currentDay} / {maxDays}
+              <br />
+              Completed Days: {userData?.journeyProgress?.completedDays?.length || 0}
+              <br />
+              User Data: {userData ? 'Loaded' : 'Missing'}
             </div>
           </div>
         </CardContent>
