@@ -177,7 +177,7 @@ export function useChatSession(specialistId?: string) {
 
       // Send initial system message
       await sendMessage({
-        content: 'Chat session started. You are now connected with a peer specialist.',
+        content: 'Chat session started. You are now connected with a Peer Support Specialist.',
         message_type: 'system'
       }, sessionData.id);
 

@@ -373,7 +373,7 @@ const englishTranslations = {
       toolSuggestions: {
         breathingRoom: 'Here\'s what I\'m thinking - you need breathing room. Hit the breathing tool. Ten minutes. That\'s the ask.',
         urgeTracker: 'Listen, sounds like your brain\'s racing. Try the urge tracker. Catch the spiral early.',
-        peerChat: 'You\'re not alone, even if it feels like it. Here\'s a thought - peer chat is how we start proving that.',
+        peerChat: 'You\'re not alone, even if it feels like it. Here\'s a thought - talking to a Peer Support Specialist is how we start proving that.',
         gratitude: 'Your mind\'s stuck in the negative loop. Would you try the gratitude tool? Find three things. Real ones.',
         strengthMeter: 'Here\'s an idea - check your recovery strength. See where you really stand right now.'
       },
@@ -402,7 +402,7 @@ const englishTranslations = {
       actions: {
         saveWisdom: 'Save This',
         fieldStory: 'Field Story',
-        talkToPeer: 'Talk to Peer'
+        talkToPeer: 'Talk to Peer Support Specialist'
       },
       fieldStories: [
         'Met someone at a meeting who couldn\'t sleep for weeks after getting clean. She was exhausted, angry, and ready to give up. Her sponsor told her to write down three things she was grateful for every single day, even when she hated it. She said those gratitude lists saved her life because they forced her to find light when everything felt dark.',
@@ -1108,7 +1108,7 @@ const spanishTranslations = {
     toolSuggestions: {
       breathingRoom: 'Necesitas espacio para respirar. Usa la herramienta de respiración. Diez minutos. Eso es lo que pido.',
       urgeTracker: 'Parece que tu cerebro está acelerado. Prueba el rastreador de impulsos. Atrapa la espiral temprano.',
-      peerChat: 'No estás solo, aunque se sienta así. El chat con compañeros es como empezamos a probarlo.',
+      peerChat: 'No estás solo, aunque se sienta así. Hablar con un Especialista de Apoyo Entre Pares es como empezamos a probarlo.',
       gratitude: 'Tu mente está atascada en el bucle negativo. Herramienta de gratitud - encuentra tres cosas. Reales.',
       strengthMeter: 'Revisa tu fuerza de recuperación. Ve dónde realmente estás parado ahora.'
     },
@@ -1137,7 +1137,7 @@ const spanishTranslations = {
     actions: {
       toolBelt: 'Agregar al Cinturón',
       fieldStory: 'Historia del Campo',
-      talkToPeer: 'Hablar con Compañero'
+      talkToPeer: 'Hablar con Especialista de Apoyo Entre Pares'
     },
     fieldStories: [
       'Conocí a alguien en una reunión que no podía dormir durante semanas después de limpiarse. Estaba agotada, enojada y lista para rendirse. Su padrino le dijo que escribiera tres cosas por las que estaba agradecida todos los días, incluso cuando lo odiaba. Dijo que esas listas de gratitud le salvaron la vida porque la obligaron a encontrar luz cuando todo se sentía oscuro.',
