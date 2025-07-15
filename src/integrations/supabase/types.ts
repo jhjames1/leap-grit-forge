@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_generated_journeys: {
+        Row: {
+          created_at: string
+          days: Json
+          focus_area: string
+          id: string
+          is_active: boolean
+          journey_name: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          days: Json
+          focus_area: string
+          id?: string
+          is_active?: boolean
+          journey_name: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          days?: Json
+          focus_area?: string
+          id?: string
+          is_active?: boolean
+          journey_name?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      ai_phase_modifiers: {
+        Row: {
+          created_at: string
+          extras: Json | null
+          id: string
+          is_active: boolean
+          journey_stage: string
+          pacing: string
+          phase_name: string
+          tone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          extras?: Json | null
+          id?: string
+          is_active?: boolean
+          journey_stage: string
+          pacing: string
+          phase_name: string
+          tone: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          extras?: Json | null
+          id?: string
+          is_active?: boolean
+          journey_stage?: string
+          pacing?: string
+          phase_name?: string
+          tone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cbt_game_sessions: {
         Row: {
           coins_earned: number
@@ -535,6 +604,78 @@ export type Database = {
         }
         Relationships: []
       }
+      user_journey_assignments: {
+        Row: {
+          assigned_at: string
+          id: string
+          is_active: boolean
+          journey_id: string
+          phase_modifier_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          is_active?: boolean
+          journey_id: string
+          phase_modifier_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          is_active?: boolean
+          journey_id?: string
+          phase_modifier_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_journey_assignments_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "ai_generated_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_journey_assignments_phase_modifier_id_fkey"
+            columns: ["phase_modifier_id"]
+            isOneToOne: false
+            referencedRelation: "ai_phase_modifiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_recovery_plans: {
+        Row: {
+          generated_at: string
+          id: string
+          is_current: boolean
+          plan_content: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          is_current?: boolean
+          plan_content: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          is_current?: boolean
+          plan_content?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -552,6 +693,48 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      week1_universal_data: {
+        Row: {
+          completed_at: string | null
+          core_why: string | null
+          created_at: string
+          id: string
+          identity_words: string[] | null
+          reflection: string | null
+          safe_space: string | null
+          support_triangle: Json | null
+          triggers: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          core_why?: string | null
+          created_at?: string
+          id?: string
+          identity_words?: string[] | null
+          reflection?: string | null
+          safe_space?: string | null
+          support_triangle?: Json | null
+          triggers?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          core_why?: string | null
+          created_at?: string
+          id?: string
+          identity_words?: string[] | null
+          reflection?: string | null
+          safe_space?: string | null
+          support_triangle?: Json | null
+          triggers?: Json | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

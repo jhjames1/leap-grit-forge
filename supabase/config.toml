@@ -2,3 +2,9 @@ project_id = "xefypnmvsikrdxzepgqf"
 
 [functions.foreman-chat]
 verify_jwt = false
+
+[functions.generate-journey-content]
+verify_jwt = false
+
+[functions.admin-import-journeys]
+verify_jwt = true
