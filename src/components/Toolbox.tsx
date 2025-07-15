@@ -9,7 +9,8 @@ import {
   Heart, 
   TrendingUp,
   Bot,
-  Radar
+  Radar,
+  FileText
 } from 'lucide-react';
 
 import BreathingExercise from '@/components/BreathingExercise';
@@ -17,7 +18,9 @@ import UrgeTracker from '@/components/UrgeTracker';
 import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
 import TriggerIdentifier from '@/components/TriggerIdentifier';
 import ThoughtPatternSorter from '@/components/ThoughtPatternSorter';
+import RecoveryPlanViewer from '@/components/RecoveryPlanViewer';
 import { useUserData } from '@/hooks/useUserData';
+import { useAIJourney } from '@/hooks/useAIJourney';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { trackingManager } from '@/utils/trackingManager';
 import { logger } from '@/utils/logger';
@@ -32,9 +35,11 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const [showGratitudeLog, setShowGratitudeLog] = useState(false);
   const [showTriggerIdentifier, setShowTriggerIdentifier] = useState(false);
   const [showThoughtPatternSorter, setShowThoughtPatternSorter] = useState(false);
+  const [showRecoveryPlan, setShowRecoveryPlan] = useState(false);
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const { userData, logActivity, updateToolboxStats } = useUserData();
+  const { recoveryPlan, isWeek1Complete } = useAIJourney();
   const { t } = useLanguage();
 
   // Get real-time tracking data and activity updates
@@ -226,6 +231,16 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       color: 'bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary',
       badge: 'Mind Training',
       badgeColor: 'bg-primary'
+    },
+    {
+      id: 'recovery-plan',
+      title: 'My Recovery Plan',
+      description: recoveryPlan ? 'View your personalized recovery plan' : 'Complete Week 1 to unlock your recovery plan',
+      icon: FileText,
+      color: recoveryPlan ? 'bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800' : 'bg-gradient-to-br from-muted to-muted hover:from-muted/80 hover:to-muted',
+      badge: recoveryPlan ? 'Ready' : 'Locked',
+      badgeColor: recoveryPlan ? 'bg-emerald-600' : 'bg-muted-foreground',
+      disabled: !recoveryPlan
     }
   ];
 
@@ -252,6 +267,12 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         break;
       case 'thought-pattern-sorter':
         setShowThoughtPatternSorter(true);
+        break;
+      case 'recovery-plan':
+        if (recoveryPlan) {
+          setShowRecoveryPlan(true);
+          logActivity('Opened Recovery Plan', 'Viewed personalized recovery plan');
+        }
         break;
       default:
         logger.debug('Tool opened', { toolId });
@@ -381,18 +402,31 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       <div className="grid grid-cols-2 gap-4">
         {tools.filter(tool => tool.id !== 'panic').map((tool) => {
           const Icon = tool.icon;
+          const isDisabled = tool.disabled;
           
           return (
             <Card 
               key={tool.id}
-              className="bg-card p-4 rounded-lg cursor-pointer hover:shadow-md transition-all duration-300 border-0 shadow-none"
-              onClick={() => handleToolClick(tool.id)}
+              className={`bg-card p-4 rounded-lg transition-all duration-300 border-0 shadow-none ${
+                isDisabled 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : 'cursor-pointer hover:shadow-md'
+              }`}
+              onClick={() => !isDisabled && handleToolClick(tool.id)}
             >
               <div className="flex flex-col items-center space-y-2">
-                <div className="bg-primary p-3 rounded-lg">
-                  <Icon className="text-primary-foreground" size={20} />
+                <div className={`p-3 rounded-lg ${
+                  isDisabled ? 'bg-muted' : 'bg-primary'
+                }`}>
+                  <Icon className={`${
+                    isDisabled ? 'text-muted-foreground' : 'text-primary-foreground'
+                  }`} size={20} />
                 </div>
-                <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide text-center">{tool.title.toUpperCase()}</h3>
+                <h3 className={`font-fjalla font-bold text-sm tracking-wide text-center ${
+                  isDisabled ? 'text-muted-foreground' : 'text-card-foreground'
+                }`}>
+                  {tool.title.toUpperCase()}
+                </h3>
                 <p className="text-muted-foreground text-sm text-center">{tool.description}</p>
               </div>
             </Card>
@@ -464,6 +498,12 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
         <ThoughtPatternSorter 
           onClose={handleThoughtPatternSorterComplete}
           onCancel={handleThoughtPatternSorterClose}
+        />
+      )}
+
+      {showRecoveryPlan && (
+        <RecoveryPlanViewer 
+          onClose={() => setShowRecoveryPlan(false)}
         />
       )}
     </div>

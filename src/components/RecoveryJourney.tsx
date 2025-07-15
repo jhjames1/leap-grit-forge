@@ -324,10 +324,19 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
       
       // Check if we have an AI journey and Week 1 is complete
       if (hasAIJourney && isWeek1Complete) {
-        toast({
-          title: "Recovery Plan Generated!",
-          description: "Your personalized recovery plan has been created based on your Week 1 responses.",
-        });
+        // Auto-generate recovery plan if not already generated
+        if (!recoveryPlan) {
+          toast({
+            title: "Generating Recovery Plan...",
+            description: "Creating your personalized recovery plan from Week 1 data.",
+          });
+          // The plan will be generated in the background
+        } else {
+          toast({
+            title: "Recovery Plan Ready!",
+            description: "Your personalized recovery plan is now available in the Toolbox.",
+          });
+        }
       }
     } else {
       toast({

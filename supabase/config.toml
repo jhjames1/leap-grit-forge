@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.admin-import-journeys]
 verify_jwt = true
+
+[functions.generate-recovery-plan]
+verify_jwt = true
