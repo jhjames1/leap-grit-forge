@@ -229,14 +229,28 @@ export const useUserData = () => {
           journeyResponses: updates.journeyResponses ? Object.keys(updates.journeyResponses) : undefined
         });
         
+        // Save to storage first
         SecureStorage.setUserData(currentUser, updated);
+        
+        // Then update state with validation
         setUserData(updated);
+        
+        // Log the update
         logSecurityEvent('user_data_updated', { username: currentUser });
         
         logger.debug('User data updated successfully', {
           completedDays: updated.journeyProgress?.completedDays?.length || 0,
-          journeyResponsesCount: Object.keys(updated.journeyResponses || {}).length
+          journeyResponsesCount: Object.keys(updated.journeyResponses || {}).length,
+          isJourneyProgress: !!updates.journeyProgress
         });
+        
+        // If this is a journey progress update, trigger additional logging
+        if (updates.journeyProgress) {
+          logger.debug('Journey progress update details', {
+            completedDaysArray: updated.journeyProgress?.completedDays,
+            completionDates: updated.journeyProgress?.completionDates
+          });
+        }
       } else {
         logger.error('No existing user data found for update');
       }

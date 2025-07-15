@@ -598,7 +598,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
     }
   };
 
-  const handleCompleteDay = () => {
+  const handleCompleteDay = async () => {
     logger.debug('Starting day completion', { day, allActivitiesComplete, userData: !!userData });
     
     if (!allActivitiesComplete) {
@@ -654,7 +654,11 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
         newCompletedDays: updatedProgress.completedDays
       });
       
+      // Update user data and ensure it's saved
       updateUserData({ journeyProgress: updatedProgress });
+      
+      // Wait a moment for the update to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       logger.debug('Journey progress updated successfully');
       
@@ -664,17 +668,19 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
         description: "Great job! Your progress has been saved.",
       });
       
-      // Call completion callback
-      logger.debug('Calling onComplete callback');
-      onComplete();
-      
-      // Navigate to home after the completion notification disappears
+      // Call completion callback with a slight delay to ensure state sync
       setTimeout(() => {
-        if (onNavigateToHome) {
-          logger.debug('Navigating to home');
-          onNavigateToHome();
-        }
-      }, 2000);
+        logger.debug('Calling onComplete callback');
+        onComplete();
+        
+        // Navigate to home after another delay
+        setTimeout(() => {
+          if (onNavigateToHome) {
+            logger.debug('Navigating to home');
+            onNavigateToHome();
+          }
+        }, 500);
+      }, 200);
       
     } catch (error) {
       logger.error('Error completing day', error);

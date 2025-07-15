@@ -350,8 +350,18 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
     // Close the modal
     setSelectedDay(null);
     
-    // Force re-render to update UI immediately
+    // Force multiple re-renders to ensure state sync
     setForceRender(prev => prev + 1);
+    setTimeout(() => setForceRender(prev => prev + 1), 100);
+    setTimeout(() => setForceRender(prev => prev + 1), 300);
+    
+    // Refresh user data from storage to ensure we have latest state
+    if (currentUser) {
+      const refreshedData = SecureStorage.getUserData(currentUser);
+      if (refreshedData) {
+        setUserData(refreshedData);
+      }
+    }
     
     // Update current day if this was the active day
     if (day === actualCurrentDay && day < totalDays) {
