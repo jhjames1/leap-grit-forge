@@ -17,6 +17,7 @@ import { journeyManager } from '@/utils/journeyManager';
 import { trackingManager } from '@/utils/trackingManager';
 import { notificationManager } from '@/utils/notificationManager';
 import { testingMode } from '@/utils/testingMode';
+import { SecureStorage } from '@/utils/secureStorage';
 
 interface RecoveryJourneyProps {
   onNavigateToHome?: () => void;
@@ -31,7 +32,7 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   const [phaseModifier, setPhaseModifier] = useState<any>(null);
   const [showWeek1Collection, setShowWeek1Collection] = useState(false);
   const [week1CollectionDay, setWeek1CollectionDay] = useState<number | null>(null);
-  const { userData, logActivity } = useUserData();
+  const { userData, logActivity, currentUser, updateUserData, setUserData } = useUserData();
   const { toast } = useToast();
   const { t } = useLanguage();
   const totalDays = 90;
@@ -109,7 +110,15 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   
   // Add useEffect to watch for userData changes and force re-render
   useEffect(() => {
-    logger.debug('Journey progress updated', { completedDaysCount: completedDays.length, currentDay: actualCurrentDay });
+    logger.debug('Journey progress updated', { 
+      completedDaysCount: completedDays.length, 
+      currentDay: actualCurrentDay,
+      userDataLastAccess: userData?.lastAccess,
+      completedDays: completedDays
+    });
+    
+    // Force re-render when userData changes to ensure UI is in sync
+    setForceRender(prev => prev + 1);
     
     // Schedule notifications for incomplete days
     if (userData && actualCurrentDay <= totalDays) {
@@ -124,7 +133,26 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
         );
       }
     }
-  }, [userData?.journeyProgress?.completedDays, forceRender, actualCurrentDay]);
+  }, [userData?.journeyProgress?.completedDays, userData?.lastAccess, actualCurrentDay]);
+
+  // Additional effect to ensure component refreshes when returning from navigation
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && userData && currentUser) {
+        logger.debug('Page became visible, refreshing user data');
+        // Reload user data to ensure we have the latest state
+        const refreshedData = SecureStorage.getUserData(currentUser);
+        if (refreshedData) {
+          // Force re-render by updating the forceRender state
+          setForceRender(prev => prev + 1);
+          updateUserData(refreshedData);
+        }
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [userData, currentUser, updateUserData]);
 
   // Check if it's past 12:01 AM
   const isPast1201AM = () => {
@@ -380,7 +408,18 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   };
 
   const getDayStatusForDay = (day: number) => {
-    return getDayStatus(userData, day);
+    // Always use the most current userData for status calculation
+    const currentUserData = userData || null;
+    const status = getDayStatus(currentUserData, day);
+    
+    logger.debug('Day status calculated', { 
+      day, 
+      status, 
+      completedDays: currentUserData?.journeyProgress?.completedDays || [],
+      hasUserData: !!currentUserData
+    });
+    
+    return status;
   };
 
   const getButtonText = (day: number, status: string) => {

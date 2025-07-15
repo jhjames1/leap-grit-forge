@@ -39,6 +39,7 @@ interface UserData {
   supportStyle?: string;
   dailyStats?: Record<string, any>;
   streakData?: any;
+  lastAccess?: number;
 }
 
 export const useUserData = () => {
@@ -224,14 +225,18 @@ export const useUserData = () => {
         logger.debug('Updating user data', { 
           username: currentUser, 
           updates: Object.keys(updates),
-          journeyProgress: updates.journeyProgress
+          journeyProgress: updates.journeyProgress,
+          journeyResponses: updates.journeyResponses ? Object.keys(updates.journeyResponses) : undefined
         });
         
         SecureStorage.setUserData(currentUser, updated);
         setUserData(updated);
         logSecurityEvent('user_data_updated', { username: currentUser });
         
-        logger.debug('User data updated successfully');
+        logger.debug('User data updated successfully', {
+          completedDays: updated.journeyProgress?.completedDays?.length || 0,
+          journeyResponsesCount: Object.keys(updated.journeyResponses || {}).length
+        });
       } else {
         logger.error('No existing user data found for update');
       }
@@ -282,6 +287,7 @@ export const useUserData = () => {
     logActivity,
     updateToolboxStats,
     loadUserData,
-    logout
+    logout,
+    setUserData // Export setUserData for manual state updates
   };
 };

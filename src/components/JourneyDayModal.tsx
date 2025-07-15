@@ -70,6 +70,12 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
     const savedStates = userData?.journeyResponses || {};
     const dayStates: ActivityState = {};
     
+    logger.debug('Loading activity states for day', { 
+      day, 
+      savedStates: Object.keys(savedStates).filter(key => key.startsWith(`day_${day}_`)),
+      allSavedStates: Object.keys(savedStates)
+    });
+    
     Object.keys(savedStates).forEach(key => {
       if (key.startsWith(`day_${day}_`)) {
         const activityKey = key.replace(`day_${day}_`, '');
@@ -85,7 +91,13 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
     // Set current activity index based on completed activities
     const completedCount = Object.keys(dayStates).length;
     setCurrentActivityIndex(completedCount);
-  }, [day, userData]);
+    
+    logger.debug('Activity states loaded', { 
+      day, 
+      completedCount, 
+      dayStates: Object.keys(dayStates)
+    });
+  }, [day, userData?.journeyResponses, userData?.lastAccess]);
 
   const markActivityComplete = (activityKey: string, data?: any) => {
     const newStates = {
@@ -94,12 +106,21 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
     };
     setActivityStates(newStates);
     
-    // Save to user data
+    // Save to user data with enhanced logging
+    const updatedResponses = {
+      ...userData?.journeyResponses,
+      [`day_${day}_${activityKey}`]: data || true
+    };
+    
+    logger.debug('Marking activity complete', { 
+      day, 
+      activityKey, 
+      data,
+      updatedResponses: Object.keys(updatedResponses)
+    });
+    
     updateUserData({
-      journeyResponses: {
-        ...userData?.journeyResponses,
-        [`day_${day}_${activityKey}`]: data || true
-      }
+      journeyResponses: updatedResponses
     });
     
     // Move to next activity
