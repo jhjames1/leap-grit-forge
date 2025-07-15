@@ -33,12 +33,15 @@ Your communication variety - resist always recommending tools:
 - Remember: Sometimes just being heard is more powerful than any tool
 
 Your resource recommendations:
-- You have access to curated resources including inspirational quotes, success stories, professional tips, and self-care content
+- You have access to curated resources including inspirational quotes, success stories, professional tips, videos, images, and audio content
+- Content types available: quotes, videos, images, audio, stories, tips, and more
+- When users ask "do you have videos?" or similar, you DO have various content types - check what's available and mention them specifically
 - When appropriate, you can naturally incorporate these resources into conversations
 - Choose resources that match the user's current emotional state and situation
 - Present resources as supportive additions to conversation, not replacements for dialogue
 - Use resources to enhance your guidance, not as automatic responses
-- Categories available: daily_inspiration, success_stories, professional_tips, self_care
+- When offering media content, be specific: "I have a powerful video about..." or "There's an inspiring image that..."
+- Categories available: daily_inspiration, success_stories, professional_tips, self_care, crisis_support, motivational, educational, field_story
 
 Your recovery guidance approach:
 - Support both casual conversation AND recovery progress
@@ -111,6 +114,28 @@ async function getRelevantResources(userEmotionalState: string, messageContent: 
   try {
     console.log('🔍 Fetching resources for emotional state:', userEmotionalState, 'and message:', messageContent.substring(0, 50) + '...');
 
+    // Detect if user is asking for specific content types
+    const contentTypeDetection = {
+      video: ['video', 'videos', 'watch', 'watching', 'see', 'viewing', 'play'],
+      image: ['image', 'images', 'picture', 'pictures', 'photo', 'photos', 'visual'],
+      audio: ['audio', 'listen', 'listening', 'hear', 'hearing', 'sound'],
+      quote: ['quote', 'quotes', 'saying', 'sayings', 'words', 'phrase'],
+      story: ['story', 'stories', 'experience', 'experiences'],
+      tip: ['tip', 'tips', 'advice', 'guidance', 'help']
+    };
+
+    const messageWords = messageContent.toLowerCase().split(' ');
+    let requestedContentType = null;
+
+    // Check if user is specifically asking for a content type
+    for (const [type, keywords] of Object.entries(contentTypeDetection)) {
+      if (keywords.some(keyword => messageWords.includes(keyword))) {
+        requestedContentType = type;
+        console.log('🎯 Detected content type request:', type);
+        break;
+      }
+    }
+
     const { data: resources } = await supabase
       .from('foreman_content')
       .select('*')
@@ -124,6 +149,21 @@ async function getRelevantResources(userEmotionalState: string, messageContent: 
 
     console.log('📚 Found', resources.length, 'total resources in database');
 
+    // Filter by content type if specifically requested
+    let filteredResources = resources;
+    if (requestedContentType) {
+      filteredResources = resources.filter((resource: any) => 
+        resource.content_type === requestedContentType
+      );
+      console.log('🎯 Filtered to', filteredResources.length, 'resources of type:', requestedContentType);
+      
+      // If no resources of requested type, fall back to all resources
+      if (filteredResources.length === 0) {
+        console.log('⚠️ No resources found for requested type, falling back to all resources');
+        filteredResources = resources;
+      }
+    }
+
     // Enhanced matching using trigger keywords, mood targeting, and content relevance
     const keywords = messageContent.toLowerCase().split(' ').filter(word => word.length > 2);
     const emotionalKeywords = userEmotionalState.toLowerCase().split(' ');
@@ -132,9 +172,15 @@ async function getRelevantResources(userEmotionalState: string, messageContent: 
     console.log('🔍 Analyzing keywords:', allKeywords.slice(0, 10));
 
     // Score resources based on multiple factors
-    const scoredResources = resources.map((resource: any) => {
+    const scoredResources = filteredResources.map((resource: any) => {
       let score = resource.priority || 1; // Start with priority score
       const resourceText = `${resource.title} ${resource.content}`.toLowerCase();
+      
+      // MASSIVE boost for exact content type match
+      if (requestedContentType && resource.content_type === requestedContentType) {
+        score += 15;
+        console.log('🎯 Exact content type match:', requestedContentType, 'boosting score by 15');
+      }
       
       // Check trigger keywords (high weight)
       (resource.trigger_keywords || []).forEach((keyword: string) => {
@@ -170,7 +216,7 @@ async function getRelevantResources(userEmotionalState: string, messageContent: 
       .sort((a: any, b: any) => b.relevanceScore - a.relevanceScore)
       .slice(0, 3);
 
-    console.log('🏆 Top resources selected:', topResources.map(r => ({ title: r.title, score: r.relevanceScore })));
+    console.log('🏆 Top resources selected:', topResources.map(r => ({ title: r.title, type: r.content_type, score: r.relevanceScore })));
 
     return topResources;
       
