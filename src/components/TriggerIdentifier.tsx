@@ -122,8 +122,219 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
   };
 
   const handleExportPDF = () => {
-    // This would generate a PDF export
-    console.log('Exporting trigger map as PDF');
+    // Create a new window with the trigger map for printing
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    const printContent = generatePrintContent();
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Wait for content to load, then print
+    printWindow.onload = () => {
+      printWindow.print();
+      printWindow.close();
+    };
+  };
+
+  const generatePrintContent = () => {
+    const currentDate = new Date().toLocaleDateString();
+    const triggersByCategory = selectedCategories.map(categoryId => {
+      const category = categories.find(c => c.id === categoryId) || { id: categoryId, label: categoryId, color: 'bg-gray-500' };
+      return {
+        category,
+        triggers: triggers.filter(t => t.category === categoryId)
+      };
+    });
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Trigger Map - ${currentDate}</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            
+            .print-header {
+              border-bottom: 2px solid #000;
+              margin-bottom: 30px;
+              padding-bottom: 20px;
+            }
+            
+            .print-header h1 {
+              font-size: 28px;
+              margin-bottom: 10px;
+            }
+            
+            .print-header .date {
+              font-size: 14px;
+              color: #666;
+            }
+            
+            .category-section {
+              margin-bottom: 30px;
+              page-break-inside: avoid;
+            }
+            
+            .category-title {
+              font-size: 20px;
+              font-weight: 600;
+              margin-bottom: 15px;
+              color: #000;
+            }
+            
+            .trigger-card {
+              border: 1px solid #ddd;
+              border-radius: 8px;
+              padding: 15px;
+              margin-bottom: 15px;
+              page-break-inside: avoid;
+            }
+            
+            .trigger-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 10px;
+            }
+            
+            .trigger-name {
+              font-size: 16px;
+              font-weight: 500;
+            }
+            
+            .intensity-badge {
+              border: 1px solid #000;
+              padding: 4px 8px;
+              border-radius: 4px;
+              font-size: 12px;
+              font-weight: 500;
+            }
+            
+            .strategy-section {
+              margin-top: 10px;
+              padding-top: 10px;
+              border-top: 1px solid #eee;
+            }
+            
+            .strategy-label {
+              font-size: 14px;
+              font-weight: 500;
+              color: #666;
+            }
+            
+            .strategy-name {
+              font-size: 16px;
+              font-weight: 500;
+              color: #000;
+            }
+            
+            .summary {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 2px solid #000;
+            }
+            
+            .summary-stats {
+              display: flex;
+              gap: 30px;
+              margin-bottom: 20px;
+            }
+            
+            .stat-item {
+              text-align: center;
+            }
+            
+            .stat-number {
+              font-size: 24px;
+              font-weight: 600;
+              color: #000;
+            }
+            
+            .stat-label {
+              font-size: 14px;
+              color: #666;
+            }
+            
+            @media print {
+              body {
+                padding: 0;
+              }
+              
+              .print-header {
+                margin-bottom: 20px;
+              }
+              
+              .category-section {
+                page-break-inside: avoid;
+              }
+              
+              .trigger-card {
+                page-break-inside: avoid;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-header">
+            <h1>Personal Trigger Map</h1>
+            <div class="date">Generated on ${currentDate}</div>
+          </div>
+          
+          ${triggersByCategory.map(({ category, triggers: categoryTriggers }) => `
+            <div class="category-section">
+              <h2 class="category-title">${category.label} Triggers</h2>
+              ${categoryTriggers.map(trigger => {
+                const strategy = copingStrategies.find(s => s.id === trigger.copingStrategy);
+                return `
+                  <div class="trigger-card">
+                    <div class="trigger-header">
+                      <div class="trigger-name">${trigger.text}</div>
+                      <div class="intensity-badge">${getIntensityLabel(trigger.intensity)}</div>
+                    </div>
+                    <div class="strategy-section">
+                      <div class="strategy-label">Coping Strategy:</div>
+                      <div class="strategy-name">${strategy?.label || 'Unknown'}</div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `).join('')}
+          
+          <div class="summary">
+            <h2>Summary</h2>
+            <div class="summary-stats">
+              <div class="stat-item">
+                <div class="stat-number">${triggers.length}</div>
+                <div class="stat-label">Total Triggers</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number">${selectedCategories.length}</div>
+                <div class="stat-label">Categories</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-number">${Math.round(triggers.reduce((sum, t) => sum + t.intensity, 0) / triggers.length) || 0}</div>
+                <div class="stat-label">Avg Intensity</div>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
   };
 
   const handleStartUrgeTracker = () => {
