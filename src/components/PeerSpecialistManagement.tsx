@@ -265,6 +265,36 @@ const PeerSpecialistManagement = () => {
     setIsDialogOpen(true);
   };
 
+  const handleSoftDelete = async (specialist: PeerSpecialist) => {
+    try {
+      const { error } = await supabase
+        .from('peer_specialists')
+        .update({
+          is_active: false,
+          is_verified: false,
+          // Optional: Add a deleted_at timestamp for audit trail
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', specialist.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Specialist deactivated",
+        description: "Specialist has been deactivated while preserving their history",
+      });
+
+      fetchSpecialists();
+    } catch (error) {
+      console.error('Error deactivating specialist:', error);
+      toast({
+        title: "Error",
+        description: "Failed to deactivate specialist",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleStatusToggle = async (specialist: PeerSpecialist, field: 'is_active' | 'is_verified') => {
     try {
       let updateData: any = {};
@@ -790,6 +820,16 @@ const PeerSpecialistManagement = () => {
                           <Send size={16} />
                         </Button>
                       )}
+                      
+                      <Button
+                        onClick={() => handleSoftDelete(specialist)}
+                        variant="outline"
+                        size="sm"
+                        className="border-red-500 text-red-500 hover:bg-red-500/10"
+                        title="Deactivate specialist while preserving history"
+                      >
+                        <X size={16} />
+                      </Button>
                     </div>
                   </div>
                 </div>
