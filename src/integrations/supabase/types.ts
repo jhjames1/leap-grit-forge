@@ -1008,6 +1008,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_admin_role: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
+      find_user_by_email: {
+        Args: { user_email: string }
+        Returns: {
+          user_id: string
+          email: string
+          created_at: string
+          is_admin: boolean
+        }[]
+      }
       generate_invitation_token: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1015,6 +1028,15 @@ export type Database = {
       generate_temporary_password: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_admin_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_id: string
+          email: string
+          created_at: string
+          role_created_at: string
+        }[]
       }
       get_users_for_admin: {
         Args: Record<PropertyKey, never>
@@ -1027,6 +1049,14 @@ export type Database = {
       is_admin: {
         Args: { _user_id?: string }
         Returns: boolean
+      }
+      remove_admin_role: {
+        Args: { target_user_id: string }
+        Returns: Json
+      }
+      request_admin_password_reset: {
+        Args: { target_email: string }
+        Returns: Json
       }
     }
     Enums: {
