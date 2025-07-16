@@ -301,43 +301,67 @@ export type Database = {
       }
       peer_specialists: {
         Row: {
+          activated_at: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
           first_name: string
           id: string
+          invitation_expires_at: string | null
+          invitation_sent_at: string | null
+          invitation_token: string | null
+          invited_by_admin_id: string | null
           is_active: boolean | null
+          is_invitation_accepted: boolean | null
           is_verified: boolean | null
           last_name: string
+          must_change_password: boolean | null
           specialties: string[] | null
+          temporary_password_hash: string | null
           updated_at: string
           user_id: string
           years_experience: number | null
         }
         Insert: {
+          activated_at?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           first_name: string
           id?: string
+          invitation_expires_at?: string | null
+          invitation_sent_at?: string | null
+          invitation_token?: string | null
+          invited_by_admin_id?: string | null
           is_active?: boolean | null
+          is_invitation_accepted?: boolean | null
           is_verified?: boolean | null
           last_name: string
+          must_change_password?: boolean | null
           specialties?: string[] | null
+          temporary_password_hash?: string | null
           updated_at?: string
           user_id: string
           years_experience?: number | null
         }
         Update: {
+          activated_at?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           first_name?: string
           id?: string
+          invitation_expires_at?: string | null
+          invitation_sent_at?: string | null
+          invitation_token?: string | null
+          invited_by_admin_id?: string | null
           is_active?: boolean | null
+          is_invitation_accepted?: boolean | null
           is_verified?: boolean | null
           last_name?: string
+          must_change_password?: boolean | null
           specialties?: string[] | null
+          temporary_password_hash?: string | null
           updated_at?: string
           user_id?: string
           years_experience?: number | null
@@ -984,6 +1008,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_invitation_token: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_temporary_password: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_users_for_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
