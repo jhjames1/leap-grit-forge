@@ -197,14 +197,14 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
       setCurrentPhase('inhale');
       setCircleScale(1.8);
       if (voiceGuideEnabled) {
-        speakText(voicePrompts.inhale);
+        playVoiceGuidance('inhale');
       }
       
       setTimeout(() => {
         // Hold phase
         setCurrentPhase('hold');
         if (voiceGuideEnabled) {
-          speakText(voicePrompts.hold);
+          playVoiceGuidance('hold');
         }
         
         setTimeout(() => {
@@ -212,7 +212,7 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
           setCurrentPhase('exhale');
           setCircleScale(1);
           if (voiceGuideEnabled) {
-            speakText(voicePrompts.exhale);
+            playVoiceGuidance('exhale');
           }
           
           setTimeout(() => {
@@ -220,7 +220,7 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
             setCurrentPhase('rest');
             setBreathCount(prev => prev + 1);
             if (voiceGuideEnabled && Math.random() > 0.7) {
-              speakText(voicePrompts.rest);
+              playVoiceGuidance('rest');
             }
             
             setTimeout(() => {
@@ -236,60 +236,46 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
     runCycle();
   };
 
-  const speakText = (text: string) => {
+  const playVoiceGuidance = async (phase: string) => {
     try {
-      if (!speechSupported) {
-        addDebugMessage("Speech synthesis not supported");
+      if (!voiceGuideEnabled || voiceGuidance.length === 0) {
+        addDebugMessage("Voice guidance disabled or no audio available");
         return;
       }
 
-      if ('speechSynthesis' in window) {
-        // Cancel any existing speech
-        speechSynthesis.cancel();
+      // Find voice guidance audio that matches the current phase
+      const voiceAudio = voiceGuidance.find(audio => 
+        audio.title.toLowerCase().includes(phase.toLowerCase()) ||
+        audio.title.toLowerCase().includes('guidance')
+      );
+
+      if (voiceAudio && voiceAudio.media_url) {
+        addDebugMessage(`Playing voice guidance: ${voiceAudio.title}`);
         
-        const utterance = new SpeechSynthesisUtterance(text);
+        const audio = new Audio(voiceAudio.media_url);
+        audio.volume = 0.8;
         
-        // Configure for British female voice
-        const voices = speechSynthesis.getVoices();
-        addDebugMessage(`Available voices: ${voices.length}`);
-        
-        const britishFemale = voices.find(voice => 
-          voice.lang.includes('en-GB') && voice.name.toLowerCase().includes('female')
-        ) || voices.find(voice => 
-          voice.lang.includes('en-GB')
-        ) || voices.find(voice => 
-          voice.name.toLowerCase().includes('karen') || voice.name.toLowerCase().includes('amy')
-        );
-        
-        if (britishFemale) {
-          utterance.voice = britishFemale;
-          addDebugMessage(`Using voice: ${britishFemale.name}`);
-        } else {
-          addDebugMessage("No British voice found, using default");
-        }
-        
-        utterance.rate = 0.8;
-        utterance.pitch = 0.9;
-        utterance.volume = 0.7;
-        
-        utterance.onstart = () => addDebugMessage(`Speaking: "${text}"`);
-        utterance.onerror = (error) => {
-          addDebugMessage(`Speech error: ${error.error}`);
+        audio.addEventListener('error', (error) => {
+          addDebugMessage(`Voice audio error: ${error}`);
           toast({
             title: "Voice Guide Error",
-            description: "Voice guidance is having issues.",
+            description: "Voice guidance audio failed to play.",
             variant: "destructive",
           });
-        };
+        });
         
-        speechSynthesis.speak(utterance);
+        try {
+          await audio.play();
+          addDebugMessage(`Voice guidance played: ${phase}`);
+        } catch (error) {
+          addDebugMessage(`Voice audio autoplay prevented: ${error}`);
+        }
       } else {
-        addDebugMessage("Speech synthesis not available");
-        setSpeechSupported(false);
+        addDebugMessage(`No voice guidance found for phase: ${phase}`);
       }
     } catch (error) {
-      logger.error("Speech synthesis error", error);
-      addDebugMessage(`Speech failed: ${error}`);
+      logger.error("Voice guidance error", error);
+      addDebugMessage(`Voice guidance failed: ${error}`);
     }
   };
 
@@ -322,17 +308,9 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
       clearInterval(timerRef.current);
     }
     
-    // Show completion message with British female voice
-    const completionMessages = [
-      "That's what slowing down feels like. Solid work.",
-      "Good move. You just reset your system.",
-      "Steady breathing, steady mind. Well done."
-    ];
-    
-    const message = completionMessages[Math.floor(Math.random() * completionMessages.length)];
-    
+    // Play completion voice guidance
     if (voiceGuideEnabled) {
-      speakText(message);
+      playVoiceGuidance('completion');
     }
     
     setTimeout(() => {
@@ -355,7 +333,6 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-    speechSynthesis.cancel();
     if (onCancel) {
       onCancel();
     } else {
