@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import SecurityAuditPanel from './SecurityAuditPanel';
-import { adminAnalytics, type UserAnalytics } from '@/utils/adminAnalytics';
+import { adminAnalytics, type UserAnalytics } from '@/services/adminAnalyticsService';
 import { 
   Users, 
   TrendingUp, 
@@ -45,10 +45,10 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
     loadAnalytics();
   }, []);
 
-  const loadAnalytics = () => {
+  const loadAnalytics = async () => {
     setIsLoading(true);
     try {
-      const data = adminAnalytics.calculateUserAnalytics();
+      const data = await adminAnalytics.calculateUserAnalytics();
       setAnalytics(data);
     } catch (error) {
       console.error('Error loading analytics:', error);
@@ -71,11 +71,11 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
 
   // Format engagement trends for display
   const engagementTrends = analytics ? [
-    { domain: t('admin.domains.peerSupport'), avg: analytics.domainEngagement.peerSupport, trend: analytics.engagementTrends.peerSupport >= 50 ? '+' + (analytics.engagementTrends.peerSupport - 50) + '%' : '-' + (50 - analytics.engagementTrends.peerSupport) + '%' },
-    { domain: t('admin.domains.selfCare'), avg: analytics.domainEngagement.selfCare, trend: analytics.engagementTrends.selfCare >= 40 ? '+' + (analytics.engagementTrends.selfCare - 40) + '%' : '-' + (40 - analytics.engagementTrends.selfCare) + '%' },
-    { domain: t('admin.domains.structure'), avg: analytics.domainEngagement.structure, trend: analytics.engagementTrends.structure >= 30 ? '+' + (analytics.engagementTrends.structure - 30) + '%' : '-' + (30 - analytics.engagementTrends.structure) + '%' },
-    { domain: t('admin.domains.mood'), avg: analytics.domainEngagement.mood, trend: analytics.engagementTrends.mood >= 35 ? '+' + (analytics.engagementTrends.mood - 35) + '%' : '-' + (35 - analytics.engagementTrends.mood) + '%' },
-    { domain: t('admin.domains.cravingControl'), avg: analytics.domainEngagement.cravingControl, trend: analytics.engagementTrends.cravingControl >= 25 ? '+' + (analytics.engagementTrends.cravingControl - 25) + '%' : '-' + (25 - analytics.engagementTrends.cravingControl) + '%' }
+    { domain: t('admin.domains.peerSupport'), avg: analytics.domainEngagement.peerSupport, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
+    { domain: t('admin.domains.selfCare'), avg: analytics.domainEngagement.selfCare, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
+    { domain: t('admin.domains.structure'), avg: analytics.domainEngagement.structure, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
+    { domain: t('admin.domains.mood'), avg: analytics.domainEngagement.mood, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
+    { domain: t('admin.domains.cravingControl'), avg: analytics.domainEngagement.cravingControl, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' }
   ] : [];
 
   const getRiskColor = (risk: string) => {
@@ -282,8 +282,8 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
                   <div className="flex items-center space-x-3">
                     <div className={`w-4 h-4 ${getRiskColor(user.risk)} rounded-full`}></div>
                     <div>
-                      <span className="text-card-foreground font-medium font-source">{user.id}</span>
-                      <p className="text-muted-foreground text-sm font-source">{user.lastActive}</p>
+                      <span className="text-card-foreground font-medium font-source">{user.userId}</span>
+                      <p className="text-muted-foreground text-sm font-source">{user.lastActivity}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
