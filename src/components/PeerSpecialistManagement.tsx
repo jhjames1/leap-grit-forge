@@ -304,8 +304,11 @@ const PeerSpecialistManagement = () => {
         description: "Specialist has been moved to the Removed tab while preserving their history",
       });
 
-      fetchSpecialists();
-      fetchRemovedSpecialists();
+      // Refresh both lists to update the UI
+      await Promise.all([
+        fetchSpecialists(),
+        fetchRemovedSpecialists()
+      ]);
     } catch (error) {
       console.error('Error deactivating specialist:', error);
       toast({
