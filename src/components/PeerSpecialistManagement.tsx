@@ -287,17 +287,23 @@ const PeerSpecialistManagement = () => {
 
   const handleSoftDelete = async (specialist: PeerSpecialist) => {
     try {
+      console.log('Starting soft delete for specialist:', specialist.id);
+      
       const { error } = await supabase
         .from('peer_specialists')
         .update({
           is_active: false,
           is_verified: false,
-          // Optional: Add a deleted_at timestamp for audit trail
           updated_at: new Date().toISOString()
         })
         .eq('id', specialist.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Update error:', error);
+        throw error;
+      }
+
+      console.log('Specialist soft deleted successfully, refreshing lists...');
 
       toast({
         title: "Specialist moved to removed",
@@ -309,6 +315,8 @@ const PeerSpecialistManagement = () => {
         fetchSpecialists(),
         fetchRemovedSpecialists()
       ]);
+      
+      console.log('Lists refreshed after soft delete');
     } catch (error) {
       console.error('Error deactivating specialist:', error);
       toast({
