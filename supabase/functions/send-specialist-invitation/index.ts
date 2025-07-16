@@ -6,8 +6,16 @@ import { corsHeaders } from "../_shared/cors.ts";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 interface InvitationRequest {
-  specialistId: string;
+  specialistId?: string;
   adminId: string;
+  // For creating new specialists
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  bio?: string;
+  specialties?: string[];
+  years_experience?: number;
+  avatar_url?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -21,34 +29,102 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { specialistId, adminId }: InvitationRequest = await req.json();
+    const requestData: InvitationRequest = await req.json();
+    const { specialistId, adminId, email, first_name, last_name, bio, specialties, years_experience, avatar_url } = requestData;
 
-    console.log("Processing invitation for specialist:", specialistId);
+    let specialist: any;
+    let userEmail: string;
 
-    // Get specialist details
-    const { data: specialist, error: specialistError } = await supabase
-      .from("peer_specialists")
-      .select("*, user_id")
-      .eq("id", specialistId)
-      .single();
+    // Check if this is creating a new specialist or resending invitation
+    if (specialistId) {
+      // Resending invitation to existing specialist
+      console.log("Processing invitation resend for specialist:", specialistId);
 
-    if (specialistError || !specialist) {
-      console.error("Error fetching specialist:", specialistError);
-      return new Response(
-        JSON.stringify({ error: "Specialist not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+      // Get specialist details
+      const { data: existingSpecialist, error: specialistError } = await supabase
+        .from("peer_specialists")
+        .select("*, user_id")
+        .eq("id", specialistId)
+        .single();
 
-    // Get user email from auth
-    const { data: user, error: userError } = await supabase.auth.admin.getUserById(specialist.user_id);
+      if (specialistError || !existingSpecialist) {
+        console.error("Error fetching specialist:", specialistError);
+        return new Response(
+          JSON.stringify({ error: "Specialist not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
-    if (userError || !user.user?.email) {
-      console.error("Error fetching user email:", userError);
-      return new Response(
-        JSON.stringify({ error: "User email not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Get user email from auth
+      const { data: user, error: userError } = await supabase.auth.admin.getUserById(existingSpecialist.user_id);
+
+      if (userError || !user.user?.email) {
+        console.error("Error fetching user email:", userError);
+        return new Response(
+          JSON.stringify({ error: "User email not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      specialist = existingSpecialist;
+      userEmail = user.user.email;
+    } else {
+      // Creating new specialist
+      if (!email || !first_name || !last_name) {
+        return new Response(
+          JSON.stringify({ error: "Email, first name, and last name are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log("Creating new specialist for email:", email);
+
+      // Create auth user first
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: {
+          first_name,
+          last_name
+        }
+      });
+
+      if (authError) {
+        console.error("Error creating auth user:", authError);
+        return new Response(
+          JSON.stringify({ error: `Failed to create user: ${authError.message}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Create specialist profile
+      const { data: specialistData, error: specialistError } = await supabase
+        .from("peer_specialists")
+        .insert({
+          user_id: authData.user.id,
+          first_name,
+          last_name,
+          bio: bio || null,
+          specialties: specialties || [],
+          years_experience: years_experience || 0,
+          avatar_url: avatar_url || null,
+          is_verified: false,
+          is_active: true,
+          invited_by_admin_id: adminId
+        })
+        .select()
+        .single();
+
+      if (specialistError) {
+        console.error("Error creating specialist profile:", specialistError);
+        return new Response(
+          JSON.stringify({ error: "Failed to create specialist profile" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      specialist = specialistData;
+      userEmail = email;
     }
 
     // Generate invitation token and temporary password
@@ -86,7 +162,7 @@ const handler = async (req: Request): Promise<Response> => {
         is_invitation_accepted: false,
         must_change_password: true
       })
-      .eq("id", specialistId);
+      .eq("id", specialist.id);
 
     if (updateError) {
       console.error("Error updating specialist:", updateError);
@@ -102,7 +178,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send invitation email
     const emailResponse = await resend.emails.send({
       from: "LEAP Recovery <noreply@leap.com>",
-      to: [user.user.email],
+      to: [userEmail],
       subject: "You've been invited to join LEAP as a Peer Specialist",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -114,7 +190,7 @@ const handler = async (req: Request): Promise<Response> => {
           
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #333; margin-top: 0;">Your Login Credentials:</h3>
-            <p><strong>Email:</strong> ${user.user.email}</p>
+            <p><strong>Email:</strong> ${userEmail}</p>
             <p><strong>Temporary Password:</strong> <code style="background-color: #e0e0e0; padding: 4px 8px; border-radius: 4px; font-size: 16px; font-weight: bold;">${tempPassword}</code></p>
           </div>
           
@@ -157,7 +233,8 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: true, 
         message: "Invitation sent successfully",
-        emailId: emailResponse.data?.id
+        emailId: emailResponse.data?.id,
+        specialistId: specialist.id
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

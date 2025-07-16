@@ -146,47 +146,21 @@ const PeerSpecialistManagement = () => {
     try {
       setIsInviting(true);
 
-      // Create auth user first
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.email,
-        email_confirm: true,
-        user_metadata: {
-          first_name: formData.first_name,
-          last_name: formData.last_name
-        }
-      });
-
-      if (authError) throw authError;
-
-      // Create specialist profile
-      const { data: specialistData, error: specialistError } = await supabase
-        .from('peer_specialists')
-        .insert({
-          user_id: authData.user.id,
+      // Call edge function to create specialist and send invitation
+      const { data, error } = await supabase.functions.invoke('send-specialist-invitation', {
+        body: {
+          adminId: user.id,
+          email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
           bio: formData.bio,
           specialties: formData.specialties,
           years_experience: formData.years_experience,
-          avatar_url: formData.avatar_url || null,
-          is_verified: false,
-          is_active: true,
-          invited_by_admin_id: user.id
-        })
-        .select()
-        .single();
-
-      if (specialistError) throw specialistError;
-
-      // Send invitation email
-      const { error: invitationError } = await supabase.functions.invoke('send-specialist-invitation', {
-        body: {
-          specialistId: specialistData.id,
-          adminId: user.id
+          avatar_url: formData.avatar_url || null
         }
       });
 
-      if (invitationError) throw invitationError;
+      if (error) throw error;
 
       toast({
         title: "Success",
