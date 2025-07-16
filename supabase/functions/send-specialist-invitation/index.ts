@@ -249,6 +249,9 @@ const handler = async (req: Request): Promise<Response> => {
     // Send invitation email
     console.log("Attempting to send email to:", userEmail);
     
+    let emailSuccess = false;
+    let emailError = null;
+    
     try {
       const emailResponse = await resend.emails.send({
         from: "LEAP Recovery <onboarding@resend.dev>",
@@ -297,31 +300,34 @@ const handler = async (req: Request): Promise<Response> => {
 
       if (emailResponse.error) {
         console.error("Resend API error:", emailResponse.error);
-        return new Response(
-          JSON.stringify({ error: `Email service error: ${emailResponse.error}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        emailError = emailResponse.error;
+      } else {
+        console.log("Invitation sent successfully:", emailResponse.data);
+        emailSuccess = true;
       }
 
-      console.log("Invitation sent successfully:", emailResponse.data);
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "Invitation sent successfully",
-          emailId: emailResponse.data?.id,
-          specialistId: specialist.id
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-
-    } catch (emailError) {
-      console.error("Error sending email:", emailError);
-      return new Response(
-        JSON.stringify({ error: `Failed to send email: ${emailError.message}` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    } catch (error) {
+      console.error("Error sending email:", error);
+      emailError = error;
     }
+
+    // Always return success if specialist was created, regardless of email status
+    const responseMessage = emailSuccess 
+      ? "Specialist created and invitation email sent successfully"
+      : `Specialist created successfully, but email could not be sent: ${emailError?.message || emailError}`;
+    
+    console.log("Final response:", responseMessage);
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: responseMessage,
+        specialistId: specialist.id,
+        emailSent: emailSuccess,
+        emailError: emailError ? String(emailError) : null
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
 
   } catch (error) {
     console.error("Error in send-specialist-invitation function:", error);
