@@ -3,8 +3,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { Wind, Volume2, VolumeX, Play, Pause, RotateCcw } from 'lucide-react';
+import { Wind, Volume2, VolumeX, Play, Pause, RotateCcw, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 
 interface BreathingExerciseProps {
   onClose: () => void;
@@ -12,6 +14,9 @@ interface BreathingExerciseProps {
 }
 
 const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
+  const { toast } = useToast();
+  
+  // Session state
   const [isStarted, setIsStarted] = useState(false);
   const [sessionLength, setSessionLength] = useState(90);
   const [backgroundSound, setBackgroundSound] = useState('');
@@ -21,12 +26,27 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
   const [timeLeft, setTimeLeft] = useState(90);
   const [isPlaying, setIsPlaying] = useState(false);
   const [circleScale, setCircleScale] = useState(1);
+  
+  // Audio state
   const [backgroundSounds, setBackgroundSounds] = useState<Array<{id: string, title: string, media_url: string}>>([]);
   const [voiceGuidance, setVoiceGuidance] = useState<Array<{id: string, title: string, media_url: string}>>([]);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   
+  // Debug and status state
+  const [isLoading, setIsLoading] = useState(true);
+  const [audioSupported, setAudioSupported] = useState(true);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const [audioPermissionGranted, setAudioPermissionGranted] = useState(false);
+  const [debugMessages, setDebugMessages] = useState<string[]>([]);
+  
   const timerRef = useRef<NodeJS.Timeout>();
   const breathTimerRef = useRef<NodeJS.Timeout>();
+
+  // Debug logging function
+  const addDebugMessage = (message: string) => {
+    logger.debug(`[BreathingExercise] ${message}`);
+    setDebugMessages(prev => [...prev.slice(-4), message]); // Keep last 5 messages
+  };
 
   // Fallback background sounds if no database content is available
   const fallbackBackgroundSounds = [
@@ -50,36 +70,114 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
     rest: "You're steady, you're solid"
   };
 
-  const startSession = () => {
-    setIsStarted(true);
-    setIsPlaying(true);
-    setTimeLeft(sessionLength);
-    setBreathCount(0);
-    startBackgroundAudio();
-    startBreathingCycle();
-    
-    // Main session timer
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          endSession();
-          return 0;
+  const startSession = async () => {
+    try {
+      addDebugMessage("Starting breathing session...");
+      
+      // Check audio permissions first
+      if (!audioPermissionGranted) {
+        try {
+          await navigator.mediaDevices.getUserMedia({ audio: true });
+          setAudioPermissionGranted(true);
+          addDebugMessage("Audio permission granted");
+          toast({
+            title: "Audio Permission Granted",
+            description: "Background audio and voice guidance are now available.",
+          });
+        } catch (error) {
+          addDebugMessage("Audio permission denied");
+          toast({
+            title: "Audio Permission Required",
+            description: "Some features may not work without audio permission.",
+            variant: "destructive",
+          });
         }
-        return prev - 1;
+      }
+
+      setIsStarted(true);
+      setIsPlaying(true);
+      setTimeLeft(sessionLength);
+      setBreathCount(0);
+      
+      addDebugMessage(`Session length: ${sessionLength}s, Voice: ${voiceGuideEnabled}, Background: ${backgroundSound}`);
+      
+      await startBackgroundAudio();
+      startBreathingCycle();
+      
+      // Main session timer
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            endSession();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      
+      addDebugMessage("Session started successfully");
+    } catch (error) {
+      logger.error("Failed to start session", error);
+      toast({
+        title: "Session Start Failed",
+        description: "There was an issue starting your breathing session.",
+        variant: "destructive",
       });
-    }, 1000);
+    }
   };
 
-  const startBackgroundAudio = () => {
-    const selectedSound = backgroundSounds.find(sound => sound.id === backgroundSound);
-    if (selectedSound && selectedSound.media_url && selectedSound.id !== 'silent') {
-      const audio = new Audio(selectedSound.media_url);
-      audio.loop = true;
-      audio.volume = 0.3;
-      audio.play().catch(error => {
-        console.log('Audio autoplay prevented:', error);
-      });
-      setAudioElement(audio);
+  const startBackgroundAudio = async () => {
+    try {
+      const selectedSound = backgroundSounds.find(sound => sound.id === backgroundSound);
+      addDebugMessage(`Attempting to play background sound: ${backgroundSound}`);
+      
+      if (selectedSound && selectedSound.media_url && selectedSound.id !== 'silent') {
+        addDebugMessage(`Loading audio: ${selectedSound.title}`);
+        const audio = new Audio(selectedSound.media_url);
+        audio.loop = true;
+        audio.volume = 0.3;
+        
+        // Add event listeners for debugging
+        audio.addEventListener('canplay', () => {
+          addDebugMessage("Audio can play");
+        });
+        
+        audio.addEventListener('error', (error) => {
+          addDebugMessage(`Audio error: ${error}`);
+          toast({
+            title: "Audio Error",
+            description: "Background audio failed to load.",
+            variant: "destructive",
+          });
+        });
+        
+        try {
+          await audio.play();
+          addDebugMessage("Background audio started successfully");
+          setAudioElement(audio);
+        } catch (error) {
+          addDebugMessage(`Audio autoplay prevented: ${error}`);
+          toast({
+            title: "Audio Autoplay Blocked",
+            description: "Click anywhere to enable background audio.",
+          });
+          
+          // Create user interaction handler
+          const enableAudio = () => {
+            audio.play().then(() => {
+              addDebugMessage("Audio enabled after user interaction");
+              setAudioElement(audio);
+            });
+            document.removeEventListener('click', enableAudio);
+          };
+          document.addEventListener('click', enableAudio);
+        }
+      } else {
+        addDebugMessage("No background sound selected or silent mode");
+      }
+    } catch (error) {
+      logger.error("Failed to start background audio", error);
+      addDebugMessage(`Background audio failed: ${error}`);
     }
   };
 
@@ -137,31 +235,59 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
   };
 
   const speakText = (text: string) => {
-    if ('speechSynthesis' in window) {
-      // Cancel any existing speech
-      speechSynthesis.cancel();
-      
-      const utterance = new SpeechSynthesisUtterance(text);
-      
-      // Configure for British female voice
-      const voices = speechSynthesis.getVoices();
-      const britishFemale = voices.find(voice => 
-        voice.lang.includes('en-GB') && voice.name.toLowerCase().includes('female')
-      ) || voices.find(voice => 
-        voice.lang.includes('en-GB')
-      ) || voices.find(voice => 
-        voice.name.toLowerCase().includes('karen') || voice.name.toLowerCase().includes('amy')
-      );
-      
-      if (britishFemale) {
-        utterance.voice = britishFemale;
+    try {
+      if (!speechSupported) {
+        addDebugMessage("Speech synthesis not supported");
+        return;
       }
-      
-      utterance.rate = 0.8;
-      utterance.pitch = 0.9;
-      utterance.volume = 0.7;
-      
-      speechSynthesis.speak(utterance);
+
+      if ('speechSynthesis' in window) {
+        // Cancel any existing speech
+        speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Configure for British female voice
+        const voices = speechSynthesis.getVoices();
+        addDebugMessage(`Available voices: ${voices.length}`);
+        
+        const britishFemale = voices.find(voice => 
+          voice.lang.includes('en-GB') && voice.name.toLowerCase().includes('female')
+        ) || voices.find(voice => 
+          voice.lang.includes('en-GB')
+        ) || voices.find(voice => 
+          voice.name.toLowerCase().includes('karen') || voice.name.toLowerCase().includes('amy')
+        );
+        
+        if (britishFemale) {
+          utterance.voice = britishFemale;
+          addDebugMessage(`Using voice: ${britishFemale.name}`);
+        } else {
+          addDebugMessage("No British voice found, using default");
+        }
+        
+        utterance.rate = 0.8;
+        utterance.pitch = 0.9;
+        utterance.volume = 0.7;
+        
+        utterance.onstart = () => addDebugMessage(`Speaking: "${text}"`);
+        utterance.onerror = (error) => {
+          addDebugMessage(`Speech error: ${error.error}`);
+          toast({
+            title: "Voice Guide Error",
+            description: "Voice guidance is having issues.",
+            variant: "destructive",
+          });
+        };
+        
+        speechSynthesis.speak(utterance);
+      } else {
+        addDebugMessage("Speech synthesis not available");
+        setSpeechSupported(false);
+      }
+    } catch (error) {
+      logger.error("Speech synthesis error", error);
+      addDebugMessage(`Speech failed: ${error}`);
     }
   };
 
@@ -235,13 +361,51 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
     }
   };
 
-  // Fetch audio content from database
+  // Initialize capabilities and fetch audio content
   useEffect(() => {
-    const fetchAudioContent = async () => {
+    const initializeComponent = async () => {
       try {
-        // Get user's preferred language (defaulting to 'en' for now)
-        // This could be enhanced to use a language context or user preferences
+        addDebugMessage("Initializing BreathingExercise component");
+        setIsLoading(true);
+
+        // Check Speech Synthesis support
+        if ('speechSynthesis' in window) {
+          setSpeechSupported(true);
+          addDebugMessage("Speech synthesis supported");
+          
+          // Wait for voices to load
+          const waitForVoices = () => {
+            return new Promise<void>((resolve) => {
+              if (speechSynthesis.getVoices().length > 0) {
+                resolve();
+              } else {
+                speechSynthesis.addEventListener('voiceschanged', () => {
+                  resolve();
+                }, { once: true });
+              }
+            });
+          };
+          
+          await waitForVoices();
+          addDebugMessage(`Speech voices loaded: ${speechSynthesis.getVoices().length}`);
+        } else {
+          setSpeechSupported(false);
+          addDebugMessage("Speech synthesis not supported");
+        }
+
+        // Check audio support
+        try {
+          const audio = new Audio();
+          setAudioSupported(true);
+          addDebugMessage("Audio element supported");
+        } catch (error) {
+          setAudioSupported(false);
+          addDebugMessage(`Audio not supported: ${error}`);
+        }
+
+        // Fetch audio content from database
         const userLanguage = 'en'; // TODO: Get from language context/user preferences
+        addDebugMessage(`Fetching audio content for language: ${userLanguage}`);
 
         const { data, error } = await supabase
           .from('foreman_content')
@@ -253,7 +417,12 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
           .not('media_url', 'is', null)
           .not('media_url', 'eq', '');
 
-        if (error) throw error;
+        if (error) {
+          logger.error("Database query failed", error);
+          throw error;
+        }
+
+        addDebugMessage(`Found ${data?.length || 0} audio files in database`);
 
         if (data && data.length > 0) {
           // Separate background sounds and voice guidance based on title
@@ -266,23 +435,43 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
             item.title.toLowerCase().includes('guidance')
           );
 
+          addDebugMessage(`Background audio files: ${backgroundAudio.length}, Voice files: ${voiceAudio.length}`);
+
           setBackgroundSounds(backgroundAudio.length > 0 ? backgroundAudio : fallbackBackgroundSounds);
           setVoiceGuidance(voiceAudio);
           
           // Set default background sound
           if (backgroundAudio.length > 0) {
             setBackgroundSound(backgroundAudio[0].id);
+            addDebugMessage(`Default background sound: ${backgroundAudio[0].title}`);
+          } else {
+            addDebugMessage("No background audio found, using fallback sounds");
           }
         } else {
+          addDebugMessage("No audio content found, using fallback sounds");
           setBackgroundSounds(fallbackBackgroundSounds);
         }
+
+        toast({
+          title: "Breathing Exercise Ready",
+          description: `Audio: ${audioSupported ? '✓' : '✗'}, Voice: ${speechSupported ? '✓' : '✗'}`,
+        });
+
       } catch (error) {
-        console.error('Error fetching audio content:', error);
+        logger.error('Failed to initialize breathing exercise', error);
+        addDebugMessage(`Initialization failed: ${error}`);
+        toast({
+          title: "Setup Error", 
+          description: "Some features may not work properly.",
+          variant: "destructive",
+        });
         setBackgroundSounds(fallbackBackgroundSounds);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchAudioContent();
+    initializeComponent();
   }, []);
 
   useEffect(() => {
@@ -355,7 +544,7 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
             </div>
 
             {/* Voice Guide */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-6">
               <span className="text-white font-oswald font-medium">Voice Guide (British Female)</span>
               <div className="flex items-center space-x-2">
                 {voiceGuideEnabled ? <Volume2 size={16} className="text-construction" /> : <VolumeX size={16} className="text-steel" />}
@@ -364,6 +553,39 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
                   onCheckedChange={setVoiceGuideEnabled}
                 />
               </div>
+            </div>
+
+            {/* System Status Debug Panel */}
+            <div className="mb-6 p-4 bg-steel-dark/20 rounded-lg border border-steel/30">
+              <h4 className="text-white font-oswald font-semibold text-sm mb-2 flex items-center">
+                System Status
+                {isLoading && <span className="ml-2 w-4 h-4 border-2 border-construction border-t-transparent rounded-full animate-spin"></span>}
+              </h4>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex items-center space-x-2">
+                  {audioSupported ? <CheckCircle size={12} className="text-green-500" /> : <AlertCircle size={12} className="text-red-500" />}
+                  <span className="text-steel-light">Audio</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {speechSupported ? <CheckCircle size={12} className="text-green-500" /> : <AlertCircle size={12} className="text-red-500" />}
+                  <span className="text-steel-light">Voice</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {audioPermissionGranted ? <CheckCircle size={12} className="text-green-500" /> : <AlertCircle size={12} className="text-yellow-500" />}
+                  <span className="text-steel-light">Permissions</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {backgroundSounds.length > 0 ? <CheckCircle size={12} className="text-green-500" /> : <AlertCircle size={12} className="text-yellow-500" />}
+                  <span className="text-steel-light">Database</span>
+                </div>
+              </div>
+              {debugMessages.length > 0 && (
+                <div className="mt-3 max-h-16 overflow-y-auto">
+                  <p className="text-steel text-xs font-mono">
+                    {debugMessages[debugMessages.length - 1]}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">
