@@ -28,7 +28,8 @@ import {
   Wifi,
   WifiOff,
   Mail,
-  Send
+  Send,
+  Trash2
 } from 'lucide-react';
 
 interface PeerSpecialist {
@@ -84,6 +85,7 @@ const PeerSpecialistManagement = () => {
     avatar_url: ''
   });
   const [newSpecialty, setNewSpecialty] = useState('');
+  const [deletingSpecialistId, setDeletingSpecialistId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSpecialists();
@@ -464,6 +466,78 @@ const PeerSpecialistManagement = () => {
       return { status: 'pending', color: 'bg-yellow-500/20 text-yellow-400', text: 'Pending' };
     }
     return { status: 'not_sent', color: 'bg-gray-500/20 text-gray-400', text: 'Not Sent' };
+  };
+
+  const handlePermanentDelete = async (specialist: PeerSpecialist) => {
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `⚠️ PERMANENT DELETION WARNING ⚠️\n\n` +
+      `This will PERMANENTLY DELETE:\n` +
+      `• ${specialist.first_name} ${specialist.last_name}'s specialist profile\n` +
+      `• All their schedules and content views\n` +
+      `• Their specialist status records\n\n` +
+      `Chat sessions will be preserved but anonymized.\n\n` +
+      `This action CANNOT be undone!\n\n` +
+      `Type "DELETE" to confirm this permanent deletion.`
+    );
+
+    if (!confirmed) return;
+
+    // Double confirmation
+    const doubleConfirm = prompt(
+      `Final confirmation required.\n\nType "DELETE" exactly to permanently delete ${specialist.first_name} ${specialist.last_name}:`
+    );
+
+    if (doubleConfirm !== 'DELETE') {
+      toast({
+        title: "Deletion cancelled",
+        description: "Permanent deletion was cancelled",
+      });
+      return;
+    }
+
+    try {
+      setDeletingSpecialistId(specialist.id);
+
+      console.log('Attempting to permanently delete specialist:', specialist.id);
+
+      // Call the edge function to permanently delete the specialist
+      const { data, error } = await supabase.functions.invoke('permanently-delete-specialist', {
+        body: {
+          specialistId: specialist.id
+        }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Failed to permanently delete specialist');
+      }
+
+      console.log('Specialist permanently deleted successfully');
+
+      toast({
+        title: "Specialist permanently deleted",
+        description: `${specialist.first_name} ${specialist.last_name} has been permanently removed from the system`,
+      });
+
+      // Refresh the removed specialists list
+      await fetchRemovedSpecialists();
+
+    } catch (error) {
+      console.error('Error permanently deleting specialist:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to permanently delete specialist';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setDeletingSpecialistId(null);
+    }
   };
 
   return (
@@ -931,57 +1005,74 @@ const PeerSpecialistManagement = () => {
               
               return (
                 <Card key={specialist.id} className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300 opacity-75">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4 flex-1">
-                      <div className="bg-muted p-3 rounded-sm">
-                        {specialist.avatar_url ? (
-                          <img 
-                            src={specialist.avatar_url} 
-                            alt={`${specialist.first_name} ${specialist.last_name}`}
-                            className="w-8 h-8 rounded object-cover grayscale"
-                          />
-                        ) : (
-                          <Users className="text-muted-foreground" size={20} />
-                        )}
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-fjalla font-bold text-muted-foreground text-lg tracking-wide">
-                            {specialist.first_name} {specialist.last_name}
-                          </h3>
-                          
-                          <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs uppercase font-oswald tracking-wide">
-                            REMOVED
-                          </Badge>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-4 flex-1">
+                        <div className="bg-muted p-3 rounded-sm">
+                          {specialist.avatar_url ? (
+                            <img 
+                              src={specialist.avatar_url} 
+                              alt={`${specialist.first_name} ${specialist.last_name}`}
+                              className="w-8 h-8 rounded object-cover grayscale"
+                            />
+                          ) : (
+                            <Users className="text-muted-foreground" size={20} />
+                          )}
                         </div>
                         
-                        <p className="text-muted-foreground text-sm mb-2">
-                          {specialist.years_experience} years experience
-                        </p>
-                        
-                        {specialist.bio && (
-                          <p className="text-muted-foreground text-sm mb-3 max-w-2xl">
-                            {specialist.bio}
-                          </p>
-                        )}
-                        
-                        {specialist.specialties && specialist.specialties.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {specialist.specialties.map((specialty, index) => (
-                              <Badge key={index} className="bg-muted/20 text-muted-foreground border-muted/30 text-xs">
-                                {specialty}
-                              </Badge>
-                            ))}
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="font-fjalla font-bold text-muted-foreground text-lg tracking-wide">
+                              {specialist.first_name} {specialist.last_name}
+                            </h3>
+                            
+                            <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs uppercase font-oswald tracking-wide">
+                              REMOVED
+                            </Badge>
                           </div>
-                        )}
-                        
-                        <p className="text-xs text-muted-foreground">
-                          Removed on: {new Date(specialist.updated_at).toLocaleDateString()}
-                        </p>
+                          
+                          <p className="text-muted-foreground text-sm mb-2">
+                            {specialist.years_experience} years experience
+                          </p>
+                          
+                          {specialist.bio && (
+                            <p className="text-muted-foreground text-sm mb-3 max-w-2xl">
+                              {specialist.bio}
+                            </p>
+                          )}
+                          
+                          {specialist.specialties && specialist.specialties.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {specialist.specialties.map((specialty, index) => (
+                                <Badge key={index} className="bg-muted/20 text-muted-foreground border-muted/30 text-xs">
+                                  {specialty}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <p className="text-xs text-muted-foreground">
+                            Removed on: {new Date(specialist.updated_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <Button
+                          onClick={() => handlePermanentDelete(specialist)}
+                          variant="outline"
+                          size="sm"
+                          className="border-red-500 text-red-500 hover:bg-red-500/10"
+                          disabled={deletingSpecialistId === specialist.id}
+                          title="Permanently delete this specialist and all their data"
+                        >
+                          {deletingSpecialistId === specialist.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-500 border-t-transparent"></div>
+                          ) : (
+                            <Trash2 size={16} />
+                          )}
+                        </Button>
                       </div>
                     </div>
-                  </div>
                 </Card>
               );
             })}
