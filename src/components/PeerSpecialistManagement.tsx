@@ -173,6 +173,17 @@ const PeerSpecialistManagement = () => {
     try {
       setIsInviting(true);
 
+      console.log('About to call send-specialist-invitation function with data:', {
+        adminId: user.id,
+        email: formData.email,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        bio: formData.bio,
+        specialties: formData.specialties,
+        years_experience: formData.years_experience,
+        avatar_url: formData.avatar_url || null
+      });
+
       // Call edge function to create specialist and send invitation
       const { data, error } = await supabase.functions.invoke('send-specialist-invitation', {
         body: {
@@ -187,7 +198,12 @@ const PeerSpecialistManagement = () => {
         }
       });
 
-      if (error) throw error;
+      console.log('Function call result:', { data, error });
+
+      if (error) {
+        console.error('Edge function error details:', error);
+        throw error;
+      }
 
       toast({
         title: "Success",
