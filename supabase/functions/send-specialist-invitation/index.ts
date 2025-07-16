@@ -79,51 +79,105 @@ const handler = async (req: Request): Promise<Response> => {
 
       console.log("Creating new specialist for email:", email);
 
-      // Create auth user first
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email,
-        email_confirm: true,
-        user_metadata: {
-          first_name,
-          last_name
-        }
-      });
+      // Check if user already exists first
+      const { data: existingUsers } = await supabase
+        .rpc("find_user_by_email", { user_email: email });
 
-      if (authError) {
-        console.error("Error creating auth user:", authError);
-        return new Response(
-          JSON.stringify({ error: `Failed to create user: ${authError.message}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      let authData;
+      
+      if (existingUsers && existingUsers.length > 0) {
+        // User already exists, use the existing user
+        const existingUser = existingUsers[0];
+        authData = { user: { id: existingUser.user_id } };
+        console.log("Using existing user:", existingUser.user_id);
+      } else {
+        // Create new auth user
+        const { data: newAuthData, error: authError } = await supabase.auth.admin.createUser({
+          email,
+          email_confirm: true,
+          user_metadata: {
+            first_name,
+            last_name
+          }
+        });
+
+        if (authError) {
+          console.error("Error creating auth user:", authError);
+          return new Response(
+            JSON.stringify({ error: `Failed to create user: ${authError.message}` }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        authData = newAuthData;
       }
 
-      // Create specialist profile
-      const { data: specialistData, error: specialistError } = await supabase
+      // Check if specialist profile already exists
+      const { data: existingSpecialist } = await supabase
         .from("peer_specialists")
-        .insert({
-          user_id: authData.user.id,
-          first_name,
-          last_name,
-          bio: bio || null,
-          specialties: specialties || [],
-          years_experience: years_experience || 0,
-          avatar_url: avatar_url || null,
-          is_verified: false,
-          is_active: true,
-          invited_by_admin_id: adminId
-        })
-        .select()
+        .select("*")
+        .eq("user_id", authData.user.id)
         .single();
 
-      if (specialistError) {
-        console.error("Error creating specialist profile:", specialistError);
-        return new Response(
-          JSON.stringify({ error: "Failed to create specialist profile" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      if (existingSpecialist) {
+        // Update existing specialist profile
+        const { data: updatedSpecialist, error: updateError } = await supabase
+          .from("peer_specialists")
+          .update({
+            first_name,
+            last_name,
+            bio: bio || null,
+            specialties: specialties || [],
+            years_experience: years_experience || 0,
+            avatar_url: avatar_url || null,
+            is_active: true,
+            invited_by_admin_id: adminId
+          })
+          .eq("user_id", authData.user.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error("Error updating specialist profile:", updateError);
+          return new Response(
+            JSON.stringify({ error: "Failed to update specialist profile" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        specialist = updatedSpecialist;
+        console.log("Updated existing specialist profile:", specialist.id);
+      } else {
+        // Create new specialist profile
+        const { data: specialistData, error: specialistError } = await supabase
+          .from("peer_specialists")
+          .insert({
+            user_id: authData.user.id,
+            first_name,
+            last_name,
+            bio: bio || null,
+            specialties: specialties || [],
+            years_experience: years_experience || 0,
+            avatar_url: avatar_url || null,
+            is_verified: false,
+            is_active: true,
+            invited_by_admin_id: adminId
+          })
+          .select()
+          .single();
+
+        if (specialistError) {
+          console.error("Error creating specialist profile:", specialistError);
+          return new Response(
+            JSON.stringify({ error: "Failed to create specialist profile" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        specialist = specialistData;
+        console.log("Created new specialist profile:", specialist.id);
       }
 
-      specialist = specialistData;
       userEmail = email;
     }
 
