@@ -607,6 +607,114 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          id: string
+          metadata: Json | null
+          timestamp: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          metadata?: Json | null
+          timestamp?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_daily_stats: {
+        Row: {
+          actions_completed: number
+          created_at: string
+          date: string
+          id: string
+          journey_activities: string[] | null
+          mood_entries: Json | null
+          recovery_strength: number | null
+          tools_used: string[] | null
+          updated_at: string
+          user_id: string
+          wellness_level: string | null
+        }
+        Insert: {
+          actions_completed?: number
+          created_at?: string
+          date: string
+          id?: string
+          journey_activities?: string[] | null
+          mood_entries?: Json | null
+          recovery_strength?: number | null
+          tools_used?: string[] | null
+          updated_at?: string
+          user_id: string
+          wellness_level?: string | null
+        }
+        Update: {
+          actions_completed?: number
+          created_at?: string
+          date?: string
+          id?: string
+          journey_activities?: string[] | null
+          mood_entries?: Json | null
+          recovery_strength?: number | null
+          tools_used?: string[] | null
+          updated_at?: string
+          user_id?: string
+          wellness_level?: string | null
+        }
+        Relationships: []
+      }
+      user_gratitude_entries: {
+        Row: {
+          created_at: string
+          date: string
+          entry_text: string
+          id: string
+          mood_rating: number | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          entry_text: string
+          id?: string
+          mood_rating?: number | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          entry_text?: string
+          id?: string
+          mood_rating?: number | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_journey_assignments: {
         Row: {
           assigned_at: string
@@ -652,6 +760,93 @@ export type Database = {
           },
         ]
       }
+      user_journey_progress: {
+        Row: {
+          completed_days: number
+          created_at: string
+          current_day: number
+          daily_stats: Json | null
+          focus_areas: string[] | null
+          id: string
+          journey_responses: Json | null
+          journey_stage: string
+          support_style: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_days?: number
+          created_at?: string
+          current_day?: number
+          daily_stats?: Json | null
+          focus_areas?: string[] | null
+          id?: string
+          journey_responses?: Json | null
+          journey_stage?: string
+          support_style?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_days?: number
+          created_at?: string
+          current_day?: number
+          daily_stats?: Json | null
+          focus_areas?: string[] | null
+          id?: string
+          journey_responses?: Json | null
+          journey_stage?: string
+          support_style?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          language: string
+          notifications_enabled: boolean
+          phone_number: string | null
+          preferences: Json | null
+          recovery_start_date: string | null
+          sms_opt_in: boolean
+          theme: string
+          timezone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language?: string
+          notifications_enabled?: boolean
+          phone_number?: string | null
+          preferences?: Json | null
+          recovery_start_date?: string | null
+          sms_opt_in?: boolean
+          theme?: string
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language?: string
+          notifications_enabled?: boolean
+          phone_number?: string | null
+          preferences?: Json | null
+          recovery_start_date?: string | null
+          sms_opt_in?: boolean
+          theme?: string
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_recovery_plans: {
         Row: {
           generated_at: string
@@ -696,6 +891,48 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_toolbox_stats: {
+        Row: {
+          created_at: string
+          favorite_tools: string[] | null
+          id: string
+          last_activity: string | null
+          last_tool_used: string | null
+          longest_streak: number
+          streak_count: number
+          tools_used_today: number
+          total_tools_used: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          favorite_tools?: string[] | null
+          id?: string
+          last_activity?: string | null
+          last_tool_used?: string | null
+          longest_streak?: number
+          streak_count?: number
+          tools_used_today?: number
+          total_tools_used?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          favorite_tools?: string[] | null
+          id?: string
+          last_activity?: string | null
+          last_tool_used?: string | null
+          longest_streak?: number
+          streak_count?: number
+          tools_used_today?: number
+          total_tools_used?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

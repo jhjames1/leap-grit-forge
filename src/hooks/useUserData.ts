@@ -4,6 +4,9 @@ import { logger } from '@/utils/logger';
 import { getSecureSession, clearSession, logSecurityEvent } from '@/utils/security';
 import { trackingManager } from '@/utils/trackingManager';
 import { notificationManager } from '@/utils/notificationManager';
+import { SupabaseUserService } from '@/services/supabaseUserService';
+import { DataMigrationService } from '@/utils/dataMigration';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ActivityLogEntry {
   id: string;
@@ -45,24 +48,44 @@ interface UserData {
 export const useUserData = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, session } = useAuth();
 
   useEffect(() => {
-    const initializeUser = () => {
-      // Check for secure session first
-      const session = getSecureSession();
-      if (session) {
-        logger.debug('Found secure session', { username: session.username });
-        setCurrentUser(session.username);
-        loadUserData(session.username);
+    const initializeUser = async () => {
+      if (user && session) {
+        // Authenticated user - use Supabase
+        logger.debug('Found authenticated user', { userId: user.id, email: user.email });
+        setCurrentUser(user.id);
+        setIsAuthenticated(true);
+        
+        // Run migration if needed
+        if (!DataMigrationService.isDataMigrated()) {
+          logger.info('Running data migration for authenticated user');
+          await DataMigrationService.migrateUserData(user.id, user.email);
+        }
+        
+        await loadUserData(user.id, true);
+        return;
+      }
+
+      // Check for secure session first (legacy)
+      const secureSession = getSecureSession();
+      if (secureSession) {
+        logger.debug('Found secure session', { username: secureSession.username });
+        setCurrentUser(secureSession.username);
+        setIsAuthenticated(false);
+        await loadUserData(secureSession.username, false);
         return;
       }
 
       // Fallback to localStorage for backwards compatibility
-      const user = localStorage.getItem('currentUser');
-      if (user) {
-        logger.debug('Found localStorage user', { user });
-        setCurrentUser(user);
-        loadUserData(user);
+      const localUser = localStorage.getItem('currentUser');
+      if (localUser) {
+        logger.debug('Found localStorage user', { user: localUser });
+        setCurrentUser(localUser);
+        setIsAuthenticated(false);
+        await loadUserData(localUser, false);
         return;
       }
 
@@ -71,11 +94,12 @@ export const useUserData = () => {
       const guestUser = 'guest-user';
       localStorage.setItem('currentUser', guestUser);
       setCurrentUser(guestUser);
-      loadUserData(guestUser);
+      setIsAuthenticated(false);
+      await loadUserData(guestUser, false);
     };
 
     initializeUser();
-  }, []);
+  }, [user, session]);
 
   useEffect(() => {
     // Initialize tracking and notifications when user is set
@@ -93,9 +117,127 @@ export const useUserData = () => {
     SecureStorage.cleanupOldData();
   }, [currentUser, userData]);
 
-  const loadUserData = (username: string) => {
+  const loadSupabaseUserData = async (userId: string): Promise<UserData | null> => {
     try {
-      logger.debug('Loading user data for', { username });
+      // Load all user data from Supabase
+      const [
+        journeyProgress,
+        toolboxStats,
+        gratitudeEntries,
+        activityLogs,
+        preferences
+      ] = await Promise.all([
+        SupabaseUserService.getJourneyProgress(userId),
+        SupabaseUserService.getToolboxStats(userId),
+        SupabaseUserService.getGratitudeEntries(userId),
+        SupabaseUserService.getActivityLogs(userId, 50),
+        SupabaseUserService.getUserPreferences(userId)
+      ]);
+
+      // Transform Supabase data to UserData format
+      const userData: UserData = {
+        firstName: preferences?.preferences?.firstName || userId,
+        gratitudeEntries: gratitudeEntries.map(entry => ({
+          id: entry.id,
+          text: entry.entry_text,
+          date: entry.date,
+          mood: entry.mood_rating
+        })),
+        activityLog: activityLogs.map(log => ({
+          id: log.id || Date.now().toString(),
+          action: log.action,
+          timestamp: log.timestamp || new Date().toISOString(),
+          details: log.details
+        })),
+        toolboxStats: {
+          toolsToday: toolboxStats?.tools_used_today || 0,
+          streak: toolboxStats?.streak_count || 0,
+          totalSessions: toolboxStats?.total_tools_used || 0,
+          urgesThisWeek: 0, // Will be calculated
+          courageCoins: 0 // Will be calculated
+        },
+        journeyProgress: journeyProgress ? {
+          completedDays: [], // Will be calculated from daily stats
+          currentWeek: Math.floor(journeyProgress.current_day / 7) + 1,
+          badges: [],
+          completionDates: {}
+        } : {
+          completedDays: [],
+          currentWeek: 1,
+          badges: [],
+          completionDates: {}
+        },
+        journeyResponses: journeyProgress?.journey_responses || {},
+        focusAreas: journeyProgress?.focus_areas || ['stress_management'],
+        journeyStage: journeyProgress?.journey_stage || 'foundation',
+        supportStyle: journeyProgress?.support_style,
+        dailyStats: journeyProgress?.daily_stats || {},
+        lastAccess: Date.now()
+      };
+
+      return userData;
+    } catch (error) {
+      logger.error('Failed to load Supabase user data:', error);
+      return null;
+    }
+  };
+
+  const initializeSupabaseUserData = async (userId: string, initialData: UserData): Promise<void> => {
+    try {
+      // Initialize user data in Supabase
+      await Promise.all([
+        SupabaseUserService.upsertJourneyProgress({
+          user_id: userId,
+          journey_stage: initialData.journeyStage || 'foundation',
+          focus_areas: initialData.focusAreas || ['stress_management'],
+          support_style: initialData.supportStyle,
+          current_day: 1,
+          completed_days: 0,
+          journey_responses: initialData.journeyResponses || {},
+          daily_stats: initialData.dailyStats || {}
+        }),
+        SupabaseUserService.upsertToolboxStats({
+          user_id: userId,
+          tools_used_today: 0,
+          total_tools_used: 0,
+          favorite_tools: [],
+          streak_count: 0,
+          longest_streak: 0
+        }),
+        SupabaseUserService.upsertUserPreferences({
+          user_id: userId,
+          language: 'en',
+          theme: 'system',
+          notifications_enabled: true,
+          sms_opt_in: false,
+          preferences: {
+            firstName: initialData.firstName || userId,
+            ...initialData
+          }
+        })
+      ]);
+      
+      logger.info('Supabase user data initialized successfully');
+    } catch (error) {
+      logger.error('Failed to initialize Supabase user data:', error);
+    }
+  };
+
+  const loadUserData = async (username: string, useSupabase: boolean = false) => {
+    try {
+      logger.debug('Loading user data for', { username, useSupabase });
+      
+      if (useSupabase) {
+        // Load data from Supabase
+        const supabaseData = await loadSupabaseUserData(username);
+        if (supabaseData) {
+          setUserData(supabaseData);
+          logSecurityEvent('user_data_accessed', { username });
+          return;
+        }
+      }
+      
+      // Fallback to localStorage/SecureStorage
       const data = SecureStorage.getUserData(username);
       
       if (data) {
@@ -164,6 +306,11 @@ export const useUserData = () => {
           journeyStage: 'foundation',
           lastAccess: Date.now()
         };
+        
+        if (useSupabase) {
+          // Initialize Supabase data
+          await initializeSupabaseUserData(username, initialData);
+        }
         
         SecureStorage.setUserData(username, initialData);
         setUserData(initialData);
