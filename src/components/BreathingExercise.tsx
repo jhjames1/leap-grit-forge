@@ -7,6 +7,7 @@ import { Wind, Volume2, VolumeX, Play, Pause, RotateCcw, AlertCircle, CheckCircl
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BreathingExerciseProps {
   onClose: () => void;
@@ -15,6 +16,7 @@ interface BreathingExerciseProps {
 
 const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
   const { toast } = useToast();
+  const { language } = useLanguage();
   
   // Session state
   const [isStarted, setIsStarted] = useState(false);
@@ -404,18 +406,42 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
         }
 
         // Fetch audio content from database
-        const userLanguage = 'en'; // TODO: Get from language context/user preferences
-        addDebugMessage(`Fetching audio content for language: ${userLanguage}`);
+        addDebugMessage(`Fetching audio content for language: ${language}`);
 
-        const { data, error } = await supabase
+        // Try to get audio for current language first
+        let { data, error } = await supabase
           .from('foreman_content')
           .select('id, title, media_url')
           .eq('category', 'breathing_exercises')
           .eq('content_type', 'audio')
-          .eq('language', userLanguage)
+          .eq('language', language)
           .eq('is_active', true)
           .not('media_url', 'is', null)
           .not('media_url', 'eq', '');
+
+        // If no content found for current language and not English, fallback to English
+        if ((!data || data.length === 0) && language !== 'en') {
+          addDebugMessage(`No audio found for ${language}, falling back to English`);
+          const fallbackQuery = await supabase
+            .from('foreman_content')
+            .select('id, title, media_url')
+            .eq('category', 'breathing_exercises')
+            .eq('content_type', 'audio')
+            .eq('language', 'en')
+            .eq('is_active', true)
+            .not('media_url', 'is', null)
+            .not('media_url', 'eq', '');
+          
+          data = fallbackQuery.data;
+          error = fallbackQuery.error;
+          
+          if (data && data.length > 0) {
+            toast({
+              title: "Language Note",
+              description: "Using English audio as Spanish audio is not available.",
+            });
+          }
+        }
 
         if (error) {
           logger.error("Database query failed", error);
@@ -472,7 +498,7 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
     };
 
     initializeComponent();
-  }, []);
+  }, [language]); // Re-fetch when language changes
 
   useEffect(() => {
     return () => {
