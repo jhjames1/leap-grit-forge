@@ -1061,7 +1061,7 @@ const PeerSpecialistManagement = () => {
                           onClick={() => handlePermanentDelete(specialist)}
                           variant="outline"
                           size="sm"
-                          className="border-red-500 text-red-500 hover:bg-red-500/10"
+                          className="border-red-500 text-red-500 hover:bg-red-500/10 min-w-[40px] bg-background"
                           disabled={deletingSpecialistId === specialist.id}
                           title="Permanently delete this specialist and all their data"
                         >
