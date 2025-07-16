@@ -76,7 +76,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Call the database function to permanently delete the specialist
     const { data, error } = await supabase.rpc('permanently_delete_specialist', {
-      specialist_id: specialistId
+      specialist_id: specialistId,
+      admin_user_id: user.id
     });
 
     if (error) {

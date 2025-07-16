@@ -1055,7 +1055,9 @@ export type Database = {
         Returns: boolean
       }
       permanently_delete_specialist: {
-        Args: { specialist_id: string }
+        Args:
+          | { specialist_id: string }
+          | { specialist_id: string; admin_user_id: string }
         Returns: Json
       }
       remove_admin_role: {
