@@ -296,53 +296,24 @@ const PeerSpecialistManagement = () => {
     try {
       console.log('Starting soft delete for specialist:', specialist.id);
       
-      // Verify current user session and role
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Current session:', session?.user?.id ? 'authenticated' : 'not authenticated');
-      
-      if (!session?.user) {
-        throw new Error('Not authenticated');
-      }
-
-      // Check if user has admin role
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id)
-        .eq('role', 'admin')
-        .single();
-
-      if (roleError && roleError.code !== 'PGRST116') {
-        console.error('Role check error:', roleError);
-        throw new Error('Failed to verify admin permissions');
-      }
-
-      if (!roleData) {
-        throw new Error('Admin permissions required');
-      }
-
-      console.log('Admin role verified, proceeding with soft delete');
-      
-      const { data, error } = await supabase
-        .from('peer_specialists')
-        .update({
-          is_active: false,
-          is_verified: false,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', specialist.id)
-        .select();
+      // Use the security definer function to bypass RLS issues
+      const { data, error } = await supabase.rpc('soft_delete_specialist', {
+        specialist_id: specialist.id
+      });
 
       if (error) {
-        console.error('Database update error:', error);
+        console.error('Database function error:', error);
         throw error;
       }
 
-      console.log('Update result:', data);
+      // Type the response properly
+      const response = data as { success: boolean; error?: string; message?: string };
       
-      if (!data || data.length === 0) {
-        throw new Error('No specialist was updated - specialist may not exist');
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to deactivate specialist');
       }
+
+      console.log('Update result:', response);
 
       console.log('Specialist soft deleted successfully, refreshing lists...');
 

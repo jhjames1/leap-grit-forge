@@ -1058,6 +1058,10 @@ export type Database = {
         Args: { target_email: string }
         Returns: Json
       }
+      soft_delete_specialist: {
+        Args: { specialist_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user"
