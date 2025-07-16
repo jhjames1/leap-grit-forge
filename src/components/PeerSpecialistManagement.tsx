@@ -115,14 +115,21 @@ const PeerSpecialistManagement = () => {
 
   const fetchRemovedSpecialists = async () => {
     try {
+      console.log('Fetching removed specialists...');
       const { data, error } = await supabase
         .from('peer_specialists')
         .select('*')
         .eq('is_active', false)
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Query error:', error);
+        throw error;
+      }
+      
+      console.log('Removed specialists data:', data);
       setRemovedSpecialists(data || []);
+      console.log('Removed specialists state updated, count:', data?.length || 0);
     } catch (error) {
       console.error('Error fetching removed specialists:', error);
     }
