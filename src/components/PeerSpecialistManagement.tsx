@@ -296,6 +296,12 @@ const PeerSpecialistManagement = () => {
     try {
       console.log('Starting soft delete for specialist:', specialist.id);
       
+      // First, test the debug function to see what's happening in the database context
+      const { data: debugData, error: debugError } = await supabase
+        .rpc('debug_auth_context');
+      
+      console.log('Debug auth context:', debugData, 'Error:', debugError);
+      
       // Use the security definer function to bypass RLS issues
       const { data, error } = await supabase.rpc('soft_delete_specialist', {
         specialist_id: specialist.id

@@ -1012,6 +1012,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
+      debug_auth_context: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       find_user_by_email: {
         Args: { user_email: string }
         Returns: {
