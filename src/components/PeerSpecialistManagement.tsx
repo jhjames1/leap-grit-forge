@@ -296,18 +296,52 @@ const PeerSpecialistManagement = () => {
     try {
       console.log('Starting soft delete for specialist:', specialist.id);
       
-      const { error } = await supabase
+      // Verify current user session and role
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Current session:', session?.user?.id ? 'authenticated' : 'not authenticated');
+      
+      if (!session?.user) {
+        throw new Error('Not authenticated');
+      }
+
+      // Check if user has admin role
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .eq('role', 'admin')
+        .single();
+
+      if (roleError && roleError.code !== 'PGRST116') {
+        console.error('Role check error:', roleError);
+        throw new Error('Failed to verify admin permissions');
+      }
+
+      if (!roleData) {
+        throw new Error('Admin permissions required');
+      }
+
+      console.log('Admin role verified, proceeding with soft delete');
+      
+      const { data, error } = await supabase
         .from('peer_specialists')
         .update({
           is_active: false,
           is_verified: false,
           updated_at: new Date().toISOString()
         })
-        .eq('id', specialist.id);
+        .eq('id', specialist.id)
+        .select();
 
       if (error) {
-        console.error('Update error:', error);
+        console.error('Database update error:', error);
         throw error;
+      }
+
+      console.log('Update result:', data);
+      
+      if (!data || data.length === 0) {
+        throw new Error('No specialist was updated - specialist may not exist');
       }
 
       console.log('Specialist soft deleted successfully, refreshing lists...');
@@ -326,9 +360,10 @@ const PeerSpecialistManagement = () => {
       console.log('Lists refreshed after soft delete');
     } catch (error) {
       console.error('Error deactivating specialist:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to deactivate specialist';
       toast({
         title: "Error",
-        description: "Failed to deactivate specialist",
+        description: errorMessage,
         variant: "destructive"
       });
     }
