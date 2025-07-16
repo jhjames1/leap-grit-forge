@@ -383,36 +383,39 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
         }
 
         // Fetch audio content from database
-        addDebugMessage(`Fetching audio content for language: ${language}`);
+        addDebugMessage(`Fetching breathing audio content for language: ${language}`);
 
-        // Try to get audio for current language first
+        // Get all breathing-related audio content
         let { data, error } = await supabase
           .from('foreman_content')
           .select('id, title, media_url')
-          .eq('category', 'breathing_exercises')
+          .ilike('title', '%breathing%')
           .eq('content_type', 'audio')
-          .eq('language', language)
           .eq('is_active', true)
           .not('media_url', 'is', null)
           .not('media_url', 'eq', '');
 
-        // If no content found for current language and not English, fallback to English
-        if ((!data || data.length === 0) && language !== 'en') {
-          addDebugMessage(`No audio found for ${language}, falling back to English`);
-          const fallbackQuery = await supabase
-            .from('foreman_content')
-            .select('id, title, media_url')
-            .eq('category', 'breathing_exercises')
-            .eq('content_type', 'audio')
-            .eq('language', 'en')
-            .eq('is_active', true)
-            .not('media_url', 'is', null)
-            .not('media_url', 'eq', '');
+        if (error) {
+          logger.error("Database query failed", error);
+          throw error;
+        }
+
+        addDebugMessage(`Found ${data?.length || 0} breathing audio files in database`);
+
+        // Filter by language suffix
+        const languageSuffix = `-${language}`;
+        let filteredData = data?.filter(item => 
+          item.title.toLowerCase().endsWith(languageSuffix)
+        ) || [];
+
+        // If no content found for current language, fallback to English
+        if (filteredData.length === 0 && language !== 'en') {
+          addDebugMessage(`No audio found with suffix ${languageSuffix}, falling back to -en`);
+          filteredData = data?.filter(item => 
+            item.title.toLowerCase().endsWith('-en')
+          ) || [];
           
-          data = fallbackQuery.data;
-          error = fallbackQuery.error;
-          
-          if (data && data.length > 0) {
+          if (filteredData.length > 0) {
             toast({
               title: "Language Note",
               description: "Using English audio as Spanish audio is not available.",
@@ -420,12 +423,8 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
           }
         }
 
-        if (error) {
-          logger.error("Database query failed", error);
-          throw error;
-        }
-
-        addDebugMessage(`Found ${data?.length || 0} audio files in database`);
+        addDebugMessage(`Using ${filteredData.length} audio files with language suffix: ${languageSuffix}`);
+        data = filteredData;
 
         if (data && data.length > 0) {
           // Separate background sounds and voice guidance based on title
