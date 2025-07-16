@@ -230,68 +230,82 @@ const handler = async (req: Request): Promise<Response> => {
     const verificationUrl = `${Deno.env.get("SUPABASE_URL")?.replace("supabase.co", "lovable.app")}/specialist/verify?token=${tokenData}`;
 
     // Send invitation email
-    const emailResponse = await resend.emails.send({
-      from: "LEAP Recovery <onboarding@resend.dev>",
-      to: [userEmail],
-      subject: "You've been invited to join LEAP as a Peer Specialist",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333; text-align: center;">Welcome to LEAP Recovery</h1>
-          
-          <p>Hello ${specialist.first_name},</p>
-          
-          <p>You have been invited to join LEAP as a Peer Specialist. We're excited to have you as part of our recovery support community.</p>
-          
-          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #333; margin-top: 0;">Your Login Credentials:</h3>
-            <p><strong>Email:</strong> ${userEmail}</p>
-            <p><strong>Temporary Password:</strong> <code style="background-color: #e0e0e0; padding: 4px 8px; border-radius: 4px; font-size: 16px; font-weight: bold;">${tempPassword}</code></p>
+    console.log("Attempting to send email to:", userEmail);
+    
+    try {
+      const emailResponse = await resend.emails.send({
+        from: "LEAP Recovery <onboarding@resend.dev>",
+        to: [userEmail],
+        subject: "You've been invited to join LEAP as a Peer Specialist",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #333; text-align: center;">Welcome to LEAP Recovery</h1>
+            
+            <p>Hello ${specialist.first_name},</p>
+            
+            <p>You have been invited to join LEAP as a Peer Specialist. We're excited to have you as part of our recovery support community.</p>
+            
+            <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #333; margin-top: 0;">Your Login Credentials:</h3>
+              <p><strong>Email:</strong> ${userEmail}</p>
+              <p><strong>Temporary Password:</strong> <code style="background-color: #e0e0e0; padding: 4px 8px; border-radius: 4px; font-size: 16px; font-weight: bold;">${tempPassword}</code></p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                Verify Account & Access Portal
+              </a>
+            </div>
+            
+            <p><strong>Important:</strong></p>
+            <ul>
+              <li>You must verify your account within 7 days</li>
+              <li>You'll be required to change your password on first login</li>
+              <li>This invitation link expires on ${expiresAt.toLocaleDateString()}</li>
+            </ul>
+            
+            <p>If you have any questions, please contact our support team.</p>
+            
+            <p>Best regards,<br>The LEAP Recovery Team</p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="font-size: 12px; color: #666; text-align: center;">
+              This is an automated message. Please do not reply to this email.
+            </p>
           </div>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-              Verify Account & Access Portal
-            </a>
-          </div>
-          
-          <p><strong>Important:</strong></p>
-          <ul>
-            <li>You must verify your account within 7 days</li>
-            <li>You'll be required to change your password on first login</li>
-            <li>This invitation link expires on ${expiresAt.toLocaleDateString()}</li>
-          </ul>
-          
-          <p>If you have any questions, please contact our support team.</p>
-          
-          <p>Best regards,<br>The LEAP Recovery Team</p>
-          
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-          <p style="font-size: 12px; color: #666; text-align: center;">
-            This is an automated message. Please do not reply to this email.
-          </p>
-        </div>
-      `,
-    });
+        `,
+      });
 
-    if (emailResponse.error) {
-      console.error("Error sending email:", emailResponse.error);
+      console.log("Email send response:", emailResponse);
+
+      if (emailResponse.error) {
+        console.error("Resend API error:", emailResponse.error);
+        return new Response(
+          JSON.stringify({ error: `Email service error: ${emailResponse.error}` }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      console.log("Invitation sent successfully:", emailResponse.data);
+      
       return new Response(
-        JSON.stringify({ error: "Failed to send invitation email" }),
+        JSON.stringify({ 
+          success: true, 
+          message: "Invitation sent successfully",
+          emailId: emailResponse.data?.id,
+          specialistId: specialist.id
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+
+    } catch (emailError) {
+      console.error("Error sending email:", emailError);
+      return new Response(
+        JSON.stringify({ error: `Failed to send email: ${emailError.message}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Invitation sent successfully:", emailResponse.data);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Invitation sent successfully",
-        emailId: emailResponse.data?.id,
-        specialistId: specialist.id
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
 
   } catch (error) {
     console.error("Error in send-specialist-invitation function:", error);
