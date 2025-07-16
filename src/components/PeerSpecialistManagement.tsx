@@ -267,11 +267,31 @@ const PeerSpecialistManagement = () => {
 
   const handleStatusToggle = async (specialist: PeerSpecialist, field: 'is_active' | 'is_verified') => {
     try {
+      let updateData: any = {};
+      
+      if (field === 'is_active') {
+        // Can only activate if verified
+        if (!specialist.is_verified) {
+          toast({
+            title: "Cannot activate specialist",
+            description: "Specialist must be verified before they can be activated",
+            variant: "destructive"
+          });
+          return;
+        }
+        updateData.is_active = !specialist.is_active;
+      } else if (field === 'is_verified') {
+        updateData.is_verified = !specialist.is_verified;
+        
+        // If unverifying, also deactivate
+        if (specialist.is_verified) {
+          updateData.is_active = false;
+        }
+      }
+
       const { error } = await supabase
         .from('peer_specialists')
-        .update({
-          [field]: !specialist[field]
-        })
+        .update(updateData)
         .eq('id', specialist.id);
 
       if (error) throw error;
@@ -732,9 +752,12 @@ const PeerSpecialistManagement = () => {
                         <Switch
                           checked={specialist.is_active}
                           onCheckedChange={() => handleStatusToggle(specialist, 'is_active')}
+                          disabled={!specialist.is_verified}
                           className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted scale-75"
                         />
-                        <span className="text-xs text-muted-foreground">Active</span>
+                        <span className={`text-xs ${specialist.is_verified ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
+                          Active {!specialist.is_verified && '(requires verification)'}
+                        </span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Switch
