@@ -184,8 +184,8 @@ const PeerSpecialistManagement = () => {
         avatar_url: formData.avatar_url || null
       });
 
-      // Call test function first to see if edge functions work at all
-      const { data, error } = await supabase.functions.invoke('test-function', {
+      // Call edge function to create specialist and send invitation
+      const { data, error } = await supabase.functions.invoke('send-specialist-invitation', {
         body: {
           adminId: user.id,
           email: formData.email,

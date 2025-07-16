@@ -11,3 +11,15 @@ verify_jwt = true
 
 [functions.generate-recovery-plan]
 verify_jwt = true
+
+[functions.send-specialist-invitation]
+verify_jwt = true
+
+[functions.test-function]
+verify_jwt = false
+
+[functions.thought-packs]
+verify_jwt = false
+
+[functions.invite-admin]
+verify_jwt = true
