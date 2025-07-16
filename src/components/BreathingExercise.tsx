@@ -402,17 +402,19 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
 
         addDebugMessage(`Found ${data?.length || 0} breathing audio files in database`);
 
-        // Filter by language suffix
-        const languageSuffix = `-${language}`;
+        // Filter by language suffix (with space, e.g., "- en", "- es")
+        const languageSuffix = `- ${language}`;
         let filteredData = data?.filter(item => 
           item.title.toLowerCase().endsWith(languageSuffix)
         ) || [];
 
+        addDebugMessage(`Filtered ${filteredData.length} files with suffix "${languageSuffix}"`);
+
         // If no content found for current language, fallback to English
         if (filteredData.length === 0 && language !== 'en') {
-          addDebugMessage(`No audio found with suffix ${languageSuffix}, falling back to -en`);
+          addDebugMessage(`No audio found with suffix "${languageSuffix}", falling back to "- en"`);
           filteredData = data?.filter(item => 
-            item.title.toLowerCase().endsWith('-en')
+            item.title.toLowerCase().endsWith('- en')
           ) || [];
           
           if (filteredData.length > 0) {
@@ -439,15 +441,18 @@ const BreathingExercise = ({ onClose, onCancel }: BreathingExerciseProps) => {
 
           addDebugMessage(`Background audio files: ${backgroundAudio.length}, Voice files: ${voiceAudio.length}`);
 
-          setBackgroundSounds(backgroundAudio.length > 0 ? backgroundAudio : fallbackBackgroundSounds);
+          // Fallback: if no background audio found with keywords, use all filtered audio as background
+          const finalBackgroundAudio = backgroundAudio.length > 0 ? backgroundAudio : data;
+          
+          setBackgroundSounds(finalBackgroundAudio.length > 0 ? finalBackgroundAudio : fallbackBackgroundSounds);
           setVoiceGuidance(voiceAudio);
           
           // Set default background sound
-          if (backgroundAudio.length > 0) {
-            setBackgroundSound(backgroundAudio[0].id);
-            addDebugMessage(`Default background sound: ${backgroundAudio[0].title}`);
+          if (finalBackgroundAudio.length > 0) {
+            setBackgroundSound(finalBackgroundAudio[0].id);
+            addDebugMessage(`Default background sound: ${finalBackgroundAudio[0].title}`);
           } else {
-            addDebugMessage("No background audio found, using fallback sounds");
+            addDebugMessage("No audio found, using fallback sounds");
           }
         } else {
           addDebugMessage("No audio content found, using fallback sounds");
