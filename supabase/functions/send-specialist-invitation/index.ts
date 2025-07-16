@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
-import { corsHeaders } from "../_shared/cors.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 interface InvitationRequest {
   specialistId?: string;
@@ -22,6 +26,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    console.log("Edge function called successfully");
+    
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
       console.error("RESEND_API_KEY is not configured");
@@ -39,6 +45,8 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     const requestData: InvitationRequest = await req.json();
+    console.log("Request data received:", requestData);
+    
     const { specialistId, adminId, email, first_name, last_name, bio, specialties, years_experience, avatar_url } = requestData;
 
     let specialist: any;
@@ -314,7 +322,6 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
 
   } catch (error) {
     console.error("Error in send-specialist-invitation function:", error);
