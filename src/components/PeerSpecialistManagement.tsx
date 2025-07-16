@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -67,6 +68,8 @@ const PeerSpecialistManagement = () => {
   const { user } = useAuth();
   const { specialistStatuses, analytics, loading: presenceLoading, refreshData } = useSpecialistPresence();
   const [specialists, setSpecialists] = useState<PeerSpecialist[]>([]);
+  const [removedSpecialists, setRemovedSpecialists] = useState<PeerSpecialist[]>([]);
+  const [activeTab, setActiveTab] = useState<'active' | 'removed'>('active');
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSpecialist, setEditingSpecialist] = useState<PeerSpecialist | null>(null);
@@ -84,6 +87,7 @@ const PeerSpecialistManagement = () => {
 
   useEffect(() => {
     fetchSpecialists();
+    fetchRemovedSpecialists();
   }, []);
 
   const fetchSpecialists = async () => {
@@ -106,6 +110,21 @@ const PeerSpecialistManagement = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRemovedSpecialists = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('peer_specialists')
+        .select('*')
+        .eq('is_active', false)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      setRemovedSpecialists(data || []);
+    } catch (error) {
+      console.error('Error fetching removed specialists:', error);
     }
   };
 
@@ -281,11 +300,12 @@ const PeerSpecialistManagement = () => {
       if (error) throw error;
 
       toast({
-        title: "Specialist deactivated",
-        description: "Specialist has been deactivated while preserving their history",
+        title: "Specialist moved to removed",
+        description: "Specialist has been moved to the Removed tab while preserving their history",
       });
 
       fetchSpecialists();
+      fetchRemovedSpecialists();
     } catch (error) {
       console.error('Error deactivating specialist:', error);
       toast({
@@ -655,196 +675,279 @@ const PeerSpecialistManagement = () => {
         </Dialog>
       </div>
 
-      {/* Specialists List */}
-      {loading ? (
-        <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
-          <p className="text-muted-foreground text-center">Loading specialists...</p>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {specialists.map((specialist) => {
-            const status = getSpecialistStatus(specialist.id);
-            const analyticsData = getSpecialistAnalytics(specialist.id);
-            const invitationStatus = getInvitationStatus(specialist);
-            
-            return (
-              <Card key={specialist.id} className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4 flex-1">
-                    <div className="bg-primary p-3 rounded-sm">
-                      {specialist.avatar_url ? (
-                        <img 
-                          src={specialist.avatar_url} 
-                          alt={`${specialist.first_name} ${specialist.last_name}`}
-                          className="w-8 h-8 rounded object-cover"
-                        />
-                      ) : (
-                        <Users className="text-primary-foreground" size={20} />
-                      )}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="font-fjalla font-bold text-card-foreground text-lg tracking-wide">
-                          {specialist.first_name} {specialist.last_name}
-                        </h3>
+      {/* Specialists List with Tabs */}
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'active' | 'removed')} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="active" className="text-foreground">
+            Active Specialists ({specialists.length})
+          </TabsTrigger>
+          <TabsTrigger value="removed" className="text-foreground">
+            Removed Specialists ({removedSpecialists.length})
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="active" className="mt-6">
+          {loading ? (
+            <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+              <p className="text-muted-foreground text-center">Loading specialists...</p>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {specialists.map((specialist) => {
+                const status = getSpecialistStatus(specialist.id);
+                const analyticsData = getSpecialistAnalytics(specialist.id);
+                const invitationStatus = getInvitationStatus(specialist);
+                
+                return (
+                  <Card key={specialist.id} className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-4 flex-1">
+                        <div className="bg-primary p-3 rounded-sm">
+                          {specialist.avatar_url ? (
+                            <img 
+                              src={specialist.avatar_url} 
+                              alt={`${specialist.first_name} ${specialist.last_name}`}
+                              className="w-8 h-8 rounded object-cover"
+                            />
+                          ) : (
+                            <Users className="text-primary-foreground" size={20} />
+                          )}
+                        </div>
                         
-                        {/* Invitation Status */}
-                        <Badge className={`${invitationStatus.color} text-xs uppercase font-oswald tracking-wide`}>
-                          {invitationStatus.text}
-                        </Badge>
-                        
-                        {/* Real-time status */}
-                        {status && (
-                          <div className="flex items-center space-x-2">
-                            <div className={`w-3 h-3 rounded-full ${getStatusColor(status.status)}`}></div>
-                            <Badge className={`${getStatusBadge(status.status)} text-xs uppercase font-oswald tracking-wide`}>
-                              {status.status}
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="font-fjalla font-bold text-card-foreground text-lg tracking-wide">
+                              {specialist.first_name} {specialist.last_name}
+                            </h3>
+                            
+                            {/* Invitation Status */}
+                            <Badge className={`${invitationStatus.color} text-xs uppercase font-oswald tracking-wide`}>
+                              {invitationStatus.text}
                             </Badge>
+                            
+                            {/* Real-time status */}
+                            {status && (
+                              <div className="flex items-center space-x-2">
+                                <div className={`w-3 h-3 rounded-full ${getStatusColor(status.status)}`}></div>
+                                <Badge className={`${getStatusBadge(status.status)} text-xs uppercase font-oswald tracking-wide`}>
+                                  {status.status}
+                                </Badge>
+                              </div>
+                            )}
                           </div>
+                          
+                          <p className="text-muted-foreground text-sm mb-2">
+                            {specialist.years_experience} years experience
+                          </p>
+                          
+                          {specialist.bio && (
+                            <p className="text-muted-foreground text-sm mb-3 max-w-2xl">
+                              {specialist.bio}
+                            </p>
+                          )}
+                          
+                          {specialist.specialties && specialist.specialties.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {specialist.specialties.map((specialty, index) => (
+                                <Badge key={index} className="bg-primary/20 text-primary border-primary/30 text-xs">
+                                  {specialty}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className="bg-muted/50 p-3 rounded-sm">
+                              <div className="flex items-center space-x-2">
+                                <Activity className="text-primary" size={14} />
+                                <div>
+                                  <div className="text-sm font-bold text-card-foreground">
+                                    {analyticsData?.total_sessions || 0}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Sessions</div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-muted/50 p-3 rounded-sm">
+                              <div className="flex items-center space-x-2">
+                                <MessageSquare className="text-primary" size={14} />
+                                <div>
+                                  <div className="text-sm font-bold text-card-foreground">
+                                    {analyticsData?.active_sessions || 0}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Active Now</div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-muted/50 p-3 rounded-sm">
+                              <div className="flex items-center space-x-2">
+                                <TrendingUp className="text-primary" size={14} />
+                                <div>
+                                  <div className="text-sm font-bold text-card-foreground">
+                                    {analyticsData?.total_messages || 0}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Messages</div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-muted/50 p-3 rounded-sm">
+                              <div className="flex items-center space-x-2">
+                                <Clock className="text-primary" size={14} />
+                                <div>
+                                  <div className="text-sm font-bold text-card-foreground">
+                                    {status?.last_seen ? new Date(status.last_seen).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--'}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Last Seen</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start space-x-4">
+                        <div className="flex flex-col space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={specialist.is_active}
+                              onCheckedChange={() => handleStatusToggle(specialist, 'is_active')}
+                              disabled={!specialist.is_verified}
+                              className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted scale-75"
+                            />
+                            <span className={`text-xs ${specialist.is_verified ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
+                              Active {!specialist.is_verified && '(requires verification)'}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={specialist.is_verified}
+                              onCheckedChange={() => handleStatusToggle(specialist, 'is_verified')}
+                              className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted scale-75"
+                            />
+                            <span className="text-xs text-muted-foreground">Verified</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col space-y-2">
+                          <Button
+                            onClick={() => handleEdit(specialist)}
+                            variant="outline"
+                            size="sm"
+                            className="border-primary text-primary hover:bg-primary/10"
+                          >
+                            <Edit size={16} />
+                          </Button>
+                          
+                          {!specialist.activated_at && (
+                            <Button
+                              onClick={() => handleResendInvitation(specialist)}
+                              variant="outline"
+                              size="sm"
+                              className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                              disabled={isInviting}
+                            >
+                              <Send size={16} />
+                            </Button>
+                          )}
+                          
+                          <Button
+                            onClick={() => handleSoftDelete(specialist)}
+                            variant="outline"
+                            size="sm"
+                            className="border-red-500 text-red-500 hover:bg-red-500/10"
+                            title="Move to removed tab while preserving history"
+                          >
+                            <X size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+              
+              {specialists.length === 0 && (
+                <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+                  <p className="text-muted-foreground text-center">No active specialists found. Create and invite your first specialist to get started.</p>
+                </Card>
+              )}
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="removed" className="mt-6">
+          <div className="space-y-4">
+            {removedSpecialists.map((specialist) => {
+              const invitationStatus = getInvitationStatus(specialist);
+              
+              return (
+                <Card key={specialist.id} className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300 opacity-75">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4 flex-1">
+                      <div className="bg-muted p-3 rounded-sm">
+                        {specialist.avatar_url ? (
+                          <img 
+                            src={specialist.avatar_url} 
+                            alt={`${specialist.first_name} ${specialist.last_name}`}
+                            className="w-8 h-8 rounded object-cover grayscale"
+                          />
+                        ) : (
+                          <Users className="text-muted-foreground" size={20} />
                         )}
                       </div>
                       
-                      <p className="text-muted-foreground text-sm mb-2">
-                        {specialist.years_experience} years experience
-                      </p>
-                      
-                      {specialist.bio && (
-                        <p className="text-muted-foreground text-sm mb-3 max-w-2xl">
-                          {specialist.bio}
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="font-fjalla font-bold text-muted-foreground text-lg tracking-wide">
+                            {specialist.first_name} {specialist.last_name}
+                          </h3>
+                          
+                          <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs uppercase font-oswald tracking-wide">
+                            REMOVED
+                          </Badge>
+                        </div>
+                        
+                        <p className="text-muted-foreground text-sm mb-2">
+                          {specialist.years_experience} years experience
                         </p>
-                      )}
-                      
-                      {specialist.specialties && specialist.specialties.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {specialist.specialties.map((specialty, index) => (
-                            <Badge key={index} className="bg-primary/20 text-primary border-primary/30 text-xs">
-                              {specialty}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="bg-muted/50 p-3 rounded-sm">
-                          <div className="flex items-center space-x-2">
-                            <Activity className="text-primary" size={14} />
-                            <div>
-                              <div className="text-sm font-bold text-card-foreground">
-                                {analyticsData?.total_sessions || 0}
-                              </div>
-                              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Sessions</div>
-                            </div>
-                          </div>
-                        </div>
                         
-                        <div className="bg-muted/50 p-3 rounded-sm">
-                          <div className="flex items-center space-x-2">
-                            <MessageSquare className="text-primary" size={14} />
-                            <div>
-                              <div className="text-sm font-bold text-card-foreground">
-                                {analyticsData?.active_sessions || 0}
-                              </div>
-                              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Active Now</div>
-                            </div>
-                          </div>
-                        </div>
+                        {specialist.bio && (
+                          <p className="text-muted-foreground text-sm mb-3 max-w-2xl">
+                            {specialist.bio}
+                          </p>
+                        )}
                         
-                        <div className="bg-muted/50 p-3 rounded-sm">
-                          <div className="flex items-center space-x-2">
-                            <TrendingUp className="text-primary" size={14} />
-                            <div>
-                              <div className="text-sm font-bold text-card-foreground">
-                                {analyticsData?.total_messages || 0}
-                              </div>
-                              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Messages</div>
-                            </div>
+                        {specialist.specialties && specialist.specialties.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {specialist.specialties.map((specialty, index) => (
+                              <Badge key={index} className="bg-muted/20 text-muted-foreground border-muted/30 text-xs">
+                                {specialty}
+                              </Badge>
+                            ))}
                           </div>
-                        </div>
+                        )}
                         
-                        <div className="bg-muted/50 p-3 rounded-sm">
-                          <div className="flex items-center space-x-2">
-                            <Clock className="text-primary" size={14} />
-                            <div>
-                              <div className="text-sm font-bold text-card-foreground">
-                                {status?.last_seen ? new Date(status.last_seen).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--'}
-                              </div>
-                              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Last Seen</div>
-                            </div>
-                          </div>
-                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Removed on: {new Date(specialist.updated_at).toLocaleDateString()}
+                        </p>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-start space-x-4">
-                    <div className="flex flex-col space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={specialist.is_active}
-                          onCheckedChange={() => handleStatusToggle(specialist, 'is_active')}
-                          disabled={!specialist.is_verified}
-                          className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted scale-75"
-                        />
-                        <span className={`text-xs ${specialist.is_verified ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
-                          Active {!specialist.is_verified && '(requires verification)'}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={specialist.is_verified}
-                          onCheckedChange={() => handleStatusToggle(specialist, 'is_verified')}
-                          className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted scale-75"
-                        />
-                        <span className="text-xs text-muted-foreground">Verified</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col space-y-2">
-                      <Button
-                        onClick={() => handleEdit(specialist)}
-                        variant="outline"
-                        size="sm"
-                        className="border-primary text-primary hover:bg-primary/10"
-                      >
-                        <Edit size={16} />
-                      </Button>
-                      
-                      {!specialist.activated_at && (
-                        <Button
-                          onClick={() => handleResendInvitation(specialist)}
-                          variant="outline"
-                          size="sm"
-                          className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
-                          disabled={isInviting}
-                        >
-                          <Send size={16} />
-                        </Button>
-                      )}
-                      
-                      <Button
-                        onClick={() => handleSoftDelete(specialist)}
-                        variant="outline"
-                        size="sm"
-                        className="border-red-500 text-red-500 hover:bg-red-500/10"
-                        title="Deactivate specialist while preserving history"
-                      >
-                        <X size={16} />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                </Card>
+              );
+            })}
+            
+            {removedSpecialists.length === 0 && (
+              <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+                <p className="text-muted-foreground text-center">No removed specialists found.</p>
               </Card>
-            );
-          })}
-          
-          {specialists.length === 0 && (
-            <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
-              <p className="text-muted-foreground text-center">No peer specialists found. Create and invite your first specialist to get started.</p>
-            </Card>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
