@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { startOfDay, endOfDay, addDays, format } from 'date-fns';
+import { Json } from '@/integrations/supabase/types';
 
 interface CalendarSettings {
   id: string;
@@ -14,18 +15,25 @@ interface CalendarSettings {
   maximum_booking_days: number;
   auto_confirm_bookings: boolean;
   allow_back_to_back_bookings: boolean;
-  working_hours: Record<string, { start: string; end: string }>;
-  notification_preferences: {
-    email: boolean;
-    sms: boolean;
-    app: boolean;
-  };
-  external_calendar_sync: {
-    enabled: boolean;
-    provider: string | null;
-    calendar_id: string | null;
-  };
+  working_hours: Json;
+  notification_preferences: Json;
+  external_calendar_sync: Json;
+  created_at: string;
+  updated_at: string;
 }
+
+// Type guards for safe JSON parsing
+const isWorkingHours = (value: Json): value is Record<string, { start: string; end: string }> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
+
+const isNotificationPrefs = (value: Json): value is { email: boolean; sms: boolean; app: boolean } => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
+
+const isExternalCalendarSync = (value: Json): value is { enabled: boolean; provider: string | null; calendar_id: string | null } => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
 
 interface AvailabilitySlot {
   id: string;
@@ -73,7 +81,7 @@ export function useSpecialistCalendar({ specialistId }: UseSpecialistCalendarPro
         throw error;
       }
 
-      setSettings(data as CalendarSettings);
+      setSettings(data);
     } catch (error) {
       console.error('Error fetching calendar settings:', error);
       setError('Failed to load calendar settings');
@@ -100,23 +108,23 @@ export function useSpecialistCalendar({ specialistId }: UseSpecialistCalendarPro
             wednesday: { start: '09:00', end: '17:00' },
             thursday: { start: '09:00', end: '17:00' },
             friday: { start: '09:00', end: '17:00' },
-          },
+          } as Json,
           notification_preferences: {
             email: true,
             sms: false,
             app: true,
-          },
+          } as Json,
           external_calendar_sync: {
             enabled: false,
             provider: null,
             calendar_id: null,
-          },
+          } as Json,
         })
         .select()
         .single();
 
       if (error) throw error;
-      setSettings(data as CalendarSettings);
+      setSettings(data);
     } catch (error) {
       console.error('Error creating default settings:', error);
       setError('Failed to create calendar settings');
@@ -135,7 +143,7 @@ export function useSpecialistCalendar({ specialistId }: UseSpecialistCalendarPro
 
       if (error) throw error;
       
-      setSettings(data as CalendarSettings);
+      setSettings(data);
       toast({
         title: "Success",
         description: "Calendar settings updated successfully"
@@ -324,6 +332,31 @@ export function useSpecialistCalendar({ specialistId }: UseSpecialistCalendarPro
     }
   }, [error]);
 
+  // Helper functions to safely extract typed values
+  const getWorkingHours = useCallback(() => {
+    if (!settings?.working_hours) return {};
+    if (isWorkingHours(settings.working_hours)) {
+      return settings.working_hours;
+    }
+    return {};
+  }, [settings?.working_hours]);
+
+  const getNotificationPreferences = useCallback(() => {
+    if (!settings?.notification_preferences) return { email: true, sms: false, app: true };
+    if (isNotificationPrefs(settings.notification_preferences)) {
+      return settings.notification_preferences;
+    }
+    return { email: true, sms: false, app: true };
+  }, [settings?.notification_preferences]);
+
+  const getExternalCalendarSync = useCallback(() => {
+    if (!settings?.external_calendar_sync) return { enabled: false, provider: null, calendar_id: null };
+    if (isExternalCalendarSync(settings.external_calendar_sync)) {
+      return settings.external_calendar_sync;
+    }
+    return { enabled: false, provider: null, calendar_id: null };
+  }, [settings?.external_calendar_sync]);
+
   return {
     settings,
     availabilitySlots,
@@ -335,5 +368,9 @@ export function useSpecialistCalendar({ specialistId }: UseSpecialistCalendarPro
     getAvailabilitySlots,
     createAvailabilityBlock,
     createAvailabilityException,
+    // Helper functions for typed access
+    getWorkingHours,
+    getNotificationPreferences,
+    getExternalCalendarSync,
   };
 }
