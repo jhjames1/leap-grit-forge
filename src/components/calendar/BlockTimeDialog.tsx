@@ -13,6 +13,8 @@ interface BlockTimeDialogProps {
   onSuccess?: () => void;
 }
 
+type BlockType = 'user' | 'meeting' | 'personal' | 'other';
+
 export function BlockTimeDialog({ specialistId, onSuccess }: BlockTimeDialogProps) {
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
@@ -20,6 +22,7 @@ export function BlockTimeDialog({ specialistId, onSuccess }: BlockTimeDialogProp
   const [endDate, setEndDate] = useState('');
   const [endTime, setEndTime] = useState('');
   const [exceptionType, setExceptionType] = useState<'unavailable' | 'busy'>('unavailable');
+  const [blockType, setBlockType] = useState<BlockType>('personal');
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +45,12 @@ export function BlockTimeDialog({ specialistId, onSuccess }: BlockTimeDialogProp
         throw new Error('End time must be after start time');
       }
 
-      await createAvailabilityException(startDateTime, endDateTime, exceptionType, reason);
+      // Include block type in the reason field
+      const formattedReason = blockType === 'other' 
+        ? reason 
+        : `[${blockType.toUpperCase()}]${reason ? ` ${reason}` : ''}`;
+
+      await createAvailabilityException(startDateTime, endDateTime, exceptionType, formattedReason);
       setOpen(false);
       onSuccess?.();
       
@@ -52,6 +60,7 @@ export function BlockTimeDialog({ specialistId, onSuccess }: BlockTimeDialogProp
       setEndDate('');
       setEndTime('');
       setExceptionType('unavailable');
+      setBlockType('personal');
       setReason('');
     } catch (error) {
       console.error('Error creating time block:', error);
@@ -87,6 +96,21 @@ export function BlockTimeDialog({ specialistId, onSuccess }: BlockTimeDialogProp
               <SelectContent>
                 <SelectItem value="unavailable">Unavailable</SelectItem>
                 <SelectItem value="busy">Busy</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="block-type">Block Category</Label>
+            <Select value={blockType} onValueChange={(value: BlockType) => setBlockType(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select block category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user">User Appointment</SelectItem>
+                <SelectItem value="meeting">Meeting</SelectItem>
+                <SelectItem value="personal">Personal</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -140,13 +164,18 @@ export function BlockTimeDialog({ specialistId, onSuccess }: BlockTimeDialogProp
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="reason">Reason (optional)</Label>
+            <Label htmlFor="reason">{blockType === 'other' ? 'Reason' : 'Reason (optional)'}</Label>
             <Textarea
               id="reason"
-              placeholder="Enter reason for blocking this time..."
+              placeholder={
+                blockType === 'other' 
+                  ? "Please specify the reason for blocking this time..."
+                  : "Enter additional details for blocking this time..."
+              }
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
+              required={blockType === 'other'}
             />
           </div>
 
