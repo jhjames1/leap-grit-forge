@@ -531,7 +531,8 @@ const PeerSpecialistDashboard = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online': return 'bg-green-500';
-      case 'busy': return 'bg-yellow-500';
+      case 'busy': return 'bg-gray-500';
+      case 'offline': return 'bg-red-500';
       default: return 'bg-gray-500';
     }
   };
@@ -723,11 +724,11 @@ const PeerSpecialistDashboard = () => {
                 WELCOME, <span className="font-bold italic">{specialist.first_name.toUpperCase()} {specialist.last_name.toUpperCase()}</span>
                 {specialistStatus && (
                   <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
-                    specialistStatus.status === 'online' ? 'text-green-500' :
-                    specialistStatus.status === 'busy' ? 'text-yellow-500' :
-                    'text-red-500'
+                    specialistStatus.status === 'online' ? 'bg-green-500 text-white' :
+                    specialistStatus.status === 'busy' ? 'bg-gray-500 text-black' :
+                    'bg-red-500 text-white'
                   }`}>
-                    {specialistStatus.status.toUpperCase()}
+                    {specialistStatus.status === 'busy' ? 'UNAVAILABLE' : specialistStatus.status.toUpperCase()}
                   </span>
                 )}
               </p>
@@ -852,31 +853,43 @@ const PeerSpecialistDashboard = () => {
             </div>
           </Card>
 
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <Card className={`p-4 rounded-lg border-0 shadow-none transition-colors duration-300 ${
+            specialistStatus?.status === 'online' ? 'bg-green-500' :
+            specialistStatus?.status === 'busy' ? 'bg-gray-500' :
+            'bg-red-500'
+          }`}>
             <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-primary p-3 rounded-sm">
-                <Settings className="text-primary-foreground" size={20} />
+              <div className={`p-3 rounded-sm ${
+                specialistStatus?.status === 'online' ? 'bg-green-600' :
+                specialistStatus?.status === 'busy' ? 'bg-gray-600' :
+                'bg-red-600'
+              }`}>
+                <Settings className="text-white" size={20} />
               </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
+              <h3 className="font-fjalla font-bold text-white text-base uppercase tracking-wide">
                 Status
               </h3>
             </div>
             <div className="flex flex-col space-y-2">
               <span className={`text-lg font-bold ${
-                specialistStatus?.status === 'online' ? 'text-green-500' :
-                specialistStatus?.status === 'busy' ? 'text-yellow-500' :
-                'text-red-500'
+                specialistStatus?.status === 'busy' ? 'text-black' : 'text-white'
               }`}>
-                {specialistStatus?.status.toUpperCase()}
+                {specialistStatus?.status === 'busy' ? 'UNAVAILABLE' : specialistStatus?.status.toUpperCase()}
               </span>
-              <div className="text-xs text-muted-foreground">
+              <div className={`text-xs ${
+                specialistStatus?.status === 'busy' ? 'text-gray-700' : 'text-white/70'
+              }`}>
                 Last seen: {specialistStatus?.last_seen ? new Date(specialistStatus.last_seen).toLocaleTimeString() : 'Never'}
               </div>
               <Button 
                 onClick={() => setIsStatusDialogOpen(true)}
                 variant="outline"
                 size="sm"
-                className="mt-1"
+                className={`mt-1 ${
+                  specialistStatus?.status === 'busy' 
+                    ? 'border-gray-700 text-black hover:bg-gray-600 hover:text-white' 
+                    : 'border-white/30 text-white hover:bg-white/20'
+                }`}
               >
                 Change
               </Button>
