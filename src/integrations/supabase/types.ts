@@ -786,7 +786,8 @@ export type Database = {
       }
       user_journey_progress: {
         Row: {
-          completed_days: number
+          completed_days: number[] | null
+          completion_dates: Json | null
           created_at: string
           current_day: number
           daily_stats: Json | null
@@ -799,7 +800,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          completed_days?: number
+          completed_days?: number[] | null
+          completion_dates?: Json | null
           created_at?: string
           current_day?: number
           daily_stats?: Json | null
@@ -812,7 +814,8 @@ export type Database = {
           user_id: string
         }
         Update: {
-          completed_days?: number
+          completed_days?: number[] | null
+          completion_dates?: Json | null
           created_at?: string
           current_day?: number
           daily_stats?: Json | null

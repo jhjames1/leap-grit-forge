@@ -39,7 +39,8 @@ export interface UserJourneyProgress {
   focus_areas: string[];
   support_style?: string;
   current_day: number;
-  completed_days: number;
+  completed_days: number[];
+  completion_dates?: Record<number, string>;
   journey_responses: Record<string, any>;
   daily_stats: Record<string, any>;
 }
@@ -239,7 +240,8 @@ export class SupabaseUserService {
       return data ? {
         ...data,
         journey_responses: data.journey_responses as Record<string, any> || {},
-        daily_stats: data.daily_stats as Record<string, any> || {}
+        daily_stats: data.daily_stats as Record<string, any> || {},
+        completion_dates: data.completion_dates as Record<number, string> || {}
       } : null;
     } catch (error) {
       logger.error('Error fetching journey progress:', error);

@@ -216,7 +216,8 @@ export class DataMigrationService {
         focus_areas: journeyProgress.focusAreas || legacyData.focusAreas || [],
         support_style: journeyProgress.supportStyle || legacyData.supportStyle,
         current_day: journeyProgress.currentDay || 1,
-        completed_days: journeyProgress.completedDays || 0,
+        completed_days: Array.isArray(journeyProgress.completedDays) ? journeyProgress.completedDays : [],
+        completion_dates: {},
         journey_responses: journeyProgress.journeyResponses || {},
         daily_stats: journeyProgress.dailyStats || legacyData.dailyStats || {}
       };

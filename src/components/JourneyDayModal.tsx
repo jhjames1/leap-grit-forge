@@ -41,7 +41,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [currentAudioActivity, setCurrentAudioActivity] = useState<string | null>(null);
   const [showTriggerIdentifier, setShowTriggerIdentifier] = useState(false);
-  const { updateUserData, userData, logActivity } = useUserData();
+  const { updateUserData, userData, logActivity, markDayComplete } = useUserData();
   const { toast } = useToast();
   const { language, t } = useLanguage();
 
@@ -326,6 +326,18 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
   const completedActivities = Object.keys(activityStates).length;
   const allActivitiesComplete = completedActivities >= activities.length;
   const dayProgress = (completedActivities / activities.length) * 100;
+
+  // Auto-complete day when all activities are done
+  useEffect(() => {
+    if (allActivitiesComplete && !userData?.journeyProgress?.completedDays?.includes(day)) {
+      markDayComplete(day);
+      
+      // Call the parent onComplete callback
+      setTimeout(() => {
+        onComplete();
+      }, 500);
+    }
+  }, [allActivitiesComplete, day, userData?.journeyProgress?.completedDays, markDayComplete, onComplete]);
 
   const renderActivity = (activity: any, index: number) => {
     const isActive = index <= currentActivityIndex;

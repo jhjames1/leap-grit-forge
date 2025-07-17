@@ -193,7 +193,7 @@ export const useUserData = () => {
           focus_areas: initialData.focusAreas || ['stress_management'],
           support_style: initialData.supportStyle,
           current_day: 1,
-          completed_days: 0,
+          completed_days: [],
           journey_responses: initialData.journeyResponses || {},
           daily_stats: initialData.dailyStats || {}
         }),
@@ -479,6 +479,51 @@ export const useUserData = () => {
     updateUserData({ toolboxStats: updatedStats });
   };
 
+  const markDayComplete = async (day: number) => {
+    if (!userData) return;
+
+    const updatedCompletedDays = [...userData.journeyProgress?.completedDays || []];
+    const completionDates = { ...userData.journeyProgress?.completionDates || {} };
+
+    // Add day to completed days if not already there
+    if (!updatedCompletedDays.includes(day)) {
+      updatedCompletedDays.push(day);
+      completionDates[day] = new Date().toISOString();
+    }
+
+    const updatedJourneyProgress = {
+      ...userData.journeyProgress,
+      completedDays: updatedCompletedDays,
+      completionDates,
+      currentWeek: Math.max(userData.journeyProgress?.currentWeek || 1, Math.ceil(day / 7))
+    };
+
+    const updatedUserData = {
+      ...userData,
+      journeyProgress: updatedJourneyProgress
+    };
+
+    setUserData(updatedUserData);
+    SecureStorage.setUserData(currentUser, updatedUserData);
+
+    // Sync to Supabase if authenticated
+    if (currentUser) {
+      await SupabaseUserService.upsertJourneyProgress({
+        user_id: currentUser,
+        current_day: Math.max(userData.journeyProgress?.currentWeek || 1, day + 1),
+        completed_days: updatedCompletedDays,
+        completion_dates: completionDates,
+        journey_stage: userData.journeyStage || 'foundation',
+        focus_areas: userData.focusAreas || [],
+        support_style: userData.supportStyle,
+        journey_responses: userData.journeyResponses || {},
+        daily_stats: userData.dailyStats || {}
+      });
+    }
+
+    logActivity(`completed_day_${day}`, `Day ${day} completed`, 'journey');
+  };
+
   const logout = () => {
     if (currentUser) {
       logSecurityEvent('user_logout', { username: currentUser });
@@ -497,6 +542,7 @@ export const useUserData = () => {
     loadUserData,
     logout,
     setUserData, // Export setUserData for manual state updates
-    refreshUserData // Export refresh function
+    refreshUserData, // Export refresh function
+    markDayComplete
   };
 };
