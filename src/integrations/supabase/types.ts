@@ -83,6 +83,39 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_types: {
+        Row: {
+          color: string | null
+          created_at: string
+          default_duration: number
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          default_duration?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          default_duration?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cbt_game_sessions: {
         Row: {
           coins_earned: number
@@ -404,6 +437,187 @@ export type Database = {
         }
         Relationships: []
       }
+      specialist_appointments: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          appointment_type_id: string
+          cancellation_reason: string | null
+          created_at: string
+          id: string
+          location: string | null
+          meeting_type: string
+          meeting_url: string | null
+          notes: string | null
+          reminder_sent: boolean | null
+          scheduled_end: string
+          scheduled_start: string
+          specialist_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          appointment_type_id: string
+          cancellation_reason?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          meeting_type?: string
+          meeting_url?: string | null
+          notes?: string | null
+          reminder_sent?: boolean | null
+          scheduled_end: string
+          scheduled_start: string
+          specialist_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          appointment_type_id?: string
+          cancellation_reason?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          meeting_type?: string
+          meeting_url?: string | null
+          notes?: string | null
+          reminder_sent?: boolean | null
+          scheduled_end?: string
+          scheduled_start?: string
+          specialist_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_appointments_appointment_type_id_fkey"
+            columns: ["appointment_type_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_appointments_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "peer_specialists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_availability_exceptions: {
+        Row: {
+          created_at: string
+          end_time: string
+          exception_type: string
+          id: string
+          is_recurring: boolean | null
+          reason: string | null
+          recurrence_pattern: Json | null
+          specialist_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          exception_type?: string
+          id?: string
+          is_recurring?: boolean | null
+          reason?: string | null
+          recurrence_pattern?: Json | null
+          specialist_id: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          exception_type?: string
+          id?: string
+          is_recurring?: boolean | null
+          reason?: string | null
+          recurrence_pattern?: Json | null
+          specialist_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_availability_exceptions_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "peer_specialists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialist_calendar_settings: {
+        Row: {
+          allow_back_to_back_bookings: boolean
+          auto_confirm_bookings: boolean
+          buffer_time_minutes: number
+          created_at: string
+          default_appointment_duration: number
+          external_calendar_sync: Json | null
+          id: string
+          maximum_booking_days: number
+          minimum_notice_hours: number
+          notification_preferences: Json
+          specialist_id: string
+          timezone: string
+          updated_at: string
+          working_hours: Json
+        }
+        Insert: {
+          allow_back_to_back_bookings?: boolean
+          auto_confirm_bookings?: boolean
+          buffer_time_minutes?: number
+          created_at?: string
+          default_appointment_duration?: number
+          external_calendar_sync?: Json | null
+          id?: string
+          maximum_booking_days?: number
+          minimum_notice_hours?: number
+          notification_preferences?: Json
+          specialist_id: string
+          timezone?: string
+          updated_at?: string
+          working_hours?: Json
+        }
+        Update: {
+          allow_back_to_back_bookings?: boolean
+          auto_confirm_bookings?: boolean
+          buffer_time_minutes?: number
+          created_at?: string
+          default_appointment_duration?: number
+          external_calendar_sync?: Json | null
+          id?: string
+          maximum_booking_days?: number
+          minimum_notice_hours?: number
+          notification_preferences?: Json
+          specialist_id?: string
+          timezone?: string
+          updated_at?: string
+          working_hours?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_calendar_settings_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: true
+            referencedRelation: "peer_specialists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specialist_content_views: {
         Row: {
           content_id: string
@@ -477,36 +691,61 @@ export type Database = {
       }
       specialist_schedules: {
         Row: {
+          appointment_type_id: string | null
+          buffer_time_minutes: number | null
           created_at: string
           day_of_week: number
           end_time: string
           id: string
           is_active: boolean | null
+          is_recurring: boolean | null
+          max_bookings_per_slot: number | null
+          recurrence_pattern: Json | null
           specialist_id: string
           start_time: string
+          timezone: string | null
           updated_at: string
         }
         Insert: {
+          appointment_type_id?: string | null
+          buffer_time_minutes?: number | null
           created_at?: string
           day_of_week: number
           end_time: string
           id?: string
           is_active?: boolean | null
+          is_recurring?: boolean | null
+          max_bookings_per_slot?: number | null
+          recurrence_pattern?: Json | null
           specialist_id: string
           start_time: string
+          timezone?: string | null
           updated_at?: string
         }
         Update: {
+          appointment_type_id?: string | null
+          buffer_time_minutes?: number | null
           created_at?: string
           day_of_week?: number
           end_time?: string
           id?: string
           is_active?: boolean | null
+          is_recurring?: boolean | null
+          max_bookings_per_slot?: number | null
+          recurrence_pattern?: Json | null
           specialist_id?: string
           start_time?: string
+          timezone?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "specialist_schedules_appointment_type_id_fkey"
+            columns: ["appointment_type_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_types"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "specialist_schedules_specialist_id_fkey"
             columns: ["specialist_id"]
@@ -1017,6 +1256,14 @@ export type Database = {
       add_admin_role: {
         Args: { target_user_id: string }
         Returns: Json
+      }
+      check_specialist_availability: {
+        Args: {
+          p_specialist_id: string
+          p_start_time: string
+          p_end_time: string
+        }
+        Returns: boolean
       }
       debug_auth_context: {
         Args: Record<PropertyKey, never>
