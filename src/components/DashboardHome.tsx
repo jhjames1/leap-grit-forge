@@ -145,9 +145,53 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       }
     }
     
-    // Calculate badge count based on activities completed
-    const uniqueActivities = new Set((userData?.activityLog || []).map(entry => entry.action));
-    setBadgeCount(uniqueActivities.size);
+    // Calculate badge count based on actual achievements
+    const calculateEarnedBadges = () => {
+      const badges = [];
+      const completedDays = userData?.journeyProgress?.completedDays || [];
+      const activityLog = userData?.activityLog || [];
+      
+      // Week Warrior Badge - Complete 7 days
+      if (completedDays.length >= 7) badges.push('weekWarrior');
+      
+      // Steady Breather Badge - Use breathing exercises 10 times
+      const breathingCount = activityLog.filter(entry => 
+        entry.action.includes('Breathing') || 
+        entry.action.includes('SteadySteel')
+      ).length;
+      if (breathingCount >= 10) badges.push('steadyBreather');
+      
+      // Tool Master Badge - Use 5 different tools
+      const uniqueTools = new Set();
+      activityLog.forEach(entry => {
+        if (entry.action.includes('Completed')) {
+          if (entry.action.includes('SteadySteel')) uniqueTools.add('SteadySteel');
+          if (entry.action.includes('Redline Recovery')) uniqueTools.add('Redline Recovery');
+          if (entry.action.includes('Gratitude')) uniqueTools.add('Gratitude Log');
+          if (entry.action.includes('Trigger')) uniqueTools.add('Trigger Identifier');
+          if (entry.action.includes('Foreman')) uniqueTools.add('The Foreman');
+          if (entry.action.includes('Peer')) uniqueTools.add('Peer Support');
+        }
+      });
+      if (uniqueTools.size >= 5) badges.push('toolMaster');
+      
+      // Journey Explorer Badge - Complete 30 days
+      if (completedDays.length >= 30) badges.push('journeyExplorer');
+      
+      // Streak Champion Badge - Maintain 14-day streak
+      if (recoveryStreak >= 14) badges.push('streakChampion');
+      
+      // Social Connector Badge - Use peer support 5 times
+      const peerSupportCount = activityLog.filter(entry => 
+        entry.action.includes('Peer') || 
+        entry.action.includes('Chat')
+      ).length;
+      if (peerSupportCount >= 5) badges.push('socialConnector');
+      
+      return badges.length;
+    };
+    
+    setBadgeCount(calculateEarnedBadges());
   }, [userData, language]);  // Add language dependency to refresh translations
 
   // Get upcoming week activities - random 3 days from next 7 in chronological order
