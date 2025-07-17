@@ -24,7 +24,8 @@ import {
   BarChart3,
   Archive,
   Heart,
-  Activity
+  Activity,
+  Calendar
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import SpecialistAnalyticsDashboard from './SpecialistAnalyticsDashboard';
@@ -32,6 +33,7 @@ import ChatArchive from './ChatArchive';
 import SpecialistActivityLog from './SpecialistActivityLog';
 import MotivationalWelcome from './MotivationalWelcome';
 import SpecialistFavorites from './SpecialistFavorites';
+import SpecialistCalendar from './calendar/SpecialistCalendar';
 
 interface ChatSession {
   id: string;
@@ -900,7 +902,7 @@ const PeerSpecialistDashboard = () => {
         {/* Main Dashboard Content */}
         <div className="w-full">
           <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-muted">
+            <TabsList className="grid w-full grid-cols-3 bg-muted">
               <TabsTrigger 
                 value="active" 
                 className="flex items-center gap-2 data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=inactive]:bg-gray-400 data-[state=inactive]:text-gray-700"
@@ -914,6 +916,13 @@ const PeerSpecialistDashboard = () => {
               >
                 <Archive size={16} />
                 Archive
+              </TabsTrigger>
+              <TabsTrigger 
+                value="calendar" 
+                className="flex items-center gap-2 data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=inactive]:bg-gray-400 data-[state=inactive]:text-gray-700"
+              >
+                <Calendar size={16} />
+                Calendar
               </TabsTrigger>
             </TabsList>
             
@@ -1129,6 +1138,12 @@ const PeerSpecialistDashboard = () => {
             
             <TabsContent value="archive" className="mt-6">
               <ChatArchive />
+            </TabsContent>
+            
+            <TabsContent value="calendar" className="mt-6">
+              {specialist && (
+                <SpecialistCalendar specialistId={specialist.id} />
+              )}
             </TabsContent>
           </Tabs>
         </div>
