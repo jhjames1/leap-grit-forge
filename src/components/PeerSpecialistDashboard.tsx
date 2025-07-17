@@ -25,7 +25,8 @@ import {
   Archive,
   Heart,
   Activity,
-  Calendar
+  Calendar,
+  RefreshCcw
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import SpecialistAnalyticsDashboard from './SpecialistAnalyticsDashboard';
@@ -205,7 +206,7 @@ const PeerSpecialistDashboard = () => {
       const startedSessions = todayChats?.filter(chat => chat.started_at) || [];
       if (startedSessions.length > 0) {
         const totalWaitTime = startedSessions.reduce((sum, session) => {
-          const waitTime = new Date(session.started_at).getTime() - new Date(session.created_at).getTime();
+          const waitTime = new Date(session.started_at!).getTime() - new Date(session.created_at).getTime();
           return sum + waitTime;
         }, 0);
         const avgWaitTimeMs = totalWaitTime / startedSessions.length;
@@ -440,6 +441,42 @@ const PeerSpecialistDashboard = () => {
       supabase.removeChannel(sessionUpdatesChannel);
     };
   };
+  
+  const refreshData = async () => {
+    if (!specialist) return;
+    
+    try {
+      toast({
+        title: "Refreshing",
+        description: "Updating specialist dashboard data..."
+      });
+      
+      await Promise.all([
+        loadChatSessions(),
+        loadTodayMetrics()
+      ]);
+      
+      toast({
+        title: "Refreshed",
+        description: "Dashboard data has been updated"
+      });
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh dashboard data",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'online': return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'busy': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+    }
+  };
 
   const updateStatus = async (newStatus: 'online' | 'busy' | 'offline', message?: string) => {
     if (!specialistStatus) return;
@@ -474,6 +511,24 @@ const PeerSpecialistDashboard = () => {
         description: "Failed to update status",
         variant: "destructive"
       });
+    }
+  };
+
+  const getSessionStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-500 text-white';
+      case 'waiting': return 'bg-yellow-500 text-white';
+      case 'ended': return 'bg-red-500 text-white';
+      default: return 'bg-gray-500 text-white';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'online': return 'bg-green-500';
+      case 'busy': return 'bg-gray-500';
+      case 'offline': return 'bg-red-500';
+      default: return 'bg-gray-500';
     }
   };
 
@@ -517,32 +572,6 @@ const PeerSpecialistDashboard = () => {
       await updateStatus('offline');
     }
     await signOut();
-  };
-
-  const getSessionStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-500 text-white';
-      case 'waiting': return 'bg-yellow-500 text-white';
-      case 'ended': return 'bg-red-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500';
-      case 'busy': return 'bg-gray-500';
-      case 'offline': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'busy': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
   };
 
   const handleSendMessage = async () => {
@@ -739,6 +768,15 @@ const PeerSpecialistDashboard = () => {
             <div className="flex flex-col items-end space-y-4">
               {/* Action Buttons */}
                <div className="flex gap-2">
+                <Button
+                  onClick={() => refreshData()}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCcw size={16} />
+                  Refresh
+                </Button>
                 <Button
                   onClick={() => setCurrentView('analytics')}
                   variant="outline"
