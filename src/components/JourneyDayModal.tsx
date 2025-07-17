@@ -195,9 +195,43 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
   };
 
   const getAllActivitiesForDay = (dayNum: number) => {
+    const activities = [];
+    
+    // Special handling for Day 1 - Understanding Your Triggers
+    if (dayNum === 1) {
+      activities.push({
+        key: 'welcome_intro',
+        title: 'Welcome to Your Journey',
+        type: 'intro',
+        description: 'Understanding your triggers is the foundation of lasting recovery. Today, you\'ll learn to identify what sparks cravings and build a personalized response plan.'
+      });
+      
+      activities.push({
+        key: 'trigger_identification',
+        title: 'Identify Your Triggers',
+        type: 'trigger_tool',
+        description: 'Use our interactive trigger identification tool to map your personal triggers and create coping strategies.'
+      });
+      
+      activities.push({
+        key: 'trigger_education',
+        title: 'Learn About Trigger Types',
+        type: 'educational',
+        description: 'Discover the 5 main types of triggers: Environmental, Emotional, Social, Physical, and Cognitive.'
+      });
+      
+      activities.push({
+        key: 'daily_reflection',
+        title: 'Reflection & Planning',
+        type: 'text_input',
+        description: 'Reflect on your trigger patterns and plan how you\'ll use this knowledge in your recovery journey.'
+      });
+      
+      return activities;
+    }
+    
     // Create activities based on the tool mentioned in the journey data
     const toolName = dayData.tool || 'Urge Tracker';
-    const activities = [];
     
     // Add tool-specific activity
     switch (toolName) {
@@ -241,6 +275,14 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
           description: dayData.activity 
         });
     }
+    
+    // Add additional activity for more content
+    activities.push({
+      key: 'bonus_activity',
+      title: 'Bonus Practice',
+      type: 'interactive',
+      description: 'Complete an additional practice to reinforce today\'s learning.'
+    });
     
     // Add reflection activity for all days
     activities.push({
@@ -532,28 +574,154 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
           </Card>
         );
 
+      case 'intro':
+        return (
+          <Card key={activity.key} className={`border-0 shadow-none p-4 rounded-lg ${isCompleted ? 'bg-card/50' : 'bg-card'}`}>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className={`w-8 h-8 rounded-sm flex items-center justify-center ${isCompleted ? 'bg-primary' : 'bg-primary'}`}>
+                {isCompleted ? <CheckCircle2 className="text-primary-foreground" size={16} /> : <Target className="text-primary-foreground" size={16} />}
+              </div>
+              <h4 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide">{activity.title}</h4>
+            </div>
+            <p className="text-muted-foreground text-sm mb-4 font-source">{activity.description}</p>
+            
+            <div className="bg-muted/30 p-4 rounded-lg mb-4">
+              <h5 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide mb-2">Key Message</h5>
+              <p className="text-muted-foreground text-sm font-source italic">"{dayData.keyMessage}"</p>
+            </div>
+            
+            {!isCompleted ? (
+              <Button 
+                onClick={() => markActivityComplete(activity.key)}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-source w-full"
+              >
+                {t('common.continue')}
+              </Button>
+            ) : (
+              <div className="flex items-center space-x-2 text-primary justify-center">
+                <CheckCircle2 size={16} />
+                <span className="font-source">{t('common.completed')}</span>
+              </div>
+            )}
+          </Card>
+        );
+
+      case 'trigger_tool':
+        return (
+          <Card key={activity.key} className={`border-0 shadow-none p-4 rounded-lg ${isCompleted ? 'bg-card/50' : 'bg-card'}`}>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className={`w-8 h-8 rounded-sm flex items-center justify-center ${isCompleted ? 'bg-primary' : 'bg-primary'}`}>
+                {isCompleted ? <CheckCircle2 className="text-primary-foreground" size={16} /> : <Target className="text-primary-foreground" size={16} />}
+              </div>
+              <h4 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide">{activity.title}</h4>
+            </div>
+            <p className="text-muted-foreground text-sm mb-4 font-source">{activity.description}</p>
+            
+            <div className="bg-muted/30 p-4 rounded-lg mb-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <Target size={16} className="text-primary" />
+                <span className="font-fjalla font-bold text-card-foreground uppercase tracking-wide text-sm">Interactive Tool</span>
+              </div>
+              <p className="text-muted-foreground text-sm font-source">Map your triggers across 5 categories and build personalized coping strategies.</p>
+            </div>
+            
+            {!isCompleted ? (
+              <Button 
+                onClick={() => {
+                  toast({
+                    title: "Trigger Tool Opened",
+                    description: "Complete the interactive trigger mapping exercise.",
+                  });
+                  // Simulate tool completion after 5 seconds
+                  setTimeout(() => {
+                    markActivityComplete(activity.key, { triggers_mapped: true });
+                  }, 5000);
+                }}
+                className="bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold w-full"
+              >
+                Open Trigger Tool
+              </Button>
+            ) : (
+              <div className="flex items-center space-x-2 text-primary justify-center">
+                <CheckCircle2 size={16} />
+                <span className="font-source">{t('common.completed')}</span>
+              </div>
+            )}
+          </Card>
+        );
+
+      case 'educational':
+        return (
+          <Card key={activity.key} className={`border-0 shadow-none p-4 rounded-lg ${isCompleted ? 'bg-card/50' : 'bg-card'}`}>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className={`w-8 h-8 rounded-sm flex items-center justify-center ${isCompleted ? 'bg-primary' : 'bg-primary'}`}>
+                {isCompleted ? <CheckCircle2 className="text-primary-foreground" size={16} /> : <span className="text-primary-foreground text-sm font-source">{index + 1}</span>}
+              </div>
+              <h4 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide">{activity.title}</h4>
+            </div>
+            <p className="text-muted-foreground text-sm mb-4 font-source">{activity.description}</p>
+            
+            <div className="space-y-3 mb-4">
+              <div className="bg-muted/30 p-3 rounded-lg">
+                <h6 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide text-sm mb-1">Environmental</h6>
+                <p className="text-muted-foreground text-xs font-source">Places, sounds, smells that trigger cravings</p>
+              </div>
+              <div className="bg-muted/30 p-3 rounded-lg">
+                <h6 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide text-sm mb-1">Emotional</h6>
+                <p className="text-muted-foreground text-xs font-source">Stress, anger, sadness, anxiety</p>
+              </div>
+              <div className="bg-muted/30 p-3 rounded-lg">
+                <h6 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide text-sm mb-1">Social</h6>
+                <p className="text-muted-foreground text-xs font-source">People, events, peer pressure</p>
+              </div>
+              <div className="bg-muted/30 p-3 rounded-lg">
+                <h6 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide text-sm mb-1">Physical</h6>
+                <p className="text-muted-foreground text-xs font-source">Fatigue, pain, hunger, illness</p>
+              </div>
+              <div className="bg-muted/30 p-3 rounded-lg">
+                <h6 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide text-sm mb-1">Cognitive</h6>
+                <p className="text-muted-foreground text-xs font-source">Negative thoughts, rumination, perfectionism</p>
+              </div>
+            </div>
+            
+            {!isCompleted ? (
+              <Button 
+                onClick={() => markActivityComplete(activity.key)}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-source w-full"
+              >
+                {t('common.continue')}
+              </Button>
+            ) : (
+              <div className="flex items-center space-x-2 text-primary justify-center">
+                <CheckCircle2 size={16} />
+                <span className="font-source">{t('common.completed')}</span>
+              </div>
+            )}
+          </Card>
+        );
+
       case 'form':
         return (
-          <Card key={activity.key} className={`border-steel-dark p-4 ${isCompleted ? 'bg-construction/10 border-construction/20' : 'bg-white/10'}`}>
+          <Card key={activity.key} className={`border-0 shadow-none p-4 rounded-lg ${isCompleted ? 'bg-card/50' : 'bg-card'}`}>
             <div className="flex items-center space-x-3 mb-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-construction' : 'bg-construction'}`}>
-                {isCompleted ? <CheckCircle2 className="text-midnight" size={16} /> : <span className="text-midnight text-sm">{index + 1}</span>}
+              <div className={`w-8 h-8 rounded-sm flex items-center justify-center ${isCompleted ? 'bg-primary' : 'bg-primary'}`}>
+                {isCompleted ? <CheckCircle2 className="text-primary-foreground" size={16} /> : <span className="text-primary-foreground text-sm font-source">{index + 1}</span>}
               </div>
-              <h4 className="font-oswald font-semibold text-white">{activity.title}</h4>
+              <h4 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide">{activity.title}</h4>
             </div>
-            <p className="text-steel-light text-sm mb-3">What are your top 2 triggers?</p>
+            <p className="text-muted-foreground text-sm mb-3 font-source">What are your top 2 triggers?</p>
             
             <div className="space-y-3">
               <input
                 type="text"
-                className="w-full bg-steel-dark text-white p-3 rounded-lg border border-steel"
+                className="w-full bg-muted text-card-foreground p-3 rounded-lg border border-border font-source"
                 placeholder="Trigger #1"
                 disabled={isCompleted}
                 defaultValue={activityStates[activity.key]?.data?.trigger1 || ''}
               />
               <input
                 type="text"
-                className="w-full bg-steel-dark text-white p-3 rounded-lg border border-steel"
+                className="w-full bg-muted text-card-foreground p-3 rounded-lg border border-border font-source"
                 placeholder="Trigger #2"
                 disabled={isCompleted}
                 defaultValue={activityStates[activity.key]?.data?.trigger2 || ''}
@@ -570,7 +738,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
                       markActivityComplete(activity.key, { trigger1, trigger2 });
                     }
                   }}
-                  className="bg-construction hover:bg-construction-dark text-midnight font-oswald"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-source w-full"
                 >
                   Save Triggers
                 </Button>
