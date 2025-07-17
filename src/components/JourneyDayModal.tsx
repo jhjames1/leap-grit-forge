@@ -655,16 +655,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
             
             {!isCompleted ? (
               <Button 
-                onClick={() => {
-                  toast({
-                    title: "Trigger Tool Opened",
-                    description: "Complete the interactive trigger mapping exercise.",
-                  });
-                  // Simulate tool completion after 5 seconds
-                  setTimeout(() => {
-                    markActivityComplete(activity.key, { triggers_mapped: true });
-                  }, 5000);
-                }}
+                onClick={() => openToolActivity('Trigger Identification', 'trigger_tool')}
                 className="bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold w-full"
               >
                 Open Trigger Tool
