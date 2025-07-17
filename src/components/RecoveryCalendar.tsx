@@ -20,6 +20,14 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
   const { userData } = useUserData();
   const { t } = useLanguage();
 
+  // Force refresh when journey progress changes
+  useEffect(() => {
+    if (userData?.journeyProgress?.completedDays) {
+      // Component will re-render when completedDays changes
+      console.log('Calendar refreshing due to completed days change:', userData.journeyProgress.completedDays);
+    }
+  }, [userData?.journeyProgress?.completedDays]);
+
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -36,34 +44,47 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
 
   // Get journey day from calendar date
   const getJourneyDayFromDate = (date: Date): number | null => {
-    // Get user's recovery start date or default to 30 days ago
-    const startDateStr = localStorage.getItem('userStartDate');
-    const startDate = startDateStr ? new Date(startDateStr) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    // Get user's recovery start date from preferences or default to today minus max completed day
+    const completedDays = userData?.journeyProgress?.completedDays || [];
+    const maxCompletedDay = completedDays.length > 0 ? Math.max(...completedDays) : 0;
+    const today = new Date();
     
-    // Calculate days since start
-    const daysDiff = Math.floor((date.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+    // Calculate journey start date based on completed days
+    // If user has completed day 1, then today should be day 1 + days since completion
+    let journeyStartDate = new Date(today);
+    if (maxCompletedDay > 0) {
+      journeyStartDate.setDate(today.getDate() - maxCompletedDay + 1);
+    }
+    
+    // Calculate journey day from start date
+    const daysDiff = Math.floor((date.getTime() - journeyStartDate.getTime()) / (24 * 60 * 60 * 1000));
     const journeyDay = daysDiff + 1;
     
     return journeyDay >= 1 && journeyDay <= 90 ? journeyDay : null;
   };
 
   const getDayStatus = (date: Date): 'completed' | 'missed' | 'today' | 'future' => {
-    if (isToday(date)) return 'today';
+    const completedDays = userData?.journeyProgress?.completedDays || [];
+    const journeyDay = getJourneyDayFromDate(date);
+    
+    if (isToday(date)) {
+      // Check if today is completed
+      return journeyDay && completedDays.includes(journeyDay) ? 'completed' : 'today';
+    }
+    
     if (date > new Date()) return 'future';
     
-    const journeyDay = getJourneyDayFromDate(date);
     if (!journeyDay) return 'missed';
     
-    const completedDays = userData?.journeyProgress?.completedDays || [];
     return completedDays.includes(journeyDay) ? 'completed' : 'missed';
   };
 
   const handleDayClick = (date: Date) => {
     const journeyDay = getJourneyDayFromDate(date);
-    if (!journeyDay) return;
-    
     const completedDays = userData?.journeyProgress?.completedDays || [];
-    if (completedDays.includes(journeyDay)) {
+    
+    // Only show details for completed days
+    if (journeyDay && completedDays.includes(journeyDay)) {
       setSelectedCompletedDay(journeyDay);
       setShowDayDetails(true);
     }
@@ -99,7 +120,7 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
     
     switch (status) {
       case 'completed':
-        return `${baseClasses} bg-orange-100 border border-orange-200 text-orange-700`;
+        return `${baseClasses} bg-emerald-100 border border-emerald-200 text-emerald-700 cursor-pointer hover:scale-105`;
       case 'missed':
         return `${baseClasses} bg-red-50 border border-red-100 text-red-600`;
       case 'today':
@@ -214,11 +235,12 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
               const dayNumber = date.getDate();
               
               return (
-                <div key={index} className="flex justify-center p-1">
-                  <div 
-                    className={`${getDayClasses(status)} ${status === 'completed' ? 'cursor-pointer hover:scale-105' : ''}`}
-                    onClick={() => handleDayClick(date)}
-                  >
+                <div 
+                  key={index} 
+                  className="flex justify-center p-1"
+                  onClick={() => handleDayClick(date)}
+                >
+                  <div className={getDayClasses(status)}>
                     <div className="flex flex-col items-center">
                       <span className="text-[10px] leading-none">{dayNumber}</span>
                       <div className="mt-0.5">
