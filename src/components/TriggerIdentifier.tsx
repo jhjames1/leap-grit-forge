@@ -567,13 +567,13 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
                     <Label className="text-sm">Coping Strategy:</Label>
                     <Select value={trigger.copingStrategy} onValueChange={(value) => handleStrategyChange(trigger.id, value)}>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Choose a coping strategy" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border-border shadow-lg">
                         {copingStrategies.map(strategy => {
                           const Icon = strategy.icon;
                           return (
-                            <SelectItem key={strategy.id} value={strategy.id}>
+                            <SelectItem key={strategy.id} value={strategy.id} className="focus:bg-accent focus:text-accent-foreground">
                               <div className="flex items-center space-x-2">
                                 <Icon className="w-4 h-4" />
                                 <div>
