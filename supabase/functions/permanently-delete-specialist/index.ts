@@ -20,18 +20,31 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Permanent delete specialist function called');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    const supabase = createClient(supabaseUrl, supabaseKey, {
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing required environment variables');
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { 
+          status: 500, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders } 
+        }
+      );
+    }
+
+    // Create service role client for database operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
       }
     });
 
-    // Get the JWT token from the request
+    // Get the JWT token from the request to identify the user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('Missing or invalid authorization header');
       return new Response(
         JSON.stringify({ error: 'Missing or invalid authorization header' }),
         { 
@@ -43,8 +56,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     const token = authHeader.replace('Bearer ', '');
     
-    // Set the auth token for the supabase client
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Create a temporary client to verify the user token
+    const tempClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!);
+    const { data: { user }, error: userError } = await tempClient.auth.getUser(token);
     
     if (userError || !user) {
       console.error('User authentication error:', userError);
@@ -59,10 +73,32 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Authenticated user:', user.id);
 
+    // Verify user is admin using service role client
+    const { data: adminCheck, error: adminError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single();
+
+    if (adminError || !adminCheck) {
+      console.error('Admin verification failed:', adminError);
+      return new Response(
+        JSON.stringify({ error: 'Admin permissions required' }),
+        { 
+          status: 403, 
+          headers: { 'Content-Type': 'application/json', ...corsHeaders } 
+        }
+      );
+    }
+
+    console.log('Admin verification successful');
+
     // Get request data
     const { specialistId }: PermanentDeleteRequest = await req.json();
 
     if (!specialistId) {
+      console.error('Specialist ID is required');
       return new Response(
         JSON.stringify({ error: 'Specialist ID is required' }),
         { 
@@ -83,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (error) {
       console.error('Database function error:', error);
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: `Database operation failed: ${error.message}` }),
         { 
           status: 500, 
           headers: { 'Content-Type': 'application/json', ...corsHeaders } 
@@ -95,6 +131,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Check if the function returned an error
     if (data && !data.success) {
+      console.error('Database function returned error:', data.error);
       return new Response(
         JSON.stringify({ error: data.error }),
         { 
@@ -119,9 +156,12 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
   } catch (error: any) {
-    console.error('Error in permanently-delete-specialist function:', error);
+    console.error('Critical error in permanently-delete-specialist function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message 
+      }),
       { 
         status: 500, 
         headers: { 'Content-Type': 'application/json', ...corsHeaders } 
