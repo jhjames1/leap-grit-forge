@@ -414,6 +414,31 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         </Card>
 
 
+        {/* Specialist Portal Access */}
+        {isSpecialist && (
+          <Card className="bg-card p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-construction/20 rounded-full flex items-center justify-center">
+                  <UserCheck className="text-construction" size={20} />
+                </div>
+                <div>
+                  <h3 className="font-fjalla font-bold text-card-foreground text-sm tracking-wide">
+                    SPECIALIST PORTAL
+                  </h3>
+                  <p className="text-muted-foreground text-xs font-source">Access your peer support dashboard</p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => window.location.href = '/specialist'}
+                className="bg-construction hover:bg-construction-dark text-midnight font-source font-bold px-4 py-2 text-sm"
+              >
+                Access Portal
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {/* Bottom Action Cards */}
         <div className="flex justify-center">
           <Card 

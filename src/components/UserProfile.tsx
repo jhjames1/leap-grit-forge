@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Edit, Bell, Calendar, Phone, BookOpen, LogOut } from 'lucide-react';
+import { User, Edit, Bell, Calendar, Phone, BookOpen, LogOut, Shield, UserCheck } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { trackingManager } from '@/utils/trackingManager';
 import EditProfile from './EditProfile';
 import NotificationSettings from './NotificationSettings';
@@ -21,6 +22,8 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const { t, language } = useLanguage();
   const [currentView, setCurrentView] = useState<'profile' | 'edit' | 'notifications' | 'saved-wisdom'>('profile');
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isSpecialist, setIsSpecialist] = useState(false);
   const { userData } = useUserData();
   const { signOut, user: authUser } = useAuth();
 
@@ -28,6 +31,36 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     await signOut();
     onNavigate?.('home');
   };
+
+  // Check admin and specialist status
+  useEffect(() => {
+    const checkUserRoles = async () => {
+      if (!authUser) return;
+
+      // Check admin status
+      const { data: adminData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', authUser.id)
+        .eq('role', 'admin')
+        .single();
+      
+      setIsAdmin(!!adminData);
+
+      // Check specialist status
+      const { data: specialistData } = await supabase
+        .from('peer_specialists')
+        .select('id')
+        .eq('user_id', authUser.id)
+        .eq('is_active', true)
+        .eq('is_verified', true)
+        .single();
+      
+      setIsSpecialist(!!specialistData);
+    };
+
+    checkUserRoles();
+  }, [authUser]);
   
   // Get real-time tracking data for all metrics
   useEffect(() => {
@@ -328,6 +361,30 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
             <Calendar size={16} className="mr-2" />
             {t('profile.weeklyCheckIn')}
           </Button>
+          
+          {/* Admin Portal Access */}
+          {isAdmin && (
+            <Button 
+              onClick={() => window.location.href = '/admin'}
+              variant="outline" 
+              className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
+            >
+              <Shield size={16} className="mr-2" />
+              Admin Portal
+            </Button>
+          )}
+          
+          {/* Specialist Portal Access */}
+          {isSpecialist && (
+            <Button 
+              onClick={() => window.location.href = '/specialist'}
+              variant="outline" 
+              className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
+            >
+              <UserCheck size={16} className="mr-2" />
+              Specialist Portal
+            </Button>
+          )}
         </div>
       </Card>
 

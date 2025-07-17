@@ -18,8 +18,13 @@ interface LanguageProviderProps {
 
 export function LanguageProvider({ children }: LanguageProviderProps) {
   const [language, setLanguageState] = useState<Language>(() => {
-    const stored = localStorage.getItem('leap-language');
-    return (stored as Language) || 'en';
+    try {
+      const stored = localStorage.getItem('leap-language');
+      return (stored as Language) || 'en';
+    } catch (error) {
+      console.warn('Failed to access localStorage, defaulting to English');
+      return 'en';
+    }
   });
 
   const setLanguage = (newLanguage: Language) => {
