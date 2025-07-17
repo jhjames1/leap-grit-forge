@@ -62,6 +62,30 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
   const [selectedView, setSelectedView] = useState<View>(Views.WEEK);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [specialistName, setSpecialistName] = useState<string>('');
+
+  // Fetch specialist information
+  const fetchSpecialistInfo = useCallback(async () => {
+    console.log('🗓️ SpecialistCalendar - fetchSpecialistInfo called');
+    try {
+      const { data, error } = await supabase
+        .from('peer_specialists')
+        .select('first_name, last_name')
+        .eq('id', specialistId)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data) {
+        const fullName = `${data.first_name} ${data.last_name}`.trim();
+        setSpecialistName(fullName);
+        console.log('🗓️ SpecialistCalendar - Specialist name set:', fullName);
+      }
+    } catch (error) {
+      console.error('Error fetching specialist info:', error);
+      setSpecialistName('Specialist'); // Fallback name
+    }
+  }, [specialistId]);
 
   // Fetch appointment types
   const fetchAppointmentTypes = useCallback(async () => {
@@ -224,9 +248,10 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
   // Initialize data
   useEffect(() => {
     console.log('🗓️ SpecialistCalendar - useEffect for initialization called');
+    fetchSpecialistInfo();
     fetchAppointmentTypes();
     fetchEvents();
-  }, [fetchAppointmentTypes, fetchEvents]);
+  }, [fetchSpecialistInfo, fetchAppointmentTypes, fetchEvents]);
 
   // Custom event style getter
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
@@ -274,7 +299,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
-              Specialist Calendar
+              {specialistName ? `${specialistName} Calendar` : 'Loading Calendar...'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -294,7 +319,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
-              Specialist Calendar
+              {specialistName ? `${specialistName} Calendar` : 'Specialist Calendar'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -336,21 +361,30 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => props.onNavigate('PREV')}
+                            onClick={() => {
+                              props.onNavigate('PREV');
+                              console.log('🗓️ Calendar navigation: PREV');
+                            }}
                           >
                             Previous
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => props.onNavigate('TODAY')}
+                            onClick={() => {
+                              props.onNavigate('TODAY');
+                              console.log('🗓️ Calendar navigation: TODAY');
+                            }}
                           >
                             Today
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => props.onNavigate('NEXT')}
+                            onClick={() => {
+                              props.onNavigate('NEXT');
+                              console.log('🗓️ Calendar navigation: NEXT');
+                            }}
                           >
                             Next
                           </Button>
@@ -364,21 +398,30 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
                           <Button
                             variant={selectedView === Views.MONTH ? "default" : "outline"}
                             size="sm"
-                            onClick={() => setSelectedView(Views.MONTH)}
+                            onClick={() => {
+                              setSelectedView(Views.MONTH);
+                              console.log('🗓️ Calendar view changed to: MONTH');
+                            }}
                           >
                             Month
                           </Button>
                           <Button
                             variant={selectedView === Views.WEEK ? "default" : "outline"}
                             size="sm"
-                            onClick={() => setSelectedView(Views.WEEK)}
+                            onClick={() => {
+                              setSelectedView(Views.WEEK);
+                              console.log('🗓️ Calendar view changed to: WEEK');
+                            }}
                           >
                             Week
                           </Button>
                           <Button
                             variant={selectedView === Views.DAY ? "default" : "outline"}
                             size="sm"
-                            onClick={() => setSelectedView(Views.DAY)}
+                            onClick={() => {
+                              setSelectedView(Views.DAY);
+                              console.log('🗓️ Calendar view changed to: DAY');
+                            }}
                           >
                             Day
                           </Button>
@@ -390,15 +433,42 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
               </div>
               
               <div className="flex flex-wrap gap-2 pt-4 border-t">
-                <Button size="sm" variant="outline" onClick={() => fetchEvents()}>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => {
+                    console.log('🗓️ Refresh button clicked');
+                    fetchEvents();
+                  }}
+                >
                   <Clock className="w-4 h-4 mr-2" />
                   Refresh
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    console.log('🗓️ Set Availability button clicked');
+                    toast({
+                      title: "Feature Coming Soon",
+                      description: "Availability management will be available soon.",
+                    });
+                  }}
+                >
                   <Users className="w-4 h-4 mr-2" />
                   Set Availability
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => {
+                    console.log('🗓️ Block Time button clicked');
+                    toast({
+                      title: "Feature Coming Soon",
+                      description: "Time blocking will be available soon.",
+                    });
+                  }}
+                >
                   <MapPin className="w-4 h-4 mr-2" />
                   Block Time
                 </Button>
