@@ -83,6 +83,91 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_proposals: {
+        Row: {
+          appointment_type_id: string
+          chat_session_id: string | null
+          created_at: string
+          description: string | null
+          duration: number
+          expires_at: string
+          frequency: string
+          id: string
+          occurrences: number
+          proposed_at: string
+          responded_at: string | null
+          specialist_id: string
+          start_date: string
+          start_time: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_type_id: string
+          chat_session_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: number
+          expires_at?: string
+          frequency: string
+          id?: string
+          occurrences?: number
+          proposed_at?: string
+          responded_at?: string | null
+          specialist_id: string
+          start_date: string
+          start_time: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_type_id?: string
+          chat_session_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: number
+          expires_at?: string
+          frequency?: string
+          id?: string
+          occurrences?: number
+          proposed_at?: string
+          responded_at?: string | null
+          specialist_id?: string
+          start_date?: string
+          start_time?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_proposals_appointment_type_id_fkey"
+            columns: ["appointment_type_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_proposals_chat_session_id_fkey"
+            columns: ["chat_session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_proposals_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "peer_specialists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_types: {
         Row: {
           color: string | null
@@ -436,6 +521,79 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      scheduled_appointments: {
+        Row: {
+          appointment_type_id: string
+          created_at: string
+          id: string
+          meeting_type: string
+          meeting_url: string | null
+          notes: string | null
+          proposal_id: string
+          reminder_sent: boolean | null
+          scheduled_end: string
+          scheduled_start: string
+          specialist_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_type_id: string
+          created_at?: string
+          id?: string
+          meeting_type?: string
+          meeting_url?: string | null
+          notes?: string | null
+          proposal_id: string
+          reminder_sent?: boolean | null
+          scheduled_end: string
+          scheduled_start: string
+          specialist_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_type_id?: string
+          created_at?: string
+          id?: string
+          meeting_type?: string
+          meeting_url?: string | null
+          notes?: string | null
+          proposal_id?: string
+          reminder_sent?: boolean | null
+          scheduled_end?: string
+          scheduled_start?: string
+          specialist_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_appointments_appointment_type_id_fkey"
+            columns: ["appointment_type_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_appointments_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "appointment_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_appointments_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "peer_specialists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       specialist_appointments: {
         Row: {

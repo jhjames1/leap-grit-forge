@@ -53,30 +53,48 @@ const RecurringAppointmentScheduler = ({
         throw new Error('No appointment types available');
       }
 
-      // Create recurring appointment proposal
-      const proposalData = {
-        specialist_id: specialistId,
-        user_id: userId,
-        appointment_type_id: appointmentTypeId,
-        title: formData.title,
-        description: formData.description,
-        start_date: formData.startDate,
-        start_time: formData.startTime,
-        duration: parseInt(formData.duration),
-        frequency: formData.frequency,
-        day_of_week: formData.dayOfWeek,
-        occurrences: parseInt(formData.occurrences),
-        status: 'proposed',
-        created_at: new Date().toISOString()
-      };
+      // Create appointment proposal in database
+      const { data: proposal, error: proposalError } = await supabase
+        .from('appointment_proposals')
+        .insert({
+          specialist_id: specialistId,
+          user_id: userId,
+          appointment_type_id: appointmentTypeId,
+          title: formData.title,
+          description: formData.description,
+          start_date: formData.startDate,
+          start_time: formData.startTime,
+          duration: parseInt(formData.duration),
+          frequency: formData.frequency,
+          occurrences: parseInt(formData.occurrences),
+          chat_session_id: chatSessionId,
+          status: 'pending'
+        })
+        .select()
+        .single();
 
-      // Send proposal message to chat
+      if (proposalError) {
+        console.error('Error creating proposal:', proposalError);
+        throw proposalError;
+      }
+
+      // Send proposal message to chat with proposal ID
       await sendMessage({
-        content: `🗓️ **Recurring Appointment Proposal**\n\n**${formData.title}**\n\n${formData.description}\n\n📅 **Schedule:** ${formData.frequency} starting ${formData.startDate} at ${formData.startTime}\n⏱️ **Duration:** ${formData.duration} minutes\n🔄 **Occurrences:** ${formData.occurrences} sessions\n\n*This is a proposal. Please respond with your availability.*`,
+        content: `🗓️ **Recurring Appointment Proposal**\n\n**${formData.title}**\n\n${formData.description}\n\n📅 **Schedule:** ${formData.frequency} starting ${formData.startDate} at ${formData.startTime}\n⏱️ **Duration:** ${formData.duration} minutes\n🔄 **Occurrences:** ${formData.occurrences} sessions\n\n*Please respond with "accept" or "reject" to this proposal. It expires in 7 days.*`,
         message_type: 'system',
         metadata: { 
-          proposal_data: proposalData,
-          action_type: 'recurring_appointment_proposal'
+          proposal_id: proposal.id,
+          action_type: 'recurring_appointment_proposal',
+          proposal_data: {
+            id: proposal.id,
+            title: formData.title,
+            description: formData.description,
+            start_date: formData.startDate,
+            start_time: formData.startTime,
+            duration: formData.duration,
+            frequency: formData.frequency,
+            occurrences: formData.occurrences
+          }
         }
       });
 

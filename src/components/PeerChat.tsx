@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import PeerSelection from './PeerSelection';
 import RecurringAppointmentScheduler from './RecurringAppointmentScheduler';
+import AppointmentProposalHandler from './AppointmentProposalHandler';
 import { PeerSpecialist } from '@/hooks/usePeerSpecialists';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useAuth } from '@/hooks/useAuth';
@@ -243,7 +244,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
           messages.map((msg) => (
             <div 
               key={msg.id}
-              className={`flex ${msg.sender_type === 'user' ? 'justify-end' : msg.message_type === 'system' ? 'justify-center' : 'justify-start'}`}
+              className={`flex flex-col ${msg.sender_type === 'user' ? 'justify-end' : msg.message_type === 'system' ? 'justify-center' : 'justify-start'}`}
             >
               <div className={`max-w-[80%] ${
                 msg.sender_type === 'user' 
@@ -259,6 +260,14 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                   {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
+              {/* Display appointment proposal handler if this is a proposal message */}
+              {msg.metadata?.action_type === 'recurring_appointment_proposal' && (
+                <AppointmentProposalHandler 
+                  message={msg} 
+                  isUser={msg.sender_type === 'user'} 
+                  onResponse={() => console.log('User responded to appointment proposal')}
+                />
+              )}
             </div>
           ))
         ) : (
