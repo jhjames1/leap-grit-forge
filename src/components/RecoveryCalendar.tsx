@@ -132,6 +132,122 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
     }
   };
 
+  // Helper functions to parse user data for specific days
+  const getActivitiesForDay = (day: number): string[] => {
+    const activities: string[] = [];
+    const journeyResponses = userData?.journeyResponses || {};
+    
+    // Look for activities completed on this day
+    Object.keys(journeyResponses).forEach(key => {
+      if (key.startsWith(`day_${day}_`)) {
+        const activityType = key.replace(`day_${day}_`, '');
+        switch (activityType) {
+          case 'welcome_intro':
+            activities.push('Welcome Introduction');
+            break;
+          case 'trigger_identification':
+            activities.push('Trigger Identification');
+            break;
+          case 'trigger_education':
+            activities.push('Trigger Education');
+            break;
+          case 'urge_tracking':
+            activities.push('Urge Tracking');
+            break;
+          case 'breathing_exercise':
+            activities.push('Breathing Exercise');
+            break;
+          case 'gratitude_log':
+            activities.push('Gratitude Practice');
+            break;
+          case 'peer_support':
+            activities.push('Peer Support');
+            break;
+          case 'bonus_activity':
+            activities.push('Bonus Practice');
+            break;
+          case 'activity':
+            activities.push('Journey Activity');
+            break;
+          default:
+            if (!activityType.includes('reflection') && !activityType.includes('text')) {
+              activities.push(activityType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+            }
+        }
+      }
+    });
+    
+    return activities;
+  };
+
+  const getJournalingResponsesForDay = (day: number): Array<{title: string, content: string}> => {
+    const responses: Array<{title: string, content: string}> = [];
+    const journeyResponses = userData?.journeyResponses || {};
+    
+    Object.keys(journeyResponses).forEach(key => {
+      if (key.startsWith(`day_${day}_`) && typeof journeyResponses[key] === 'string') {
+        const activityType = key.replace(`day_${day}_`, '');
+        const content = journeyResponses[key] as string;
+        
+        if (content && content.length > 0) {
+          switch (activityType) {
+            case 'daily_reflection':
+              responses.push({title: 'Daily Reflection', content});
+              break;
+            case 'reflection':
+              responses.push({title: 'Reflection', content});
+              break;
+            case 'trigger_identification':
+              responses.push({title: 'Trigger Identification', content});
+              break;
+            case 'gratitude_log':
+              responses.push({title: 'Gratitude Entry', content});
+              break;
+            default:
+              if (activityType.includes('text') || activityType.includes('reflection') || activityType.includes('journal')) {
+                responses.push({
+                  title: activityType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                  content
+                });
+              }
+          }
+        }
+      }
+    });
+    
+    return responses;
+  };
+
+  const getToolsUsedForDay = (day: number): string[] => {
+    const tools: string[] = [];
+    const journeyResponses = userData?.journeyResponses || {};
+    
+    Object.keys(journeyResponses).forEach(key => {
+      if (key.startsWith(`day_${day}_`)) {
+        const activityType = key.replace(`day_${day}_`, '');
+        switch (activityType) {
+          case 'trigger_identification':
+            tools.push('Trigger Identifier');
+            break;
+          case 'urge_tracking':
+            tools.push('Urge Tracker');
+            break;
+          case 'breathing_exercise':
+            tools.push('Breathing Exercise');
+            break;
+          case 'gratitude_log':
+            tools.push('Gratitude Log');
+            break;
+          case 'peer_support':
+            tools.push('Peer Support');
+            break;
+        }
+      }
+    });
+    
+    return tools;
+  };
+
   // Calculate stats from journey progress
   const completedJourneyDays = userData?.journeyProgress?.completedDays || [];
   const completedDaysCount = completedJourneyDays.length;
@@ -313,33 +429,74 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
 
       {/* Completed Day Details Dialog */}
       <Dialog open={showDayDetails} onOpenChange={setShowDayDetails}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-emerald-500" />
               Day {selectedCompletedDay} - Completed
             </DialogTitle>
             <DialogDescription>
-              Activities completed on this day
+              Your activities and reflections from this day
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
+            {/* Activity Summary */}
             <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
               <div className="flex items-center gap-2 mb-2">
                 <Flame className="h-4 w-4 text-emerald-600" />
-                <span className="font-semibold text-emerald-800">Journey Activity</span>
+                <span className="font-semibold text-emerald-800">Journey Activities Completed</span>
               </div>
-              <p className="text-sm text-emerald-700">
-                Day {selectedCompletedDay} journey activity completed successfully!
-              </p>
-              <p className="text-xs text-emerald-600 mt-1">
+              <div className="space-y-2">
+                {selectedCompletedDay && getActivitiesForDay(selectedCompletedDay).map((activity, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                    <span className="text-sm text-emerald-700">{activity}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-emerald-600 mt-2">
                 Completed on {userData?.journeyProgress?.completionDates?.[selectedCompletedDay || 0] 
                   ? new Date(userData.journeyProgress.completionDates[selectedCompletedDay || 0]).toLocaleDateString()
-                  : 'Unknown date'
+                  : "Unknown date"
                 }
               </p>
             </div>
+
+            {/* Journaling Responses */}
+            {selectedCompletedDay && getJournalingResponsesForDay(selectedCompletedDay).length > 0 && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Target className="h-4 w-4 text-blue-600" />
+                  <span className="font-semibold text-blue-800">Your Reflections</span>
+                </div>
+                <div className="space-y-3">
+                  {getJournalingResponsesForDay(selectedCompletedDay).map((response, index) => (
+                    <div key={index} className="bg-white p-3 rounded border border-blue-100">
+                      <p className="font-medium text-blue-800 text-sm mb-1">{response.title}</p>
+                      <p className="text-blue-700 text-sm italic">"{response.content}"</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tools Used */}
+            {selectedCompletedDay && getToolsUsedForDay(selectedCompletedDay).length > 0 && (
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="h-4 w-4 text-purple-600" />
+                  <span className="font-semibold text-purple-800">Recovery Tools Used</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {getToolsUsedForDay(selectedCompletedDay).map((tool, index) => (
+                    <span key={index} className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-medium">
+                      {tool}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="text-center">
               <Button 
