@@ -505,26 +505,27 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
 
       case 'interactive':
         return (
-          <Card key={activity.key} className={`border-steel-dark p-4 ${isCompleted ? 'bg-construction/10 border-construction/20' : 'bg-white/10'}`}>
+          <Card key={activity.key} className={`bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 ${isCompleted ? 'opacity-75' : ''}`}>
             <div className="flex items-center space-x-3 mb-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isCompleted ? 'bg-construction' : 'bg-construction'}`}>
-                {isCompleted ? <CheckCircle2 className="text-midnight" size={16} /> : <span className="text-midnight text-sm">{index + 1}</span>}
+              <div className="bg-primary p-3 rounded-sm">
+                {isCompleted ? <CheckCircle2 className="text-primary-foreground" size={20} /> : <Target className="text-primary-foreground" size={20} />}
               </div>
-              <h4 className="font-oswald font-semibold text-white">{activity.title}</h4>
+              <h4 className="font-fjalla font-bold text-card-foreground uppercase tracking-wide">{activity.title}</h4>
             </div>
-            <p className="text-steel-light text-sm mb-3">{activity.description}</p>
+            <p className="text-card-foreground text-sm mb-4 font-source">{activity.description}</p>
             
             {!isCompleted ? (
               <Button 
                 onClick={() => openToolActivity(dayData.tool, activity.key)}
-                className="bg-construction hover:bg-construction-dark text-midnight font-oswald"
+                className="bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold py-3 rounded-lg w-full flex items-center justify-center gap-2"
               >
-                {activity.title === 'Mindful Breathing' ? 'Start Breathing' : `Start ${activity.title}`}
+                <Play size={16} />
+                {activity.title === 'Mindful Breathing' ? 'START BREATHING' : `START ${activity.title.toUpperCase()}`}
               </Button>
             ) : (
-              <div className="flex items-center space-x-2 text-construction">
+              <div className="flex items-center justify-center space-x-2 text-primary">
                 <CheckCircle2 size={16} />
-                <span className="font-oswald">Activity Complete</span>
+                <span className="font-source font-bold">{t('common.completed').toUpperCase()}</span>
               </div>
             )}
           </Card>
