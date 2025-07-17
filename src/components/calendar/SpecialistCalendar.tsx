@@ -217,9 +217,16 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
       if (exceptionsError) throw exceptionsError;
       console.log('🗓️ SpecialistCalendar - Exceptions fetched:', exceptions);
 
-      // Convert exceptions to events
+      // Convert exceptions to events with enhanced user detection
       if (exceptions) {
         exceptions.forEach(exception => {
+          // Check if this is a user-related block by looking for user keywords in reason
+          const hasUser = exception.reason && 
+            (exception.reason.toLowerCase().includes('user') || 
+             exception.reason.toLowerCase().includes('client') || 
+             exception.reason.toLowerCase().includes('patient') ||
+             exception.reason.toLowerCase().includes('meeting'));
+          
           events.push({
             id: `exception-${exception.id}`,
             title: `${exception.exception_type === 'unavailable' ? 'Unavailable' : 'Blocked'} - ${exception.reason || 'No reason'}`,
@@ -227,7 +234,8 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
             end: new Date(exception.end_time),
             resource: {
               type: 'exception',
-              color: '#ef4444'
+              userId: hasUser ? 'user' : undefined,
+              color: hasUser ? '#f59e0b' : '#ef4444'
             }
           });
         });
@@ -255,42 +263,60 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
     fetchEvents();
   }, [fetchSpecialistInfo, fetchAppointmentTypes, fetchEvents]);
 
-  // Custom event style getter
+  // Enhanced event style getter with dynamic color coding
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const baseStyle = {
-      backgroundColor: event.resource.color || '#3b82f6',
       borderRadius: '4px',
-      opacity: 0.8,
+      opacity: 0.9,
       color: 'white',
       border: '0px',
-      display: 'block'
+      display: 'block',
+      fontSize: '12px',
+      fontWeight: '500'
     };
 
     switch (event.resource.type) {
       case 'availability':
+        // Available time slots - green with dashed border
         return {
           style: {
             ...baseStyle,
-            backgroundColor: event.resource.color || '#10b981',
-            border: '1px dashed #059669'
+            backgroundColor: '#10b981', // Green for available
+            border: '2px dashed #059669',
+            opacity: 0.7
           }
         };
       case 'appointment':
+        // Appointments with users - different colors based on status
+        const appointmentColor = event.resource.status === 'confirmed' ? '#3b82f6' : 
+                                event.resource.status === 'in_progress' ? '#8b5cf6' : 
+                                '#6b7280';
         return {
           style: {
             ...baseStyle,
-            backgroundColor: event.resource.color || '#3b82f6'
+            backgroundColor: appointmentColor,
+            border: `1px solid ${appointmentColor}`
           }
         };
       case 'exception':
+        // Blocked time - different colors for different reasons
+        const hasUser = event.resource.userId;
+        const blockColor = hasUser ? '#f59e0b' : '#ef4444'; // Yellow for user-blocked, red for personal
         return {
           style: {
             ...baseStyle,
-            backgroundColor: '#ef4444'
+            backgroundColor: blockColor,
+            border: `1px solid ${blockColor}`,
+            opacity: 0.8
           }
         };
       default:
-        return { style: baseStyle };
+        return { 
+          style: {
+            ...baseStyle,
+            backgroundColor: '#6b7280' // Gray for unknown types
+          }
+        };
     }
   }, []);
 
@@ -329,15 +355,23 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className="bg-green-100 text-green-800">
                   <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  Available
+                  Available Time
                 </Badge>
                 <Badge variant="outline" className="bg-blue-100 text-blue-800">
                   <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                  Appointments
+                  Scheduled Appointments
+                </Badge>
+                <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                  Blocked (User Meeting)
                 </Badge>
                 <Badge variant="outline" className="bg-red-100 text-red-800">
                   <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-                  Blocked/Unavailable
+                  Personal Block
+                </Badge>
+                <Badge variant="outline" className="bg-purple-100 text-purple-800">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                  In Progress
                 </Badge>
               </div>
               

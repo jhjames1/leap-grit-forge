@@ -14,8 +14,10 @@ import {
   Shield
 } from 'lucide-react';
 import PeerSelection from './PeerSelection';
+import RecurringAppointmentScheduler from './RecurringAppointmentScheduler';
 import { PeerSpecialist } from '@/hooks/usePeerSpecialists';
 import { useChatSession } from '@/hooks/useChatSession';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PeerChatProps {
   onBack?: () => void;
@@ -27,6 +29,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   const [message, setMessage] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
   
   const {
     session,
@@ -321,7 +324,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
       )}
 
       {/* Scheduled Check-in Banner */}
-      {selectedPeer?.status.status === 'online' && session && (
+      {selectedPeer?.status.status === 'online' && session && user && (
         <div className="bg-steel/90 backdrop-blur-sm border-t border-steel-dark p-3">
           <div className="flex items-center space-x-3">
             <Calendar className="text-white" size={16} />
@@ -333,9 +336,11 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                 Schedule with {selectedPeer.first_name} {selectedPeer.last_name}
               </p>
             </div>
-            <Button size="sm" className="bg-midnight hover:bg-matte text-white">
-              Schedule
-            </Button>
+            <RecurringAppointmentScheduler 
+              specialistId={selectedPeer.id}
+              userId={user.id}
+              chatSessionId={session.id}
+            />
           </div>
         </div>
       )}
