@@ -37,8 +37,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   const [dailyStats, setDailyStats] = useState<any>(null);
   const [streakData, setStreakData] = useState<any>(null);
 
-  // Calculate recovery streak and badges based on daily activity
-  const [recoveryStreak, setRecoveryStreak] = useState(0);
+  // Calculate total completed days from calendar
+  const totalCompletedDays = userData?.journeyProgress?.completedDays?.length || 0;
   const [mostRecentBadge, setMostRecentBadge] = useState<any>(null);
   
   // Calculate current journey day using shared utility
@@ -117,7 +117,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         const streak = trackingManager.getStreakData();
         setDailyStats(stats);
         setStreakData(streak);
-        setRecoveryStreak(streak.currentStreak);
+        // Keep streak data for other potential uses, but use completedDays for display
       } catch (error) {
         console.error('Failed to load tracking stats:', error);
         // Fallback to legacy calculation
@@ -142,12 +142,12 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
           }
         }
         
-        setRecoveryStreak(currentStreak);
+        // Use totalCompletedDays instead of streak calculation
       }
     }
     
     // Get the most recent badge
-    const recentBadge = getMostRecentBadge(userData, t, recoveryStreak);
+    const recentBadge = getMostRecentBadge(userData, t, totalCompletedDays);
     setMostRecentBadge(recentBadge);
   }, [userData, language]);  // Add language dependency to refresh translations
 
@@ -324,7 +324,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <div className="bg-primary p-3 rounded-sm">
                   <Flame className="text-primary-foreground" size={20} />
                 </div>
-                <div className="text-[28px] font-bold text-card-foreground">{recoveryStreak}</div>
+                <div className="text-[28px] font-bold text-card-foreground">{totalCompletedDays}</div>
               </div>
               <p className="text-muted-foreground text-xs lowercase italic">{t('home.streak.days').toLowerCase()}</p>
             </div>
