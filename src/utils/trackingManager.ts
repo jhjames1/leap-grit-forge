@@ -48,12 +48,14 @@ export class TrackingManager {
     
     if (this.username) {
       this.ensureDailyStatsExist();
+      this.initializeStreakFromJourney();
     }
   }
 
   public setUser(username: string): void {
     this.username = username;
     this.ensureDailyStatsExist();
+    this.initializeStreakFromJourney();
   }
 
   /**
@@ -205,7 +207,82 @@ export class TrackingManager {
   }
 
   /**
-   * Update streak based on daily activity
+   * Initialize streak data from journey progress
+   */
+  private initializeStreakFromJourney(): void {
+    if (!this.username) return;
+
+    const userData = SecureStorage.getUserData(this.username);
+    if (!userData) return;
+
+    const completionDates = userData.journeyProgress?.completionDates || {};
+    const completedDays = userData.journeyProgress?.completedDays || [];
+    
+    if (completedDays.length === 0) return;
+
+    // Convert completion dates to sorted array of date strings
+    const sortedCompletionDates = completedDays
+      .map(day => completionDates[day] || new Date().toISOString())
+      .map(dateStr => this.getDateString(new Date(dateStr)))
+      .sort();
+
+    // Calculate current streak from journey completions
+    const currentStreak = this.calculateStreakFromDates(sortedCompletionDates);
+    const longestStreak = Math.max(currentStreak, userData.streakData?.longestStreak || 0);
+    const lastActivityDate = sortedCompletionDates[sortedCompletionDates.length - 1] || '';
+
+    const streakData = {
+      currentStreak,
+      longestStreak,
+      lastActivityDate
+    };
+
+    // Save updated streak data
+    const updatedData = {
+      ...userData,
+      streakData,
+      lastAccess: Date.now()
+    };
+
+    SecureStorage.setUserData(this.username, updatedData);
+  }
+
+  /**
+   * Calculate streak from array of date strings
+   */
+  private calculateStreakFromDates(sortedDates: string[]): number {
+    if (sortedDates.length === 0) return 0;
+
+    const today = this.getTodayDateString();
+    const yesterday = this.getDateString(new Date(Date.now() - 24 * 60 * 60 * 1000));
+    
+    // Check if streak is still active (completed today or yesterday)
+    const lastDate = sortedDates[sortedDates.length - 1];
+    const isActive = lastDate === today || lastDate === yesterday;
+    
+    if (!isActive) return 0;
+
+    // Count consecutive days from the end
+    let streak = 0;
+    let expectedDate = new Date(lastDate);
+    
+    for (let i = sortedDates.length - 1; i >= 0; i--) {
+      const currentDate = sortedDates[i];
+      const expectedDateStr = this.getDateString(expectedDate);
+      
+      if (currentDate === expectedDateStr) {
+        streak++;
+        expectedDate.setDate(expectedDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  }
+
+  /**
+   * Update streak based on daily activity and journey completion
    */
   private updateStreak(): void {
     if (!this.username) return;
@@ -216,19 +293,26 @@ export class TrackingManager {
     const today = this.getTodayDateString();
     const streakData = userData.streakData || { currentStreak: 0, longestStreak: 0, lastActivityDate: '' };
     
-    // Check if user had activity today
+    // Check if user had activity today (either activity log or journey completion)
     const todaysStats = userData.dailyStats?.[today];
     const hasActivityToday = (todaysStats?.actionsToday || 0) > 0;
+    
+    // Also check if today is a completed journey day
+    const currentDay = this.getCurrentJourneyDay(userData);
+    const isJourneyDayCompleted = userData.journeyProgress?.completedDays?.includes(currentDay);
+    
+    const hasAnyActivityToday = hasActivityToday || isJourneyDayCompleted;
 
-    if (hasActivityToday) {
+    if (hasAnyActivityToday) {
       const yesterday = this.getDateString(new Date(Date.now() - 24 * 60 * 60 * 1000));
       
       if (streakData.lastActivityDate === yesterday) {
         // Continuing streak
         streakData.currentStreak += 1;
       } else if (streakData.lastActivityDate !== today) {
-        // Starting new streak
-        streakData.currentStreak = 1;
+        // Starting new streak or gap - recalculate from journey progress
+        this.initializeStreakFromJourney();
+        return;
       }
       // If lastActivityDate === today, we've already counted today
       
@@ -253,11 +337,23 @@ export class TrackingManager {
     if (!this.username) return {};
 
     const userData = SecureStorage.getUserData(this.username);
-    if (!userData?.dailyStats) return {};
+    if (!userData) return {};
 
     const calendarData: Record<string, 'completed' | 'missed'> = {};
     const now = new Date();
     const userCreatedDate = new Date(userData.createdAt || now);
+    
+    // Get journey completion dates
+    const completionDates = userData.journeyProgress?.completionDates || {};
+    const completedDays = userData.journeyProgress?.completedDays || [];
+    
+    // Create set of journey completion date strings for quick lookup
+    const journeyCompletionDates = new Set(
+      completedDays.map(day => {
+        const completionDate = completionDates[day];
+        return completionDate ? this.getDateString(new Date(completionDate)) : null;
+      }).filter(Boolean)
+    );
     
     // Go back specified months but not before user creation
     for (let i = 0; i < monthsBack * 31; i++) {
@@ -270,11 +366,14 @@ export class TrackingManager {
       
       // Only include dates from the past (not today or future)
       if (date.toDateString() !== now.toDateString() && date < now) {
-        const dayStats = userData.dailyStats[dateString];
-        if (dayStats) {
-          calendarData[dateString] = dayStats.actionsToday > 0 ? 'completed' : 'missed';
+        // Check if this date has journey completion or activity
+        const dayStats = userData.dailyStats?.[dateString];
+        const hasActivity = dayStats && dayStats.actionsToday > 0;
+        const hasJourneyCompletion = journeyCompletionDates.has(dateString);
+        
+        if (hasActivity || hasJourneyCompletion) {
+          calendarData[dateString] = 'completed';
         } else {
-          // If no stats exist for a past date, mark as missed
           calendarData[dateString] = 'missed';
         }
       }
@@ -375,6 +474,19 @@ export class TrackingManager {
     // This could be dynamic based on the user's journey and available tools
     // For now, assuming 1 journey activity + up to 4 tool uses per day
     return 5;
+  }
+
+  /**
+   * Get current journey day for the user
+   */
+  private getCurrentJourneyDay(userData: any): number {
+    if (!userData?.journeyProgress?.completedDays) return 1;
+    
+    const completedDays = userData.journeyProgress.completedDays;
+    if (completedDays.length === 0) return 1;
+    
+    const highestCompletedDay = Math.max(...completedDays);
+    return Math.min(highestCompletedDay + 1, 90); // Assuming 90 day journey
   }
 }
 
