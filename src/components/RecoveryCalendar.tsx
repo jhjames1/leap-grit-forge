@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Flame, X, ChevronLeft, ChevronRight, Target } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Calendar, Flame, X, ChevronLeft, ChevronRight, Target, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { trackingManager } from '@/utils/trackingManager';
@@ -14,15 +15,10 @@ interface RecoveryCalendarProps {
 
 const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [calendarData, setCalendarData] = useState<Record<string, 'completed' | 'missed'>>({});
+  const [selectedCompletedDay, setSelectedCompletedDay] = useState<number | null>(null);
+  const [showDayDetails, setShowDayDetails] = useState(false);
   const { userData } = useUserData();
   const { t } = useLanguage();
-
-  useEffect(() => {
-    // Load calendar data from tracking manager
-    const data = trackingManager.getCalendarData(3); // Last 3 months
-    setCalendarData(data);
-  }, [userData]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -38,13 +34,41 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
     setCurrentDate(newDate);
   };
 
-  const getDayStatus = (date: Date): 'completed' | 'missed' | 'today' | 'future' => {
-    const dateString = date.toISOString().split('T')[0];
+  // Get journey day from calendar date
+  const getJourneyDayFromDate = (date: Date): number | null => {
+    // For now, assume journey starts from day 1 on today minus completed days
+    // This is a simplified approach - in real app you'd want to track actual start date
+    const today = new Date();
+    const completedDays = userData?.journeyProgress?.completedDays || [];
+    const maxCompletedDay = completedDays.length > 0 ? Math.max(...completedDays) : 0;
     
+    // Calculate days back from today
+    const daysDiff = Math.floor((today.getTime() - date.getTime()) / (24 * 60 * 60 * 1000));
+    const journeyDay = maxCompletedDay - daysDiff + 1;
+    
+    return journeyDay >= 1 && journeyDay <= 90 ? journeyDay : null;
+  };
+
+  const getDayStatus = (date: Date): 'completed' | 'missed' | 'today' | 'future' => {
     if (isToday(date)) return 'today';
     if (date > new Date()) return 'future';
     
-    return calendarData[dateString] || 'missed';
+    const journeyDay = getJourneyDayFromDate(date);
+    if (!journeyDay) return 'missed';
+    
+    const completedDays = userData?.journeyProgress?.completedDays || [];
+    return completedDays.includes(journeyDay) ? 'completed' : 'missed';
+  };
+
+  const handleDayClick = (date: Date) => {
+    const journeyDay = getJourneyDayFromDate(date);
+    if (!journeyDay) return;
+    
+    const completedDays = userData?.journeyProgress?.completedDays || [];
+    if (completedDays.includes(journeyDay)) {
+      setSelectedCompletedDay(journeyDay);
+      setShowDayDetails(true);
+    }
   };
 
   const getDayIcon = (status: string) => {
@@ -89,20 +113,33 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
     }
   };
 
-  // Calculate stats
-  const completedDays = Object.values(calendarData).filter(status => status === 'completed').length;
-  const totalTrackedDays = Object.keys(calendarData).length;
-  const completionRate = totalTrackedDays > 0 ? Math.round((completedDays / totalTrackedDays) * 100) : 0;
+  // Calculate stats from journey progress
+  const completedJourneyDays = userData?.journeyProgress?.completedDays || [];
+  const completedDaysCount = completedJourneyDays.length;
+  const totalJourneyDays = 90; // Total journey days
+  const completionRate = Math.round((completedDaysCount / totalJourneyDays) * 100);
 
   return (
     <div className="min-h-screen bg-background">
       <div className="p-4 pb-24">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-            <span className="font-oswald font-extralight tracking-tight">YOUR</span><span className="font-fjalla font-extrabold italic">CALENDAR</span>
-          </h1>
-          <p className="text-muted-foreground font-oswald">{t('calendar.subtitle')}</p>
+          <div className="flex items-center mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onNavigate?.('journey')}
+              className="p-2 mr-4"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+            <div>
+              <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+                <span className="font-oswald font-extralight tracking-tight">YOUR</span><span className="font-fjalla font-extrabold italic">CALENDAR</span>
+              </h1>
+              <p className="text-muted-foreground font-oswald">{t('calendar.subtitle')}</p>
+            </div>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -113,7 +150,7 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
                 <Flame className="text-white" size={16} />
               </div>
               <div>
-                <div className="text-2xl font-bold text-foreground">{completedDays}</div>
+                <div className="text-2xl font-bold text-foreground">{completedDaysCount}</div>
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">
                   {t('calendar.completedDays')}
                 </div>
@@ -180,7 +217,10 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
               
               return (
                 <div key={index} className="flex justify-center p-1">
-                  <div className={getDayClasses(status)}>
+                  <div 
+                    className={`${getDayClasses(status)} ${status === 'completed' ? 'cursor-pointer hover:scale-105' : ''}`}
+                    onClick={() => handleDayClick(date)}
+                  >
                     <div className="flex flex-col items-center">
                       <span className="text-[10px] leading-none">{dayNumber}</span>
                       <div className="mt-0.5">
@@ -250,6 +290,48 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
           </div>
         </Card>
       </div>
+
+      {/* Completed Day Details Dialog */}
+      <Dialog open={showDayDetails} onOpenChange={setShowDayDetails}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              Day {selectedCompletedDay} - Completed
+            </DialogTitle>
+            <DialogDescription>
+              Activities completed on this day
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Flame className="h-4 w-4 text-emerald-600" />
+                <span className="font-semibold text-emerald-800">Journey Activity</span>
+              </div>
+              <p className="text-sm text-emerald-700">
+                Day {selectedCompletedDay} journey activity completed successfully!
+              </p>
+              <p className="text-xs text-emerald-600 mt-1">
+                Completed on {userData?.journeyProgress?.completionDates?.[selectedCompletedDay || 0] 
+                  ? new Date(userData.journeyProgress.completionDates[selectedCompletedDay || 0]).toLocaleDateString()
+                  : 'Unknown date'
+                }
+              </p>
+            </div>
+
+            <div className="text-center">
+              <Button 
+                onClick={() => setShowDayDetails(false)} 
+                className="w-full"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
