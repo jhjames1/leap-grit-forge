@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, Clock, Users, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { SetAvailabilityDialog } from './SetAvailabilityDialog';
+import { BlockTimeDialog } from './BlockTimeDialog';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './calendar.css';
 
@@ -444,34 +446,21 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
                   <Clock className="w-4 h-4 mr-2" />
                   Refresh
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => {
-                    console.log('🗓️ Set Availability button clicked');
-                    toast({
-                      title: "Feature Coming Soon",
-                      description: "Availability management will be available soon.",
-                    });
+                <SetAvailabilityDialog 
+                  specialistId={specialistId}
+                  appointmentTypes={appointmentTypes}
+                  onSuccess={() => {
+                    console.log('🗓️ Availability set successfully, refreshing events');
+                    fetchEvents();
                   }}
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Set Availability
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => {
-                    console.log('🗓️ Block Time button clicked');
-                    toast({
-                      title: "Feature Coming Soon",
-                      description: "Time blocking will be available soon.",
-                    });
+                />
+                <BlockTimeDialog 
+                  specialistId={specialistId}
+                  onSuccess={() => {
+                    console.log('🗓️ Time blocked successfully, refreshing events');
+                    fetchEvents();
                   }}
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  Block Time
-                </Button>
+                />
               </div>
             </div>
           </CardContent>
