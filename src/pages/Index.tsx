@@ -15,6 +15,8 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import { useUserData } from '@/hooks/useUserData';
 import { useAuth } from '@/hooks/useAuth';
+import { useBadgeNotifications } from '@/hooks/useBadgeNotifications';
+import { BadgeCelebrationModal } from '@/components/BadgeCelebrationModal';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 
@@ -26,6 +28,7 @@ const Index = () => {
   
   const { user, loading, signOut, isAuthenticated } = useAuth();
   const { updateUserData } = useUserData();
+  const { newBadges, showCelebration, markBadgesAsSeen } = useBadgeNotifications();
 
   useEffect(() => {
     if (!loading) {
@@ -169,6 +172,13 @@ const Index = () => {
         <BottomNavigation activeTab={activeTab} onTabChange={handleNavigation} />
       )}
       <PWAInstallPrompt />
+      
+      {/* Badge Celebration Modal */}
+      <BadgeCelebrationModal 
+        badges={newBadges}
+        isOpen={showCelebration}
+        onClose={markBadgesAsSeen}
+      />
     </div>
   );
 };

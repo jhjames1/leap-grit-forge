@@ -44,6 +44,7 @@ interface UserData {
   streakData?: any;
   lastAccess?: number;
   gender?: string;
+  lastSeenBadges?: string[]; // Track which badges user has been shown
 }
 
 export const useUserData = () => {
@@ -173,7 +174,8 @@ export const useUserData = () => {
         journeyStage: journeyProgress?.journey_stage || 'foundation',
         supportStyle: journeyProgress?.support_style,
         dailyStats: journeyProgress?.daily_stats || {},
-        lastAccess: Date.now()
+        lastAccess: Date.now(),
+        lastSeenBadges: []
       };
 
       return userData;
@@ -272,7 +274,8 @@ export const useUserData = () => {
           journeyResponses: data.journeyResponses || {},
           focusAreas: data.focusAreas || ['stress_management'],
           journeyStage: data.journeyStage || 'foundation',
-          lastAccess: Date.now()
+          lastAccess: Date.now(),
+          lastSeenBadges: data.lastSeenBadges || []
         };
         
         // Update daily stats
@@ -306,7 +309,8 @@ export const useUserData = () => {
           journeyResponses: {},
           focusAreas: ['stress_management'],
           journeyStage: 'foundation',
-          lastAccess: Date.now()
+          lastAccess: Date.now(),
+          lastSeenBadges: []
         };
         
         if (useSupabase) {
@@ -343,7 +347,8 @@ export const useUserData = () => {
         journeyResponses: {},
         focusAreas: ['stress_management'],
         journeyStage: 'foundation',
-        lastAccess: Date.now()
+        lastAccess: Date.now(),
+        lastSeenBadges: []
       };
       setUserData(fallbackData);
     }
