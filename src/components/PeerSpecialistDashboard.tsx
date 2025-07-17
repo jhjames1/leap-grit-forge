@@ -33,7 +33,7 @@ import ChatArchive from './ChatArchive';
 import SpecialistActivityLog from './SpecialistActivityLog';
 import MotivationalWelcome from './MotivationalWelcome';
 import SpecialistFavorites from './SpecialistFavorites';
-import SpecialistCalendar from './calendar/SpecialistCalendar';
+// import SpecialistCalendar from './calendar/SpecialistCalendar';
 
 interface ChatSession {
   id: string;
@@ -1142,7 +1142,9 @@ const PeerSpecialistDashboard = () => {
             
             <TabsContent value="calendar" className="mt-6">
               {specialist && (
-                <SpecialistCalendar specialistId={specialist.id} />
+                <div className="p-8 text-center">
+                  <p className="text-muted-foreground">Calendar feature is temporarily disabled for maintenance.</p>
+                </div>
               )}
             </TabsContent>
           </Tabs>
