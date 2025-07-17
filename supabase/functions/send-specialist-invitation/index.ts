@@ -254,7 +254,7 @@ const handler = async (req: Request): Promise<Response> => {
     
     try {
       const emailResponse = await resend.emails.send({
-        from: "LEAP Recovery <onboarding@resend.dev>",
+        from: "LEAP Recovery <noreply@modecommunications.net>",
         to: [userEmail],
         subject: "You've been invited to join LEAP as a Peer Specialist",
         html: `
