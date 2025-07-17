@@ -14,11 +14,13 @@ import {
   Home,
   Clock,
   Sparkles,
-  Heart
+  Heart,
+  Hand
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useUserData } from '@/hooks/useUserData';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ThoughtItem {
   id: string;
@@ -62,9 +64,15 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
   const [dailyLimitReached, setDailyLimitReached] = useState(false);
   const [nextResetTime, setNextResetTime] = useState<number | null>(null);
   const [timeUntilReset, setTimeUntilReset] = useState<string>('');
+  
+  // Mobile-specific states
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const { logActivity, userData, updateToolboxStats } = useUserData();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Fetch today's thought pack
   const fetchTodaysPack = useCallback(async () => {
@@ -158,23 +166,103 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
 
   // Handle drag start
   const handleDragStart = (e: React.DragEvent, itemId: string) => {
+    if (isMobile) return; // Disable HTML5 drag on mobile
     setDraggedItem(itemId);
     e.dataTransfer.effectAllowed = 'move';
   };
 
   // Handle drag over
   const handleDragOver = (e: React.DragEvent) => {
+    if (isMobile) return; // Disable HTML5 drag on mobile
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
   // Handle drop
   const handleDrop = (e: React.DragEvent, dropZone: 'distortion' | 'realistic') => {
+    if (isMobile) return; // Disable HTML5 drag on mobile
     e.preventDefault();
     
     if (!draggedItem || !gameData) return;
+    processItemDrop(draggedItem, dropZone);
+  };
 
-    const item = gameData.items.find(i => i.id === draggedItem);
+  // Mobile touch handlers
+  const handleTouchStart = (e: React.TouchEvent, itemId: string) => {
+    if (!isMobile) return;
+    
+    const touch = e.touches[0];
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+    setSelectedItem(itemId);
+    
+    // Add haptic feedback if available
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile || !touchStartPos) return;
+    
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStartPos.x);
+    const deltaY = Math.abs(touch.clientY - touchStartPos.y);
+    
+    // Start dragging if moved more than 10px
+    if (deltaX > 10 || deltaY > 10) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    
+    if (isDragging && selectedItem) {
+      // Find what zone we're over
+      const touch = e.changedTouches[0];
+      const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+      const dropZone = elementBelow?.closest('[data-drop-zone]')?.getAttribute('data-drop-zone') as 'distortion' | 'realistic' | null;
+      
+      if (dropZone) {
+        processItemDrop(selectedItem, dropZone);
+      }
+    }
+    
+    // Reset touch states
+    setTouchStartPos(null);
+    setIsDragging(false);
+    setSelectedItem(null);
+  };
+
+  // Mobile tap-to-select handler
+  const handleMobileTap = (itemId: string) => {
+    if (!isMobile) return;
+    
+    if (selectedItem === itemId) {
+      // Deselect if tapping the same item
+      setSelectedItem(null);
+    } else {
+      // Select new item
+      setSelectedItem(itemId);
+      if (navigator.vibrate) {
+        navigator.vibrate(30);
+      }
+    }
+  };
+
+  // Mobile drop zone tap handler
+  const handleDropZoneTap = (dropZone: 'distortion' | 'realistic') => {
+    if (!isMobile || !selectedItem) return;
+    
+    processItemDrop(selectedItem, dropZone);
+    setSelectedItem(null);
+  };
+
+  // Common function to process item drops (used by both desktop and mobile)
+  const processItemDrop = (itemId: string, dropZone: 'distortion' | 'realistic') => {
+    if (!gameData) return;
+
+    const item = gameData.items.find(i => i.id === itemId);
     if (!item) return;
 
     // Check if correct
@@ -182,10 +270,10 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
                      (dropZone === 'realistic' && !item.is_distortion);
 
     // Update sorted items
-    setSortedItems(prev => ({ ...prev, [draggedItem]: dropZone }));
+    setSortedItems(prev => ({ ...prev, [itemId]: dropZone }));
     
     // Update feedback
-    setFeedback(prev => ({ ...prev, [draggedItem]: isCorrect ? 'correct' : 'incorrect' }));
+    setFeedback(prev => ({ ...prev, [itemId]: isCorrect ? 'correct' : 'incorrect' }));
 
     // Play sound feedback (if available)
     if (isCorrect) {
@@ -202,17 +290,22 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
       audio.play().catch(() => {}); // Ignore errors if sound file doesn't exist
       
       // Shake animation (handled by CSS)
-      const bubble = document.getElementById(`bubble-${draggedItem}`);
+      const bubble = document.getElementById(`bubble-${itemId}`);
       if (bubble) {
         bubble.classList.add('animate-shake');
         setTimeout(() => bubble.classList.remove('animate-shake'), 600);
       }
     }
 
+    // Add haptic feedback for mobile
+    if (isMobile && navigator.vibrate) {
+      navigator.vibrate(isCorrect ? [50, 50, 50] : [100]);
+    }
+
     setDraggedItem(null);
 
     // Check if game is complete
-    const newSortedItems = { ...sortedItems, [draggedItem]: dropZone };
+    const newSortedItems = { ...sortedItems, [itemId]: dropZone };
     const allItemsSorted = Object.values(newSortedItems).every(value => value !== null);
     
     if (allItemsSorted) {
@@ -480,45 +573,77 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
                 />
               </div>
 
-              {/* Draggable bubbles */}
+              {/* Instructions */}
               <div className="space-y-4">
-                <h3 className="text-lg font-fjalla font-bold text-foreground tracking-wide">DRAG EACH THOUGHT TO THE CORRECT CATEGORY:</h3>
-                <div className="grid grid-cols-2 gap-4 min-h-[200px]">
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-lg font-fjalla font-bold text-foreground tracking-wide">
+                    {isMobile ? 'TAP TO SELECT, THEN TAP CATEGORY:' : 'DRAG EACH THOUGHT TO THE CORRECT CATEGORY:'}
+                  </h3>
+                  {isMobile && <Hand className="h-5 w-5 text-primary animate-pulse" />}
+                </div>
+                
+                {isMobile && selectedItem && (
+                  <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+                    <p className="text-sm font-source text-primary font-medium">
+                      Selected thought - now tap a category below to sort it!
+                    </p>
+                  </div>
+                )}
+
+                {/* Thought bubbles */}
+                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 min-h-[200px]`}>
                   {gameData.items.map(item => {
                     const isCompleted = sortedItems[item.id] !== null;
                     const feedbackType = feedback[item.id];
+                    const isSelected = selectedItem === item.id;
                     
                     return (
                       <div
                         key={item.id}
                         id={`bubble-${item.id}`}
-                        draggable={!isCompleted}
+                        draggable={!isMobile && !isCompleted}
                         onDragStart={(e) => handleDragStart(e, item.id)}
+                        onTouchStart={(e) => handleTouchStart(e, item.id)}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        onClick={() => handleMobileTap(item.id)}
                         className={`
-                          p-4 rounded-lg border-2 cursor-move transition-all duration-200
+                          ${isMobile ? 'p-6 min-h-[80px]' : 'p-4'} rounded-lg border-2 transition-all duration-200
                           ${isCompleted 
                             ? (feedbackType === 'correct' 
                                 ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
                                 : 'border-red-500 bg-red-50 dark:bg-red-900/20')
-                            : 'border-border bg-card hover:border-primary/50'
+                            : isSelected
+                              ? 'border-primary bg-primary/10 shadow-lg scale-105'
+                              : 'border-border bg-card hover:border-primary/50'
                           }
                           ${draggedItem === item.id ? 'opacity-50 scale-95' : ''}
+                          ${isDragging && selectedItem === item.id ? 'opacity-70 transform rotate-2' : ''}
+                          ${isMobile ? 'cursor-pointer touch-manipulation' : 'cursor-move'}
+                          ${isMobile && !isCompleted ? 'active:scale-95' : ''}
                         `}
                       >
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-source font-medium">{item.text}</p>
-                          {isCompleted && (
-                            <div className="flex items-center space-x-1">
-                              {feedbackType === 'correct' ? (
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <X className="h-4 w-4 text-red-600" />
-                              )}
-                               <span className="text-xs font-source font-bold">
-                                 {feedbackType === 'correct' ? '+10' : '0'}
-                               </span>
-                            </div>
-                          )}
+                          <p className={`${isMobile ? 'text-base' : 'text-sm'} font-source font-medium`}>
+                            {item.text}
+                          </p>
+                          <div className="flex items-center space-x-1">
+                            {isSelected && isMobile && !isCompleted && (
+                              <div className="w-3 h-3 bg-primary rounded-full animate-pulse" />
+                            )}
+                            {isCompleted && (
+                              <>
+                                {feedbackType === 'correct' ? (
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-600" />
+                                )}
+                                <span className="text-xs font-source font-bold">
+                                  {feedbackType === 'correct' ? '+10' : '0'}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -527,25 +652,57 @@ const ThoughtPatternSorter: React.FC<ThoughtPatternSorterProps> = ({ onClose, on
               </div>
 
               {/* Drop zones */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-2 gap-6'}`}>
                 <div
+                  data-drop-zone="distortion"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, 'distortion')}
-                  className="border-2 border-dashed border-red-300 bg-red-50 dark:bg-red-900/20 rounded-lg p-6 text-center min-h-[120px] flex flex-col items-center justify-center space-y-2"
+                  onClick={() => handleDropZoneTap('distortion')}
+                  className={`
+                    border-2 border-dashed border-red-300 bg-red-50 dark:bg-red-900/20 rounded-lg 
+                    ${isMobile ? 'p-8 min-h-[100px]' : 'p-6 min-h-[120px]'} 
+                    text-center flex flex-col items-center justify-center space-y-2
+                    ${isMobile && selectedItem ? 'cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 active:scale-95' : ''}
+                    ${isMobile ? 'touch-manipulation' : ''}
+                    transition-all duration-200
+                  `}
                 >
-                  <AlertTriangle className="h-8 w-8 text-red-600" />
+                  <AlertTriangle className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} text-red-600`} />
                   <h4 className="font-fjalla font-bold text-red-700 dark:text-red-300 tracking-wide">DISTORTIONS</h4>
-                  <p className="text-sm text-red-600 dark:text-red-400 font-source">Unhelpful thinking patterns</p>
+                  <p className={`${isMobile ? 'text-base' : 'text-sm'} text-red-600 dark:text-red-400 font-source`}>
+                    Unhelpful thinking patterns
+                  </p>
+                  {isMobile && selectedItem && (
+                    <p className="text-xs text-red-500 font-source font-medium animate-pulse">
+                      Tap here to categorize
+                    </p>
+                  )}
                 </div>
 
                 <div
+                  data-drop-zone="realistic"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, 'realistic')}
-                  className="border-2 border-dashed border-green-300 bg-green-50 dark:bg-green-900/20 rounded-lg p-6 text-center min-h-[120px] flex flex-col items-center justify-center space-y-2"
+                  onClick={() => handleDropZoneTap('realistic')}
+                  className={`
+                    border-2 border-dashed border-green-300 bg-green-50 dark:bg-green-900/20 rounded-lg 
+                    ${isMobile ? 'p-8 min-h-[100px]' : 'p-6 min-h-[120px]'} 
+                    text-center flex flex-col items-center justify-center space-y-2
+                    ${isMobile && selectedItem ? 'cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 active:scale-95' : ''}
+                    ${isMobile ? 'touch-manipulation' : ''}
+                    transition-all duration-200
+                  `}
                 >
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                  <CheckCircle className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} text-green-600`} />
                   <h4 className="font-fjalla font-bold text-green-700 dark:text-green-300 tracking-wide">REALISTIC</h4>
-                  <p className="text-sm text-green-600 dark:text-green-400 font-source">Balanced, helpful thoughts</p>
+                  <p className={`${isMobile ? 'text-base' : 'text-sm'} text-green-600 dark:text-green-400 font-source`}>
+                    Balanced, helpful thoughts
+                  </p>
+                  {isMobile && selectedItem && (
+                    <p className="text-xs text-green-500 font-source font-medium animate-pulse">
+                      Tap here to categorize
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
