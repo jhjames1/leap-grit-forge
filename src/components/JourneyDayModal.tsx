@@ -889,8 +889,18 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="bg-background border-0 shadow-lg max-w-lg w-full max-h-[80vh] overflow-y-auto rounded-lg">
+    <>
+      {showTriggerIdentifier && (
+        <TriggerIdentifier
+          onClose={() => {
+            markActivityComplete('trigger_identification', { triggers_mapped: true });
+            setShowTriggerIdentifier(false);
+          }}
+          onCancel={() => setShowTriggerIdentifier(false)}
+        />
+      )}
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <Card className="bg-background border-0 shadow-lg max-w-lg w-full max-h-[80vh] overflow-y-auto rounded-lg">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center space-x-3">
@@ -981,24 +991,8 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
           </div>
         </div>
       </Card>
-      
-      {showTriggerIdentifier && (
-        <TriggerIdentifier
-          onClose={() => {
-            setShowTriggerIdentifier(false);
-            // Only mark as complete when user actually saves their triggers
-            // This will be called from TriggerIdentifier's handleSave function
-            try {
-              markActivityComplete('trigger_identification', { triggers_mapped: true });
-            } catch (error) {
-              logger.error('Failed to mark trigger activity complete', error);
-              // Don't let this error break the flow - user can still close the component
-            }
-          }}
-          onCancel={() => setShowTriggerIdentifier(false)}
-        />
-      )}
     </div>
+    </>
   );
 };
 
