@@ -986,7 +986,14 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
         <TriggerIdentifier
           onClose={() => {
             setShowTriggerIdentifier(false);
-            markActivityComplete('trigger_identification', { triggers_mapped: true });
+            // Only mark as complete when user actually saves their triggers
+            // This will be called from TriggerIdentifier's handleSave function
+            try {
+              markActivityComplete('trigger_identification', { triggers_mapped: true });
+            } catch (error) {
+              logger.error('Failed to mark trigger activity complete', error);
+              // Don't let this error break the flow - user can still close the component
+            }
           }}
           onCancel={() => setShowTriggerIdentifier(false)}
         />
