@@ -9,6 +9,7 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import { useAudio } from '@/hooks/useAudio';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { logger } from '@/utils/logger';
+import TriggerIdentifier from '@/components/TriggerIdentifier';
 
 interface JourneyDayModalProps {
   day: number;
@@ -39,6 +40,7 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [currentAudioActivity, setCurrentAudioActivity] = useState<string | null>(null);
+  const [showTriggerIdentifier, setShowTriggerIdentifier] = useState(false);
   const { updateUserData, userData, logActivity } = useUserData();
   const { toast } = useToast();
   const { language, t } = useLanguage();
@@ -163,35 +165,60 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
 
   const openToolActivity = (toolName: string, activityKey: string) => {
     switch (toolName) {
+      case 'Trigger Identification':
+        if (activityKey === 'trigger_tool') {
+          setShowTriggerIdentifier(true);
+        } else {
+          toast({
+            title: "Activity Started",
+            description: "Complete this trigger identification exercise.",
+          });
+          // Simulate completion after 3 seconds
+          setTimeout(() => {
+            markActivityComplete(activityKey);
+          }, 3000);
+        }
+        break;
       case 'Breathing Exercise':
         toast({
           title: "Breathing Exercise Started",
           description: "Take deep breaths and focus on your recovery journey.",
         });
+        // Simulate completion after 3 seconds
+        setTimeout(() => {
+          markActivityComplete(activityKey);
+        }, 3000);
         break;
       case 'Urge Tracker':
         toast({
           title: "Urge Tracker Opened",
           description: "Track your urges and cravings to identify patterns.",
         });
+        // Simulate completion after 3 seconds
+        setTimeout(() => {
+          markActivityComplete(activityKey);
+        }, 3000);
         break;
       case 'Peer Support':
         toast({
           title: "Connecting with Peers",
           description: "Reach out to your support network for encouragement.",
         });
+        // Simulate completion after 3 seconds
+        setTimeout(() => {
+          markActivityComplete(activityKey);
+        }, 3000);
         break;
       default:
         toast({
           title: "Activity Started",
           description: "Complete this recovery tool activity.",
         });
+        // Simulate completion after 3 seconds
+        setTimeout(() => {
+          markActivityComplete(activityKey);
+        }, 3000);
     }
-    
-    // Simulate completion after 3 seconds
-    setTimeout(() => {
-      markActivityComplete(activityKey);
-    }, 3000);
   };
 
   const getAllActivitiesForDay = (dayNum: number) => {
@@ -954,6 +981,16 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
           </div>
         </div>
       </Card>
+      
+      {showTriggerIdentifier && (
+        <TriggerIdentifier
+          onClose={() => {
+            setShowTriggerIdentifier(false);
+            markActivityComplete('trigger_identification', { triggers_mapped: true });
+          }}
+          onCancel={() => setShowTriggerIdentifier(false)}
+        />
+      )}
     </div>
   );
 };
