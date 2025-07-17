@@ -36,15 +36,13 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
 
   // Get journey day from calendar date
   const getJourneyDayFromDate = (date: Date): number | null => {
-    // For now, assume journey starts from day 1 on today minus completed days
-    // This is a simplified approach - in real app you'd want to track actual start date
-    const today = new Date();
-    const completedDays = userData?.journeyProgress?.completedDays || [];
-    const maxCompletedDay = completedDays.length > 0 ? Math.max(...completedDays) : 0;
+    // Get user's recovery start date or default to 30 days ago
+    const startDateStr = localStorage.getItem('userStartDate');
+    const startDate = startDateStr ? new Date(startDateStr) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     
-    // Calculate days back from today
-    const daysDiff = Math.floor((today.getTime() - date.getTime()) / (24 * 60 * 60 * 1000));
-    const journeyDay = maxCompletedDay - daysDiff + 1;
+    // Calculate days since start
+    const daysDiff = Math.floor((date.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+    const journeyDay = daysDiff + 1;
     
     return journeyDay >= 1 && journeyDay <= 90 ? journeyDay : null;
   };

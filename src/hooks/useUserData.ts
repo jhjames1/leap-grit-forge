@@ -158,10 +158,10 @@ export const useUserData = () => {
           courageCoins: 0 // Will be calculated
         },
         journeyProgress: journeyProgress ? {
-          completedDays: [], // Will be calculated from daily stats
+          completedDays: journeyProgress.completed_days || [],
           currentWeek: Math.floor(journeyProgress.current_day / 7) + 1,
           badges: [],
-          completionDates: {}
+          completionDates: journeyProgress.completion_dates || {}
         } : {
           completedDays: [],
           currentWeek: 1,
@@ -446,11 +446,11 @@ export const useUserData = () => {
     }
   };
 
-  // Force refresh user data from storage
-  const refreshUserData = () => {
+  // Force refresh user data from storage and database
+  const refreshUserData = async () => {
     if (currentUser) {
-      logger.debug('Force refreshing user data from storage');
-      loadUserData(currentUser);
+      logger.debug('Force refreshing user data from database');
+      await loadUserData(currentUser, isAuthenticated);
     }
   };
 
@@ -507,7 +507,7 @@ export const useUserData = () => {
     SecureStorage.setUserData(currentUser, updatedUserData);
 
     // Sync to Supabase if authenticated
-    if (currentUser) {
+    if (isAuthenticated && currentUser) {
       await SupabaseUserService.upsertJourneyProgress({
         user_id: currentUser,
         current_day: Math.max(userData.journeyProgress?.currentWeek || 1, day + 1),
@@ -519,6 +519,11 @@ export const useUserData = () => {
         journey_responses: userData.journeyResponses || {},
         daily_stats: userData.dailyStats || {}
       });
+      
+      // Force refresh after successful sync
+      setTimeout(() => {
+        refreshUserData();
+      }, 100);
     }
 
     logActivity(`completed_day_${day}`, `Day ${day} completed`, 'journey');

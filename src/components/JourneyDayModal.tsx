@@ -332,9 +332,11 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
     if (allActivitiesComplete && !userData?.journeyProgress?.completedDays?.includes(day)) {
       markDayComplete(day);
       
-      // Call the parent onComplete callback
+      // Call the parent onComplete callback and refresh
       setTimeout(() => {
         onComplete();
+        // Trigger a data refresh to update UI
+        window.dispatchEvent(new CustomEvent('journeyDataChanged'));
       }, 500);
     }
   }, [allActivitiesComplete, day, userData?.journeyProgress?.completedDays, markDayComplete, onComplete]);

@@ -45,6 +45,13 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
   
   // Check if the current day is locked
   const currentDayStatus = getDayStatus(userData, currentJourneyDay);
+  
+  // Force refresh when journey progress changes
+  useEffect(() => {
+    if (userData?.journeyProgress?.completedDays) {
+      // Component will re-render when completedDays changes
+    }
+  }, [userData?.journeyProgress?.completedDays]);
 
   useEffect(() => {
     // Check if current user is a peer specialist
