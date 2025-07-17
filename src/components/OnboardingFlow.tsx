@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { CheckCircle2, Brain, Users, Target, Zap, TrendingUp, PenTool, Headphones, Goal, BarChart, Link, Sprout, CloudSun, Waves, Mountain, RotateCcw } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageToggle } from '@/components/LanguageToggle';
@@ -12,6 +14,7 @@ interface OnboardingFlowProps {
     focusAreas: string[];
     journeyStage: string;
     supportStyle: string;
+    gender: string;
   }) => void;
 }
 
@@ -19,6 +22,7 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(1);
   const [firstName, setFirstName] = useState('');
+  const [gender, setGender] = useState('');
   const [focusAreas, setFocusAreas] = useState<string[]>([]);
   const [journeyStage, setJourneyStage] = useState('');
   const [supportStyle, setSupportStyle] = useState('');
@@ -72,7 +76,8 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       firstName: firstName.trim() || '',
       focusAreas,
       journeyStage,
-      supportStyle
+      supportStyle,
+      gender
     };
     
     localStorage.setItem('onboardingCompleted', 'true');
@@ -83,7 +88,8 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       onComplete({
         ...onboardingData,
         focusAreas, // Ensure focusAreas is passed
-        journeyStage // Ensure journeyStage is passed
+        journeyStage, // Ensure journeyStage is passed
+        gender // Ensure gender is passed
       });
     }, 2000);
   };
@@ -265,14 +271,36 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
               {t('onboarding.step4.subtitle')}
             </p>
             
-            <div className="mb-8">
-              <Input
-                type="text"
-                placeholder={t('onboarding.step4.placeholder')}
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="w-full p-4 text-[16px] border border-border rounded-lg bg-background focus:border-primary focus:outline-none"
-              />
+            <div className="space-y-6 mb-8">
+              <div>
+                <Input
+                  type="text"
+                  placeholder={t('onboarding.step4.placeholder')}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full p-4 text-[16px] border border-border rounded-lg bg-background focus:border-primary focus:outline-none"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-card-foreground mb-3 block">
+                  Gender (Optional)
+                </Label>
+                <RadioGroup value={gender} onValueChange={setGender} className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="male" id="male" />
+                    <Label htmlFor="male" className="text-sm cursor-pointer">Male</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="female" id="female" />
+                    <Label htmlFor="female" className="text-sm cursor-pointer">Female</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="other" id="other" />
+                    <Label htmlFor="other" className="text-sm cursor-pointer">Other</Label>
+                  </div>
+                </RadioGroup>
+              </div>
             </div>
           </>
         );
