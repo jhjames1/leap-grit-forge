@@ -43,6 +43,7 @@ interface UserData {
   dailyStats?: Record<string, any>;
   streakData?: any;
   lastAccess?: number;
+  gender?: string;
 }
 
 export const useUserData = () => {
@@ -210,6 +211,7 @@ export const useUserData = () => {
           theme: 'system',
           notifications_enabled: true,
           sms_opt_in: false,
+          gender: initialData.gender || '',
           preferences: {
             firstName: initialData.firstName || userId,
             ...initialData

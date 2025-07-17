@@ -91,7 +91,8 @@ const Index = () => {
         focusAreas: onboardingData.focusAreas || [],
         journeyStage: onboardingData.journeyStage || '',
         supportStyle: onboardingData.supportStyle || '',
-        firstName: user.user_metadata?.first_name || ''
+        firstName: onboardingData.firstName || user.user_metadata?.first_name || '',
+        gender: onboardingData.gender || ''
       });
     }
   };

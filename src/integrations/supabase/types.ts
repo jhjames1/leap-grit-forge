@@ -829,6 +829,7 @@ export type Database = {
       user_preferences: {
         Row: {
           created_at: string
+          gender: string | null
           id: string
           language: string
           notifications_enabled: boolean
@@ -843,6 +844,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          gender?: string | null
           id?: string
           language?: string
           notifications_enabled?: boolean
@@ -857,6 +859,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          gender?: string | null
           id?: string
           language?: string
           notifications_enabled?: boolean

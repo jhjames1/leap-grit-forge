@@ -54,6 +54,7 @@ export interface UserPreferences {
   phone_number?: string;
   timezone?: string;
   recovery_start_date?: string;
+  gender?: string;
   preferences: Record<string, any>;
 }
 
