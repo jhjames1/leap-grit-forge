@@ -133,51 +133,26 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
   };
 
   // Helper functions to parse user data for specific days
-  const getActivitiesForDay = (day: number): string[] => {
-    const activities: string[] = [];
-    const journeyResponses = userData?.journeyResponses || {};
+  const getActivitiesForDay = (day: number): Array<{title: string, activity: string, tool: string, completionDate: string}> => {
+    // Get the activity details from journey data
+    const journeyData = require('../data/journeyData.json');
+    const coreJourney = journeyData.coreJourneys[0]; // Using "Craving Control" journey
+    const dayData = coreJourney.days.find((d: any) => d.day === day);
     
-    // Look for activities completed on this day
-    Object.keys(journeyResponses).forEach(key => {
-      if (key.startsWith(`day_${day}_`)) {
-        const activityType = key.replace(`day_${day}_`, '');
-        switch (activityType) {
-          case 'welcome_intro':
-            activities.push('Welcome Introduction');
-            break;
-          case 'trigger_identification':
-            activities.push('Trigger Identification');
-            break;
-          case 'trigger_education':
-            activities.push('Trigger Education');
-            break;
-          case 'urge_tracking':
-            activities.push('Urge Tracking');
-            break;
-          case 'breathing_exercise':
-            activities.push('Breathing Exercise');
-            break;
-          case 'gratitude_log':
-            activities.push('Gratitude Practice');
-            break;
-          case 'peer_support':
-            activities.push('Peer Support');
-            break;
-          case 'bonus_activity':
-            activities.push('Bonus Practice');
-            break;
-          case 'activity':
-            activities.push('Journey Activity');
-            break;
-          default:
-            if (!activityType.includes('reflection') && !activityType.includes('text')) {
-              activities.push(activityType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
-            }
-        }
-      }
-    });
+    if (!dayData) return [];
     
-    return activities;
+    // Check if this day was actually completed
+    const completedDays = userData?.journeyProgress?.completedDays || [];
+    if (!completedDays.includes(day)) return [];
+    
+    // Return activity with completion date
+    const completionDate = userData?.journeyProgress?.completionDates?.[day];
+    return [{
+      title: dayData.title,
+      activity: dayData.activity,
+      tool: dayData.tool,
+      completionDate: completionDate ? new Date(completionDate).toLocaleDateString() : 'Unknown date'
+    }];
   };
 
   const getJournalingResponsesForDay = (day: number): Array<{title: string, content: string}> => {
@@ -447,20 +422,21 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
                 <Flame className="h-4 w-4 text-emerald-600" />
                 <span className="font-semibold text-emerald-800">Journey Activities Completed</span>
               </div>
-              <div className="space-y-2">
-                {selectedCompletedDay && getActivitiesForDay(selectedCompletedDay).map((activity, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                    <span className="text-sm text-emerald-700">{activity}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-emerald-600 mt-2">
-                Completed on {userData?.journeyProgress?.completionDates?.[selectedCompletedDay || 0] 
-                  ? new Date(userData.journeyProgress.completionDates[selectedCompletedDay || 0]).toLocaleDateString()
-                  : "Unknown date"
-                }
-              </p>
+               <div className="space-y-3">
+                 {selectedCompletedDay && getActivitiesForDay(selectedCompletedDay).map((activityData, index) => (
+                   <div key={index} className="bg-white p-3 rounded border border-emerald-100">
+                     <div className="flex items-center gap-2 mb-2">
+                       <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                       <span className="text-sm font-medium text-emerald-800">{activityData.title}</span>
+                     </div>
+                     <p className="text-sm text-emerald-700 mb-2">{activityData.activity}</p>
+                     <div className="flex items-center gap-4 text-xs text-emerald-600">
+                       <span>Tool: {activityData.tool}</span>
+                       <span>Completed: {activityData.completionDate}</span>
+                     </div>
+                   </div>
+                 ))}
+               </div>
             </div>
 
             {/* Journaling Responses */}
