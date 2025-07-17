@@ -11,6 +11,7 @@ import { trackingManager } from '@/utils/trackingManager';
 import EditProfile from './EditProfile';
 import NotificationSettings from './NotificationSettings';
 import { SavedWisdom } from './SavedWisdom';
+import { getEarnedBadges } from '@/utils/badgeUtils';
 
 interface UserProfileProps {
   onNavigate?: (page: string) => void;
@@ -145,126 +146,8 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     return favorites.slice(0, 3);
   };
 
-  // Dynamic badge calculation based on actual achievements
-  const getEarnedBadges = () => {
-    const badges = [];
-    const completedDays = userData?.journeyProgress?.completedDays || [];
-    const activityLog = userData?.activityLog || [];
-    const completionDates = userData?.journeyProgress?.completionDates || {};
-    
-    // Week Warrior Badge - Complete 7 days
-    if (completedDays.length >= 7) {
-      // Find when the 7th day was completed
-      const seventhDayIndex = completedDays[6]; // 7th completed day
-      const earnedDate = completionDates[seventhDayIndex] 
-        ? new Date(completionDates[seventhDayIndex])
-        : new Date();
-      
-      badges.push({
-        name: t('profile.badges.weekWarrior'),
-        earned: formatTimeAgo(earnedDate),
-        icon: "🏆",
-        description: "Complete 7 days of recovery activities"
-      });
-    }
-    
-    // Steady Breather Badge - Use breathing exercises 10 times
-    const breathingCount = activityLog.filter(entry => 
-      entry.action.includes('Breathing') || 
-      entry.action.includes('SteadySteel')
-    ).length;
-    
-    if (breathingCount >= 10) {
-      const lastBreathingEntry = activityLog
-        .filter(entry => entry.action.includes('Breathing') || entry.action.includes('SteadySteel'))
-        .slice(9, 10)[0]; // 10th entry
-      
-      badges.push({
-        name: t('profile.badges.steadyBreather'),
-        earned: formatTimeAgo(new Date(lastBreathingEntry?.timestamp || Date.now())),
-        icon: "🌬️",
-        description: "Use breathing exercises 10 times"
-      });
-    }
-    
-    // Tool Master Badge - Use 5 different tools
-    const uniqueTools = new Set();
-    activityLog.forEach(entry => {
-      if (entry.action.includes('Completed')) {
-        if (entry.action.includes('SteadySteel')) uniqueTools.add('SteadySteel');
-        if (entry.action.includes('Redline Recovery')) uniqueTools.add('Redline Recovery');
-        if (entry.action.includes('Gratitude')) uniqueTools.add('Gratitude Log');
-        if (entry.action.includes('Trigger')) uniqueTools.add('Trigger Identifier');
-        if (entry.action.includes('Foreman')) uniqueTools.add('The Foreman');
-        if (entry.action.includes('Peer')) uniqueTools.add('Peer Support');
-      }
-    });
-    
-    if (uniqueTools.size >= 5) {
-      badges.push({
-        name: t('profile.badges.toolMaster'),
-        earned: formatTimeAgo(new Date()),
-        icon: "🧰",
-        description: "Master 5 different recovery tools"
-      });
-    }
-    
-    // Journey Explorer Badge - Complete 30 days
-    if (completedDays.length >= 30) {
-      const thirtiethDayIndex = completedDays[29]; // 30th completed day
-      const earnedDate = completionDates[thirtiethDayIndex] 
-        ? new Date(completionDates[thirtiethDayIndex])
-        : new Date();
-      
-      badges.push({
-        name: "Journey Explorer",
-        earned: formatTimeAgo(earnedDate),
-        icon: "🗺️",
-        description: "Complete 30 days of your recovery journey"
-      });
-    }
-    
-    // Streak Champion Badge - Maintain 14-day streak
-    if (liveRecoveryStreak >= 14) {
-      badges.push({
-        name: "Streak Champion",
-        earned: formatTimeAgo(new Date()),
-        icon: "🔥",
-        description: "Maintain a 14-day recovery streak"
-      });
-    }
-    
-    // Social Connector Badge - Use peer support 5 times
-    const peerSupportCount = activityLog.filter(entry => 
-      entry.action.includes('Peer') || 
-      entry.action.includes('Chat')
-    ).length;
-    
-    if (peerSupportCount >= 5) {
-      badges.push({
-        name: "Social Connector",
-        earned: formatTimeAgo(new Date()),
-        icon: "👥",
-        description: "Connect with peer support 5 times"
-      });
-    }
-    
-    return badges;
-  };
-
-  // Helper function to format time ago
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-    
-    if (diffInDays === 0) return 'Today';
-    if (diffInDays === 1) return 'Yesterday';
-    if (diffInDays < 7) return `${diffInDays} days ago`;
-    if (diffInDays < 14) return '1 week ago';
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
-    return `${Math.floor(diffInDays / 30)} months ago`;
-  };
+  // Use shared badge utility
+  const earnedBadges = getEarnedBadges(userData, t, liveRecoveryStreak);
 
   const profileStats = [
     { 
@@ -293,7 +176,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     streakDays: liveRecoveryStreak,
     totalSessions: liveTotalToolsUsed,
     favoriteTools: getFavoriteTools(),
-    badges: getEarnedBadges()
+    badges: earnedBadges
   };
 
 
@@ -384,9 +267,9 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
       {/* Badges & Achievements */}
       <Card className="bg-card mb-6 p-6 border-0 shadow-none">
         <h3 className="font-fjalla font-bold text-card-foreground mb-4">{t('profile.achievements')}</h3>
-        {user.badges.length > 0 ? (
+        {earnedBadges.length > 0 ? (
           <div className="grid grid-cols-1 gap-4">
-            {user.badges.map((badge, index) => (
+            {earnedBadges.map((badge, index) => (
               <div key={index} className="flex items-start space-x-3 p-4 bg-muted/20 rounded-lg">
                 <div className="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-lg">{badge.icon}</span>

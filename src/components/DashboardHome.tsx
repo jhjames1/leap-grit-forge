@@ -15,6 +15,7 @@ import { logger } from '@/utils/logger';
 import { calculateCurrentJourneyDay, getDayStatus } from '@/utils/journeyCalculation';
 import { trackingManager } from '@/utils/trackingManager';
 import { journeyManager } from '@/utils/journeyManager';
+import { getMostRecentBadge } from '@/utils/badgeUtils';
 
 interface DashboardHomeProps {
   onNavigate?: (page: string) => void;
@@ -38,7 +39,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
 
   // Calculate recovery streak and badges based on daily activity
   const [recoveryStreak, setRecoveryStreak] = useState(0);
-  const [badgeCount, setBadgeCount] = useState(0);
+  const [mostRecentBadge, setMostRecentBadge] = useState<any>(null);
   
   // Calculate current journey day using shared utility
   const currentJourneyDay = calculateCurrentJourneyDay(userData);
@@ -145,53 +146,9 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       }
     }
     
-    // Calculate badge count based on actual achievements
-    const calculateEarnedBadges = () => {
-      const badges = [];
-      const completedDays = userData?.journeyProgress?.completedDays || [];
-      const activityLog = userData?.activityLog || [];
-      
-      // Week Warrior Badge - Complete 7 days
-      if (completedDays.length >= 7) badges.push('weekWarrior');
-      
-      // Steady Breather Badge - Use breathing exercises 10 times
-      const breathingCount = activityLog.filter(entry => 
-        entry.action.includes('Breathing') || 
-        entry.action.includes('SteadySteel')
-      ).length;
-      if (breathingCount >= 10) badges.push('steadyBreather');
-      
-      // Tool Master Badge - Use 5 different tools
-      const uniqueTools = new Set();
-      activityLog.forEach(entry => {
-        if (entry.action.includes('Completed')) {
-          if (entry.action.includes('SteadySteel')) uniqueTools.add('SteadySteel');
-          if (entry.action.includes('Redline Recovery')) uniqueTools.add('Redline Recovery');
-          if (entry.action.includes('Gratitude')) uniqueTools.add('Gratitude Log');
-          if (entry.action.includes('Trigger')) uniqueTools.add('Trigger Identifier');
-          if (entry.action.includes('Foreman')) uniqueTools.add('The Foreman');
-          if (entry.action.includes('Peer')) uniqueTools.add('Peer Support');
-        }
-      });
-      if (uniqueTools.size >= 5) badges.push('toolMaster');
-      
-      // Journey Explorer Badge - Complete 30 days
-      if (completedDays.length >= 30) badges.push('journeyExplorer');
-      
-      // Streak Champion Badge - Maintain 14-day streak
-      if (recoveryStreak >= 14) badges.push('streakChampion');
-      
-      // Social Connector Badge - Use peer support 5 times
-      const peerSupportCount = activityLog.filter(entry => 
-        entry.action.includes('Peer') || 
-        entry.action.includes('Chat')
-      ).length;
-      if (peerSupportCount >= 5) badges.push('socialConnector');
-      
-      return badges.length;
-    };
-    
-    setBadgeCount(calculateEarnedBadges());
+    // Get the most recent badge
+    const recentBadge = getMostRecentBadge(userData, t, recoveryStreak);
+    setMostRecentBadge(recentBadge);
   }, [userData, language]);  // Add language dependency to refresh translations
 
   // Get upcoming week activities - random 3 days from next 7 in chronological order
@@ -322,11 +279,23 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
                 <ThemeToggle />
                 <LanguageToggle />
               </div>
-              <div className="flex items-end space-x-2 mt-12">
-                <div className="bg-primary p-3 rounded-lg">
-                  <Trophy className="text-primary-foreground" size={20} />
-                </div>
-                <span className="text-3xl font-bold text-foreground">{badgeCount}</span>
+              <div className="flex flex-col items-end space-y-2 mt-12">
+                {mostRecentBadge ? (
+                  <>
+                    <div className="text-2xl">{mostRecentBadge.icon}</div>
+                    <div className="text-right">
+                      <div className="text-sm font-fjalla font-bold text-foreground uppercase tracking-wide">{mostRecentBadge.name}</div>
+                      <div className="text-xs text-muted-foreground">{mostRecentBadge.earned}</div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center">
+                    <div className="bg-muted p-3 rounded-lg mb-2">
+                      <Trophy className="text-muted-foreground" size={20} />
+                    </div>
+                    <div className="text-xs text-muted-foreground">No badges yet</div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
