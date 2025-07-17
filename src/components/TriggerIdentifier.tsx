@@ -570,20 +570,11 @@ const TriggerIdentifier: React.FC<TriggerIdentifierProps> = ({ onClose, onCancel
                         <SelectValue placeholder="Choose a coping strategy" />
                       </SelectTrigger>
                       <SelectContent className="bg-background border-border shadow-lg">
-                        {copingStrategies.map(strategy => {
-                          const Icon = strategy.icon;
-                          return (
-                            <SelectItem key={strategy.id} value={strategy.id} className="focus:bg-accent focus:text-accent-foreground">
-                              <div className="flex items-center space-x-2">
-                                <Icon className="w-4 h-4" />
-                                <div>
-                                  <div className="font-medium">{strategy.label}</div>
-                                  <div className="text-xs text-muted-foreground">{strategy.description}</div>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
+                        {copingStrategies.map(strategy => (
+                          <SelectItem key={strategy.id} value={strategy.id}>
+                            {strategy.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
