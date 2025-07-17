@@ -54,6 +54,7 @@ interface SpecialistCalendarProps {
 }
 
 export default function SpecialistCalendar({ specialistId }: SpecialistCalendarProps) {
+  console.log('🗓️ SpecialistCalendar - Component mounted with specialistId:', specialistId);
   const { user } = useAuth();
   const { toast } = useToast();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -85,6 +86,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
 
   // Fetch calendar events (schedules, appointments, exceptions)
   const fetchEvents = useCallback(async () => {
+    console.log('🗓️ SpecialistCalendar - fetchEvents called with user:', user, 'specialistId:', specialistId);
     if (!user || !specialistId) return;
 
     try {
@@ -294,6 +296,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
 
   // Initialize data
   useEffect(() => {
+    console.log('🗓️ SpecialistCalendar - useEffect for initialization called');
     fetchAppointmentTypes();
     fetchEvents();
   }, [fetchAppointmentTypes, fetchEvents]);
