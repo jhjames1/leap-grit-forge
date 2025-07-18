@@ -48,8 +48,14 @@ const PeerSpecialistDashboard = () => {
     }
 
     fetchSpecialistData();
-    fetchActiveSessions();
   }, [user]);
+
+  // Only fetch active sessions after specialist data is loaded
+  useEffect(() => {
+    if (specialistData?.id) {
+      fetchActiveSessions();
+    }
+  }, [specialistData?.id]);
 
   const fetchSpecialistData = async () => {
     try {
