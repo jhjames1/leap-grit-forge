@@ -1,7 +1,6 @@
 
 import { useSpecialistMetrics } from '@/hooks/useSpecialistMetrics';
-import { MessageSquare, Calendar, Star, Clock, TrendingUp, CheckCircle } from 'lucide-react';
-import { isMetricBelowGoal } from '@/utils/performanceGoals';
+import { MessageSquare, Calendar, Star, Clock, TrendingUp } from 'lucide-react';
 import MetricCard from './MetricCard';
 
 interface SpecialistPerformanceMetricsProps {
@@ -22,7 +21,7 @@ const SpecialistPerformanceMetrics = ({ specialistId }: SpecialistPerformanceMet
   if (loading) {
     return (
       <div className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">Live Performance Metrics</p>
+        <p className="text-sm font-medium text-muted-foreground">Performance Metrics</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="animate-pulse bg-muted/50 p-3 rounded-sm">
@@ -46,16 +45,9 @@ const SpecialistPerformanceMetrics = ({ specialistId }: SpecialistPerformanceMet
     total_ratings: 0
   };
 
-  // Check if all metrics meet their goals
-  const allMetricsMeetGoals = !isMetricBelowGoal(displayMetrics.chat_completion_rate, 'CHAT_COMPLETION_RATE') &&
-    !isMetricBelowGoal(displayMetrics.checkin_completion_rate, 'CHECKIN_COMPLETION_RATE') &&
-    !isMetricBelowGoal(displayMetrics.avg_user_rating, 'AVG_USER_RATING') &&
-    !isMetricBelowGoal(displayMetrics.avg_response_time_seconds, 'AVG_RESPONSE_TIME_SECONDS') &&
-    !isMetricBelowGoal(displayMetrics.avg_streak_impact, 'AVG_STREAK_IMPACT');
-
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium">Live Performance Metrics</p>
+      <p className="text-sm font-medium">Performance Metrics</p>
       <div className="text-xs text-muted-foreground mb-3">
         {displayMetrics.total_sessions} sessions • {displayMetrics.total_checkins} check-ins • {displayMetrics.total_ratings} ratings
       </div>
@@ -101,18 +93,6 @@ const SpecialistPerformanceMetrics = ({ specialistId }: SpecialistPerformanceMet
           icon={TrendingUp}
         />
       </div>
-
-      {/* Success message when all metrics meet goals */}
-      {allMetricsMeetGoals && (
-        <div className="bg-muted/50 p-3 rounded-sm">
-          <div className="flex items-center space-x-2">
-            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-            <div className="text-sm font-medium text-green-800">
-              Excellent work! All your performance metrics are meeting their goals.
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

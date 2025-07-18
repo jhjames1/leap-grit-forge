@@ -1,8 +1,6 @@
 
-import { Button } from '@/components/ui/button';
 import { useSpecialistMetrics } from '@/hooks/useSpecialistMetrics';
-import { RefreshCw, MessageSquare, Calendar, Star, Clock, TrendingUp, CheckCircle } from 'lucide-react';
-import { PERFORMANCE_GOALS, isMetricBelowGoal } from '@/utils/performanceGoals';
+import { MessageSquare, Calendar, Star, Clock, TrendingUp } from 'lucide-react';
 import MetricCard from './MetricCard';
 
 interface RealTimeSpecialistMetricsProps {
@@ -10,7 +8,7 @@ interface RealTimeSpecialistMetricsProps {
 }
 
 const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsProps) => {
-  const { metrics, loading, lastFetched, refreshMetrics } = useSpecialistMetrics(specialistId);
+  const { metrics, loading } = useSpecialistMetrics(specialistId);
 
   const formatResponseTime = (seconds: number | undefined): string => {
     if (!seconds) return '0s';
@@ -18,12 +16,6 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.round(seconds % 60);
     return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
-  };
-
-  const formatLastUpdated = (timestamp: string | undefined): string => {
-    if (!timestamp) return 'Never';
-    const date = new Date(timestamp);
-    return `${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
   };
 
   // Check if there's meaningful data to display
@@ -36,12 +28,7 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
   if (loading && !metrics) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-muted-foreground">Live Performance Metrics</p>
-          <div className="animate-pulse">
-            <div className="h-4 bg-muted rounded w-16"></div>
-          </div>
-        </div>
+        <p className="text-sm font-medium text-muted-foreground">Performance Metrics</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="animate-pulse bg-muted/50 p-3 rounded-sm">
@@ -58,18 +45,7 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
   if (!hasData && !loading) {
     return (
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">Live Performance Metrics</p>
-          <Button
-            onClick={refreshMetrics}
-            size="sm"
-            variant="ghost"
-            className="h-6 w-6 p-0"
-            disabled={loading}
-          >
-            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
+        <p className="text-sm font-medium">Performance Metrics</p>
         <div className="text-center py-4">
           <p className="text-sm text-muted-foreground">No performance data available yet</p>
         </div>
@@ -88,37 +64,12 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
     total_ratings: 0
   };
 
-  // Check if all metrics meet their goals
-  const allMetricsMeetGoals = !isMetricBelowGoal(displayMetrics.chat_completion_rate, 'CHAT_COMPLETION_RATE') &&
-    !isMetricBelowGoal(displayMetrics.checkin_completion_rate, 'CHECKIN_COMPLETION_RATE') &&
-    !isMetricBelowGoal(displayMetrics.avg_user_rating, 'AVG_USER_RATING') &&
-    !isMetricBelowGoal(displayMetrics.avg_response_time_seconds, 'AVG_RESPONSE_TIME_SECONDS') &&
-    !isMetricBelowGoal(displayMetrics.avg_streak_impact, 'AVG_STREAK_IMPACT');
-
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Live Performance Metrics</p>
-        <div className="flex items-center space-x-2">
-          {lastFetched && (
-            <span className="text-xs text-muted-foreground">
-              Updated: {formatLastUpdated(metrics?.last_updated)}
-            </span>
-          )}
-          <Button
-            onClick={refreshMetrics}
-            size="sm"
-            variant="ghost"
-            className="h-6 w-6 p-0"
-            disabled={loading}
-          >
-            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-      </div>
+      <p className="text-sm font-medium">Performance Metrics</p>
       
       <div className="text-xs text-muted-foreground mb-3">
-        Cumulative up to yesterday: {displayMetrics.total_sessions} sessions • {displayMetrics.total_checkins} check-ins • {displayMetrics.total_ratings} ratings
+        {displayMetrics.total_sessions} sessions • {displayMetrics.total_checkins} check-ins • {displayMetrics.total_ratings} ratings
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -161,26 +112,6 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
           formatValue={(value) => `${(value || 0) >= 0 ? '+' : ''}${value?.toFixed(1) || '0.0'}d`}
           icon={TrendingUp}
         />
-      </div>
-
-      {/* Success message when all metrics meet goals */}
-      {allMetricsMeetGoals && hasData && (
-        <div className="bg-muted/50 p-3 rounded-sm">
-          <div className="flex items-center space-x-2">
-            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-            <div className="text-sm font-medium text-green-800">
-              Excellent work! All your performance metrics are meeting their goals.
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Real-time status indicator */}
-      <div className="flex items-center space-x-2 pt-2 border-t border-muted/30">
-        <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
-        <span className="text-xs text-muted-foreground">
-          {loading ? 'Updating...' : 'Live data active'}
-        </span>
       </div>
     </div>
   );
