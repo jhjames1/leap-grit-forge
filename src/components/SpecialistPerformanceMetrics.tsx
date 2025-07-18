@@ -50,12 +50,7 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
   }
 
   if (!metrics) {
-    return (
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">Performance Metrics</p>
-        <p className="text-xs text-muted-foreground">No data available for current month</p>
-      </div>
-    );
+    return null;
   }
 
   return (
