@@ -92,6 +92,52 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
     }
   }, [currentSpecialistId, isCalendarControlled]);
 
+  // Manual online status override
+  const setManualOnlineStatus = useCallback(async (isOnline: boolean, message?: string) => {
+    if (!currentSpecialistId) {
+      console.error('No specialist ID available for manual online status change');
+      return;
+    }
+
+    try {
+      console.log('Setting manual online status:', isOnline, message);
+      
+      if (isOnline) {
+        // Set manual online status, overriding calendar
+        setManualStatus(null); // Clear any manual away status
+        const { error } = await supabase
+          .from('specialist_status')
+          .upsert({
+            specialist_id: currentSpecialistId,
+            status: 'online',
+            status_message: message || 'Manually set online',
+            last_seen: new Date().toISOString(),
+            presence_data: {
+              calendar_controlled: false,
+              manual_override: true,
+              manual_online: true,
+              timestamp: Date.now()
+            }
+          });
+        
+        if (error) {
+          console.error('Error setting manual online status:', error);
+          throw error;
+        }
+        console.log('Successfully set manual online status');
+      } else {
+        // Return to calendar-controlled status
+        console.log('Clearing manual online status, returning to calendar control');
+        if (isCalendarControlled) {
+          await updateSpecialistStatusFromCalendar(currentSpecialistId);
+        }
+      }
+    } catch (error) {
+      console.error('Error setting manual online status:', error);
+      throw error;
+    }
+  }, [currentSpecialistId, isCalendarControlled]);
+
   // Toggle calendar control
   const toggleCalendarControl = useCallback(async (enabled: boolean) => {
     console.log('Toggling calendar control:', enabled);
@@ -219,6 +265,7 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
     manualStatus,
     isCalendarControlled,
     setManualAwayStatus,
+    setManualOnlineStatus,
     toggleCalendarControl,
     refreshAvailability: updateCalendarAvailability,
     specialistId: currentSpecialistId

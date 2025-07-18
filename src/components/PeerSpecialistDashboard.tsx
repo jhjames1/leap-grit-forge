@@ -59,6 +59,7 @@ const PeerSpecialistDashboard = () => {
     manualStatus,
     isCalendarControlled,
     setManualAwayStatus,
+    setManualOnlineStatus,
     toggleCalendarControl,
     refreshAvailability,
     specialistId
@@ -244,10 +245,10 @@ const PeerSpecialistDashboard = () => {
           });
         console.log('Set offline status');
       } else if (newStatus === 'online') {
-        // Return to calendar-controlled status
+        // Set manual online status to override calendar
         await setManualAwayStatus(false); // Clear any manual away status
-        await toggleCalendarControl(true);
-        console.log('Returned to calendar-controlled status');
+        await setManualOnlineStatus(true, 'Manually set online');
+        console.log('Set manual online status');
       }
 
       // Refresh availability to get updated status
@@ -273,6 +274,11 @@ const PeerSpecialistDashboard = () => {
   const getEffectiveStatus = (): 'online' | 'away' | 'offline' | 'busy' => {
     // Manual status takes precedence
     if (manualStatus === 'away') return 'away';
+    
+    // Check if specialist status has manual online override
+    if (peerSpecialist?.status && !isCalendarControlled) {
+      return peerSpecialist.status.status;
+    }
     
     // If calendar controlled and we have calendar availability data
     if (isCalendarControlled && calendarAvailability) {
