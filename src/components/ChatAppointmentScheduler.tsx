@@ -8,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Calendar as CalendarIcon, Clock, Users, X, Plus } from 'lucide-react';
-import { format, addDays, startOfDay, addMinutes, isBefore, isAfter, isSameDay } from 'date-fns';
+import { Calendar as CalendarIcon, Clock, Users, X, Plus, AlertCircle } from 'lucide-react';
+import { format, addDays, startOfDay, addMinutes, isBefore, isAfter, isSameDay, endOfDay } from 'date-fns';
 import { useSpecialistCalendar } from '@/hooks/useSpecialistCalendar';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -41,9 +41,11 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [appointmentTypes, setAppointmentTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [nextAvailableTime, setNextAvailableTime] = useState<Date | null>(null);
   
   const { toast } = useToast();
-  const { checkAvailability, settings } = useSpecialistCalendar({ specialistId });
+  const { settings, getAvailabilitySlots, availabilitySlots } = useSpecialistCalendar({ specialistId });
 
   // Load appointment types
   useEffect(() => {
@@ -72,39 +74,63 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
     if (selectedDate && settings) {
       generateAvailableSlots();
     }
-  }, [selectedDate, settings]);
+  }, [selectedDate, settings, getAvailabilitySlots]);
 
   const generateAvailableSlots = async () => {
     if (!selectedDate || !settings) return;
 
-    const slots: string[] = [];
-    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase().slice(0, 3); // e.g., 'mon', 'tue'
-    const workingHours = settings.working_hours;
-    
-    if (workingHours && typeof workingHours === 'object' && dayName in workingHours) {
-      const dayHours = (workingHours as any)[dayName];
-      if (dayHours && dayHours.start && dayHours.end) {
-        const startTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${dayHours.start}`);
-        const endTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${dayHours.end}`);
-        
-        let currentTime = startTime;
-        while (isBefore(currentTime, endTime)) {
-          const slotEnd = addMinutes(currentTime, duration);
-          
-          if (isBefore(slotEnd, endTime) || slotEnd.getTime() === endTime.getTime()) {
-            // Check if slot is available
-            const isAvailable = await checkAvailability(currentTime, slotEnd);
-            if (isAvailable) {
-              slots.push(format(currentTime, 'HH:mm'));
-            }
-          }
-          
-          currentTime = addMinutes(currentTime, 30); // 30-minute intervals
-        }
-      }
-    }
+    setSlotsLoading(true);
+    try {
+      // Get availability slots for the selected date
+      const startOfSelectedDate = startOfDay(selectedDate);
+      const endOfSelectedDate = endOfDay(selectedDate);
+      
+      await getAvailabilitySlots(startOfSelectedDate, endOfSelectedDate);
+      
+      // Filter slots for the selected date and extract available times
+      const daySlots = availabilitySlots.filter(slot => 
+        isSameDay(slot.start, selectedDate) && slot.isAvailable
+      );
+      
+      const timeSlots = daySlots.map(slot => format(slot.start, 'HH:mm'));
+      setAvailableSlots(timeSlots);
 
-    setAvailableSlots(slots);
+      // Find next available time if no slots today
+      if (timeSlots.length === 0) {
+        findNextAvailableTime();
+      } else {
+        setNextAvailableTime(null);
+      }
+    } catch (error) {
+      console.error('Error generating available slots:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load available time slots",
+        variant: "destructive"
+      });
+    } finally {
+      setSlotsLoading(false);
+    }
+  };
+
+  const findNextAvailableTime = async () => {
+    if (!settings) return;
+
+    try {
+      // Look for available slots in the next 30 days
+      const today = new Date();
+      const futureDate = addDays(today, settings.maximum_booking_days || 30);
+      
+      await getAvailabilitySlots(today, futureDate);
+      
+      const nextSlot = availabilitySlots.find(slot => 
+        slot.isAvailable && isAfter(slot.start, new Date())
+      );
+      
+      setNextAvailableTime(nextSlot?.start || null);
+    } catch (error) {
+      console.error('Error finding next available time:', error);
+    }
   };
 
   const handleTypeChange = (typeId: string) => {
@@ -207,6 +233,7 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
     setTitle('');
     setDescription('');
     setAvailableSlots([]);
+    setNextAvailableTime(null);
   };
 
   if (!isOpen) return null;
@@ -281,7 +308,12 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
               <Label>Available Times</Label>
               {selectedDate ? (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {availableSlots.length > 0 ? (
+                  {slotsLoading ? (
+                    <div className="text-center text-muted-foreground py-4">
+                      <Clock size={16} className="animate-spin mx-auto mb-2" />
+                      Loading available times...
+                    </div>
+                  ) : availableSlots.length > 0 ? (
                     <div className="grid grid-cols-2 gap-2">
                       {availableSlots.map((time) => (
                         <Button
@@ -297,8 +329,33 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center text-muted-foreground py-4">
-                      No available slots for this date
+                    <div className="space-y-3">
+                      <div className="text-center text-muted-foreground py-4">
+                        <AlertCircle size={16} className="mx-auto mb-2 text-amber-500" />
+                        No available slots for this date
+                      </div>
+                      {nextAvailableTime && (
+                        <div className="bg-blue-50 p-3 rounded-md">
+                          <p className="text-sm text-blue-700 mb-2">
+                            <strong>Next available:</strong>
+                          </p>
+                          <p className="text-sm text-blue-600">
+                            {format(nextAvailableTime, 'EEEE, MMMM d, yyyy')} at{' '}
+                            {format(nextAvailableTime, 'h:mm a')}
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-2"
+                            onClick={() => {
+                              setSelectedDate(nextAvailableTime);
+                              setSelectedTime(format(nextAvailableTime, 'HH:mm'));
+                            }}
+                          >
+                            Select this time
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -315,6 +372,29 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock size={16} />
               Duration: {duration} minutes
+              {settings && (
+                <span className="ml-4">
+                  • Buffer time: {settings.buffer_time_minutes} minutes
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Working Hours Info */}
+          {settings && selectedDate && (
+            <div className="bg-muted/50 p-3 rounded-md">
+              <p className="text-sm text-muted-foreground">
+                <strong>Working hours for {format(selectedDate, 'EEEE')}:</strong>
+                {(() => {
+                  const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+                  const workingHours = settings.working_hours as any;
+                  const dayHours = workingHours?.[dayName];
+                  return dayHours ? ` ${dayHours.start} - ${dayHours.end}` : ' Not available';
+                })()}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Minimum notice: {settings.minimum_notice_hours} hours
+              </p>
             </div>
           )}
 

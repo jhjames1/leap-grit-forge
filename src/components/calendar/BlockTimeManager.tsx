@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, addDays } from 'date-fns';
 import { CalendarIcon, Plus, Trash2, Coffee, Users, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { updateSpecialistStatusFromCalendar } from '@/utils/calendarAvailability';
 
 interface BlockTimeEntry {
   id?: string;
@@ -26,7 +24,6 @@ interface BlockTimeEntry {
 
 interface BlockTimeManagerProps {
   specialistId: string;
-  onBlockTimeChange?: () => void;
 }
 
 const blockTimePresets = [
@@ -35,7 +32,7 @@ const blockTimePresets = [
   { label: 'Personal Time', icon: Clock, reason: 'Personal time', duration: 30 },
 ];
 
-const BlockTimeManager = ({ specialistId, onBlockTimeChange }: BlockTimeManagerProps) => {
+const BlockTimeManager = ({ specialistId }: BlockTimeManagerProps) => {
   const { toast } = useToast();
   const [blocks, setBlocks] = useState<BlockTimeEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -84,15 +81,6 @@ const BlockTimeManager = ({ specialistId, onBlockTimeChange }: BlockTimeManagerP
     }
   };
 
-  const triggerStatusUpdate = async () => {
-    try {
-      await updateSpecialistStatusFromCalendar(specialistId);
-      onBlockTimeChange?.();
-    } catch (error) {
-      console.error('Error updating specialist status:', error);
-    }
-  };
-
   const createBlock = async (blockData: Partial<BlockTimeEntry>) => {
     if (!blockData.start_time || !blockData.end_time || !blockData.reason) {
       toast({
@@ -129,8 +117,7 @@ const BlockTimeManager = ({ specialistId, onBlockTimeChange }: BlockTimeManagerP
         reason: ''
       });
       setShowNewBlockForm(false);
-      await fetchBlocks();
-      await triggerStatusUpdate();
+      fetchBlocks();
     } catch (error) {
       console.error('Error creating block:', error);
       toast({
@@ -156,8 +143,7 @@ const BlockTimeManager = ({ specialistId, onBlockTimeChange }: BlockTimeManagerP
         title: "Success",
         description: "Time block deleted successfully"
       });
-      await fetchBlocks();
-      await triggerStatusUpdate();
+      fetchBlocks();
     } catch (error) {
       console.error('Error deleting block:', error);
       toast({
@@ -204,7 +190,7 @@ const BlockTimeManager = ({ specialistId, onBlockTimeChange }: BlockTimeManagerP
         <CardHeader>
           <CardTitle className="font-fjalla">Block Time</CardTitle>
           <p className="text-sm text-muted-foreground font-source">
-            Schedule lunch breaks, meetings, and personal time. Your status will automatically update to "busy" during blocked time.
+            Schedule lunch breaks, meetings, and personal time
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -247,7 +233,6 @@ const BlockTimeManager = ({ specialistId, onBlockTimeChange }: BlockTimeManagerP
                   size="sm"
                   onClick={() => createQuickBlock(preset)}
                   className="flex items-center gap-2"
-                  disabled={loading}
                 >
                   <preset.icon className="h-4 w-4" />
                   {preset.label}
@@ -329,17 +314,14 @@ const BlockTimeManager = ({ specialistId, onBlockTimeChange }: BlockTimeManagerP
             {blocks.length > 0 ? (
               <div className="space-y-2">
                 {blocks.map((block) => (
-                  <div 
-                    key={block.id} 
-                    className="flex items-center justify-between p-3 border rounded-lg bg-red-50 border-red-200"
-                  >
+                  <div key={block.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <div className="font-medium font-source">
                         {formatTime(block.start_time)} - {formatTime(block.end_time)}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {block.reason} 
-                        <span className="ml-2 text-xs bg-red-100 text-red-700 px-1 py-0.5 rounded">
+                        <span className="ml-2 text-xs bg-muted px-1 py-0.5 rounded">
                           {block.exception_type}
                         </span>
                       </div>
@@ -348,7 +330,6 @@ const BlockTimeManager = ({ specialistId, onBlockTimeChange }: BlockTimeManagerP
                       variant="ghost"
                       size="sm"
                       onClick={() => block.id && deleteBlock(block.id)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-100"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

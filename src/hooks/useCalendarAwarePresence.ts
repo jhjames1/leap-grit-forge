@@ -9,7 +9,6 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
   const [calendarAvailability, setCalendarAvailability] = useState<CalendarAvailabilityResult | null>(null);
   const [manualStatus, setManualStatus] = useState<'away' | null>(null);
   const [isCalendarControlled, setIsCalendarControlled] = useState(true);
-  const [blockTimeStatus, setBlockTimeStatus] = useState<string | null>(null);
 
   // Get the specialist ID for the current user if not provided
   const [currentSpecialistId, setCurrentSpecialistId] = useState<string | null>(specialistId || null);
@@ -29,20 +28,13 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
     }
   }, [user, specialistId]);
 
-  // Calculate calendar availability with enhanced blocked time detection
+  // Calculate calendar availability
   const updateCalendarAvailability = useCallback(async () => {
     if (!currentSpecialistId) return;
 
     try {
       const availability = await calculateRealTimeAvailability(currentSpecialistId);
       setCalendarAvailability(availability);
-
-      // Check if status is due to blocked time
-      if (availability.status === 'busy' && availability.reason?.includes('Blocked time')) {
-        setBlockTimeStatus(availability.reason);
-      } else {
-        setBlockTimeStatus(null);
-      }
 
       // If calendar-controlled, update the status automatically
       if (isCalendarControlled && !manualStatus) {
@@ -94,13 +86,7 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
     }
   }, [currentSpecialistId]);
 
-  // Handle blocked time changes
-  const handleBlockTimeChange = useCallback(() => {
-    console.log('Block time changed, refreshing availability');
-    updateCalendarAvailability();
-  }, [updateCalendarAvailability]);
-
-  // Set up real-time monitoring with enhanced blocked time support
+  // Set up real-time monitoring
   useEffect(() => {
     if (!currentSpecialistId) return;
 
@@ -147,8 +133,8 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
           table: 'specialist_availability_exceptions',
           filter: `specialist_id=eq.${currentSpecialistId}`
         },
-        (payload) => {
-          console.log('Availability exceptions changed, updating availability:', payload);
+        () => {
+          console.log('Availability exceptions changed, updating availability');
           updateCalendarAvailability();
         }
       )
@@ -185,11 +171,9 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
     calendarAvailability,
     manualStatus,
     isCalendarControlled,
-    blockTimeStatus,
     setManualAwayStatus,
     toggleCalendarControl,
     refreshAvailability: updateCalendarAvailability,
-    handleBlockTimeChange,
     specialistId: currentSpecialistId
   };
 };
