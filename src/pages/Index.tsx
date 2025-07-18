@@ -6,7 +6,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import DashboardHome from '@/components/DashboardHome';
 import RecoveryJourney from '@/components/RecoveryJourney';
 import Toolbox from '@/components/Toolbox';
-import PeerChat from '@/components/PeerChat';
+import ChatFlow from '@/components/ChatFlow';
 import UserProfile from '@/components/UserProfile';
 import About from '@/components/About';
 import RecoveryCalendar from '@/components/RecoveryCalendar';
@@ -135,7 +135,6 @@ const Index = () => {
     return <OnboardingFlow onComplete={handleOnboardingComplete} />;
   }
 
-
   const renderActivePage = () => {
     switch (currentPage) {
       case 'home':
@@ -145,7 +144,7 @@ const Index = () => {
       case 'toolbox':
         return <Toolbox onNavigate={handleNavigation} />;
       case 'chat':
-        return <PeerChat specialistId="" specialistName="Specialist" onBack={handleBackToHome} />;
+        return <ChatFlow onBack={handleBackToHome} />;
       case 'profile':
         return <UserProfile onNavigate={handleNavigation} />;
       case 'about':
