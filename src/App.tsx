@@ -1,45 +1,44 @@
 
-import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "next-themes";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { AppUpdateNotification } from "@/components/AppUpdateNotification";
 import Index from "./pages/Index";
 import AdminPortal from "./pages/AdminPortal";
 import PeerSpecialistPortal from "./pages/PeerSpecialistPortal";
 import NotFound from "./pages/NotFound";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
-const App = () => {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <ThemeProvider 
-          attribute="class" 
-          defaultTheme="light" 
-          enableSystem={true}
-          storageKey="leap-theme"
-        >
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <BrowserRouter>
-            <Toaster />
-            <Sonner />
-            <AppUpdateNotification />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/admin" element={<AdminPortal />} />
-              <Route path="/specialist" element={<PeerSpecialistPortal />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route 
+                path="/specialist" 
+                element={
+                  <ErrorBoundary>
+                    <PeerSpecialistPortal />
+                  </ErrorBoundary>
+                } 
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </ThemeProvider>
+        </TooltipProvider>
       </LanguageProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;

@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { calculateRealTimeAvailability, updateSpecialistStatusFromCalendar, CalendarAvailabilityResult } from '@/utils/calendarAvailability';
@@ -11,45 +11,66 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
   const [isCalendarControlled, setIsCalendarControlled] = useState(true);
   const [currentSpecialistId, setCurrentSpecialistId] = useState<string | null>(specialistId || null);
 
+  // Use refs to prevent race conditions and multiple simultaneous operations
+  const isUpdatingRef = useRef(false);
+  const mountedRef = useRef(true);
+  const lastUpdateRef = useRef<number>(0);
+
   // Get the specialist ID for the current user if not provided
   useEffect(() => {
-    if (!specialistId && user) {
+    if (!specialistId && user && mountedRef.current) {
       supabase
         .from('peer_specialists')
         .select('id')
         .eq('user_id', user.id)
         .single()
         .then(({ data }) => {
-          if (data) {
+          if (data && mountedRef.current) {
             setCurrentSpecialistId(data.id);
           }
         });
     }
   }, [user, specialistId]);
 
-  // Calculate calendar availability
+  // Debounced update function to prevent rapid successive calls
   const updateCalendarAvailability = useCallback(async () => {
-    if (!currentSpecialistId) return;
+    if (!currentSpecialistId || isUpdatingRef.current || !mountedRef.current) {
+      return;
+    }
+
+    // Debounce rapid calls (minimum 1 second between updates)
+    const now = Date.now();
+    if (now - lastUpdateRef.current < 1000) {
+      return;
+    }
+
+    isUpdatingRef.current = true;
+    lastUpdateRef.current = now;
 
     try {
       console.log('Updating calendar availability for specialist:', currentSpecialistId);
       const availability = await calculateRealTimeAvailability(currentSpecialistId);
+      
+      if (!mountedRef.current) return;
+      
       console.log('Calendar availability result:', availability);
       setCalendarAvailability(availability);
 
       // If calendar-controlled and no manual override, update the status automatically
-      if (isCalendarControlled && !manualStatus) {
+      if (isCalendarControlled && !manualStatus && mountedRef.current) {
         console.log('Updating specialist status from calendar...');
         await updateSpecialistStatusFromCalendar(currentSpecialistId);
       }
     } catch (error) {
       console.error('Error updating calendar availability:', error);
+    } finally {
+      isUpdatingRef.current = false;
     }
   }, [currentSpecialistId, isCalendarControlled, manualStatus]);
 
   // Manual status override (for "away" status)
   const setManualAwayStatus = useCallback(async (isAway: boolean, message?: string) => {
-    if (!currentSpecialistId) {
+    if (!currentSpecialistId || !mountedRef.current) {
       console.error('No specialist ID available for manual status change');
       return;
     }
@@ -79,7 +100,9 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
         }
         console.log('Successfully set away status');
       } else {
-        setManualStatus(null);
+        if (mountedRef.current) {
+          setManualStatus(null);
+        }
         // Return to calendar-controlled status
         console.log('Clearing manual status, returning to calendar control');
         if (isCalendarControlled) {
@@ -94,7 +117,7 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
 
   // Manual online status override
   const setManualOnlineStatus = useCallback(async (isOnline: boolean, message?: string) => {
-    if (!currentSpecialistId) {
+    if (!currentSpecialistId || !mountedRef.current) {
       console.error('No specialist ID available for manual online status change');
       return;
     }
@@ -104,7 +127,10 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
       
       if (isOnline) {
         // Set manual online status, overriding calendar
-        setManualStatus(null); // Clear any manual away status
+        if (mountedRef.current) {
+          setManualStatus(null); // Clear any manual away status
+        }
+        
         const { error } = await supabase
           .from('specialist_status')
           .upsert({
@@ -140,16 +166,24 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
 
   // Toggle calendar control
   const toggleCalendarControl = useCallback(async (enabled: boolean) => {
+    if (!mountedRef.current) return;
+    
     console.log('Toggling calendar control:', enabled);
     setIsCalendarControlled(enabled);
     
     if (enabled && currentSpecialistId) {
       // Return to calendar-controlled status
-      setManualStatus(null);
+      if (mountedRef.current) {
+        setManualStatus(null);
+      }
       console.log('Returning to calendar-controlled status');
       await updateSpecialistStatusFromCalendar(currentSpecialistId);
       // Refresh availability after enabling calendar control
-      await updateCalendarAvailability();
+      setTimeout(() => {
+        if (mountedRef.current) {
+          updateCalendarAvailability();
+        }
+      }, 100);
     } else if (!enabled && currentSpecialistId) {
       // When disabling calendar control, set to offline by default
       console.log('Disabling calendar control, setting offline');
@@ -173,24 +207,31 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
     }
   }, [currentSpecialistId, updateCalendarAvailability]);
 
-  // Set up real-time monitoring
+  // Set up real-time monitoring with proper cleanup
   useEffect(() => {
     if (!currentSpecialistId) return;
 
     console.log('Setting up calendar availability monitoring for specialist:', currentSpecialistId);
+    mountedRef.current = true;
 
-    // Initial availability check
-    updateCalendarAvailability();
+    // Initial availability check with delay to prevent rapid calls
+    const initialTimeout = setTimeout(() => {
+      if (mountedRef.current) {
+        updateCalendarAvailability();
+      }
+    }, 100);
 
     // Set up interval to check availability every minute
     const interval = setInterval(() => {
-      console.log('Running scheduled availability check...');
-      updateCalendarAvailability();
+      if (mountedRef.current) {
+        console.log('Running scheduled availability check...');
+        updateCalendarAvailability();
+      }
     }, 60000);
 
     // Set up real-time subscriptions for schedule changes
     const channel = supabase
-      .channel('calendar-availability-changes')
+      .channel(`calendar-availability-changes-${currentSpecialistId}`)
       .on(
         'postgres_changes',
         {
@@ -200,8 +241,14 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
           filter: `specialist_id=eq.${currentSpecialistId}`
         },
         () => {
-          console.log('Appointment changed, updating availability');
-          updateCalendarAvailability();
+          if (mountedRef.current && !isUpdatingRef.current) {
+            console.log('Appointment changed, updating availability');
+            setTimeout(() => {
+              if (mountedRef.current) {
+                updateCalendarAvailability();
+              }
+            }, 500); // Debounce real-time updates
+          }
         }
       )
       .on(
@@ -213,8 +260,14 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
           filter: `specialist_id=eq.${currentSpecialistId}`
         },
         () => {
-          console.log('Calendar settings changed, updating availability');
-          updateCalendarAvailability();
+          if (mountedRef.current && !isUpdatingRef.current) {
+            console.log('Calendar settings changed, updating availability');
+            setTimeout(() => {
+              if (mountedRef.current) {
+                updateCalendarAvailability();
+              }
+            }, 500);
+          }
         }
       )
       .on(
@@ -226,15 +279,24 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
           filter: `specialist_id=eq.${currentSpecialistId}`
         },
         () => {
-          console.log('Availability exceptions changed, updating availability');
-          updateCalendarAvailability();
+          if (mountedRef.current && !isUpdatingRef.current) {
+            console.log('Availability exceptions changed, updating availability');
+            setTimeout(() => {
+              if (mountedRef.current) {
+                updateCalendarAvailability();
+              }
+            }, 500);
+          }
         }
       )
       .subscribe();
 
     return () => {
+      mountedRef.current = false;
+      clearTimeout(initialTimeout);
       clearInterval(interval);
       supabase.removeChannel(channel);
+      isUpdatingRef.current = false;
     };
   }, [currentSpecialistId, updateCalendarAvailability]);
 
@@ -256,7 +318,10 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      handleBeforeUnload();
+      mountedRef.current = false;
+      if (currentSpecialistId) {
+        handleBeforeUnload();
+      }
     };
   }, [currentSpecialistId]);
 

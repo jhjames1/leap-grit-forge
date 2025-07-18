@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +53,14 @@ const PeerSpecialistDashboard = () => {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
 
+  // Performance monitoring ref
+  const renderCount = useRef(0);
+  const mountTime = useRef(Date.now());
+
+  // Increment render count for debugging
+  renderCount.current += 1;
+  console.log(`🔄 PeerSpecialistDashboard render #${renderCount.current} (mounted ${Date.now() - mountTime.current}ms ago)`);
+
   // Use the calendar-aware presence hook
   const {
     calendarAvailability,
@@ -65,46 +73,46 @@ const PeerSpecialistDashboard = () => {
     specialistId
   } = useCalendarAwarePresence();
 
-  // Load specialist data and sessions
-  useEffect(() => {
-    const loadData = async () => {
-      if (!user) return;
-      setLoading(true);
-      try {
-        // Fetch peer specialist data
-        const { data: specialistData, error: specialistError } = await supabase
-          .from('peer_specialists')
-          .select('*, status:specialist_status(status, last_seen)')
-          .eq('user_id', user.id)
-          .single();
+  // Load specialist data and sessions with useCallback to prevent recreation
+  const loadData = useCallback(async () => {
+    if (!user) return;
+    
+    console.log('📊 Loading specialist data for user:', user.id);
+    setLoading(true);
+    
+    try {
+      // Fetch peer specialist data
+      const { data: specialistData, error: specialistError } = await supabase
+        .from('peer_specialists')
+        .select('*, status:specialist_status(status, last_seen)')
+        .eq('user_id', user.id)
+        .single();
 
-        if (specialistError) {
-          console.error('Error fetching peer specialist data:', specialistError);
-        } else if (specialistData) {
-          // Add missing email and phone_number from auth user
-          const specialistWithUserData = {
-            ...specialistData,
-            email: user.email || '',
-            phone_number: user.phone || '',
-            status: specialistData.status?.[0] || {
-              status: 'offline' as const,
-              last_active: null
-            }
-          };
-          setPeerSpecialist(specialistWithUserData);
+      if (specialistError) {
+        console.error('Error fetching peer specialist data:', specialistError);
+      } else if (specialistData) {
+        // Add missing email and phone_number from auth user
+        const specialistWithUserData = {
+          ...specialistData,
+          email: user.email || '',
+          phone_number: user.phone || '',
+          status: specialistData.status?.[0] || {
+            status: 'offline' as const,
+            last_active: null
+          }
+        };
+        setPeerSpecialist(specialistWithUserData);
 
-          // Load chat sessions with the specialist ID
-          await loadChatSessionsForSpecialist(specialistWithUserData.id);
-        }
-      } finally {
-        setLoading(false);
+        // Load chat sessions with the specialist ID
+        await loadChatSessionsForSpecialist(specialistWithUserData.id);
       }
-    };
-    loadData();
-  }, [user]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]); // Only depend on user.id
 
-  const loadChatSessionsForSpecialist = async (specialistId: string) => {
-    console.log('Loading chat sessions for specialist:', specialistId);
+  const loadChatSessionsForSpecialist = useCallback(async (specialistId: string) => {
+    console.log('📨 Loading chat sessions for specialist:', specialistId);
     const { data, error } = await supabase
       .from('chat_sessions')
       .select('*')
@@ -121,20 +129,26 @@ const PeerSpecialistDashboard = () => {
       }));
       setChatSessions(typedSessions);
     }
-  };
+  }, []);
 
-  const loadChatSessions = async () => {
+  const loadChatSessions = useCallback(async () => {
     if (!peerSpecialist) return;
     await loadChatSessionsForSpecialist(peerSpecialist.id);
-  };
+  }, [peerSpecialist?.id, loadChatSessionsForSpecialist]);
 
-  // Real-time subscriptions
+  // Load data when component mounts or user changes
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Real-time subscriptions with improved cleanup
   useEffect(() => {
     if (!user?.id) return;
-    console.log('Setting up real-time subscriptions for user:', user.id);
+    
+    console.log('🔗 Setting up real-time subscriptions for user:', user.id);
 
     const chatSessionsChannel = supabase
-      .channel('chat-sessions-realtime')
+      .channel(`chat-sessions-realtime-${user.id}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -146,7 +160,7 @@ const PeerSpecialistDashboard = () => {
       .subscribe();
 
     const appointmentProposalsChannel = supabase
-      .channel('appointment-proposals-realtime')
+      .channel(`appointment-proposals-realtime-${user.id}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -158,7 +172,7 @@ const PeerSpecialistDashboard = () => {
       .subscribe();
 
     const chatMessagesChannel = supabase
-      .channel('chat-messages-realtime')
+      .channel(`chat-messages-realtime-${user.id}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -171,7 +185,7 @@ const PeerSpecialistDashboard = () => {
 
     // Subscribe to specialist status changes
     const statusChannel = supabase
-      .channel('specialist-status-realtime')
+      .channel(`specialist-status-realtime-${specialistId || 'unknown'}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -179,18 +193,20 @@ const PeerSpecialistDashboard = () => {
         filter: specialistId ? `specialist_id=eq.${specialistId}` : undefined
       }, payload => {
         console.log('Real-time status change:', payload);
-        refreshAvailability();
+        if (refreshAvailability) {
+          setTimeout(refreshAvailability, 100); // Debounce the refresh
+        }
       })
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time subscriptions');
+      console.log('🧹 Cleaning up real-time subscriptions');
       supabase.removeChannel(chatSessionsChannel);
       supabase.removeChannel(appointmentProposalsChannel);
       supabase.removeChannel(chatMessagesChannel);
       supabase.removeChannel(statusChannel);
     };
-  }, [user?.id, specialistId, refreshAvailability]);
+  }, [user?.id, specialistId, refreshAvailability, loadChatSessions]);
 
   const filterSessions = () => {
     if (chatFilter === 'all') {
@@ -217,7 +233,7 @@ const PeerSpecialistDashboard = () => {
     }
 
     setStatusLoading(true);
-    console.log('Changing status to:', newStatus);
+    console.log('🔄 Changing status to:', newStatus);
     
     try {
       if (newStatus === 'away') {
@@ -353,6 +369,18 @@ const PeerSpecialistDashboard = () => {
   // Check if there are more than 2 users waiting
   const waitingSessions = chatSessions.filter(s => s.status === 'waiting');
   const hasMultipleWaitingSessions = waitingSessions.length > 2;
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

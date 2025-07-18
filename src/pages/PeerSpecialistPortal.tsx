@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import SpecialistLogin from '@/components/SpecialistLogin';
 import PeerSpecialistDashboard from '@/components/PeerSpecialistDashboard';
@@ -9,15 +10,21 @@ const PeerSpecialistPortal = () => {
   const { user, loading } = useAuth();
   const [isVerifiedSpecialist, setIsVerifiedSpecialist] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasChecked, setHasChecked] = useState(false);
+  
+  // Use refs to prevent unnecessary re-renders and track operation state
+  const isCheckingRef = useRef(false);
+  const mountedRef = useRef(true);
 
-  // Define checkSpecialistStatus outside of useEffect to avoid recreation
-  const checkSpecialistStatus = async () => {
-    if (!user) {
-      setIsLoading(false);
+  // Define checkSpecialistStatus with useCallback to prevent recreation
+  const checkSpecialistStatus = useCallback(async () => {
+    if (!user || isCheckingRef.current || !mountedRef.current) {
+      if (!user) setIsLoading(false);
       return;
     }
 
     console.log('🔍 Checking specialist status for user:', user.id);
+    isCheckingRef.current = true;
     setIsLoading(true);
 
     try {
@@ -32,6 +39,8 @@ const PeerSpecialistPortal = () => {
 
       console.log('📋 Specialist check result:', { specialistData, error });
 
+      if (!mountedRef.current) return; // Component unmounted, don't update state
+
       if (!error && specialistData) {
         console.log('✅ User is verified specialist');
         setIsVerifiedSpecialist(true);
@@ -39,29 +48,49 @@ const PeerSpecialistPortal = () => {
         console.log('❌ User is not verified specialist');
         setIsVerifiedSpecialist(false);
       }
+      
+      setHasChecked(true);
     } catch (error) {
       console.error('❌ Error checking specialist status:', error);
-      setIsVerifiedSpecialist(false);
+      if (mountedRef.current) {
+        setIsVerifiedSpecialist(false);
+        setHasChecked(true);
+      }
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
+      isCheckingRef.current = false;
     }
-  };
+  }, [user?.id]); // Only depend on user.id to prevent recreation loops
 
   useEffect(() => {
-    if (!loading) {
-      console.log('👤 User state changed, checking specialist status:', { user: user?.id, loading });
+    mountedRef.current = true;
+    
+    if (!loading && user && !hasChecked) {
+      console.log('👤 User state ready, checking specialist status:', { user: user?.id, loading });
       checkSpecialistStatus();
+    } else if (!loading && !user) {
+      // User is not authenticated, stop loading
+      setIsLoading(false);
+      setHasChecked(true);
     }
-  }, [user?.id, loading]); // Only depend on user.id to avoid recreation loops
 
-  const handleLogin = () => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [user?.id, loading, hasChecked, checkSpecialistStatus]);
+
+  const handleLogin = useCallback(() => {
     console.log('🔄 Login handler called');
     // Reset states and re-check
     setIsVerifiedSpecialist(false);
-    checkSpecialistStatus();
-  };
+    setHasChecked(false);
+    isCheckingRef.current = false;
+  }, []);
 
-  if (loading || isLoading) {
+  // Show loading while auth is loading or we're checking specialist status
+  if (loading || (isLoading && !hasChecked)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-construction" />
@@ -69,6 +98,7 @@ const PeerSpecialistPortal = () => {
     );
   }
 
+  // Show login if no user or not verified specialist
   if (!user || !isVerifiedSpecialist) {
     return <SpecialistLogin onLogin={handleLogin} onBack={() => window.history.back()} />;
   }
