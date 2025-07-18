@@ -12,13 +12,12 @@ import {
   AlertCircle,
   ChevronRight,
   User,
-  Settings
+  LogOut
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import SpecialistChatWindow from './SpecialistChatWindow';
-import SpecialistSettings from './SpecialistSettings';
 import { useToast } from '@/hooks/use-toast';
 
 interface ChatSession {
@@ -55,7 +54,7 @@ const PeerSpecialistDashboard = () => {
   const [chatFilter, setChatFilter] = useState<'all' | 'waiting' | 'active'>('all');
   const [peerSpecialist, setPeerSpecialist] = useState<PeerSpecialist | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showSettings, setShowSettings] = useState(false);
+  
 
   // Add state for selected chat session
   const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
@@ -239,6 +238,51 @@ const PeerSpecialistDashboard = () => {
     }
   };
 
+  // Check if there are active or waiting sessions
+  const hasActiveSessions = chatSessions.some(session => 
+    session.status === 'active' || session.status === 'waiting'
+  );
+
+  const handleLogout = async () => {
+    if (hasActiveSessions) {
+      toast({
+        title: "Cannot Log Out",
+        description: "Please complete or close all active and waiting sessions before logging out.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Set status to offline before logging out
+      if (peerSpecialist) {
+        await supabase
+          .from('specialist_status')
+          .upsert({
+            specialist_id: peerSpecialist.id,
+            status: 'offline',
+            updated_at: new Date().toISOString()
+          });
+      }
+
+      // Sign out the user
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out."
+      });
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleUpdateSpecialist = (updatedSpecialist: any) => {
     setPeerSpecialist(updatedSpecialist);
   };
@@ -250,7 +294,7 @@ const PeerSpecialistDashboard = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Peer Support Specialist Dashboard</h1>
-            <p className="text-muted-foreground">Manage your chat sessions and profile settings.</p>
+            <p className="text-muted-foreground">Manage your chat sessions and support users in their recovery journey.</p>
           </div>
           <div className="flex items-center space-x-4">
             {peerSpecialist?.status && (
@@ -264,10 +308,10 @@ const PeerSpecialistDashboard = () => {
                   <span className="capitalize">{peerSpecialist.status.status}</span>
                 </div>
                 <Select value={peerSpecialist.status.status} onValueChange={handleStatusChange}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-32 bg-background border-border z-50">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-background border-border shadow-lg z-50">
                     <SelectItem value="online">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500" />
@@ -290,9 +334,14 @@ const PeerSpecialistDashboard = () => {
                 </Select>
               </div>
             )}
-            <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>
-              <Settings size={16} className="mr-2" />
-              Settings
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleLogout}
+              disabled={hasActiveSessions}
+            >
+              <LogOut size={16} className="mr-2" />
+              {hasActiveSessions ? 'Sessions Active' : 'Log Out'}
             </Button>
           </div>
         </div>
@@ -300,6 +349,16 @@ const PeerSpecialistDashboard = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
+        {/* Specialist Name */}
+        {peerSpecialist && (
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-foreground">
+              {peerSpecialist.first_name} {peerSpecialist.last_name}
+            </h2>
+            <p className="text-muted-foreground">Peer Support Specialist</p>
+          </div>
+        )}
+
         {/* Status Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card className="flex items-center justify-between p-6">
@@ -427,15 +486,6 @@ const PeerSpecialistDashboard = () => {
         </div>
       </div>
 
-      {/* Settings Dialog */}
-      {peerSpecialist && (
-        <SpecialistSettings
-          isOpen={showSettings}
-          onClose={() => setShowSettings(false)}
-          specialist={peerSpecialist}
-          onUpdateSpecialist={handleUpdateSpecialist}
-        />
-      )}
     </div>
   );
 };
