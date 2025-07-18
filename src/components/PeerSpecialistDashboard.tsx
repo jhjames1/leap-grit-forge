@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, Settings, CalendarClock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -295,16 +296,34 @@ const PeerSpecialistDashboard = () => {
             <p className="text-muted-foreground font-source">Manage your chat sessions and support users in their recovery journey.</p>
           </div>
           <div className="flex items-center space-x-4">
-            {/* Calendar Control Toggle */}
-            <div className="flex items-center space-x-2">
-              <CalendarClock className="h-4 w-4 text-muted-foreground" />
-              <Switch
-                checked={isCalendarControlled}
-                onCheckedChange={toggleCalendarControl}
-                className="data-[state=checked]:bg-primary"
-              />
-              <span className="text-sm text-muted-foreground">Auto</span>
-            </div>
+            {/* Calendar Control Toggle with Tooltip */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center space-x-2">
+                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                    <Switch
+                      checked={isCalendarControlled}
+                      onCheckedChange={toggleCalendarControl}
+                      className="data-[state=checked]:bg-primary"
+                    />
+                    <span className="text-sm text-muted-foreground">Auto</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <div className="space-y-1">
+                    <p className="font-medium">Calendar-Based Status Control</p>
+                    <p className="text-sm">When enabled, your status is automatically set based on your calendar:</p>
+                    <ul className="text-sm space-y-1">
+                      <li>• <strong>Online</strong> during working hours</li>
+                      <li>• <strong>Busy</strong> during appointments</li>
+                      <li>• <strong>Offline</strong> outside working hours</li>
+                    </ul>
+                    <p className="text-sm">When disabled, you can manually control your status.</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
             {/* Status Selector */}
             <div className="flex items-center space-x-3">
