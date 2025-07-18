@@ -14,6 +14,7 @@ import {
   Shield
 } from 'lucide-react';
 import PeerSelection from './PeerSelection';
+import RecurringAppointmentScheduler from './RecurringAppointmentScheduler';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
 import { PeerSpecialist } from '@/hooks/usePeerSpecialists';
 import { useChatSession } from '@/hooks/useChatSession';
@@ -259,8 +260,8 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                   {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
-              {/* Display appointment proposal handler for both one-time and recurring appointments */}
-              {(msg.metadata?.action_type === 'appointment_proposal' || msg.metadata?.action_type === 'recurring_appointment_proposal') && (
+              {/* Display appointment proposal handler if this is a proposal message */}
+              {msg.metadata?.action_type === 'recurring_appointment_proposal' && (
                 <AppointmentProposalHandler 
                   message={msg} 
                   isUser={msg.sender_type === 'user'} 
@@ -327,6 +328,28 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
             >
               Question
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Scheduled Check-in Banner */}
+      {selectedPeer?.status.status === 'online' && session && user && (
+        <div className="bg-steel/90 backdrop-blur-sm border-t border-steel-dark p-3">
+          <div className="flex items-center space-x-3">
+            <Calendar className="text-white" size={16} />
+            <div className="flex-1">
+              <p className="text-white font-oswald font-medium text-sm">
+                Weekly Check-in Available
+              </p>
+              <p className="text-white/70 text-xs">
+                Schedule with {selectedPeer.first_name} {selectedPeer.last_name}
+              </p>
+            </div>
+            <RecurringAppointmentScheduler 
+              specialistId={selectedPeer.id}
+              userId={user.id}
+              chatSessionId={session.id}
+            />
           </div>
         </div>
       )}

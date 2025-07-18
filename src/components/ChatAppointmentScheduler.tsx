@@ -7,9 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Calendar as CalendarIcon, Clock, Users, X, Plus, Repeat } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Users, X, Plus } from 'lucide-react';
 import { format, addDays, startOfDay, addMinutes, isBefore, isAfter, isSameDay } from 'date-fns';
 import { useSpecialistCalendar } from '@/hooks/useSpecialistCalendar';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,11 +41,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [appointmentTypes, setAppointmentTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  
-  // Recurring appointment states
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [frequency, setFrequency] = useState<string>('weekly');
-  const [occurrences, setOccurrences] = useState<number>(4);
   
   const { toast } = useToast();
   const { checkAvailability, settings } = useSpecialistCalendar({ specialistId });
@@ -84,7 +78,7 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
     if (!selectedDate || !settings) return;
 
     const slots: string[] = [];
-    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase().slice(0, 3);
+    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase().slice(0, 3); // e.g., 'mon', 'tue'
     const workingHours = settings.working_hours;
     
     if (workingHours && typeof workingHours === 'object' && dayName in workingHours) {
@@ -98,13 +92,14 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
           const slotEnd = addMinutes(currentTime, duration);
           
           if (isBefore(slotEnd, endTime) || slotEnd.getTime() === endTime.getTime()) {
+            // Check if slot is available
             const isAvailable = await checkAvailability(currentTime, slotEnd);
             if (isAvailable) {
               slots.push(format(currentTime, 'HH:mm'));
             }
           }
           
-          currentTime = addMinutes(currentTime, 30);
+          currentTime = addMinutes(currentTime, 30); // 30-minute intervals
         }
       }
     }
@@ -135,6 +130,8 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
 
     try {
       // Create appointment proposal
+      const startDateTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${selectedTime}`);
+      
       const { data, error } = await supabase
         .from('appointment_proposals')
         .insert({
@@ -147,8 +144,8 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
           start_date: format(selectedDate, 'yyyy-MM-dd'),
           start_time: selectedTime,
           duration,
-          frequency: isRecurring ? frequency : 'once',
-          occurrences: isRecurring ? occurrences : 1,
+          frequency: 'once',
+          occurrences: 1,
           status: 'pending'
         })
         .select()
@@ -159,18 +156,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
         throw error;
       }
 
-      // Create appropriate chat message content
-      let messageContent: string;
-      let actionType: string;
-
-      if (isRecurring) {
-        messageContent = `🗓️ **Recurring Appointment Proposal**\n\n**${title}**\n\n${description}\n\n📅 **Schedule:** ${frequency} starting ${format(selectedDate, 'MMMM d, yyyy')} at ${selectedTime}\n⏱️ **Duration:** ${duration} minutes\n🔄 **Occurrences:** ${occurrences} sessions\n\n*Please respond with "accept" or "reject" to this proposal.*`;
-        actionType = 'recurring_appointment_proposal';
-      } else {
-        messageContent = `I'd like to schedule a ${title} appointment with you on ${format(selectedDate, 'MMMM d, yyyy')} at ${selectedTime}. Please let me know if this works for you!`;
-        actionType = 'appointment_proposal';
-      }
-
       // Send chat message with the proposal
       await supabase
         .from('chat_messages')
@@ -179,9 +164,9 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
           sender_id: specialistId,
           sender_type: 'specialist',
           message_type: 'system',
-          content: messageContent,
+          content: `I'd like to schedule a ${title} appointment with you on ${format(selectedDate, 'MMMM d, yyyy')} at ${selectedTime}. Please let me know if this works for you!`,
           metadata: {
-            action_type: actionType,
+            action_type: 'appointment_proposal',
             proposal_id: data.id,
             proposal_data: {
               id: data.id,
@@ -198,7 +183,7 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
 
       toast({
         title: "Appointment Proposed",
-        description: `Your ${isRecurring ? 'recurring ' : ''}appointment proposal has been sent to the user`
+        description: "Your appointment proposal has been sent to the user"
       });
 
       onScheduled();
@@ -222,9 +207,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
     setTitle('');
     setDescription('');
     setAvailableSlots([]);
-    setIsRecurring(false);
-    setFrequency('weekly');
-    setOccurrences(4);
   };
 
   if (!isOpen) return null;
@@ -256,53 +238,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
               </SelectContent>
             </Select>
           </div>
-
-          {/* Recurring Toggle */}
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="recurring"
-              checked={isRecurring}
-              onCheckedChange={setIsRecurring}
-            />
-            <Label htmlFor="recurring" className="flex items-center gap-2">
-              <Repeat size={16} />
-              Recurring Appointment
-            </Label>
-          </div>
-
-          {/* Recurring Options */}
-          {isRecurring && (
-            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
-              <div className="space-y-2">
-                <Label>Frequency</Label>
-                <Select value={frequency} onValueChange={setFrequency}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Occurrences</Label>
-                <Select value={occurrences.toString()} onValueChange={(value) => setOccurrences(parseInt(value))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="2">2 sessions</SelectItem>
-                    <SelectItem value="4">4 sessions</SelectItem>
-                    <SelectItem value="6">6 sessions</SelectItem>
-                    <SelectItem value="8">8 sessions</SelectItem>
-                    <SelectItem value="12">12 sessions</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
 
           {/* Title */}
           <div className="space-y-2">
