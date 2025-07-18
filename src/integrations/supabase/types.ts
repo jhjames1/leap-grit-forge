@@ -417,6 +417,187 @@ export type Database = {
         }
         Relationships: []
       }
+      peer_checkins: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          peer_id: string
+          scheduled_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          peer_id: string
+          scheduled_at: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          peer_id?: string
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peer_checkins_peer_id_fkey"
+            columns: ["peer_id"]
+            isOneToOne: false
+            referencedRelation: "peer_specialists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      peer_monthly_metrics: {
+        Row: {
+          avg_response_time_seconds: number | null
+          avg_streak_impact: number | null
+          avg_user_rating: number | null
+          chat_completion_rate: number | null
+          checkin_completion_rate: number | null
+          created_at: string
+          id: string
+          month: string
+          peer_id: string
+          updated_at: string
+        }
+        Insert: {
+          avg_response_time_seconds?: number | null
+          avg_streak_impact?: number | null
+          avg_user_rating?: number | null
+          chat_completion_rate?: number | null
+          checkin_completion_rate?: number | null
+          created_at?: string
+          id?: string
+          month: string
+          peer_id: string
+          updated_at?: string
+        }
+        Update: {
+          avg_response_time_seconds?: number | null
+          avg_streak_impact?: number | null
+          avg_user_rating?: number | null
+          chat_completion_rate?: number | null
+          checkin_completion_rate?: number | null
+          created_at?: string
+          id?: string
+          month?: string
+          peer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peer_monthly_metrics_peer_id_fkey"
+            columns: ["peer_id"]
+            isOneToOne: false
+            referencedRelation: "peer_specialists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      peer_performance_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          peer_id: string | null
+          session_id: string | null
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          peer_id?: string | null
+          session_id?: string | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          peer_id?: string | null
+          session_id?: string | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peer_performance_events_peer_id_fkey"
+            columns: ["peer_id"]
+            isOneToOne: false
+            referencedRelation: "peer_specialists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_performance_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      peer_session_ratings: {
+        Row: {
+          created_at: string
+          feedback: string | null
+          id: string
+          peer_id: string
+          rating: number
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          peer_id: string
+          rating: number
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          peer_id?: string
+          rating?: number
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peer_session_ratings_peer_id_fkey"
+            columns: ["peer_id"]
+            isOneToOne: false
+            referencedRelation: "peer_specialists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_session_ratings_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       peer_specialists: {
         Row: {
           activated_at: string | null

@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSpecialistPresence } from '@/hooks/useSpecialistPresence';
+import PeerPerformanceDashboard from './PeerPerformanceDashboard';
 import { 
   UserPlus, 
   Edit, 
@@ -542,6 +543,9 @@ const PeerSpecialistManagement = () => {
 
   return (
     <div className="space-y-6">
+      {/* Performance Dashboard */}
+      <PeerPerformanceDashboard onRefresh={fetchSpecialists} />
+      
       {/* Real-time Status Header */}
       <div className="mb-6">
         <div className="flex justify-between items-start mb-6">
