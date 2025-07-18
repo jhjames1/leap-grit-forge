@@ -89,64 +89,70 @@ const PeerSpecialistDashboard = () => {
     };
 
     loadData();
+  }, [user]);
+
+  // Separate effect for real-time subscriptions
+  useEffect(() => {
+    if (!user?.id) return;
+
+    console.log('Setting up real-time subscriptions for user:', user.id);
 
     // Set up real-time subscriptions for live updates
-    if (user?.id) {
-      const chatSessionsChannel = supabase
-        .channel('chat-sessions-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'chat_sessions'
-          },
-          (payload) => {
-            console.log('Chat session change:', payload);
-            loadChatSessions(); // Refresh sessions on any change
-          }
-        )
-        .subscribe();
+    const chatSessionsChannel = supabase
+      .channel('chat-sessions-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_sessions'
+        },
+        (payload) => {
+          console.log('Real-time chat session change:', payload);
+          loadChatSessions(); // Refresh sessions on any change
+        }
+      )
+      .subscribe();
 
-      const appointmentProposalsChannel = supabase
-        .channel('appointment-proposals-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'appointment_proposals'
-          },
-          (payload) => {
-            console.log('Appointment proposal change:', payload);
-            loadChatSessions(); // Refresh to pick up new proposals
-          }
-        )
-        .subscribe();
+    const appointmentProposalsChannel = supabase
+      .channel('appointment-proposals-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointment_proposals'
+        },
+        (payload) => {
+          console.log('Real-time appointment proposal change:', payload);
+          loadChatSessions(); // Refresh to pick up new proposals
+        }
+      )
+      .subscribe();
 
-      const chatMessagesChannel = supabase
-        .channel('chat-messages-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'chat_messages'
-          },
-          (payload) => {
-            console.log('Chat message change:', payload);
-            loadChatSessions(); // Refresh sessions when messages change
-          }
-        )
-        .subscribe();
+    const chatMessagesChannel = supabase
+      .channel('chat-messages-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_messages'
+        },
+        (payload) => {
+          console.log('Real-time chat message change:', payload);
+          loadChatSessions(); // Refresh sessions when messages change
+        }
+      )
+      .subscribe();
 
-      return () => {
-        supabase.removeChannel(chatSessionsChannel);
-        supabase.removeChannel(appointmentProposalsChannel);
-        supabase.removeChannel(chatMessagesChannel);
-      };
-    }
-  }, [user]);
+    return () => {
+      console.log('Cleaning up real-time subscriptions');
+      supabase.removeChannel(chatSessionsChannel);
+      supabase.removeChannel(appointmentProposalsChannel);
+      supabase.removeChannel(chatMessagesChannel);
+    };
+  }, [user?.id]);
 
   const loadChatSessions = async () => {
     if (!user) return;
