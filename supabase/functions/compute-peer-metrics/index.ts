@@ -132,9 +132,64 @@ Deno.serve(async (req) => {
         }
       }
 
-      // 5. Recovery Streak Impact (simplified - would need more complex logic for actual streak tracking)
-      // This is a placeholder - actual implementation would require tracking user recovery streaks
-      metrics.avg_streak_impact = 0.5 // Placeholder value
+      // 5. Recovery Streak Impact - Calculate based on user journey completions before/after sessions
+      const { data: sessionsWithUsers } = await supabase
+        .from('chat_sessions')
+        .select(`
+          id,
+          user_id,
+          created_at,
+          ended_at
+        `)
+        .eq('specialist_id', specialist.id)
+        .eq('status', 'ended')
+        .gte('created_at', targetMonth)
+        .lt('created_at', new Date(new Date(targetMonth).getFullYear(), new Date(targetMonth).getMonth() + 1, 1).toISOString())
+        .not('ended_at', 'is', null)
+
+      if (sessionsWithUsers && sessionsWithUsers.length > 0) {
+        const streakImpacts: number[] = []
+
+        for (const session of sessionsWithUsers) {
+          const sessionDate = new Date(session.ended_at)
+          
+          // Count journey completions 7 days before session
+          const beforeStart = new Date(sessionDate)
+          beforeStart.setDate(beforeStart.getDate() - 7)
+          const beforeEnd = new Date(sessionDate)
+          beforeEnd.setDate(beforeEnd.getDate() - 1)
+
+          const { data: beforeCompletions } = await supabase
+            .from('user_daily_stats')
+            .select('actions_completed')
+            .eq('user_id', session.user_id)
+            .gte('date', beforeStart.toISOString().slice(0, 10))
+            .lte('date', beforeEnd.toISOString().slice(0, 10))
+
+          // Count journey completions 7 days after session
+          const afterStart = new Date(sessionDate)
+          afterStart.setDate(afterStart.getDate() + 1)
+          const afterEnd = new Date(sessionDate)
+          afterEnd.setDate(afterEnd.getDate() + 7)
+
+          const { data: afterCompletions } = await supabase
+            .from('user_daily_stats')
+            .select('actions_completed')
+            .eq('user_id', session.user_id)
+            .gte('date', afterStart.toISOString().slice(0, 10))
+            .lte('date', afterEnd.toISOString().slice(0, 10))
+
+          const beforeCount = beforeCompletions?.length || 0
+          const afterCount = afterCompletions?.length || 0
+          const impact = afterCount - beforeCount
+
+          streakImpacts.push(impact)
+        }
+
+        if (streakImpacts.length > 0) {
+          metrics.avg_streak_impact = Math.round((streakImpacts.reduce((sum, impact) => sum + impact, 0) / streakImpacts.length) * 100) / 100
+        }
+      }
 
       allMetrics.push(metrics)
     }

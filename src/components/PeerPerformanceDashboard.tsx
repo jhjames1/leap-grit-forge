@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { RefreshCw, TrendingUp, TrendingDown, Clock, Star, Target } from 'lucide-react';
+import PeerPerformanceAlerts from './PeerPerformanceAlerts';
 
 interface PeerMetrics {
   peer_id: string;
@@ -308,6 +309,9 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
           )}
         </CardContent>
       </Card>
+
+      {/* Performance Alerts & Coaching */}
+      <PeerPerformanceAlerts selectedMonth={selectedMonth} />
 
       {/* Individual Specialist Metrics */}
       <div className="grid grid-cols-1 gap-4">
