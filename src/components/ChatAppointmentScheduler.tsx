@@ -139,10 +139,33 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
     }
 
     setLoading(true);
+    console.log('Starting appointment scheduling...', {
+      selectedDate,
+      selectedTime,
+      selectedType,
+      title,
+      specialistId,
+      userId,
+      chatSessionId
+    });
 
     try {
       // Create appointment proposal
       const startDateTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${selectedTime}`);
+      console.log('Creating appointment proposal...', {
+        specialist_id: specialistId,
+        user_id: userId,
+        chat_session_id: chatSessionId,
+        appointment_type_id: selectedType,
+        title: title.trim(),
+        description: description.trim() || null,
+        start_date: format(selectedDate, 'yyyy-MM-dd'),
+        start_time: selectedTime,
+        duration,
+        frequency: 'once',
+        occurrences: 1,
+        status: 'pending'
+      });
       
       const { data, error } = await supabase
         .from('appointment_proposals')
@@ -168,8 +191,11 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
         throw error;
       }
 
+      console.log('Appointment proposal created successfully:', data);
+
       // Send chat message with the proposal
-      await supabase
+      console.log('Sending chat message...');
+      const messageResult = await supabase
         .from('chat_messages')
         .insert({
           session_id: chatSessionId,
@@ -193,6 +219,13 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
           }
         });
 
+      if (messageResult.error) {
+        console.error('Error sending chat message:', messageResult.error);
+        throw messageResult.error;
+      }
+
+      console.log('Chat message sent successfully:', messageResult);
+
       toast({
         title: "Appointment Proposed",
         description: "Your appointment proposal has been sent to the user"
@@ -205,7 +238,7 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
       console.error('Error scheduling appointment:', error);
       toast({
         title: "Error",
-        description: "Failed to schedule appointment. Please try again.",
+        description: `Failed to schedule appointment: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
     } finally {
