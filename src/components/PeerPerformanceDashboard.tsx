@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { RefreshCw, TrendingUp, TrendingDown, Clock, Star, Target } from 'lucide-react';
-import PeerPerformanceAlerts from './PeerPerformanceAlerts';
+
 
 interface PeerMetrics {
   peer_id: string;
@@ -310,9 +310,6 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
         </CardContent>
       </Card>
 
-      {/* Performance Alerts & Coaching */}
-      <PeerPerformanceAlerts selectedMonth={selectedMonth} />
-
       {/* Individual Specialist Metrics */}
       <div className="grid grid-cols-1 gap-4">
         {metrics.map((specialist) => (
@@ -415,11 +412,94 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                       <TooltipContent>
                         <p>Average time to first response in chat sessions</p>
                       </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </CardContent>
-            </Card>
+                     </Tooltip>
+                   </TooltipProvider>
+                 </div>
+
+                 {/* Performance Alerts & Coaching for Individual Specialist */}
+                 {(() => {
+                   const issues: string[] = [];
+                   const coachingTips: string[] = [];
+                   
+                   // Check for performance issues and generate coaching tips
+                   if ((specialist.chat_completion_rate || 0) < 50) {
+                     issues.push('Chat completion rate critically low');
+                     coachingTips.push('Focus on consistent session attendance and engagement strategies');
+                   } else if ((specialist.chat_completion_rate || 0) < 75) {
+                     coachingTips.push('Consider improving session scheduling and reminder systems');
+                   }
+                   
+                   if ((specialist.checkin_completion_rate || 0) < 50) {
+                     issues.push('Check-in completion rate critically low');
+                     coachingTips.push('Develop structured check-in protocols and time management');
+                   } else if ((specialist.checkin_completion_rate || 0) < 75) {
+                     coachingTips.push('Set regular check-in reminders and improve follow-up processes');
+                   }
+                   
+                   if ((specialist.avg_response_time_seconds || 0) > 60) {
+                     issues.push('Response time exceeds 60 seconds');
+                     coachingTips.push('Practice quick response techniques and use message templates');
+                   } else if ((specialist.avg_response_time_seconds || 0) > 45) {
+                     coachingTips.push('Aim to respond within 45 seconds to improve user experience');
+                   }
+                   
+                   if ((specialist.avg_user_rating || 0) < 3.5) {
+                     issues.push('User satisfaction below 3.5 stars');
+                     coachingTips.push('Focus on active listening skills and empathy training');
+                   } else if ((specialist.avg_user_rating || 0) < 4.5) {
+                     coachingTips.push('Work on building stronger rapport and providing more personalized support');
+                   }
+
+                   if ((specialist.avg_streak_impact || 0) < 1) {
+                     if ((specialist.avg_streak_impact || 0) < 0) {
+                       issues.push('Negative impact on recovery streaks');
+                       coachingTips.push('Review session techniques and focus on positive motivation strategies');
+                     } else {
+                       coachingTips.push('Incorporate more goal-setting and accountability practices');
+                     }
+                   }
+
+                   if (issues.length > 0 || coachingTips.length > 0) {
+                     return (
+                       <div className="mt-4 pt-4 border-t">
+                         {issues.length > 0 && (
+                           <div className="mb-3">
+                             <h4 className="text-sm font-medium text-destructive mb-2 flex items-center gap-1">
+                               <TrendingDown className="h-4 w-4" />
+                               Performance Alerts
+                             </h4>
+                             <div className="space-y-1">
+                               {issues.map((issue, index) => (
+                                 <Badge key={index} variant="destructive" className="text-xs mr-2 mb-1">
+                                   {issue}
+                                 </Badge>
+                               ))}
+                             </div>
+                           </div>
+                         )}
+                         
+                         {coachingTips.length > 0 && (
+                           <div>
+                             <h4 className="text-sm font-medium text-primary mb-2 flex items-center gap-1">
+                               <TrendingUp className="h-4 w-4" />
+                               Coaching Tips
+                             </h4>
+                             <div className="space-y-1">
+                               {coachingTips.map((tip, index) => (
+                                 <p key={index} className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
+                                   {tip}
+                                 </p>
+                               ))}
+                             </div>
+                           </div>
+                         )}
+                       </div>
+                     );
+                   }
+                   return null;
+                 })()}
+               </CardContent>
+             </Card>
         ))}
       </div>
     </div>
