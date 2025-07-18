@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSpecialistPresence } from '@/hooks/useSpecialistPresence';
 import PeerPerformanceDashboard from './PeerPerformanceDashboard';
+import SpecialistPerformanceMetrics from './SpecialistPerformanceMetrics';
 import { 
   UserPlus, 
   Edit, 
@@ -928,6 +929,11 @@ const PeerSpecialistManagement = () => {
                                 </div>
                               </div>
                             </div>
+                          </div>
+                          
+                          {/* Performance Metrics */}
+                          <div className="mt-4 pt-4 border-t border-muted/30">
+                            <SpecialistPerformanceMetrics specialistId={specialist.id} />
                           </div>
                         </div>
                       </div>
