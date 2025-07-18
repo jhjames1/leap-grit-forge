@@ -327,7 +327,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
-              {specialistName ? `${specialistName} Calendar` : 'Loading Calendar...'}
+              {specialistName ? `${specialistName}'s Calendar` : 'Loading Calendar...'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -347,7 +347,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
-              {specialistName ? `${specialistName} Calendar` : 'Specialist Calendar'}
+              {specialistName ? `${specialistName}'s Calendar` : 'Specialist Calendar'}
             </CardTitle>
             <div className="flex flex-wrap gap-2 pt-4">
               <Button 
