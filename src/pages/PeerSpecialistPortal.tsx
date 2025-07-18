@@ -10,52 +10,18 @@ const PeerSpecialistPortal = () => {
   const [isVerifiedSpecialist, setIsVerifiedSpecialist] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const checkSpecialistStatus = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        // Check if user is a verified peer specialist
-        const { data: specialistData, error } = await supabase
-          .from('peer_specialists')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .eq('is_verified', true)
-          .single();
-
-        if (!error && specialistData) {
-          setIsVerifiedSpecialist(true);
-        }
-      } catch (error) {
-        console.error('Error checking specialist status:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSpecialistStatus();
-  }, [user]);
-
-  const handleLogin = () => {
-    // Re-check specialist status after login
-    setIsLoading(true);
-    setIsVerifiedSpecialist(false);
-    
-    setTimeout(() => {
-      if (user) {
-        checkSpecialistStatus();
-      }
-    }, 100);
-  };
-
+  // Define checkSpecialistStatus outside of useEffect to avoid recreation
   const checkSpecialistStatus = async () => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
+    console.log('🔍 Checking specialist status for user:', user.id);
+    setIsLoading(true);
 
     try {
+      // Check if user is a verified peer specialist
       const { data: specialistData, error } = await supabase
         .from('peer_specialists')
         .select('*')
@@ -64,14 +30,35 @@ const PeerSpecialistPortal = () => {
         .eq('is_verified', true)
         .single();
 
+      console.log('📋 Specialist check result:', { specialistData, error });
+
       if (!error && specialistData) {
+        console.log('✅ User is verified specialist');
         setIsVerifiedSpecialist(true);
+      } else {
+        console.log('❌ User is not verified specialist');
+        setIsVerifiedSpecialist(false);
       }
     } catch (error) {
-      console.error('Error checking specialist status:', error);
+      console.error('❌ Error checking specialist status:', error);
+      setIsVerifiedSpecialist(false);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (!loading) {
+      console.log('👤 User state changed, checking specialist status:', { user: user?.id, loading });
+      checkSpecialistStatus();
+    }
+  }, [user?.id, loading]); // Only depend on user.id to avoid recreation loops
+
+  const handleLogin = () => {
+    console.log('🔄 Login handler called');
+    // Reset states and re-check
+    setIsVerifiedSpecialist(false);
+    checkSpecialistStatus();
   };
 
   if (loading || isLoading) {
