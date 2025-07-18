@@ -3,11 +3,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut } from 'lucide-react';
+import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import SpecialistChatWindow from './SpecialistChatWindow';
+import SpecialistCalendar from './calendar/SpecialistCalendar';
+import ScheduleManagementModal from './calendar/ScheduleManagementModal';
 import { useToast } from '@/hooks/use-toast';
 interface ChatSession {
   id: string;
@@ -48,6 +50,7 @@ const PeerSpecialistDashboard = () => {
 
   // Add state for selected chat session
   const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   useEffect(() => {
     const loadData = async () => {
       if (!user) return;
@@ -248,7 +251,8 @@ const PeerSpecialistDashboard = () => {
   // Check if there are more than 2 users waiting
   const waitingSessions = chatSessions.filter(s => s.status === 'waiting');
   const hasMultipleWaitingSessions = waitingSessions.length > 2;
-  return <div className="min-h-screen bg-background">
+  return (
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-card border-b border-border p-6">
         <div className="flex items-center justify-between">
@@ -258,7 +262,6 @@ const PeerSpecialistDashboard = () => {
           </div>
           <div className="flex items-center space-x-4">
             {peerSpecialist?.status && <div className="flex items-center space-x-3">
-                
                 <Select value={peerSpecialist.status.status} onValueChange={handleStatusChange}>
                   <SelectTrigger className="w-32 bg-background border-border z-50">
                     <SelectValue />
@@ -285,6 +288,14 @@ const PeerSpecialistDashboard = () => {
                   </SelectContent>
                 </Select>
               </div>}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowScheduleModal(true)}
+            >
+              <Settings size={16} className="mr-2" />
+              Manage Schedule
+            </Button>
             <Button variant="outline" size="sm" onClick={handleLogout} disabled={hasActiveSessions}>
               <LogOut size={16} className="mr-2" />
               {hasActiveSessions ? 'Sessions Active' : 'Log Out'}
@@ -329,7 +340,7 @@ const PeerSpecialistDashboard = () => {
         </div>
 
         {/* Chat Management */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Chat Sessions List */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -387,6 +398,26 @@ const PeerSpecialistDashboard = () => {
           </Card>
         </div>
 
+        {/* Calendar Section */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-fjalla font-bold">Your Schedule</h2>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowScheduleModal(true)}
+              >
+                <Settings size={16} className="mr-2" />
+                Schedule Settings
+              </Button>
+            </div>
+          </div>
+          {peerSpecialist && (
+            <SpecialistCalendar specialistId={peerSpecialist.id} />
+          )}
+        </div>
+
         {/* Recent Activity */}
         <div className="mt-6">
           <h2 className="text-xl font-fjalla font-bold mb-4">Recent Activity</h2>
@@ -396,6 +427,16 @@ const PeerSpecialistDashboard = () => {
         </div>
       </div>
 
-    </div>;
+      {/* Schedule Management Modal */}
+      {peerSpecialist && (
+        <ScheduleManagementModal
+          isOpen={showScheduleModal}
+          onClose={() => setShowScheduleModal(false)}
+          specialistId={peerSpecialist.id}
+        />
+      )}
+    </div>
+  );
 };
+
 export default PeerSpecialistDashboard;
