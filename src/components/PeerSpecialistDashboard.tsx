@@ -1,1318 +1,275 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { audioNotification } from '@/utils/audioNotification';
 import { 
-  MessageSquare, 
-  Phone, 
-  Video, 
-  Bell, 
-  LogOut, 
-  Clock,
+  MessageCircle, 
+  Calendar, 
+  Users, 
+  Clock, 
+  CheckCircle, 
+  AlertCircle,
+  ChevronRight,
   User,
-  Settings,
-  Send,
-  X,
-  BarChart3,
-  Archive,
-  Heart,
-  Activity,
-  Calendar,
-  RefreshCcw
+  Settings
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import SpecialistAnalyticsDashboard from './SpecialistAnalyticsDashboard';
-import ChatArchive from './ChatArchive';
-import SpecialistActivityLog from './SpecialistActivityLog';
-import MotivationalWelcome from './MotivationalWelcome';
-import SpecialistFavorites from './SpecialistFavorites';
-import SpecialistCalendar from './calendar/SpecialistCalendar';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { format } from 'date-fns';
+import SpecialistChatWindow from './SpecialistChatWindow';
 
 interface ChatSession {
   id: string;
   user_id: string;
-  status: string;
-  created_at: string;
-  started_at: string | null;
-  ended_at: string | null;
-  lastMessage?: {
-    content: string;
-    sender_type: string;
-    created_at: string;
-  };
-}
-
-interface ChatMessage {
-  id: string;
-  session_id: string;
-  sender_id: string;
-  sender_type: string;
-  content: string;
-  created_at: string;
-}
-
-interface SpecialistStatus {
-  id: string;
-  specialist_id: string;
-  status: 'online' | 'busy' | 'offline';
-  status_message: string | null;
-  last_seen: string;
+  specialist_id?: string;
+  status: 'waiting' | 'active' | 'ended';
+  started_at: string;
+  ended_at?: string;
 }
 
 interface PeerSpecialist {
   id: string;
+  user_id: string;
   first_name: string;
   last_name: string;
-  specialties: string[];
+  email: string;
+  phone_number: string;
+  bio: string;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  status: {
+    status: 'online' | 'offline' | 'away';
+    last_active: string | null;
+  };
 }
 
 const PeerSpecialistDashboard = () => {
-  const { t } = useLanguage();
-  const { user, signOut } = useAuth();
-  const { toast } = useToast();
-  
-  const [currentView, setCurrentView] = useState<'dashboard' | 'analytics'>('dashboard');
-  const [specialist, setSpecialist] = useState<PeerSpecialist | null>(null);
-  const [specialistStatus, setSpecialistStatus] = useState<SpecialistStatus | null>(null);
+  const { user } = useAuth();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
-  const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
-  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
-  const [newMessage, setNewMessage] = useState('');
-  const [totalChatsToday, setTotalChatsToday] = useState(0);
-  const [averageWaitTime, setAverageWaitTime] = useState(0);
-  const [showMotivationalWelcome, setShowMotivationalWelcome] = useState(false);
-  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
   const [chatFilter, setChatFilter] = useState<'all' | 'waiting' | 'active'>('all');
-  
-  // Audio notification state
-  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
-    const saved = localStorage.getItem('specialist-notifications-enabled');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-  
+  const [peerSpecialist, setPeerSpecialist] = useState<PeerSpecialist | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Add state for selected chat session
+  const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
 
   useEffect(() => {
-    if (user) {
-      loadSpecialistData();
-    }
-  }, [user]);
+    const loadData = async () => {
+      if (!user) return;
 
-  useEffect(() => {
-    if (specialist) {
-      loadChatSessions();
-      loadTodayMetrics();
-      setupRealtimeSubscriptions();
-      
-      // Show motivational welcome once per day
-      const today = new Date().toDateString();
-      const lastWelcomeShown = localStorage.getItem('lastMotivationalWelcome');
-      
-      if (lastWelcomeShown !== today) {
-        setTimeout(() => {
-          setShowMotivationalWelcome(true);
-          localStorage.setItem('lastMotivationalWelcome', today);
-        }, 1000); // Show after 1 second to allow dashboard to load
-      }
-    }
-  }, [specialist]);
+      setLoading(true);
+      try {
+        // Fetch chat sessions
+        await loadChatSessions();
 
-  useEffect(() => {
-    if (selectedSession) {
-      loadMessages(selectedSession.id);
-    }
-  }, [selectedSession]);
-
-  const loadSpecialistData = async () => {
-    try {
-      // Get specialist info
-      const { data: specialistData, error: specialistError } = await supabase
-        .from('peer_specialists')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (specialistError) throw specialistError;
-      setSpecialist(specialistData);
-
-      // Get or create specialist status
-      const { data: statusData, error: statusError } = await supabase
-        .from('specialist_status')
-        .select('*')
-        .eq('specialist_id', specialistData.id)
-        .single();
-
-      if (statusError && statusError.code === 'PGRST116') {
-        // Create initial status if doesn't exist
-        const { data: newStatus, error: createError } = await supabase
-          .from('specialist_status')
-          .insert({
-            specialist_id: specialistData.id,
-            status: 'offline',
-            last_seen: new Date().toISOString()
-          })
-          .select()
+        // Fetch peer specialist data
+        const { data: specialistData, error: specialistError } = await supabase
+          .from('peer_specialists')
+          .select('*, status:peer_specialist_status(status, last_active)')
+          .eq('user_id', user.id)
           .single();
 
-        if (createError) throw createError;
-        setSpecialistStatus(newStatus as SpecialistStatus);
-      } else if (statusError) {
-        throw statusError;
-      } else {
-        setSpecialistStatus(statusData as SpecialistStatus);
-      }
-    } catch (error) {
-      console.error('Error loading specialist data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load specialist information",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadTodayMetrics = async () => {
-    if (!specialist) return;
-
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      // Get total chats today
-      const { data: todayChats, error: chatsError } = await supabase
-        .from('chat_sessions')
-        .select('id, created_at, started_at')
-        .eq('specialist_id', specialist.id)
-        .gte('created_at', today.toISOString())
-        .lt('created_at', tomorrow.toISOString());
-
-      if (chatsError) throw chatsError;
-      setTotalChatsToday(todayChats?.length || 0);
-
-      // Calculate average wait time for sessions that started today
-      const startedSessions = todayChats?.filter(chat => chat.started_at) || [];
-      if (startedSessions.length > 0) {
-        const totalWaitTime = startedSessions.reduce((sum, session) => {
-          const waitTime = new Date(session.started_at!).getTime() - new Date(session.created_at).getTime();
-          return sum + waitTime;
-        }, 0);
-        const avgWaitTimeMs = totalWaitTime / startedSessions.length;
-        const avgWaitTimeMin = Math.round(avgWaitTimeMs / (1000 * 60));
-        setAverageWaitTime(avgWaitTimeMin);
-      } else {
-        setAverageWaitTime(0);
-      }
-    } catch (error) {
-      console.error('Error loading today metrics:', error);
-    }
-  };
-
-  const sortSessionsByPriority = (sessions: ChatSession[]) => {
-    return sessions.sort((a, b) => {
-      // Assign priority values: waiting = 1, active = 2, ended = 3
-      const getStatusPriority = (status: string) => {
-        switch (status) {
-          case 'waiting': return 1;
-          case 'active': return 2;
-          case 'ended': return 3;
-          default: return 4;
+        if (specialistError) {
+          console.error('Error fetching peer specialist data:', specialistError);
+        } else {
+          setPeerSpecialist(specialistData || null);
         }
-      };
-
-      const aPriority = getStatusPriority(a.status);
-      const bPriority = getStatusPriority(b.status);
-
-      // First sort by status priority (ascending: waiting first)
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority;
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // Within same status, sort by created_at descending (newest first)
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
-  };
+    loadData();
+  }, [user]);
 
   const loadChatSessions = async () => {
-    if (!specialist) return;
-
-    try {
-      // First get all sessions for this specialist
-      const { data: sessions, error: sessionsError } = await supabase
-        .from('chat_sessions')
-        .select('*')
-        .eq('specialist_id', specialist.id)
-        .order('created_at', { ascending: false });
-
-      if (sessionsError) throw sessionsError;
-
-      console.log('Loaded chat sessions:', sessions);
-
-      // For each session, get the most recent message
-      const sessionsWithLastMessage = await Promise.all(
-        (sessions || []).map(async (session) => {
-          const { data: lastMessage } = await supabase
-            .from('chat_messages')
-            .select('content, sender_type, created_at')
-            .eq('session_id', session.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          console.log(`Session ${session.id} - Status: ${session.status}, Last message:`, lastMessage);
-
-          return {
-            ...session,
-            lastMessage: lastMessage || undefined
-          };
-        })
-      );
-
-      // Sort sessions by priority before setting state
-      const sortedSessions = sortSessionsByPriority(sessionsWithLastMessage);
-      setChatSessions(sortedSessions);
-      console.log('Sessions with last messages (sorted):', sortedSessions);
-    } catch (error) {
-      console.error('Error loading chat sessions:', error);
-    }
-  };
-
-  const loadMessages = async (sessionId: string) => {
-    console.log('Loading messages for session:', sessionId);
-    try {
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      console.log('Loaded messages:', data);
-      setMessages(data || []);
-      
-      // Auto-scroll to bottom after loading messages
-      setTimeout(() => {
-        const messagesContainer = document.getElementById('messages-container');
-        if (messagesContainer) {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-      }, 100);
-    } catch (error) {
-      console.error('Error loading messages:', error);
-    }
-  };
-
-  const setupRealtimeSubscriptions = () => {
-    if (!specialist) return;
-
-    // Subscribe to new chat sessions
-    const sessionChannel = supabase
-      .channel('chat-sessions')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_sessions',
-          filter: `specialist_id=eq.${specialist.id}`
-        },
-        (payload) => {
-          const newSession = { ...payload.new as ChatSession, lastMessage: undefined };
-          setChatSessions(prev => sortSessionsByPriority([newSession, ...prev]));
-          loadTodayMetrics(); // Refresh metrics when new session arrives
-          toast({
-            title: "New Chat Request",
-            description: "A user wants to start a chat with you"
-          });
-        }
-      )
-      .subscribe();
-
-    // Subscribe to ALL messages for this specialist's sessions to update last message info
-    const allMessagesChannel = supabase
-      .channel('all-chat-messages')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages'
-        },
-        (payload) => {
-          const newMessage = payload.new as ChatMessage;
-          console.log('🔥 New message received via realtime:', newMessage);
-          console.log('🎯 Currently selected session:', selectedSession?.id);
-          console.log('🎯 Message is for session:', newMessage.session_id);
-          
-          // Check if this message is for this specialist's sessions
-          const isForThisSpecialist = chatSessions.some(session => session.id === newMessage.session_id);
-          
-          // Play notification sound for new user messages (not from specialist)
-          if (isForThisSpecialist && 
-              newMessage.sender_type === 'user' && 
-              notificationsEnabled) {
-            console.log('🔊 Playing notification sound for new user message');
-            try {
-              audioNotification.playTwoToneNotification();
-            } catch (error) {
-              console.log('Could not play notification sound:', error);
-            }
-          }
-          
-          // Update the last message in chat sessions for any session this specialist has
-          setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
-            session.id === newMessage.session_id 
-              ? { 
-                  ...session, 
-                  lastMessage: {
-                    content: newMessage.content,
-                    sender_type: newMessage.sender_type,
-                    created_at: newMessage.created_at
-                  }
-                }
-              : session
-          )));
-
-          // If this message is for the currently selected session, also update the messages
-          if (selectedSession && newMessage.session_id === selectedSession.id) {
-            console.log('✅ Adding message to current session messages');
-            setMessages(prev => {
-              console.log('Current messages before adding new one:', prev);
-              const newMessages = [...prev, newMessage];
-              console.log('Messages after adding new one:', newMessages);
-              return newMessages;
-            });
-            
-            // Auto-scroll to show new messages if viewing this session
-            setTimeout(() => {
-              const messagesContainer = document.getElementById('messages-container');
-              if (messagesContainer) {
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-              }
-            }, 100);
-          } else {
-            console.log('❌ Message not for current session, skipping message addition');
-          }
-        }
-      )
-      .subscribe();
-
-    // Subscribe to session status updates
-    const sessionUpdatesChannel = supabase
-      .channel('session-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'chat_sessions',
-          filter: `specialist_id=eq.${specialist.id}`
-        },
-        (payload) => {
-          const updatedSession = payload.new as ChatSession;
-          setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
-            session.id === updatedSession.id 
-              ? { ...session, ...updatedSession }
-              : session
-          )));
-
-          if (selectedSession?.id === updatedSession.id) {
-            setSelectedSession(updatedSession);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(sessionChannel);
-      supabase.removeChannel(allMessagesChannel);
-      supabase.removeChannel(sessionUpdatesChannel);
-    };
-  };
-  
-  const refreshData = async () => {
-    if (!specialist) return;
-    
-    try {
-      toast({
-        title: "Refreshing",
-        description: "Updating specialist dashboard data..."
-      });
-      
-      await Promise.all([
-        loadChatSessions(),
-        loadTodayMetrics()
-      ]);
-      
-      toast({
-        title: "Refreshed",
-        description: "Dashboard data has been updated"
-      });
-    } catch (error) {
-      console.error('Error refreshing data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to refresh dashboard data",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'busy': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  const updateStatus = async (newStatus: 'online' | 'busy' | 'offline', message?: string) => {
-    if (!specialistStatus) return;
-
-    try {
-      const { error } = await supabase
-        .from('specialist_status')
-        .update({
-          status: newStatus,
-          status_message: message || null,
-          last_seen: new Date().toISOString()
-        })
-        .eq('id', specialistStatus.id);
-
-      if (error) throw error;
-
-      setSpecialistStatus(prev => prev ? {
-        ...prev,
-        status: newStatus,
-        status_message: message || null,
-        last_seen: new Date().toISOString()
-      } : null);
-
-      toast({
-        title: "Status Updated",
-        description: `Your status has been changed to ${newStatus}`
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update status",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const getSessionStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-500 text-white';
-      case 'waiting': return 'bg-yellow-500 text-white';
-      case 'ended': return 'bg-red-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500';
-      case 'busy': return 'bg-gray-500';
-      case 'offline': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const startPhoneCall = () => {
-    if (selectedSession) {
-      // In a real implementation, this would integrate with a calling service
-      toast({
-        title: "Phone Call",
-        description: "Initiating phone call with user..."
-      });
-    }
-  };
-
-  const startVideoCall = () => {
-    if (selectedSession) {
-      // Open Zoom meeting
-      const zoomUrl = `https://zoom.us/start/videomeeting`;
-      window.open(zoomUrl, '_blank');
-      toast({
-        title: "Video Call",
-        description: "Opening Zoom meeting..."
-      });
-    }
-  };
-
-  const handleSignOut = async () => {
-    // Check if there are any active sessions
-    const activeSessions = chatSessions.filter(session => session.status === 'active' || session.status === 'waiting');
-    
-    if (activeSessions.length > 0) {
-      toast({
-        title: "Cannot Sign Out",
-        description: "You cannot log out because you have active sessions.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Set status to offline before signing out
-    if (specialistStatus) {
-      await updateStatus('offline');
-    }
-    await signOut();
-  };
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedSession || !user) return;
-
-    try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .insert({
-          session_id: selectedSession.id,
-          sender_id: user.id,
-          sender_type: 'specialist',
-          message_type: 'text',
-          content: newMessage.trim()
-        });
-
-      if (error) throw error;
-
-      setNewMessage('');
-      
-      // Update session to active if it was waiting
-      if (selectedSession.status === 'waiting') {
-        const { error: updateError } = await supabase
-          .from('chat_sessions')
-          .update({ status: 'active' })
-          .eq('id', selectedSession.id);
-
-        if (!updateError) {
-          setSelectedSession(prev => prev ? { ...prev, status: 'active' } : null);
-          setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
-            session.id === selectedSession.id 
-              ? { ...session, status: 'active' }
-              : session
-          )));
-        }
-      }
-
-      toast({
-        title: "Message Sent",
-        description: "Your message has been delivered"
-      });
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleEndChat = async (sessionId: string) => {
     if (!user) return;
 
-    try {
-      // Send a kind farewell message first
-      const { error: messageError } = await supabase
-        .from('chat_messages')
-        .insert({
-          session_id: sessionId,
-          sender_id: user.id,
-          sender_type: 'specialist',
-          message_type: 'text',
-          content: "Thank you for reaching out today. Remember, you're not alone on this journey, and every step forward is a victory. Take care of yourself, and don't hesitate to reach out again if you need support. You've got this! 💪"
-        });
+    const { data, error } = await supabase
+      .from('chat_sessions')
+      .select('*')
+      .eq('specialist_id', user.id)
+      .order('started_at', { ascending: false });
 
-      if (messageError) throw messageError;
-
-      // Then end the session
-      const { error } = await supabase
-        .from('chat_sessions')
-        .update({ 
-          status: 'ended',
-          ended_at: new Date().toISOString()
-        })
-        .eq('id', sessionId);
-
-      if (error) throw error;
-
-        // Update local state
-        setChatSessions(prev => sortSessionsByPriority(prev.map(session => 
-          session.id === sessionId 
-            ? { ...session, status: 'ended', ended_at: new Date().toISOString() }
-            : session
-        )));
-
-        if (selectedSession?.id === sessionId) {
-          setSelectedSession(prev => prev ? { 
-            ...prev, 
-            status: 'ended', 
-            ended_at: new Date().toISOString() 
-          } : null);
-        }
-
-        // Refresh today's metrics
-        loadTodayMetrics();
-
-      toast({
-        title: "Chat Ended",
-        description: "The chat session has been ended and a farewell message was sent"
-      });
-    } catch (error) {
-      console.error('Error ending chat:', error);
-      toast({
-        title: "Error",
-        description: "Failed to end chat session",
-        variant: "destructive"
-      });
+    if (error) {
+      console.error('Error fetching chat sessions:', error);
+    } else {
+      setChatSessions(data || []);
     }
   };
 
-  const formatTimeAgo = (timestamp: string) => {
-    const now = new Date();
-    const messageTime = new Date(timestamp);
-    const diffMs = now.getTime() - messageTime.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    
-    if (diffMins < 1) return 'just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
+  const filterSessions = () => {
+    if (chatFilter === 'all') {
+      return chatSessions;
+    } else {
+      return chatSessions.filter(session => session.status === chatFilter);
+    }
   };
 
-  if (currentView === 'analytics') {
-    return <SpecialistAnalyticsDashboard onNavigateToChat={() => setCurrentView('dashboard')} />;
-  }
+  const handleChatClick = (session: ChatSession) => {
+    setSelectedChatSession(session);
+  };
 
-  if (loading) {
-    return (
-      <div className="p-4 pb-24 bg-background min-h-screen flex items-center justify-center">
-        <p className="text-steel-light">Loading dashboard...</p>
-      </div>
-    );
-  }
-
-  if (!specialist) {
-    return (
-      <div className="p-4 pb-24 bg-background min-h-screen flex items-center justify-center">
-        <Card className="p-8 max-w-md">
-          <div className="text-center space-y-4">
-            <h2 className="text-2xl font-fjalla text-foreground">Not Registered</h2>
-            <p className="text-steel-light">
-              You are not registered as a peer specialist. Please contact an administrator 
-              to be added to the specialist program.
-            </p>
-            <div className="space-y-2">
-              <Button 
-                onClick={() => window.location.href = '/'} 
-                variant="default"
-                className="w-full"
-              >
-                Return to Home
-              </Button>
-              <Button onClick={handleSignOut} variant="outline" className="w-full">
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
+  const handleCloseChatWindow = () => {
+    setSelectedChatSession(null);
+    // Refresh sessions after closing
+    loadChatSessions();
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="p-4 pb-24">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex justify-between items-start mb-6">
-            {/* Left column: Title and welcome text */}
-            <div className="flex-1">
-              <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-                <span className="font-oswald font-extralight tracking-tight">PEER SUPPORT</span><span className="font-fjalla font-extrabold italic">SPECIALIST</span>
-              </h1>
-              <div className="mt-8"></div>
-              <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
-                WELCOME, <span className="font-bold italic">{specialist.first_name.toUpperCase()} {specialist.last_name.toUpperCase()}</span>
-                {specialistStatus && (
-                  <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
-                    specialistStatus.status === 'online' ? 'bg-green-500 text-white' :
-                    specialistStatus.status === 'busy' ? 'bg-gray-500 text-black' :
-                    'bg-red-500 text-white'
-                  }`}>
-                    {specialistStatus.status === 'busy' ? 'UNAVAILABLE' : specialistStatus.status.toUpperCase()}
-                  </span>
-                )}
-              </p>
-              <p className="text-muted-foreground text-sm">Ready to help others on their journey</p>
-            </div>
-            
-            {/* Right column: Actions and Status */}
-            <div className="flex flex-col items-end space-y-4">
-              {/* Action Buttons */}
-               <div className="flex gap-2">
-                <Button
-                  onClick={() => refreshData()}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCcw size={16} />
-                  Refresh
-                </Button>
-                <Button
-                  onClick={() => setCurrentView('analytics')}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <BarChart3 size={16} />
-                  Analytics
-                </Button>
-                 <Button
-                   onClick={() => setIsActivityLogOpen(true)}
-                   variant="outline"
-                   size="sm"
-                   className="flex items-center gap-2"
-                 >
-                   <Activity size={16} />
-                   Activity
-                 </Button>
-                <Button
-                  onClick={() => setIsFavoritesOpen(true)}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Heart size={16} />
-                  Favorites
-                </Button>
-                <Button
-                  onClick={handleSignOut}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 text-destructive hover:text-destructive"
-                >
-                  <LogOut size={16} />
-                  Sign Out
-                </Button>
-              </div>
-              
-            </div>
+      {/* Header */}
+      <div className="bg-card border-b border-border p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Peer Specialist Dashboard</h1>
+            <p className="text-muted-foreground">Manage your chat sessions and profile settings.</p>
           </div>
-        </div>
-
-        {/* Status and Overview Cards */}
-        <div className="grid grid-cols-5 gap-4 mb-4">
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-primary p-3 rounded-sm">
-                <MessageSquare className="text-primary-foreground" size={20} />
+          <div className="flex items-center space-x-4">
+            {peerSpecialist?.status && (
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <div className={`w-2 h-2 rounded-full ${peerSpecialist.status.status === 'online' ? 'bg-green-500' : peerSpecialist.status.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'}`}></div>
+                <span>{peerSpecialist.status.status}</span>
               </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                Active Sessions
-              </h3>
-            </div>
-            <div className="text-2xl font-bold text-card-foreground">
-              {chatSessions.filter(s => s.status === 'active').length}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {totalChatsToday} total chats today
-            </div>
-          </Card>
-
-          <Card className={`bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 ${
-            (() => {
-              const waitingCount = chatSessions.filter(s => s.status === 'waiting').length;
-              if (waitingCount >= 1 && waitingCount <= 2) {
-                return 'bg-yellow-100/50 border border-yellow-200/50';
-              } else if (waitingCount > 2) {
-                return 'bg-red-100/50 border border-red-200/50';
-              }
-              return '';
-            })()
-          }`}>
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-primary p-3 rounded-sm">
-                <Clock className="text-primary-foreground" size={20} />
-              </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                Waiting
-              </h3>
-            </div>
-            <div className="text-2xl font-bold text-card-foreground">
-              {chatSessions.filter(s => s.status === 'waiting').length}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {averageWaitTime} min. avg wait time
-            </div>
-          </Card>
-
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-primary p-3 rounded-sm">
-                <Bell className="text-primary-foreground" size={20} />
-              </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                Notifications
-              </h3>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-card-foreground">
-                {notificationsEnabled ? 'ON' : 'OFF'}
-              </span>
-              <Switch
-                checked={notificationsEnabled}
-                onCheckedChange={(checked) => {
-                  setNotificationsEnabled(checked);
-                  localStorage.setItem('specialist-notifications-enabled', JSON.stringify(checked));
-                  
-                  if (checked) {
-                    try {
-                      audioNotification.playTwoToneNotification();
-                    } catch (error) {
-                      console.log('Could not play test notification:', error);
-                    }
-                  }
-                  
-                  toast({
-                    title: checked ? "Notifications Enabled" : "Notifications Disabled",
-                    description: checked ? "You'll hear a sound when new messages arrive" : "Message notifications are now silent"
-                  });
-                }}
-              />
-            </div>
-          </Card>
-
-          <Card className={`p-4 rounded-lg border-0 shadow-none transition-colors duration-300 ${
-            specialistStatus?.status === 'online' ? 'bg-green-500' :
-            specialistStatus?.status === 'busy' ? 'bg-gray-500' :
-            'bg-red-500'
-          }`}>
-            <div className="flex items-center space-x-3 mb-2">
-              <div className={`p-3 rounded-sm ${
-                specialistStatus?.status === 'online' ? 'bg-green-600' :
-                specialistStatus?.status === 'busy' ? 'bg-gray-600' :
-                'bg-red-600'
-              }`}>
-                <Settings className="text-white" size={20} />
-              </div>
-              <h3 className="font-fjalla font-bold text-white text-base uppercase tracking-wide">
-                Status
-              </h3>
-            </div>
-            <div className="flex flex-col space-y-2">
-              <span className={`text-lg font-bold ${
-                specialistStatus?.status === 'busy' ? 'text-black' : 'text-white'
-              }`}>
-                {specialistStatus?.status === 'busy' ? 'UNAVAILABLE' : specialistStatus?.status.toUpperCase()}
-              </span>
-              <div className={`text-xs ${
-                specialistStatus?.status === 'busy' ? 'text-gray-700' : 'text-white/70'
-              }`}>
-                Last seen: {specialistStatus?.last_seen ? new Date(specialistStatus.last_seen).toLocaleTimeString() : 'Never'}
-              </div>
-              <Button 
-                onClick={() => setIsStatusDialogOpen(true)}
-                variant="outline"
-                size="sm"
-                className={`mt-1 ${
-                  specialistStatus?.status === 'busy' 
-                    ? 'border-gray-700 text-black hover:bg-gray-600 hover:text-white' 
-                    : 'border-white/30 text-white hover:bg-white/20'
-                }`}
-              >
-                Change
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-primary p-3 rounded-sm">
-                <User className="text-primary-foreground" size={20} />
-              </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                New Feature
-              </h3>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Placeholder for future expansion
-            </div>
-          </Card>
-        </div>
-
-
-        {/* Main Dashboard Content */}
-        <div className="w-full">
-          <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-muted">
-              <TabsTrigger 
-                value="active" 
-                className="flex items-center gap-2 data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=inactive]:bg-gray-400 data-[state=inactive]:text-gray-700"
-              >
-                <MessageSquare size={16} />
-                Active Chats
-              </TabsTrigger>
-              <TabsTrigger 
-                value="archive" 
-                className="flex items-center gap-2 data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=inactive]:bg-gray-400 data-[state=inactive]:text-gray-700"
-              >
-                <Archive size={16} />
-                Archive
-              </TabsTrigger>
-              <TabsTrigger 
-                value="calendar" 
-                className="flex items-center gap-2 data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=inactive]:bg-gray-400 data-[state=inactive]:text-gray-700"
-              >
-                <Calendar size={16} />
-                Calendar
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="active" className="mt-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Chat Sessions List */}
-                <Card className="bg-card border-0 shadow-none">
-                  <div className="p-4 border-b border-border">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-fjalla font-bold text-card-foreground text-lg uppercase tracking-wide">
-                        Chat Sessions
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => setChatFilter('all')}
-                          size="sm"
-                          variant={chatFilter === 'all' ? 'default' : 'outline'}
-                          className="h-8 px-3 text-xs"
-                        >
-                          All ({chatSessions.filter(s => s.status !== 'ended').length})
-                        </Button>
-                        <Button
-                          onClick={() => setChatFilter('waiting')}
-                          size="sm"
-                          variant={chatFilter === 'waiting' ? 'default' : 'outline'}
-                          className={`h-8 px-3 text-xs ${
-                            chatFilter === 'waiting' 
-                              ? 'bg-yellow-500 text-black hover:bg-yellow-600' 
-                              : chatSessions.filter(s => s.status === 'waiting').length > 0
-                                ? 'border-yellow-500 text-yellow-600 hover:bg-yellow-50'
-                                : ''
-                          }`}
-                        >
-                          Waiting ({chatSessions.filter(s => s.status === 'waiting').length})
-                        </Button>
-                        <Button
-                          onClick={() => setChatFilter('active')}
-                          size="sm"
-                          variant={chatFilter === 'active' ? 'default' : 'outline'}
-                          className={`h-8 px-3 text-xs ${
-                            chatFilter === 'active' 
-                              ? 'bg-green-500 text-white hover:bg-green-600' 
-                              : chatSessions.filter(s => s.status === 'active').length > 0
-                                ? 'border-green-500 text-green-600 hover:bg-green-50'
-                                : ''
-                          }`}
-                        >
-                          Active ({chatSessions.filter(s => s.status === 'active').length})
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 max-h-[400px] overflow-y-auto">
-                    {(() => {
-                      const filteredSessions = chatSessions.filter(s => {
-                        if (chatFilter === 'all') return s.status !== 'ended';
-                        return s.status === chatFilter;
-                      });
-                      
-                      return filteredSessions.length === 0 ? (
-                        <div className="space-y-4">
-                          <p className="text-muted-foreground text-center py-8">
-                            {chatFilter === 'all' 
-                              ? 'No active chat sessions' 
-                              : `No ${chatFilter} chat sessions`}
-                          </p>
-                          {chatFilter === 'all' && (
-                            <div className="flex justify-center">
-                              <Button onClick={handleSignOut} variant="outline" className="w-full max-w-xs">
-                                <LogOut size={16} className="mr-2" />
-                                Sign Out
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                           {filteredSessions.map((session) => (
-                            <div
-                              key={session.id}
-                              className={`p-4 rounded-lg border transition-colors ${
-                                selectedSession?.id === session.id
-                                  ? 'bg-primary/10 border-primary/20'
-                                  : 'bg-background hover:bg-background/80 border-border'
-                              }`}
-                            >
-                              <div className="space-y-3">
-                                {/* Session Header */}
-                                <div className="flex items-center justify-between">
-                                  <div 
-                                    className="flex-1 cursor-pointer"
-                                    onClick={() => {
-                                      setSelectedSession(session);
-                                      loadMessages(session.id);
-                                    }}
-                                  >
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <p className="font-source font-medium text-card-foreground">
-                                        Session {session.id.slice(0, 8)}
-                                      </p>
-                                      <Badge className={`text-xs px-2 py-0.5 ${getSessionStatusColor(session.status)}`}>
-                                        {session.status.toUpperCase()}
-                                      </Badge>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">
-                                      Started: {new Date(session.created_at).toLocaleString()}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Session and Action Row */}
-                                <div className="flex items-center justify-between pt-2 border-t border-border">
-                                  {/* Session Info - Left aligned */}
-                                  <div className="text-xs text-muted-foreground">
-                                    <span>Duration: {formatTimeAgo(session.created_at)}</span>
-                                  </div>
-                                  
-                                  {/* Action Buttons - Right aligned */}
-                                  <div className="flex items-center gap-2">
-                                    {/* End Chat Button */}
-                                    <Button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEndChat(session.id);
-                                      }}
-                                      size="sm"
-                                      variant="destructive"
-                                      className="h-8 px-3 text-xs font-medium bg-red-600 hover:bg-red-700"
-                                    >
-                                      End Chat
-                                    </Button>
-                                    
-                                    {/* View Messages Button */}
-                                    <Button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedSession(session);
-                                        loadMessages(session.id);
-                                      }}
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-8 px-3 text-xs font-medium"
-                                    >
-                                      View Messages
-                                    </Button>
-                                  </div>
-                                </div>
-
-                                {/* Last Message Info */}
-                                {session.lastMessage && (
-                                  <div className="border-t border-border pt-2">
-                                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                                      <span className="font-medium">
-                                        Last message from: {session.lastMessage.sender_type === 'specialist' ? 'You' : 'User'}
-                                      </span>
-                                      <span>{formatTimeAgo(session.lastMessage.created_at)}</span>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground/80 truncate">
-                                      {session.lastMessage.content}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </Card>
-
-                {/* Chat Messages */}
-                {selectedSession ? (
-                  <Card className="bg-card border-0 shadow-none">
-                    <div className="p-4 border-b border-border">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-fjalla font-bold text-card-foreground text-lg uppercase tracking-wide">
-                            Chat Messages
-                          </h3>
-                          <p className="text-xs text-muted-foreground">Session {selectedSession.id.slice(0, 8)}</p>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            onClick={startPhoneCall}
-                            size="sm"
-                            variant="outline"
-                            className="flex items-center space-x-1"
-                          >
-                            <Phone size={16} />
-                          </Button>
-                          <Button
-                            onClick={startVideoCall}
-                            size="sm"
-                            variant="outline"
-                            className="flex items-center space-x-1"
-                          >
-                            <Video size={16} />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col h-[400px]">
-                      <div id="messages-container" className="flex-1 overflow-y-auto p-4 space-y-3">
-                        {messages.map((message) => (
-                          <div
-                            key={message.id}
-                            className={`flex ${message.sender_type === 'specialist' ? 'justify-end' : 'justify-start'}`}
-                          >
-                            <div
-                              className={`max-w-[80%] p-3 rounded-lg ${
-                                message.sender_type === 'specialist'
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-background border'
-                              }`}
-                            >
-                              <p className="text-sm">{message.content}</p>
-                              <p className="text-xs opacity-70 mt-1">
-                                {new Date(message.created_at).toLocaleTimeString()}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                        
-                        {messages.length === 0 && (
-                          <p className="text-muted-foreground text-center py-8">No messages yet</p>
-                        )}
-                      </div>
-
-                      {/* Message Input */}
-                      <div className="border-t border-border p-4">
-                        <div className="flex gap-2">
-                          <Input
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder="Type your response..."
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSendMessage();
-                              }
-                            }}
-                            className="flex-1 bg-background border-border"
-                          />
-                          <Button 
-                            onClick={handleSendMessage} 
-                            disabled={!newMessage.trim()}
-                            className="bg-primary hover:bg-primary/80 text-primary-foreground"
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ) : (
-                  <Card className="bg-card border-0 shadow-none">
-                    <div className="p-8 h-[400px] flex items-center justify-center">
-                      <p className="text-muted-foreground">Select a chat session to view messages</p>
-                    </div>
-                  </Card>
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="archive" className="mt-6">
-              <ChatArchive />
-            </TabsContent>
-            
-            <TabsContent value="calendar" className="mt-6">
-              {specialist && (
-                <SpecialistCalendar specialistId={specialist.id} />
-              )}
-            </TabsContent>
-          </Tabs>
+            )}
+            <Button variant="outline" size="sm">
+              <Settings size={16} className="mr-2" />
+              Settings
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Status Dialog */}
-      <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
-        <DialogContent className="bg-card border border-border">
-          <DialogHeader>
-            <DialogTitle className="text-card-foreground font-fjalla font-bold uppercase tracking-wide">Update Status</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-3">
-              {(['online', 'busy', 'offline'] as const).map((status) => (
-                <Button
-                  key={status}
-                  onClick={() => {
-                    updateStatus(status);
-                    setIsStatusDialogOpen(false);
-                  }}
-                  variant="outline"
-                  className={`w-full justify-start ${
-                    specialistStatus?.status === status ? 'bg-primary/10 border-primary/20' : ''
-                  }`}
-                >
-                  <div className={`w-3 h-3 rounded-full mr-3 ${getStatusColor(status).split(' ')[0]}`} />
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </Button>
-              ))}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Status Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <Card className="flex items-center justify-between p-6">
+            <div>
+              <h3 className="text-lg font-semibold">Active Sessions</h3>
+              <p className="text-muted-foreground">Current live chat sessions</p>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+            <Badge variant="default">{chatSessions.filter(s => s.status === 'active').length}</Badge>
+          </Card>
+          <Card className="flex items-center justify-between p-6">
+            <div>
+              <h3 className="text-lg font-semibold">Waiting Sessions</h3>
+              <p className="text-muted-foreground">Users waiting for a response</p>
+            </div>
+            <Badge variant="secondary">{chatSessions.filter(s => s.status === 'waiting').length}</Badge>
+          </Card>
+          <Card className="flex items-center justify-between p-6">
+            <div>
+              <h3 className="text-lg font-semibold">Completed Sessions</h3>
+              <p className="text-muted-foreground">Total sessions completed today</p>
+            </div>
+            <Badge variant="outline">{chatSessions.filter(s => s.status === 'ended').length}</Badge>
+          </Card>
+        </div>
 
-      {/* Activity Log Dialog */}
-      <SpecialistActivityLog 
-        isOpen={isActivityLogOpen}
-        onClose={() => setIsActivityLogOpen(false)}
-        specialistId={specialist?.id || ''}
-      />
+        {/* Chat Management */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Chat Sessions List */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Chat Sessions</h2>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={chatFilter === 'all' ? 'default' : 'outline'}
+                  onClick={() => setChatFilter('all')}
+                >
+                  All ({chatSessions.length})
+                </Button>
+                <Button
+                  size="sm"
+                  variant={chatFilter === 'waiting' ? 'default' : 'outline'}
+                  onClick={() => setChatFilter('waiting')}
+                >
+                  Waiting ({chatSessions.filter(s => s.status === 'waiting').length})
+                </Button>
+                <Button
+                  size="sm"
+                  variant={chatFilter === 'active' ? 'default' : 'outline'}
+                  onClick={() => setChatFilter('active')}
+                >
+                  Active ({chatSessions.filter(s => s.status === 'active').length})
+                </Button>
+              </div>
+            </div>
 
-      {/* Motivational Welcome Dialog */}
-      <MotivationalWelcome
-        specialistId={specialist?.id || ''}
-        isOpen={showMotivationalWelcome}
-        onClose={() => setShowMotivationalWelcome(false)}
-      />
+            <div className="space-y-4">
+              {filterSessions().length > 0 ? (
+                filterSessions().map((session) => (
+                  <div 
+                    key={session.id}
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${
+                      selectedChatSession?.id === session.id ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                    onClick={() => handleChatClick(session)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                          <User className="text-primary" size={16} />
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium">Chat Session</span>
+                            <Badge variant={
+                              session.status === 'active' ? 'default' : 
+                              session.status === 'waiting' ? 'secondary' : 'outline'
+                            }>
+                              {session.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Started {format(new Date(session.started_at), 'MMM d, HH:mm')}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="text-muted-foreground" />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>No {chatFilter !== 'all' ? chatFilter : ''} chat sessions</p>
+                </div>
+              )}
+            </div>
+          </Card>
 
-      {/* Favorites Dialog */}
-      <SpecialistFavorites
-        specialistId={specialist?.id || ''}
-        isOpen={isFavoritesOpen}
-        onClose={() => setIsFavoritesOpen(false)}
-      />
+          {/* Chat Window or Welcome */}
+          <Card className="p-0 overflow-hidden">
+            {selectedChatSession ? (
+              <SpecialistChatWindow 
+                session={selectedChatSession}
+                onClose={handleCloseChatWindow}
+              />
+            ) : (
+              <div className="p-6 text-center">
+                <MessageCircle size={64} className="mx-auto mb-4 text-muted-foreground/50" />
+                <h3 className="text-lg font-semibold mb-2">Select a Chat Session</h3>
+                <p className="text-muted-foreground">
+                  Choose a chat session from the list to start helping users with their recovery journey.
+                </p>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="mt-6">
+          <h2 className="text-xl font-bold mb-4">Recent Activity</h2>
+          <Card className="p-6">
+            <p className="text-muted-foreground">No recent activity to display.</p>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
