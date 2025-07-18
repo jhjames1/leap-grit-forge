@@ -1,3 +1,4 @@
+
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSpecialistMetrics } from '@/hooks/useSpecialistMetrics';
@@ -5,11 +6,10 @@ import { Star, Clock, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface SpecialistPerformanceMetricsProps {
   specialistId: string;
-  month?: string;
 }
 
-const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerformanceMetricsProps) => {
-  const { metrics, loading } = useSpecialistMetrics(specialistId, month);
+const SpecialistPerformanceMetrics = ({ specialistId }: SpecialistPerformanceMetricsProps) => {
+  const { metrics, loading } = useSpecialistMetrics(specialistId);
 
   const getMetricColor = (value: number | undefined, threshold: number, isReversed = false): string => {
     if (value === undefined || value === null) return 'text-muted-foreground';
@@ -40,7 +40,7 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
   if (loading) {
     return (
       <div className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">Performance Metrics</p>
+        <p className="text-sm font-medium text-muted-foreground">Live Performance Metrics</p>
         <div className="animate-pulse">
           <div className="h-4 bg-muted rounded w-24 mb-2"></div>
           <div className="h-4 bg-muted rounded w-20"></div>
@@ -49,18 +49,23 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
     );
   }
 
-  // Always show metrics with "0" values when no data is available
   const displayMetrics = metrics || {
     chat_completion_rate: 0,
     checkin_completion_rate: 0,
     avg_user_rating: 0,
     avg_streak_impact: 0,
-    avg_response_time_seconds: 0
+    avg_response_time_seconds: 0,
+    total_sessions: 0,
+    total_checkins: 0,
+    total_ratings: 0
   };
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium">Performance Metrics</p>
+      <p className="text-sm font-medium">Live Performance Metrics</p>
+      <div className="text-xs text-muted-foreground mb-2">
+        {displayMetrics.total_sessions} sessions • {displayMetrics.total_checkins} check-ins • {displayMetrics.total_ratings} ratings
+      </div>
       <div className="grid grid-cols-2 gap-2">
         <TooltipProvider>
           <Tooltip>
@@ -76,7 +81,7 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Chat completion rate (Target ≥ 75%)</p>
+              <p>Live chat completion rate (Target ≥ 75%)</p>
             </TooltipContent>
           </Tooltip>
 
@@ -93,7 +98,7 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Check-in completion rate (Target ≥ 75%)</p>
+              <p>Live check-in completion rate (Target ≥ 75%)</p>
             </TooltipContent>
           </Tooltip>
 
@@ -111,7 +116,7 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Average user rating (Target ≥ 4.5★)</p>
+              <p>Live average user rating (Target ≥ 4.5★)</p>
             </TooltipContent>
           </Tooltip>
 
@@ -129,7 +134,7 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Average response time (Target ≤ 45s)</p>
+              <p>Live average response time (Target ≤ 45s)</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -154,7 +159,7 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
             </div>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Recovery streak impact (Target ≥ +1d)</p>
+            <p>Live recovery streak impact (Target ≥ +1d)</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
