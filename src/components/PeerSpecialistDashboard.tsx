@@ -93,6 +93,7 @@ const PeerSpecialistDashboard = () => {
   const [averageWaitTime, setAverageWaitTime] = useState(0);
   const [showMotivationalWelcome, setShowMotivationalWelcome] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
+  const [chatFilter, setChatFilter] = useState<'all' | 'waiting' | 'active'>('all');
   
   // Audio notification state
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
@@ -992,113 +993,166 @@ const PeerSpecialistDashboard = () => {
                 {/* Chat Sessions List */}
                 <Card className="bg-card border-0 shadow-none">
                   <div className="p-4 border-b border-border">
-                    <h3 className="font-fjalla font-bold text-card-foreground text-lg uppercase tracking-wide">
-                      Active & Waiting Sessions
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-fjalla font-bold text-card-foreground text-lg uppercase tracking-wide">
+                        Chat Sessions
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => setChatFilter('all')}
+                          size="sm"
+                          variant={chatFilter === 'all' ? 'default' : 'outline'}
+                          className="h-8 px-3 text-xs"
+                        >
+                          All ({chatSessions.filter(s => s.status !== 'ended').length})
+                        </Button>
+                        <Button
+                          onClick={() => setChatFilter('waiting')}
+                          size="sm"
+                          variant={chatFilter === 'waiting' ? 'default' : 'outline'}
+                          className={`h-8 px-3 text-xs ${
+                            chatFilter === 'waiting' 
+                              ? 'bg-yellow-500 text-black hover:bg-yellow-600' 
+                              : chatSessions.filter(s => s.status === 'waiting').length > 0
+                                ? 'border-yellow-500 text-yellow-600 hover:bg-yellow-50'
+                                : ''
+                          }`}
+                        >
+                          Waiting ({chatSessions.filter(s => s.status === 'waiting').length})
+                        </Button>
+                        <Button
+                          onClick={() => setChatFilter('active')}
+                          size="sm"
+                          variant={chatFilter === 'active' ? 'default' : 'outline'}
+                          className={`h-8 px-3 text-xs ${
+                            chatFilter === 'active' 
+                              ? 'bg-green-500 text-white hover:bg-green-600' 
+                              : chatSessions.filter(s => s.status === 'active').length > 0
+                                ? 'border-green-500 text-green-600 hover:bg-green-50'
+                                : ''
+                          }`}
+                        >
+                          Active ({chatSessions.filter(s => s.status === 'active').length})
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                   <div className="p-4 max-h-[400px] overflow-y-auto">
-                    {chatSessions.filter(s => s.status !== 'ended').length === 0 ? (
-                      <div className="space-y-4">
-                        <p className="text-muted-foreground text-center py-8">No active chat sessions</p>
-                        <div className="flex justify-center">
-                          <Button onClick={handleSignOut} variant="outline" className="w-full max-w-xs">
-                            <LogOut size={16} className="mr-2" />
-                            Sign Out
-                          </Button>
+                    {(() => {
+                      const filteredSessions = chatSessions.filter(s => {
+                        if (chatFilter === 'all') return s.status !== 'ended';
+                        return s.status === chatFilter;
+                      });
+                      
+                      return filteredSessions.length === 0 ? (
+                        <div className="space-y-4">
+                          <p className="text-muted-foreground text-center py-8">
+                            {chatFilter === 'all' 
+                              ? 'No active chat sessions' 
+                              : `No ${chatFilter} chat sessions`}
+                          </p>
+                          {chatFilter === 'all' && (
+                            <div className="flex justify-center">
+                              <Button onClick={handleSignOut} variant="outline" className="w-full max-w-xs">
+                                <LogOut size={16} className="mr-2" />
+                                Sign Out
+                              </Button>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {chatSessions.filter(s => s.status !== 'ended').map((session) => (
-                          <div
-                            key={session.id}
-                            className={`p-4 rounded-lg border transition-colors ${
-                              selectedSession?.id === session.id
-                                ? 'bg-primary/10 border-primary/20'
-                                : 'bg-background hover:bg-background/80 border-border'
-                            }`}
-                          >
-                            <div className="space-y-3">
-                              {/* Session Header */}
-                              <div className="flex items-center justify-between">
-                                <div 
-                                  className="flex-1 cursor-pointer"
-                                  onClick={() => {
-                                    setSelectedSession(session);
-                                    loadMessages(session.id);
-                                  }}
-                                >
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <p className="font-source font-medium text-card-foreground">
-                                      Session {session.id.slice(0, 8)}
-                                    </p>
-                                    <Badge className={`text-xs px-2 py-0.5 ${getSessionStatusColor(session.status)}`}>
-                                      {session.status.toUpperCase()}
-                                    </Badge>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Started: {new Date(session.created_at).toLocaleString()}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Session and Action Row */}
-                              <div className="flex items-center justify-between pt-2 border-t border-border">
-                                {/* Session Info - Left aligned */}
-                                <div className="text-xs text-muted-foreground">
-                                  <span>Duration: {formatTimeAgo(session.created_at)}</span>
-                                </div>
-                                
-                                {/* Action Buttons - Right aligned */}
-                                <div className="flex items-center gap-2">
-                                  {/* End Chat Button */}
-                                  <Button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEndChat(session.id);
-                                    }}
-                                    size="sm"
-                                    variant="destructive"
-                                    className="h-8 px-3 text-xs font-medium bg-red-600 hover:bg-red-700"
-                                  >
-                                    End Chat
-                                  </Button>
-                                  
-                                  {/* View Messages Button */}
-                                  <Button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
+                      ) : (
+                        <div className="space-y-3">
+                           {filteredSessions.map((session) => (
+                            <div
+                              key={session.id}
+                              className={`p-4 rounded-lg border transition-colors ${
+                                selectedSession?.id === session.id
+                                  ? 'bg-primary/10 border-primary/20'
+                                  : 'bg-background hover:bg-background/80 border-border'
+                              }`}
+                            >
+                              <div className="space-y-3">
+                                {/* Session Header */}
+                                <div className="flex items-center justify-between">
+                                  <div 
+                                    className="flex-1 cursor-pointer"
+                                    onClick={() => {
                                       setSelectedSession(session);
                                       loadMessages(session.id);
                                     }}
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-8 px-3 text-xs font-medium"
                                   >
-                                    View Messages
-                                  </Button>
-                                </div>
-                              </div>
-
-                              {/* Last Message Info */}
-                              {session.lastMessage && (
-                                <div className="border-t border-border pt-2">
-                                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                                    <span className="font-medium">
-                                      Last message from: {session.lastMessage.sender_type === 'specialist' ? 'You' : 'User'}
-                                    </span>
-                                    <span>{formatTimeAgo(session.lastMessage.created_at)}</span>
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <p className="font-source font-medium text-card-foreground">
+                                        Session {session.id.slice(0, 8)}
+                                      </p>
+                                      <Badge className={`text-xs px-2 py-0.5 ${getSessionStatusColor(session.status)}`}>
+                                        {session.status.toUpperCase()}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                      Started: {new Date(session.created_at).toLocaleString()}
+                                    </p>
                                   </div>
-                                  <p className="text-xs text-muted-foreground/80 truncate">
-                                    {session.lastMessage.content}
-                                  </p>
                                 </div>
-                              )}
+
+                                {/* Session and Action Row */}
+                                <div className="flex items-center justify-between pt-2 border-t border-border">
+                                  {/* Session Info - Left aligned */}
+                                  <div className="text-xs text-muted-foreground">
+                                    <span>Duration: {formatTimeAgo(session.created_at)}</span>
+                                  </div>
+                                  
+                                  {/* Action Buttons - Right aligned */}
+                                  <div className="flex items-center gap-2">
+                                    {/* End Chat Button */}
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEndChat(session.id);
+                                      }}
+                                      size="sm"
+                                      variant="destructive"
+                                      className="h-8 px-3 text-xs font-medium bg-red-600 hover:bg-red-700"
+                                    >
+                                      End Chat
+                                    </Button>
+                                    
+                                    {/* View Messages Button */}
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedSession(session);
+                                        loadMessages(session.id);
+                                      }}
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-8 px-3 text-xs font-medium"
+                                    >
+                                      View Messages
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                {/* Last Message Info */}
+                                {session.lastMessage && (
+                                  <div className="border-t border-border pt-2">
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                                      <span className="font-medium">
+                                        Last message from: {session.lastMessage.sender_type === 'specialist' ? 'You' : 'User'}
+                                      </span>
+                                      <span>{formatTimeAgo(session.lastMessage.created_at)}</span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground/80 truncate">
+                                      {session.lastMessage.content}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </Card>
 
