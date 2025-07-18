@@ -78,14 +78,20 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
     if (!selectedDate || !settings) return;
 
     const slots: string[] = [];
-    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase().slice(0, 3); // e.g., 'mon', 'tue'
+    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase(); // e.g., 'monday', 'tuesday'
     const workingHours = settings.working_hours;
+    
+    console.log('Generating slots for:', { dayName, workingHours, selectedDate });
     
     if (workingHours && typeof workingHours === 'object' && dayName in workingHours) {
       const dayHours = (workingHours as any)[dayName];
+      console.log('Day hours found:', dayHours);
+      
       if (dayHours && dayHours.start && dayHours.end) {
         const startTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${dayHours.start}`);
         const endTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${dayHours.end}`);
+        
+        console.log('Working hours:', { startTime, endTime });
         
         let currentTime = startTime;
         while (isBefore(currentTime, endTime)) {
@@ -93,7 +99,10 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
           
           if (isBefore(slotEnd, endTime) || slotEnd.getTime() === endTime.getTime()) {
             // Check if slot is available
+            console.log('Checking availability for slot:', format(currentTime, 'HH:mm'));
             const isAvailable = await checkAvailability(currentTime, slotEnd);
+            console.log('Slot availability:', { time: format(currentTime, 'HH:mm'), isAvailable });
+            
             if (isAvailable) {
               slots.push(format(currentTime, 'HH:mm'));
             }
@@ -102,8 +111,11 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
           currentTime = addMinutes(currentTime, 30); // 30-minute intervals
         }
       }
+    } else {
+      console.log('No working hours found for day:', dayName);
     }
 
+    console.log('Generated slots:', slots);
     setAvailableSlots(slots);
   };
 

@@ -165,7 +165,7 @@ export const updateSpecialistStatusFromCalendar = async (specialistId: string): 
   const availability = await calculateRealTimeAvailability(specialistId);
   
   try {
-    // Update specialist status
+    // Update specialist status with proper conflict resolution
     await supabase
       .from('specialist_status')
       .upsert({
@@ -183,6 +183,8 @@ export const updateSpecialistStatusFromCalendar = async (specialistId: string): 
           },
           timestamp: Date.now()
         }
+      }, {
+        onConflict: 'specialist_id'
       });
   } catch (error) {
     console.error('Error updating specialist status from calendar:', error);
