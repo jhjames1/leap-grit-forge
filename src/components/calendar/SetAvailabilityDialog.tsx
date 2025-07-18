@@ -1,10 +1,11 @@
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useSpecialistCalendar } from '@/hooks/useSpecialistCalendar';
 
 interface SetAvailabilityDialogProps {
@@ -70,13 +71,13 @@ export function SetAvailabilityDialog({ specialistId, appointmentTypes, onSucces
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" variant="outline">
-          <Users className="w-4 h-4 mr-2" />
-          Set Availability
+          <Settings className="w-4 h-4 mr-2" />
+          Set Weekly Hours
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Set Availability</DialogTitle>
+          <DialogTitle>Set Weekly Hours</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

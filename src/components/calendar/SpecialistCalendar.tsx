@@ -378,20 +378,16 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
 
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <SetAvailabilityDialog 
-                        specialistId={specialistId}
-                        appointmentTypes={appointmentTypes}
-                        onSuccess={() => {
-                          console.log('🗓️ Availability set successfully, refreshing events');
-                          fetchEvents();
-                        }}
-                        trigger={
-                          <Button size="sm" variant="outline">
-                            <Settings className="w-4 h-4 mr-2" />
-                            Set Weekly Hours
-                          </Button>
-                        }
-                      />
+                      <div>
+                        <SetAvailabilityDialog 
+                          specialistId={specialistId}
+                          appointmentTypes={appointmentTypes}
+                          onSuccess={() => {
+                            console.log('🗓️ Availability set successfully, refreshing events');
+                            fetchEvents();
+                          }}
+                        />
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Define your regular working hours and availability</p>
@@ -400,19 +396,15 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
 
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <BlockTimeDialog 
-                        specialistId={specialistId}
-                        onSuccess={() => {
-                          console.log('🗓️ Time blocked successfully, refreshing events');
-                          fetchEvents();
-                        }}
-                        trigger={
-                          <Button size="sm" variant="outline">
-                            <Ban className="w-4 h-4 mr-2" />
-                            Block Specific Time
-                          </Button>
-                        }
-                      />
+                      <div>
+                        <BlockTimeDialog 
+                          specialistId={specialistId}
+                          onSuccess={() => {
+                            console.log('🗓️ Time blocked successfully, refreshing events');
+                            fetchEvents();
+                          }}
+                        />
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Block out meetings, appointments, or time off</p>

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin } from 'lucide-react';
+import { Ban } from 'lucide-react';
 import { useSpecialistCalendar } from '@/hooks/useSpecialistCalendar';
 
 interface BlockTimeDialogProps {
@@ -78,13 +79,13 @@ export function BlockTimeDialog({ specialistId, onSuccess }: BlockTimeDialogProp
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" variant="outline">
-          <MapPin className="w-4 h-4 mr-2" />
-          Block Time
+          <Ban className="w-4 h-4 mr-2" />
+          Block Specific Time
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Block Time</DialogTitle>
+          <DialogTitle>Block Specific Time</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
