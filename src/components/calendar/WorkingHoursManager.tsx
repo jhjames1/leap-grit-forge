@@ -120,6 +120,8 @@ const WorkingHoursManager = ({ specialistId }: WorkingHoursManagerProps) => {
   const saveWorkingHours = async () => {
     setLoading(true);
     try {
+      console.log('💾 Saving working hours:', workingHours);
+      
       // First check if settings exist
       const { data: existingSettings } = await supabase
         .from('specialist_calendar_settings')
@@ -138,6 +140,7 @@ const WorkingHoursManager = ({ specialistId }: WorkingHoursManagerProps) => {
           .eq('specialist_id', specialistId);
 
         if (error) throw error;
+        console.log('✅ Working hours updated in database');
       } else {
         // Create new settings with all required fields - triggers will sync to schedules
         const { error } = await supabase
@@ -165,21 +168,25 @@ const WorkingHoursManager = ({ specialistId }: WorkingHoursManagerProps) => {
           });
 
         if (error) throw error;
+        console.log('✅ Working hours created in database');
       }
 
       // Manually call the sync function to ensure schedules are created immediately
       try {
+        console.log('🔄 Manually syncing working hours to schedules...');
         const { error: syncError } = await supabase.rpc('sync_working_hours_to_schedules', {
           p_specialist_id: specialistId,
           p_working_hours: workingHours as any
         });
         
         if (syncError) {
-          console.warn('Manual sync warning:', syncError);
+          console.warn('⚠️ Manual sync warning:', syncError);
           // Don't throw here as the triggers should handle it
+        } else {
+          console.log('✅ Manual sync completed successfully');
         }
       } catch (syncError) {
-        console.warn('Manual sync failed, relying on triggers:', syncError);
+        console.warn('⚠️ Manual sync failed, relying on triggers:', syncError);
       }
 
       toast({
@@ -187,8 +194,15 @@ const WorkingHoursManager = ({ specialistId }: WorkingHoursManagerProps) => {
         description: "Working hours updated and calendar schedules synchronized"
       });
       setHasChanges(false);
+      
+      // Force a small delay to ensure database changes propagate
+      setTimeout(() => {
+        console.log('🔄 Triggering calendar refresh...');
+        window.dispatchEvent(new CustomEvent('calendar-refresh'));
+      }, 500);
+      
     } catch (error) {
-      console.error('Error saving working hours:', error);
+      console.error('❌ Error saving working hours:', error);
       toast({
         title: "Error",
         description: "Failed to save working hours",
@@ -208,15 +222,22 @@ const WorkingHoursManager = ({ specialistId }: WorkingHoursManagerProps) => {
     const sourceHours = workingHours[sourceDay];
     const newHours = { ...workingHours };
     
+    console.log(`📋 Applying ${sourceDay} hours (${sourceHours.start}-${sourceHours.end}) to all days`);
+    
     Object.keys(newHours).forEach(day => {
       newHours[day as keyof WorkingHours] = {
         ...sourceHours,
-        enabled: newHours[day as keyof WorkingHours].enabled
+        enabled: newHours[day as keyof WorkingHours].enabled  // Preserve enabled status
       };
     });
     
     setWorkingHours(newHours);
     setHasChanges(true);
+    
+    toast({
+      title: "Applied to All Days",
+      description: `${sourceDay} hours (${sourceHours.start} - ${sourceHours.end}) applied to all days`
+    });
   };
 
   return (

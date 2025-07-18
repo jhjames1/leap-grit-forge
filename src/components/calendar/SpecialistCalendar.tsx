@@ -263,6 +263,20 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
     fetchEvents();
   }, [fetchSpecialistInfo, fetchAppointmentTypes, fetchEvents]);
 
+  // Listen for custom calendar refresh events
+  useEffect(() => {
+    const handleCalendarRefresh = () => {
+      console.log('🔄 Custom calendar refresh event received');
+      fetchEvents();
+    };
+
+    window.addEventListener('calendar-refresh', handleCalendarRefresh);
+    
+    return () => {
+      window.removeEventListener('calendar-refresh', handleCalendarRefresh);
+    };
+  }, [fetchEvents]);
+
   // Set up real-time subscriptions for calendar updates
   useEffect(() => {
     if (!specialistId) return;

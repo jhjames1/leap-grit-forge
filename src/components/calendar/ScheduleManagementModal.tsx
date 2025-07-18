@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Clock, Calendar, Shield, Repeat } from 'lucide-react';
+import { Clock, Calendar, Shield, Repeat, Settings } from 'lucide-react';
 import WorkingHoursManager from './WorkingHoursManager';
 import BlockTimeManager from './BlockTimeManager';
 import AvailabilityRulesManager from './AvailabilityRulesManager';
 import RecurringPatternsManager from './RecurringPatternsManager';
+import AvailabilitySlotManager from './AvailabilitySlotManager';
 
 interface ScheduleManagementModalProps {
   isOpen: boolean;
@@ -25,10 +26,14 @@ const ScheduleManagementModal = ({ isOpen, onClose, specialistId }: ScheduleMana
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="working-hours" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Working Hours
+            </TabsTrigger>
+            <TabsTrigger value="availability-slots" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Manage Slots
             </TabsTrigger>
             <TabsTrigger value="block-time" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
@@ -46,6 +51,10 @@ const ScheduleManagementModal = ({ isOpen, onClose, specialistId }: ScheduleMana
 
           <TabsContent value="working-hours" className="mt-6">
             <WorkingHoursManager specialistId={specialistId} />
+          </TabsContent>
+
+          <TabsContent value="availability-slots" className="mt-6">
+            <AvailabilitySlotManager specialistId={specialistId} />
           </TabsContent>
 
           <TabsContent value="block-time" className="mt-6">
