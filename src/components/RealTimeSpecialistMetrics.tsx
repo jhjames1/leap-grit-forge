@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSpecialistMetrics } from '@/hooks/useSpecialistMetrics';
 import { Star, Clock, TrendingUp, TrendingDown, RefreshCw, Activity, MessageSquare } from 'lucide-react';
+import { PERFORMANCE_GOALS, getGoalText } from '@/utils/performanceGoals';
 
 interface RealTimeSpecialistMetricsProps {
   specialistId: string;
@@ -44,6 +45,13 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
     return `${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
   };
 
+  // Check if there's meaningful data to display
+  const hasData = metrics && (
+    (metrics.total_sessions || 0) > 0 || 
+    (metrics.total_checkins || 0) > 0 || 
+    (metrics.total_ratings || 0) > 0
+  );
+
   if (loading && !metrics) {
     return (
       <div className="space-y-2">
@@ -56,6 +64,29 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
         <div className="animate-pulse">
           <div className="h-4 bg-muted rounded w-24 mb-2"></div>
           <div className="h-4 bg-muted rounded w-20"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // If no meaningful data, show placeholder message
+  if (!hasData && !loading) {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">Live Performance Metrics</p>
+          <Button
+            onClick={refreshMetrics}
+            size="sm"
+            variant="ghost"
+            className="h-6 w-6 p-0"
+            disabled={loading}
+          >
+            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+        <div className="text-center py-4">
+          <p className="text-sm text-muted-foreground">No performance data available yet</p>
         </div>
       </div>
     );
@@ -103,9 +134,9 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Chat Rate</p>
+                <p className="text-xs text-muted-foreground">Chat Rate (Goal: {getGoalText('CHAT_COMPLETION_RATE')})</p>
                 <Badge 
-                  variant={getMetricBadgeVariant(displayMetrics.chat_completion_rate, 75)}
+                  variant={getMetricBadgeVariant(displayMetrics.chat_completion_rate, PERFORMANCE_GOALS.CHAT_COMPLETION_RATE)}
                   className="text-xs"
                 >
                   {displayMetrics.chat_completion_rate?.toFixed(0) || '0'}%
@@ -113,16 +144,16 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Chat completion rate (Target ≥ 75%)</p>
+              <p>Chat completion rate (Target {getGoalText('CHAT_COMPLETION_RATE')})</p>
             </TooltipContent>
           </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Check-ins</p>
+                <p className="text-xs text-muted-foreground">Check-ins (Goal: {getGoalText('CHECKIN_COMPLETION_RATE')})</p>
                 <Badge 
-                  variant={getMetricBadgeVariant(displayMetrics.checkin_completion_rate, 75)}
+                  variant={getMetricBadgeVariant(displayMetrics.checkin_completion_rate, PERFORMANCE_GOALS.CHECKIN_COMPLETION_RATE)}
                   className="text-xs"
                 >
                   {displayMetrics.checkin_completion_rate?.toFixed(0) || '0'}%
@@ -130,16 +161,16 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Check-in completion rate (Target ≥ 75%)</p>
+              <p>Check-in completion rate (Target {getGoalText('CHECKIN_COMPLETION_RATE')})</p>
             </TooltipContent>
           </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Rating</p>
+                <p className="text-xs text-muted-foreground">Rating (Goal: {getGoalText('AVG_USER_RATING')})</p>
                 <Badge 
-                  variant={getMetricBadgeVariant(displayMetrics.avg_user_rating, 4.5)}
+                  variant={getMetricBadgeVariant(displayMetrics.avg_user_rating, PERFORMANCE_GOALS.AVG_USER_RATING)}
                   className="text-xs flex items-center gap-1"
                 >
                   <Star className="h-3 w-3 fill-current" />
@@ -148,16 +179,16 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Average user rating (Target ≥ 4.5★)</p>
+              <p>Average user rating (Target {getGoalText('AVG_USER_RATING')})</p>
             </TooltipContent>
           </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Response</p>
+                <p className="text-xs text-muted-foreground">Response (Goal: {getGoalText('AVG_RESPONSE_TIME_SECONDS')})</p>
                 <Badge 
-                  variant={getMetricBadgeVariant(displayMetrics.avg_response_time_seconds, 45, true)}
+                  variant={getMetricBadgeVariant(displayMetrics.avg_response_time_seconds, PERFORMANCE_GOALS.AVG_RESPONSE_TIME_SECONDS, true)}
                   className="text-xs flex items-center gap-1"
                 >
                   <Clock className="h-3 w-3" />
@@ -166,7 +197,7 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Average response time (Target ≤ 45s)</p>
+              <p>Average response time (Target {getGoalText('AVG_RESPONSE_TIME_SECONDS')})</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -176,9 +207,9 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Streak Impact</p>
+              <p className="text-xs text-muted-foreground">Streak Impact (Goal: {getGoalText('AVG_STREAK_IMPACT')})</p>
               <Badge 
-                variant={getMetricBadgeVariant(displayMetrics.avg_streak_impact, 1)}
+                variant={getMetricBadgeVariant(displayMetrics.avg_streak_impact, PERFORMANCE_GOALS.AVG_STREAK_IMPACT)}
                 className="text-xs flex items-center gap-1 w-fit"
               >
                 {(displayMetrics.avg_streak_impact || 0) >= 0 ? (
@@ -191,7 +222,7 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
             </div>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Recovery streak impact (Target ≥ +1d)</p>
+            <p>Recovery streak impact (Target {getGoalText('AVG_STREAK_IMPACT')})</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
