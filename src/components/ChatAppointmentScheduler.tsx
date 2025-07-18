@@ -199,8 +199,8 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
         .from('chat_messages')
         .insert({
           session_id: chatSessionId,
-          sender_id: specialistId,
-          sender_type: 'specialist',
+          sender_id: userId, // Fix: Use userId (the person scheduling) instead of specialistId
+          sender_type: 'user', // Fix: Change to 'user' since it's the user sending the message
           message_type: 'system',
           content: `I'd like to schedule a ${title} appointment with you on ${format(selectedDate, 'MMMM d, yyyy')} at ${selectedTime}. Please let me know if this works for you!`,
           metadata: {
