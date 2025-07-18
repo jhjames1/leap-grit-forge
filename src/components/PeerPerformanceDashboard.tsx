@@ -191,16 +191,25 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
       </div>
 
       {/* Consolidated Metrics Card */}
-      {consolidatedMetrics && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Overall Performance Metrics
-              <Badge variant="outline">{consolidatedMetrics.total_specialists} Specialists</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Overall Performance Metrics
+            <Badge variant="outline">
+              {consolidatedMetrics?.total_specialists || 0} Specialists
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!consolidatedMetrics ? (
+            <div className="text-center text-muted-foreground py-8">
+              <p className="text-lg mb-2">No metrics data available</p>
+              <p className="text-sm">
+                Click "Compute Metrics" to generate performance data for {new Date(`${selectedMonth}-01`).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+              </p>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <TooltipProvider>
                 <Tooltip>
@@ -208,7 +217,7 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Chat Completion</p>
                       <div className={`text-2xl font-bold ${getMetricColor(consolidatedMetrics.chat_completion_rate, 75)}`}>
-                        {consolidatedMetrics.chat_completion_rate?.toFixed(1) || '--'}%
+                        {consolidatedMetrics.chat_completion_rate?.toFixed(1) || '0.0'}%
                       </div>
                       <Badge variant={getMetricBadgeVariant(consolidatedMetrics.chat_completion_rate, 75)}>
                         Target ≥ 75%
@@ -225,7 +234,7 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Check-in Completion</p>
                       <div className={`text-2xl font-bold ${getMetricColor(consolidatedMetrics.checkin_completion_rate, 75)}`}>
-                        {consolidatedMetrics.checkin_completion_rate?.toFixed(1) || '--'}%
+                        {consolidatedMetrics.checkin_completion_rate?.toFixed(1) || '0.0'}%
                       </div>
                       <Badge variant={getMetricBadgeVariant(consolidatedMetrics.checkin_completion_rate, 75)}>
                         Target ≥ 75%
@@ -243,7 +252,7 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                       <p className="text-sm font-medium">User Satisfaction</p>
                       <div className={`text-2xl font-bold ${getMetricColor(consolidatedMetrics.avg_user_rating, 4.5)} flex items-center gap-1`}>
                         <Star className="h-5 w-5 fill-current" />
-                        {consolidatedMetrics.avg_user_rating?.toFixed(1) || '--'}
+                        {consolidatedMetrics.avg_user_rating?.toFixed(1) || '0.0'}
                       </div>
                       <Badge variant={getMetricBadgeVariant(consolidatedMetrics.avg_user_rating, 4.5)}>
                         Target ≥ 4.5★
@@ -260,12 +269,12 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Streak Impact</p>
                       <div className={`text-2xl font-bold ${getMetricColor(consolidatedMetrics.avg_streak_impact, 1)} flex items-center gap-1`}>
-                        {consolidatedMetrics.avg_streak_impact >= 0 ? (
+                        {(consolidatedMetrics.avg_streak_impact || 0) >= 0 ? (
                           <TrendingUp className="h-5 w-5" />
                         ) : (
                           <TrendingDown className="h-5 w-5" />
                         )}
-                        {consolidatedMetrics.avg_streak_impact >= 0 ? '+' : ''}{consolidatedMetrics.avg_streak_impact?.toFixed(1) || '--'}d
+                        {(consolidatedMetrics.avg_streak_impact || 0) >= 0 ? '+' : ''}{consolidatedMetrics.avg_streak_impact?.toFixed(1) || '0.0'}d
                       </div>
                       <Badge variant={getMetricBadgeVariant(consolidatedMetrics.avg_streak_impact, 1)}>
                         Target ≥ +1d
@@ -296,9 +305,9 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                 </Tooltip>
               </TooltipProvider>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       {/* Individual Specialist Metrics */}
       <div className="grid grid-cols-1 gap-4">
@@ -306,8 +315,10 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
           <Card>
             <CardContent className="pt-6">
               <div className="text-center text-muted-foreground">
-                No metrics data available for {new Date(`${selectedMonth}-01`).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}. 
-                Click "Compute Metrics" to generate data.
+                <p className="text-lg mb-2">No specialist metrics available</p>
+                <p className="text-sm">
+                  Click "Compute Metrics" to generate performance data for {new Date(`${selectedMonth}-01`).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}.
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -327,7 +338,7 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                         <div className="space-y-2">
                           <p className="text-sm font-medium">Chat Completion</p>
                           <div className={`text-xl font-bold ${getMetricColor(specialist.chat_completion_rate, 75)}`}>
-                            {specialist.chat_completion_rate?.toFixed(1) || '--'}%
+                            {specialist.chat_completion_rate?.toFixed(1) || '0.0'}%
                           </div>
                         </div>
                       </TooltipTrigger>
@@ -341,7 +352,7 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                         <div className="space-y-2">
                           <p className="text-sm font-medium">Check-in Completion</p>
                           <div className={`text-xl font-bold ${getMetricColor(specialist.checkin_completion_rate, 75)}`}>
-                            {specialist.checkin_completion_rate?.toFixed(1) || '--'}%
+                            {specialist.checkin_completion_rate?.toFixed(1) || '0.0'}%
                           </div>
                         </div>
                       </TooltipTrigger>
@@ -356,7 +367,7 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                           <p className="text-sm font-medium">User Rating</p>
                           <div className={`text-xl font-bold ${getMetricColor(specialist.avg_user_rating, 4.5)} flex items-center gap-1`}>
                             <Star className="h-4 w-4 fill-current" />
-                            {specialist.avg_user_rating?.toFixed(1) || '--'}
+                            {specialist.avg_user_rating?.toFixed(1) || '0.0'}
                           </div>
                         </div>
                       </TooltipTrigger>
@@ -370,12 +381,12 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                         <div className="space-y-2">
                           <p className="text-sm font-medium">Streak Impact</p>
                           <div className={`text-xl font-bold ${getMetricColor(specialist.avg_streak_impact, 1)} flex items-center gap-1`}>
-                            {specialist.avg_streak_impact && specialist.avg_streak_impact >= 0 ? (
+                            {(specialist.avg_streak_impact || 0) >= 0 ? (
                               <TrendingUp className="h-4 w-4" />
                             ) : (
                               <TrendingDown className="h-4 w-4" />
                             )}
-                            {specialist.avg_streak_impact && specialist.avg_streak_impact >= 0 ? '+' : ''}{specialist.avg_streak_impact?.toFixed(1) || '--'}d
+                            {(specialist.avg_streak_impact || 0) >= 0 ? '+' : ''}{specialist.avg_streak_impact?.toFixed(1) || '0.0'}d
                           </div>
                         </div>
                       </TooltipTrigger>
@@ -390,7 +401,7 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                           <p className="text-sm font-medium">Response Time</p>
                           <div className={`text-xl font-bold ${getMetricColor(specialist.avg_response_time_seconds, 45, true)} flex items-center gap-1`}>
                             <Clock className="h-4 w-4" />
-                            {formatResponseTime(specialist.avg_response_time_seconds)}
+                            {formatResponseTime(specialist.avg_response_time_seconds) || '0s'}
                           </div>
                         </div>
                       </TooltipTrigger>
