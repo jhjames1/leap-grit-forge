@@ -270,7 +270,7 @@ const PeerSpecialistDashboard = () => {
   };
 
   // Get current effective status with proper precedence
-  const getEffectiveStatus = (): 'online' | 'away' | 'offline' => {
+  const getEffectiveStatus = (): 'online' | 'away' | 'offline' | 'busy' => {
     // Manual status takes precedence
     if (manualStatus === 'away') return 'away';
     
