@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Clock, MessageCircle, User, Users, Settings, LogOut } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 import PeerChat from '@/components/PeerChat';
 import RecurringAppointmentScheduler from '@/components/RecurringAppointmentScheduler';
 import BulkSchedulingTools from '@/components/calendar/BulkSchedulingTools';
@@ -35,7 +35,6 @@ interface SpecialistData {
 const PeerSpecialistDashboard = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [activeSessions, setActiveSessions] = useState<ChatSession[]>([]);
   const [specialistData, setSpecialistData] = useState<SpecialistData | null>(null);
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
@@ -43,14 +42,14 @@ const PeerSpecialistDashboard = () => {
 
   useEffect(() => {
     if (!user) {
-      console.log('User not found, redirecting to login');
-      navigate('/login');
+      console.log('User not found in PeerSpecialistDashboard');
+      // Don't redirect here, let the parent component handle authentication
       return;
     }
 
     fetchSpecialistData();
     fetchActiveSessions();
-  }, [user, navigate]);
+  }, [user]);
 
   const fetchSpecialistData = async () => {
     try {
