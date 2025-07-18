@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import PeerChat from '@/components/PeerChat';
 import RecurringAppointmentScheduler from '@/components/RecurringAppointmentScheduler';
 import BulkSchedulingTools from '@/components/calendar/BulkSchedulingTools';
-import SpecialistAvailabilityCalendar from '@/components/calendar/SpecialistAvailabilityCalendar';
+import SpecialistCalendar from '@/components/calendar/SpecialistCalendar';
 
 interface ChatSession {
   id: string;
@@ -24,7 +24,8 @@ interface ChatSession {
 interface SpecialistData {
   id: string;
   user_id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   bio: string;
   avatar_url: string;
   is_active: boolean;
@@ -68,7 +69,7 @@ const PeerSpecialistDashboard = () => {
         });
       }
 
-      setSpecialistData(data);
+      setSpecialistData(data as SpecialistData);
     } catch (error) {
       console.error('Error fetching specialist data:', error);
       toast({
@@ -96,7 +97,7 @@ const PeerSpecialistDashboard = () => {
         });
       }
 
-      setActiveSessions(data || []);
+      setActiveSessions((data || []) as ChatSession[]);
     } catch (error) {
       console.error('Error fetching active sessions:', error);
       toast({
@@ -176,17 +177,17 @@ const PeerSpecialistDashboard = () => {
         <div className="p-4">
           <h2 className="font-bold text-lg">Peer Specialist Portal</h2>
           <p className="text-sm text-muted-foreground">
-            Welcome, {specialistData?.name || 'Specialist'}
+            Welcome, {specialistData ? `${specialistData.first_name} ${specialistData.last_name}` : 'Specialist'}
           </p>
         </div>
 
         <div className="flex-1 p-4">
           <nav className="grid gap-2">
-            <Button variant="ghost" className="justify-start" onClick={() => setSelectedSession(null)}>
+            <Button variant="ghost" className="justify-start" onClick={() => { setSelectedSession(null); setShowCalendar(false); }}>
               <Users className="w-4 h-4 mr-2" />
               Active Sessions
             </Button>
-            <Button variant="ghost" className="justify-start" onClick={() => setShowCalendar(true)}>
+            <Button variant="ghost" className="justify-start" onClick={() => { setSelectedSession(null); setShowCalendar(true); }}>
               <Calendar className="w-4 h-4 mr-2" />
               Availability Calendar
             </Button>
@@ -210,19 +211,19 @@ const PeerSpecialistDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>
-              {selectedSession ? 'Active Chat Session' : 'Active Sessions'}
+              {selectedSession ? 'Active Chat Session' : showCalendar ? 'Availability Calendar' : 'Active Sessions'}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {selectedSession ? (
               <PeerChat
                 specialistId={specialistData?.id || ''}
-                specialistName={specialistData?.name || 'Specialist'}
+                specialistName={specialistData ? `${specialistData.first_name} ${specialistData.last_name}` : 'Specialist'}
                 onBack={() => setSelectedSession(null)}
                 onSessionEnded={handleSessionEnded}
               />
             ) : showCalendar ? (
-              <SpecialistAvailabilityCalendar specialistId={specialistData?.id || ''} />
+              <SpecialistCalendar specialistId={specialistData?.id || ''} />
             ) : (
               renderActiveSessions()
             )}

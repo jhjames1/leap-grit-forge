@@ -145,7 +145,7 @@ const Index = () => {
       case 'toolbox':
         return <Toolbox onNavigate={handleNavigation} />;
       case 'chat':
-        return <PeerChat onBack={handleBackToHome} />;
+        return <PeerChat specialistId="" specialistName="Specialist" onBack={handleBackToHome} />;
       case 'profile':
         return <UserProfile onNavigate={handleNavigation} />;
       case 'about':

@@ -15,9 +15,10 @@ interface PeerChatProps {
   specialistId: string;
   specialistName: string;
   onBack: () => void;
+  onSessionEnded?: () => void;
 }
 
-const PeerChat: React.FC<PeerChatProps> = ({ specialistId, specialistName, onBack }) => {
+const PeerChat: React.FC<PeerChatProps> = ({ specialistId, specialistName, onBack, onSessionEnded }) => {
   const { user } = useAuth();
   const { 
     session, 
@@ -88,6 +89,7 @@ const PeerChat: React.FC<PeerChatProps> = ({ specialistId, specialistName, onBac
         title: "Session Ended",
         description: "Chat session has been closed"
       });
+      onSessionEnded?.();
     }
   };
 
