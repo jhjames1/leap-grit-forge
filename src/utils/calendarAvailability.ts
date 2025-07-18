@@ -1,17 +1,11 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { addMinutes, format, startOfDay, endOfDay } from 'date-fns';
 
 export interface CalendarAvailabilityResult {
   isAvailable: boolean;
   status: 'online' | 'busy' | 'offline';
   reason?: string;
   nextAvailable?: Date;
-  currentAppointment?: {
-    id: string;
-    title: string;
-    end_time: Date;
-  };
 }
 
 interface WorkingHours {
@@ -33,16 +27,12 @@ export const calculateRealTimeAvailability = async (
     // Get calendar settings
     const { data: settings } = await supabase
       .from('specialist_calendar_settings')
-      .select('*')
+      .select('working_hours')
       .eq('specialist_id', specialistId)
       .single();
 
     if (!settings?.working_hours) {
-      return { 
-        isAvailable: false, 
-        status: 'offline', 
-        reason: 'No working hours configured' 
-      };
+      return { isAvailable: false, status: 'offline', reason: 'No working hours configured' };
     }
 
     const workingHours = settings.working_hours as WorkingHours;
@@ -50,28 +40,18 @@ export const calculateRealTimeAvailability = async (
 
     // Check if today has working hours and if they're enabled
     if (!todayHours || todayHours.enabled === false) {
-      const nextAvailable = await getNextWorkingDay(workingHours, now);
-      return { 
-        isAvailable: false, 
-        status: 'offline', 
-        reason: 'Not scheduled to work today',
-        nextAvailable
-      };
+      return { isAvailable: false, status: 'offline', reason: 'Not scheduled to work today' };
     }
 
     // Check if within working hours
     const isWithinWorkingHours = currentTime >= todayHours.start && currentTime <= todayHours.end;
     
     if (!isWithinWorkingHours) {
-      const nextAvailable = currentTime < todayHours.start 
-        ? getTodayStartTime(now, todayHours.start)
-        : await getNextWorkingDay(workingHours, now);
-        
       return { 
         isAvailable: false, 
         status: 'offline', 
-        reason: `Outside working hours (${todayHours.start} - ${todayHours.end})`,
-        nextAvailable
+        reason: 'Outside working hours',
+        nextAvailable: getNextAvailableTime(workingHours, now)
       };
     }
 
@@ -85,20 +65,11 @@ export const calculateRealTimeAvailability = async (
       .gte('scheduled_end', now.toISOString());
 
     if (activeAppointments && activeAppointments.length > 0) {
-      const appointment = activeAppointments[0];
-      const endTime = new Date(appointment.scheduled_end);
-      const bufferedEndTime = addMinutes(endTime, settings.buffer_time_minutes || 15);
-      
       return { 
         isAvailable: false, 
         status: 'busy', 
-        reason: `In appointment until ${format(endTime, 'h:mm a')}`,
-        nextAvailable: bufferedEndTime,
-        currentAppointment: {
-          id: appointment.id,
-          title: `Appointment (${appointment.meeting_type})`,
-          end_time: endTime
-        }
+        reason: 'In appointment',
+        nextAvailable: new Date(activeAppointments[0].scheduled_end)
       };
     }
 
@@ -113,14 +84,11 @@ export const calculateRealTimeAvailability = async (
       .gte('end_time', now.toISOString());
 
     if (blockedTime && blockedTime.length > 0) {
-      const block = blockedTime[0];
-      const endTime = new Date(block.end_time);
-      
       return { 
         isAvailable: false, 
         status: 'busy', 
-        reason: block.reason || 'Blocked time',
-        nextAvailable: endTime
+        reason: blockedTime[0].reason || 'Blocked time',
+        nextAvailable: new Date(blockedTime[0].end_time)
       };
     }
 
@@ -135,39 +103,13 @@ export const calculateRealTimeAvailability = async (
     if (recurringPatterns) {
       for (const pattern of recurringPatterns) {
         if (isCurrentlyInRecurringPattern(pattern, now)) {
-          const patternEndTime = getRecurringPatternEndTime(pattern, now);
-          
           return { 
             isAvailable: false, 
             status: 'busy', 
-            reason: pattern.reason || 'Recurring blocked time',
-            nextAvailable: patternEndTime
+            reason: pattern.reason || 'Recurring blocked time'
           };
         }
       }
-    }
-
-    // Check upcoming appointments within buffer time
-    const bufferEndTime = addMinutes(now, settings.buffer_time_minutes || 15);
-    const { data: upcomingAppointments } = await supabase
-      .from('specialist_appointments')
-      .select('*')
-      .eq('specialist_id', specialistId)
-      .in('status', ['confirmed', 'scheduled'])
-      .gte('scheduled_start', now.toISOString())
-      .lte('scheduled_start', bufferEndTime.toISOString())
-      .order('scheduled_start', { ascending: true });
-
-    if (upcomingAppointments && upcomingAppointments.length > 0) {
-      const nextAppointment = upcomingAppointments[0];
-      const startTime = new Date(nextAppointment.scheduled_start);
-      
-      return {
-        isAvailable: false,
-        status: 'busy',
-        reason: `Next appointment in ${Math.ceil((startTime.getTime() - now.getTime()) / 60000)} minutes`,
-        nextAvailable: addMinutes(new Date(nextAppointment.scheduled_end), settings.buffer_time_minutes || 15)
-      };
     }
 
     // If all checks pass, specialist is available
@@ -175,11 +117,7 @@ export const calculateRealTimeAvailability = async (
 
   } catch (error) {
     console.error('Error calculating availability:', error);
-    return { 
-      isAvailable: false, 
-      status: 'offline', 
-      reason: 'Error checking availability' 
-    };
+    return { isAvailable: false, status: 'offline', reason: 'Error checking availability' };
   }
 };
 
@@ -201,21 +139,7 @@ const isCurrentlyInRecurringPattern = (pattern: any, now: Date): boolean => {
   return currentTime >= patternStart && currentTime <= patternEnd;
 };
 
-const getRecurringPatternEndTime = (pattern: any, now: Date): Date => {
-  const patternEndTime = new Date(pattern.end_time);
-  const endTime = new Date(now);
-  endTime.setHours(patternEndTime.getHours(), patternEndTime.getMinutes(), 0, 0);
-  return endTime;
-};
-
-const getTodayStartTime = (now: Date, startTime: string): Date => {
-  const [hours, minutes] = startTime.split(':').map(Number);
-  const todayStart = new Date(now);
-  todayStart.setHours(hours, minutes, 0, 0);
-  return todayStart;
-};
-
-const getNextWorkingDay = async (workingHours: WorkingHours, currentTime: Date): Promise<Date | undefined> => {
+const getNextAvailableTime = (workingHours: WorkingHours, currentTime: Date): Date | undefined => {
   const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const currentDay = currentTime.getDay();
   
@@ -255,8 +179,7 @@ export const updateSpecialistStatusFromCalendar = async (specialistId: string): 
             isAvailable: availability.isAvailable,
             status: availability.status,
             reason: availability.reason || null,
-            nextAvailable: availability.nextAvailable?.toISOString() || null,
-            currentAppointment: availability.currentAppointment || null
+            nextAvailable: availability.nextAvailable?.toISOString() || null
           },
           timestamp: Date.now()
         }
