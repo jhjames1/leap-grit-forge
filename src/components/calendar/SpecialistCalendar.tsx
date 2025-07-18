@@ -1,6 +1,7 @@
+
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Calendar, dateFnsLocalizer, Views, View } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay, addHours, isSameDay, startOfDay, endOfDay } from 'date-fns';
+import { format, parse, startOfWeek, getDay, addHours, isSameDay, startOfDay, endOfDay, addDays, addWeeks } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -34,11 +35,13 @@ interface CalendarEvent {
   start: Date;
   end: Date;
   resource: {
-    type: 'availability' | 'appointment' | 'exception';
+    type: 'availability' | 'appointment' | 'exception' | 'recurring_pattern';
     status?: string;
     appointmentType?: string;
     userId?: string;
     color?: string;
+    isRecurring?: boolean;
+    patternId?: string;
   };
 }
 
@@ -65,6 +68,54 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [specialistName, setSpecialistName] = useState<string>('');
+
+  // Helper function to expand recurring patterns into individual events
+  const expandRecurringPattern = useCallback((pattern: any, startDate: Date, endDate: Date): CalendarEvent[] => {
+    const events: CalendarEvent[] = [];
+    const { recurrence_pattern, start_time, end_time, reason, exception_type, id } = pattern;
+    
+    if (!recurrence_pattern?.days_of_week) return events;
+
+    const patternStartTime = new Date(`2000-01-01T${new Date(start_time).toTimeString().slice(0, 8)}`);
+    const patternEndTime = new Date(`2000-01-01T${new Date(end_time).toTimeString().slice(0, 8)}`);
+    
+    // Generate events for each occurrence within the date range
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const dayOfWeek = currentDate.getDay();
+      
+      if (recurrence_pattern.days_of_week.includes(dayOfWeek)) {
+        const eventStart = new Date(currentDate);
+        eventStart.setHours(patternStartTime.getHours(), patternStartTime.getMinutes(), 0, 0);
+        
+        const eventEnd = new Date(currentDate);
+        eventEnd.setHours(patternEndTime.getHours(), patternEndTime.getMinutes(), 0, 0);
+
+        // Determine event title and color based on exception type
+        const isAvailable = exception_type === 'available';
+        const title = isAvailable 
+          ? `Recurring Available - ${reason || 'Available time'}`
+          : `Recurring Block - ${reason || 'Blocked time'}`;
+        
+        events.push({
+          id: `recurring-${id}-${currentDate.toISOString().split('T')[0]}`,
+          title,
+          start: eventStart,
+          end: eventEnd,
+          resource: {
+            type: 'recurring_pattern',
+            color: isAvailable ? '#22c55e' : '#f97316', // Green for available, orange for blocked
+            isRecurring: true,
+            patternId: id
+          }
+        });
+      }
+      
+      currentDate = addDays(currentDate, 1);
+    }
+    
+    return events;
+  }, []);
 
   // Fetch specialist information
   const fetchSpecialistInfo = useCallback(async () => {
@@ -112,7 +163,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
     }
   }, [toast]);
 
-  // Fetch calendar events (schedules, appointments, exceptions)
+  // Fetch calendar events (schedules, appointments, exceptions, and recurring patterns)
   const fetchEvents = useCallback(async () => {
     console.log('🗓️ SpecialistCalendar - fetchEvents called with user:', user, 'specialistId:', specialistId);
     if (!user || !specialistId) return;
@@ -142,7 +193,6 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
 
       // Convert schedules to recurring events
       if (schedules) {
-
         schedules.forEach(schedule => {
           const startTime = new Date(`2000-01-01T${schedule.start_time}`);
           const endTime = new Date(`2000-01-01T${schedule.end_time}`);
@@ -206,21 +256,21 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
         });
       }
 
-      // Fetch exceptions (blocked time)
+      // Fetch one-time exceptions (blocked time)
       const { data: exceptions, error: exceptionsError } = await supabase
         .from('specialist_availability_exceptions')
         .select('*')
         .eq('specialist_id', specialistId)
+        .eq('is_recurring', false)
         .gte('start_time', new Date().toISOString())
         .lte('start_time', endDate.toISOString());
 
       if (exceptionsError) throw exceptionsError;
-      console.log('🗓️ SpecialistCalendar - Exceptions fetched:', exceptions);
+      console.log('🗓️ SpecialistCalendar - One-time exceptions fetched:', exceptions);
 
-      // Convert exceptions to events with enhanced user detection
+      // Convert one-time exceptions to events
       if (exceptions) {
         exceptions.forEach(exception => {
-          // Check if this is a user-related block by looking for user keywords in reason
           const hasUser = exception.reason && 
             (exception.reason.toLowerCase().includes('user') || 
              exception.reason.toLowerCase().includes('client') || 
@@ -241,6 +291,24 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
         });
       }
 
+      // Fetch recurring patterns
+      const { data: recurringPatterns, error: recurringError } = await supabase
+        .from('specialist_availability_exceptions')
+        .select('*')
+        .eq('specialist_id', specialistId)
+        .eq('is_recurring', true);
+
+      if (recurringError) throw recurringError;
+      console.log('🗓️ SpecialistCalendar - Recurring patterns fetched:', recurringPatterns);
+
+      // Expand recurring patterns into individual events
+      if (recurringPatterns) {
+        recurringPatterns.forEach(pattern => {
+          const recurringEvents = expandRecurringPattern(pattern, today, endDate);
+          events.push(...recurringEvents);
+        });
+      }
+
       console.log('🗓️ SpecialistCalendar - All events processed:', events);
       setEvents(events);
     } catch (error) {
@@ -253,7 +321,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
     } finally {
       setLoading(false);
     }
-  }, [user, specialistId, toast]);
+  }, [user, specialistId, toast, expandRecurringPattern]);
 
   // Initialize data
   useEffect(() => {
@@ -394,6 +462,17 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
             opacity: 0.8
           }
         };
+      case 'recurring_pattern':
+        // Recurring patterns - with striped pattern effect
+        return {
+          style: {
+            ...baseStyle,
+            backgroundColor: event.resource.color || '#f97316',
+            border: `2px dotted ${event.resource.color || '#f97316'}`,
+            opacity: 0.85,
+            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.2) 3px, rgba(255,255,255,0.2) 6px)'
+          }
+        };
       default:
         return { 
           style: {
@@ -480,6 +559,10 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
                 <Badge variant="outline" className="bg-red-100 text-red-800">
                   <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
                   Personal Block
+                </Badge>
+                <Badge variant="outline" className="bg-orange-100 text-orange-800">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full mr-2"></div>
+                  Recurring Patterns
                 </Badge>
                 <Badge variant="outline" className="bg-purple-100 text-purple-800">
                   <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
