@@ -687,26 +687,6 @@ const PeerSpecialistManagement = () => {
         </Card>
       </div>
 
-      {/* New Workflow Instructions */}
-      <Card className="bg-blue-50 p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
-        <div className="flex items-start space-x-3">
-          <div className="bg-primary p-3 rounded-sm">
-            <Mail className="text-primary-foreground" size={20} />
-          </div>
-          <div>
-            <h3 className="text-black font-fjalla font-bold mb-2 tracking-wide text-lg">NEW ADMIN-CONTROLLED SPECIALIST ONBOARDING</h3>
-            <p className="text-black text-sm font-source">
-              1. Admin creates specialist account and sends invitation email with temporary password
-              <br />
-              2. Specialist receives email with login credentials and verification link
-              <br />
-              3. Specialist clicks verification link to activate account and access the portal
-              <br />
-              4. Specialist must change password on first login for security
-            </p>
-          </div>
-        </div>
-      </Card>
 
       {/* Add Specialist Section */}
       <div className="flex items-center justify-between">
@@ -740,8 +720,11 @@ const PeerSpecialistManagement = () => {
               <h4 className="font-fjalla font-bold text-primary text-lg tracking-wide mb-2">
                 NEW ADMIN-CONTROLLED SPECIALIST ONBOARDING
               </h4>
+              <p className="text-sm text-muted-foreground mb-1">
+                1. Creates a peer support specialist account. An invitation email with temporary password will be sent.
+              </p>
               <p className="text-sm text-muted-foreground">
-                This system provides full administrative control over specialist invitations and onboarding process.
+                2. The invited Peer Support Specialist clicks email verification link to activate account and access the portal.
               </p>
             </Card>
             
