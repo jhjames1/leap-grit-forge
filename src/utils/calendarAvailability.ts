@@ -256,7 +256,10 @@ export const updateSpecialistStatusFromCalendar = async (specialistId: string): 
             status: availability.status,
             reason: availability.reason || null,
             nextAvailable: availability.nextAvailable?.toISOString() || null,
-            currentAppointment: availability.currentAppointment || null
+            currentAppointment: availability.currentAppointment ? {
+              ...availability.currentAppointment,
+              end_time: availability.currentAppointment.end_time.toISOString()
+            } : null
           },
           timestamp: Date.now()
         }

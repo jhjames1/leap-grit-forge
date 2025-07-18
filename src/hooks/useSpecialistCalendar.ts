@@ -341,7 +341,7 @@ export function useSpecialistCalendar({ specialistId }: UseSpecialistCalendarPro
     } finally {
       setLoading(false);
     }
-  }, [specialistId, settings, getWorkingHours]);
+  }, [specialistId, settings]);
 
   // Create availability block
   const createAvailabilityBlock = useCallback(async (

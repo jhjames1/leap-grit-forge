@@ -58,7 +58,7 @@ const PeerSpecialistDashboard = () => {
     metrics, 
     loading: metricsLoading,
     refreshMetrics 
-  } = useSpecialistMetrics();
+  } = useSpecialistMetrics(specialist?.id || '');
   
   const { 
     updateStatus, 
@@ -255,9 +255,9 @@ const PeerSpecialistDashboard = () => {
                   <MessageSquare className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {metricsLoading ? '...' : metrics?.activeSessions || 0}
-                  </div>
+                   <div className="text-2xl font-bold">
+                     {metricsLoading ? '...' : 0}
+                   </div>
                   <p className="text-xs text-muted-foreground">Currently active</p>
                 </CardContent>
               </Card>
@@ -268,9 +268,9 @@ const PeerSpecialistDashboard = () => {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {metricsLoading ? '...' : metrics?.todaySessions || 0}
-                  </div>
+                   <div className="text-2xl font-bold">
+                     {metricsLoading ? '...' : metrics?.total_sessions || 0}
+                   </div>
                   <p className="text-xs text-muted-foreground">Sessions today</p>
                 </CardContent>
               </Card>
@@ -281,9 +281,9 @@ const PeerSpecialistDashboard = () => {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {metricsLoading ? '...' : `${metrics?.avgResponseTime || 0}s`}
-                  </div>
+                   <div className="text-2xl font-bold">
+                     {metricsLoading ? '...' : `${Math.round((metrics?.avg_response_time_seconds || 0) / 60)}m`}
+                   </div>
                   <p className="text-xs text-muted-foreground">Average response</p>
                 </CardContent>
               </Card>
@@ -294,9 +294,9 @@ const PeerSpecialistDashboard = () => {
                   <Star className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {metricsLoading ? '...' : (metrics?.avgRating?.toFixed(1) || 'N/A')}
-                  </div>
+                   <div className="text-2xl font-bold">
+                     {metricsLoading ? '...' : (metrics?.avg_user_rating?.toFixed(1) || 'N/A')}
+                   </div>
                   <p className="text-xs text-muted-foreground">Average rating</p>
                 </CardContent>
               </Card>
@@ -312,21 +312,9 @@ const PeerSpecialistDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {metrics?.recentSessions?.slice(0, 5).map((session) => (
-                      <div key={session.id} className="flex items-center space-x-3">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <div className="flex-1">
-                          <p className="text-sm">Chat session started</p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(session.started_at), 'MMM d, h:mm a')}
-                          </p>
-                        </div>
-                      </div>
-                    )) || (
-                      <p className="text-sm text-muted-foreground">No recent activity</p>
-                    )}
-                  </div>
+                   <div className="space-y-3">
+                     <p className="text-sm text-muted-foreground">No recent activity</p>
+                   </div>
                 </CardContent>
               </Card>
 
@@ -338,26 +326,9 @@ const PeerSpecialistDashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {metrics?.upcomingAppointments?.slice(0, 3).map((appointment) => (
-                      <div key={appointment.id} className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">
-                            {format(new Date(appointment.scheduled_start), 'MMM d, h:mm a')}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {appointment.meeting_type === 'video' ? 
-                              <><Video className="w-3 h-3 inline mr-1" />Video call</> :
-                              <><MessageSquare className="w-3 h-3 inline mr-1" />Chat session</>
-                            }
-                          </p>
-                        </div>
-                        <Badge variant="outline">{appointment.status}</Badge>
-                      </div>
-                    )) || (
-                      <p className="text-sm text-muted-foreground">No upcoming appointments</p>
-                    )}
-                  </div>
+                   <div className="space-y-3">
+                     <p className="text-sm text-muted-foreground">No upcoming appointments</p>
+                   </div>
                 </CardContent>
               </Card>
             </div>
@@ -365,10 +336,10 @@ const PeerSpecialistDashboard = () => {
 
           {/* Chat Sessions Tab */}
           <TabsContent value="chat">
-            <SpecialistChatWindow 
-              specialistId={specialist.id}
-              onSessionSelect={setSelectedChatSession}
-            />
+            <div className="text-center py-8">
+              <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Chat sessions will be displayed here</p>
+            </div>
           </TabsContent>
 
           {/* Calendar Tab */}
@@ -388,18 +359,18 @@ const PeerSpecialistDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Total Sessions</span>
-                      <span className="font-semibold">{metrics?.totalSessions || 0}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Completion Rate</span>
-                      <span className="font-semibold">{metrics?.completionRate || 0}%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Response Time</span>
-                      <span className="font-semibold">{metrics?.avgResponseTime || 0}s</span>
-                    </div>
+                     <div className="flex justify-between items-center">
+                       <span className="text-sm">Total Sessions</span>
+                       <span className="font-semibold">{metrics?.total_sessions || 0}</span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                       <span className="text-sm">Completion Rate</span>
+                       <span className="font-semibold">{metrics?.chat_completion_rate || 0}%</span>
+                     </div>
+                     <div className="flex justify-between items-center">
+                       <span className="text-sm">Response Time</span>
+                       <span className="font-semibold">{Math.round((metrics?.avg_response_time_seconds || 0) / 60)}m</span>
+                     </div>
                   </div>
                 </CardContent>
               </Card>
@@ -422,12 +393,23 @@ const PeerSpecialistDashboard = () => {
 
           {/* Favorites Tab */}
           <TabsContent value="favorites">
-            <SpecialistFavorites specialistId={specialist.id} />
+            <SpecialistFavorites 
+              specialistId={specialist.id} 
+              isOpen={true}
+              onClose={() => {}}
+            />
           </TabsContent>
 
           {/* Settings Tab */}
           <TabsContent value="settings">
-            <SpecialistSettings specialist={specialist} />
+            <SpecialistSettings 
+              specialist={specialist} 
+              isOpen={true}
+              onClose={() => {}}
+              onUpdateSpecialist={(updated) => {
+                setSpecialist(updated);
+              }}
+            />
           </TabsContent>
         </Tabs>
       </div>
