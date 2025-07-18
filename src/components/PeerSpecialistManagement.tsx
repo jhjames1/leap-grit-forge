@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSpecialistPresence } from '@/hooks/useSpecialistPresence';
 import SpecialistPerformanceMetrics from './SpecialistPerformanceMetrics';
 import CoachingTips from './CoachingTips';
+import RealTimeSpecialistMetrics from './RealTimeSpecialistMetrics';
 import { 
   UserPlus, 
   Edit, 
@@ -86,7 +87,6 @@ const PeerSpecialistManagement = () => {
   const { specialistStatuses, analytics, loading: presenceLoading, refreshData } = useSpecialistPresence();
   const [specialists, setSpecialists] = useState<PeerSpecialist[]>([]);
   const [removedSpecialists, setRemovedSpecialists] = useState<PeerSpecialist[]>([]);
-  const [specialistMetrics, setSpecialistMetrics] = useState<{[key: string]: SpecialistMetrics}>({});
   const [activeTab, setActiveTab] = useState<'active' | 'removed'>('active');
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -108,7 +108,6 @@ const PeerSpecialistManagement = () => {
     fetchSpecialists();
     fetchRemovedSpecialists();
   }, []);
-
 
   const fetchCoachingTips = async (specialistId: string): Promise<string[]> => {
     try {
@@ -886,7 +885,6 @@ const PeerSpecialistManagement = () => {
                 const status = getSpecialistStatus(specialist.id);
                 const analyticsData = getSpecialistAnalytics(specialist.id);
                 const invitationStatus = getInvitationStatus(specialist);
-                const metrics = specialistMetrics[specialist.id];
                 
                 return (
                   <Card key={specialist.id} className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
@@ -946,6 +944,7 @@ const PeerSpecialistManagement = () => {
                             </div>
                           )}
                           
+                          {/* Current Activity Stats */}
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                             <div className="bg-muted/50 p-3 rounded-sm">
                               <div className="flex items-center space-x-2">
@@ -996,134 +995,10 @@ const PeerSpecialistManagement = () => {
                             </div>
                           </div>
 
-                          {/* Performance Metrics & Coaching Tips */}
-                          {metrics && (
-                            <div className="pt-4 border-t border-muted/30">
-                              <h4 className="text-sm font-medium mb-3">Performance Metrics & Coaching</h4>
-                              
-                              {/* Performance Grid */}
-                              <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
-                                <div className="space-y-1">
-                                  <p className="text-xs font-bold">Chat Completion</p>
-                                  <div className={`text-lg font-bold ${getMetricColor(metrics.chat_completion_rate, 75)}`}>
-                                    {metrics.chat_completion_rate?.toFixed(1) || '0.0'}%
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">Target ≥ 75%</p>
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <p className="text-xs font-bold">Check-in Rate</p>
-                                  <div className={`text-lg font-bold ${getMetricColor(metrics.checkin_completion_rate, 75)}`}>
-                                    {metrics.checkin_completion_rate?.toFixed(1) || '0.0'}%
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">Target ≥ 75%</p>
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <p className="text-xs font-bold">User Rating</p>
-                                  <div className={`text-lg font-bold ${getMetricColor(metrics.avg_user_rating, 4.5)} flex items-center gap-1`}>
-                                    <Star className="h-4 w-4 fill-current" />
-                                    {metrics.avg_user_rating?.toFixed(1) || '0.0'}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">Target ≥ 4.5★</p>
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <p className="text-xs font-bold">Streak Impact</p>
-                                  <div className={`text-lg font-bold ${getMetricColor(metrics.avg_streak_impact, 1)} flex items-center gap-1`}>
-                                    {(metrics.avg_streak_impact || 0) >= 0 ? (
-                                      <TrendingUp className="h-4 w-4" />
-                                    ) : (
-                                      <TrendingDown className="h-4 w-4" />
-                                    )}
-                                    {(metrics.avg_streak_impact || 0) >= 0 ? '+' : ''}{metrics.avg_streak_impact?.toFixed(1) || '0.0'}d
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">Target ≥ +1d</p>
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <p className="text-xs font-bold">Response Time</p>
-                                  <div className={`text-lg font-bold ${getMetricColor(metrics.avg_response_time_seconds, 45, true)} flex items-center gap-1`}>
-                                    <Clock className="h-4 w-4" />
-                                    {formatResponseTime(metrics.avg_response_time_seconds)}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">Target ≤ 45s</p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Live Performance Metrics */}
-                          {metrics && (
-                            <div className="pt-4 border-t border-muted/30">
-                              <h4 className="text-sm font-medium mb-3">Live Performance Metrics</h4>
-                              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-                                <div className="bg-muted/50 p-3 rounded-sm">
-                                  <div className="flex items-center space-x-2">
-                                    <MessageSquare className="text-primary" size={14} />
-                                    <div>
-                                      <div className={`text-sm font-bold ${getMetricColor(metrics.chat_completion_rate, 75)}`}>
-                                        {metrics.chat_completion_rate?.toFixed(1) || '0.0'}%
-                                      </div>
-                                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Chat Rate</div>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="bg-muted/50 p-3 rounded-sm">
-                                  <div className="flex items-center space-x-2">
-                                    <Activity className="text-primary" size={14} />
-                                    <div>
-                                      <div className={`text-sm font-bold ${getMetricColor(metrics.checkin_completion_rate, 75)}`}>
-                                        {metrics.checkin_completion_rate?.toFixed(1) || '0.0'}%
-                                      </div>
-                                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Check-in Rate</div>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="bg-muted/50 p-3 rounded-sm">
-                                  <div className="flex items-center space-x-2">
-                                    <Star className="text-primary" size={14} />
-                                    <div>
-                                      <div className={`text-sm font-bold ${getMetricColor(metrics.avg_user_rating, 4.5)}`}>
-                                        {metrics.avg_user_rating?.toFixed(1) || '0.0'}★
-                                      </div>
-                                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">User Rating</div>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="bg-muted/50 p-3 rounded-sm">
-                                  <div className="flex items-center space-x-2">
-                                    {(metrics.avg_streak_impact || 0) >= 0 ? (
-                                      <TrendingUp className="text-primary" size={14} />
-                                    ) : (
-                                      <TrendingDown className="text-primary" size={14} />
-                                    )}
-                                    <div>
-                                      <div className={`text-sm font-bold ${getMetricColor(metrics.avg_streak_impact, 1)}`}>
-                                        {(metrics.avg_streak_impact || 0) >= 0 ? '+' : ''}{metrics.avg_streak_impact?.toFixed(1) || '0.0'}d
-                                      </div>
-                                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Streak Impact</div>
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="bg-muted/50 p-3 rounded-sm">
-                                  <div className="flex items-center space-x-2">
-                                    <Clock className="text-primary" size={14} />
-                                    <div>
-                                      <div className={`text-sm font-bold ${getMetricColor(metrics.avg_response_time_seconds, 45, true)}`}>
-                                        {formatResponseTime(metrics.avg_response_time_seconds)}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Response Time</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
+                          {/* Replace the old performance metrics section with the new real-time component */}
+                          <div className="pt-4 border-t border-muted/30">
+                            <RealTimeSpecialistMetrics specialistId={specialist.id} />
+                          </div>
 
                           {/* Coaching Tips */}
                           <CoachingTips specialistId={specialist.id} />
