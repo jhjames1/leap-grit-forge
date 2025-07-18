@@ -163,82 +163,84 @@ export const useSpecialistMetrics = (specialistId: string) => {
     // Initial fetch
     fetchLiveMetrics();
 
-    // Set up real-time subscriptions for live updates
+    // Only set up selective real-time subscriptions for meaningful changes
     const chatSessionsChannel = supabase
-      .channel('chat_sessions_changes')
+      .channel(`specialist_${specialistId}_sessions`)
       .on('postgres_changes', 
         { 
-          event: '*', 
+          event: 'UPDATE', 
           schema: 'public', 
           table: 'chat_sessions',
           filter: `specialist_id=eq.${specialistId}`
         }, 
-        () => {
-          console.log('Chat session updated, refreshing metrics...');
-          fetchLiveMetrics();
+        (payload) => {
+          // Only refresh if status changed to 'ended' (completion matters for metrics)
+          if (payload.new.status === 'ended' && payload.old.status !== 'ended') {
+            console.log('Session completed, refreshing metrics...');
+            fetchLiveMetrics();
+          }
         }
       )
       .subscribe();
 
     const checkinsChannel = supabase
-      .channel('peer_checkins_changes')
+      .channel(`specialist_${specialistId}_checkins`)
       .on('postgres_changes', 
         { 
-          event: '*', 
+          event: 'UPDATE', 
           schema: 'public', 
           table: 'peer_checkins',
           filter: `peer_id=eq.${specialistId}`
         }, 
-        () => {
-          console.log('Check-in updated, refreshing metrics...');
-          fetchLiveMetrics();
+        (payload) => {
+          // Only refresh if status changed to 'completed'
+          if (payload.new.status === 'completed' && payload.old.status !== 'completed') {
+            console.log('Check-in completed, refreshing metrics...');
+            fetchLiveMetrics();
+          }
         }
       )
       .subscribe();
 
     const ratingsChannel = supabase
-      .channel('ratings_changes')
+      .channel(`specialist_${specialistId}_ratings`)
       .on('postgres_changes', 
         { 
-          event: '*', 
+          event: 'INSERT', 
           schema: 'public', 
           table: 'peer_session_ratings',
           filter: `peer_id=eq.${specialistId}`
         }, 
         () => {
-          console.log('Rating updated, refreshing metrics...');
+          console.log('New rating received, refreshing metrics...');
           fetchLiveMetrics();
         }
       )
       .subscribe();
 
-    const messagesChannel = supabase
-      .channel('messages_changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'chat_messages'
-        }, 
-        () => {
-          console.log('Message updated, refreshing metrics...');
+    // Check once per hour if it's a new day (metrics should refresh at midnight)
+    const checkForNewDay = () => {
+      if (lastFetched) {
+        const now = new Date();
+        const lastFetchDate = new Date(lastFetched);
+        
+        // If it's a new day since last fetch, refresh metrics
+        if (now.getDate() !== lastFetchDate.getDate() || 
+            now.getMonth() !== lastFetchDate.getMonth() || 
+            now.getFullYear() !== lastFetchDate.getFullYear()) {
+          console.log('New day detected, refreshing metrics...');
           fetchLiveMetrics();
         }
-      )
-      .subscribe();
-
-    // Set up periodic refresh every 60 seconds for near real-time updates
-    const intervalId = setInterval(() => {
-      if (lastFetched && Date.now() - lastFetched.getTime() > 60000) {
-        fetchLiveMetrics();
       }
-    }, 60000);
+    };
+
+    // Check for new day every hour instead of every minute
+    const intervalId = setInterval(checkForNewDay, 60 * 60 * 1000); // 1 hour
 
     return () => {
       supabase.removeChannel(chatSessionsChannel);
       supabase.removeChannel(checkinsChannel);
       supabase.removeChannel(ratingsChannel);
-      supabase.removeChannel(messagesChannel);
       clearInterval(intervalId);
     };
   }, [specialistId, fetchLiveMetrics, lastFetched]);
