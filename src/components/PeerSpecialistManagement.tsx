@@ -734,6 +734,16 @@ const PeerSpecialistManagement = () => {
                 {editingSpecialist ? 'Edit Specialist' : 'Create & Invite New Specialist'}
               </DialogTitle>
             </DialogHeader>
+
+            {/* NEW ADMIN-CONTROLLED SPECIALIST ONBOARDING Card */}
+            <Card className="bg-primary/10 border-primary/30 p-4 mb-4">
+              <h4 className="font-fjalla font-bold text-primary text-lg tracking-wide mb-2">
+                NEW ADMIN-CONTROLLED SPECIALIST ONBOARDING
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                This system provides full administrative control over specialist invitations and onboarding process.
+              </p>
+            </Card>
             
             <form onSubmit={editingSpecialist ? handleEditSpecialist : handleInviteSpecialist} className="space-y-4">
               {!editingSpecialist && (
