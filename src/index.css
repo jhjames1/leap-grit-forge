@@ -30,6 +30,9 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
+    --warning: 0 100% 95%; /* Light red background #FFF5F5 */
+    --warning-foreground: 0 68% 42%; /* Darker red text #DC2626 */
+
     --border: 0 0% 85%; /* Subtle border */
     --input: 0 0% 85%; /* Input border */
     --ring: 51 100% 50%; /* Yellow #FFCE00 */
@@ -62,6 +65,9 @@
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
+
+    --warning: 0 100% 10%; /* Dark red background for dark mode */
+    --warning-foreground: 0 70% 80%; /* Light red text for dark mode */
 
     --border: 0 0% 25%; /* Darker border */
     --input: 0 0% 25%; /* Darker input */

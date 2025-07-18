@@ -235,6 +235,19 @@ const PeerSpecialistDashboard = () => {
   const handleUpdateSpecialist = (updatedSpecialist: any) => {
     setPeerSpecialist(updatedSpecialist);
   };
+
+  // Helper function to check if waiting session has been waiting more than 45 seconds
+  const isWaitingTooLong = (session: ChatSession) => {
+    if (session.status !== 'waiting') return false;
+    const now = new Date();
+    const startTime = new Date(session.started_at);
+    const waitTime = now.getTime() - startTime.getTime();
+    return waitTime > 45000; // 45 seconds in milliseconds
+  };
+
+  // Check if there are more than 2 users waiting
+  const waitingSessions = chatSessions.filter(s => s.status === 'waiting');
+  const hasMultipleWaitingSessions = waitingSessions.length > 2;
   return <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-card border-b border-border p-6">
@@ -299,7 +312,7 @@ const PeerSpecialistDashboard = () => {
             </div>
             <Badge variant="default">{chatSessions.filter(s => s.status === 'active').length}</Badge>
           </Card>
-          <Card className="flex items-center justify-between p-6">
+          <Card className={`flex items-center justify-between p-6 ${hasMultipleWaitingSessions ? 'bg-warning border-warning-foreground/20' : ''}`}>
             <div>
               <h3 className="text-lg font-semibold">Waiting Sessions</h3>
               <p className="text-muted-foreground">Users waiting for a response</p>
@@ -335,7 +348,7 @@ const PeerSpecialistDashboard = () => {
             </div>
 
             <div className="space-y-4">
-              {filterSessions().length > 0 ? filterSessions().map(session => <div key={session.id} className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${selectedChatSession?.id === session.id ? 'border-primary bg-primary/5' : 'border-border'}`} onClick={() => handleChatClick(session)}>
+              {filterSessions().length > 0 ? filterSessions().map(session => <div key={session.id} className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${selectedChatSession?.id === session.id ? 'border-primary bg-primary/5' : 'border-border'} ${isWaitingTooLong(session) ? 'bg-warning border-warning-foreground/20' : ''}`} onClick={() => handleChatClick(session)}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -349,7 +362,7 @@ const PeerSpecialistDashboard = () => {
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Started {format(new Date(session.started_at), 'MMM d, HH:mm')}
+                            Started {format(new Date(session.started_at), 'MMM d, h:mm a')}
                           </p>
                         </div>
                       </div>
