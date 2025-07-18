@@ -1053,6 +1053,78 @@ const PeerSpecialistManagement = () => {
                             </div>
                           )}
 
+                          {/* Live Performance Metrics */}
+                          {metrics && (
+                            <div className="pt-4 border-t border-muted/30">
+                              <h4 className="text-sm font-medium mb-3">Live Performance Metrics</h4>
+                              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                                <div className="bg-muted/50 p-3 rounded-sm">
+                                  <div className="flex items-center space-x-2">
+                                    <MessageSquare className="text-primary" size={14} />
+                                    <div>
+                                      <div className={`text-sm font-bold ${getMetricColor(metrics.chat_completion_rate, 75)}`}>
+                                        {metrics.chat_completion_rate?.toFixed(1) || '0.0'}%
+                                      </div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Chat Rate</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <div className="bg-muted/50 p-3 rounded-sm">
+                                  <div className="flex items-center space-x-2">
+                                    <Activity className="text-primary" size={14} />
+                                    <div>
+                                      <div className={`text-sm font-bold ${getMetricColor(metrics.checkin_completion_rate, 75)}`}>
+                                        {metrics.checkin_completion_rate?.toFixed(1) || '0.0'}%
+                                      </div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Check-in Rate</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <div className="bg-muted/50 p-3 rounded-sm">
+                                  <div className="flex items-center space-x-2">
+                                    <Star className="text-primary" size={14} />
+                                    <div>
+                                      <div className={`text-sm font-bold ${getMetricColor(metrics.avg_user_rating, 4.5)}`}>
+                                        {metrics.avg_user_rating?.toFixed(1) || '0.0'}★
+                                      </div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">User Rating</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <div className="bg-muted/50 p-3 rounded-sm">
+                                  <div className="flex items-center space-x-2">
+                                    {(metrics.avg_streak_impact || 0) >= 0 ? (
+                                      <TrendingUp className="text-primary" size={14} />
+                                    ) : (
+                                      <TrendingDown className="text-primary" size={14} />
+                                    )}
+                                    <div>
+                                      <div className={`text-sm font-bold ${getMetricColor(metrics.avg_streak_impact, 1)}`}>
+                                        {(metrics.avg_streak_impact || 0) >= 0 ? '+' : ''}{metrics.avg_streak_impact?.toFixed(1) || '0.0'}d
+                                      </div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Streak Impact</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <div className="bg-muted/50 p-3 rounded-sm">
+                                  <div className="flex items-center space-x-2">
+                                    <Clock className="text-primary" size={14} />
+                                    <div>
+                                      <div className={`text-sm font-bold ${getMetricColor(metrics.avg_response_time_seconds, 45, true)}`}>
+                                        {formatResponseTime(metrics.avg_response_time_seconds)}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Response Time</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Coaching Tips */}
                           <CoachingTips specialistId={specialist.id} />
                         </div>
