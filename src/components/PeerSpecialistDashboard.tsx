@@ -253,8 +253,8 @@ const PeerSpecialistDashboard = () => {
       <div className="bg-card border-b border-border p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Peer Support Specialist Dashboard</h1>
-            <p className="text-muted-foreground">Manage your chat sessions and support users in their recovery journey.</p>
+            <h1 className="text-2xl font-fjalla font-bold">Peer Support Specialist Dashboard</h1>
+            <p className="text-muted-foreground font-source">Manage your chat sessions and support users in their recovery journey.</p>
           </div>
           <div className="flex items-center space-x-4">
             {peerSpecialist?.status && <div className="flex items-center space-x-3">
@@ -297,32 +297,32 @@ const PeerSpecialistDashboard = () => {
       <div className="max-w-7xl mx-auto p-6">
         {/* Specialist Name */}
         {peerSpecialist && <div className="mb-6">
-            <h2 className="text-xl font-semibold text-foreground">
+            <h2 className="text-xl font-fjalla font-bold text-foreground">
               {peerSpecialist.first_name} {peerSpecialist.last_name}
             </h2>
-            <p className="text-muted-foreground">Peer Support Specialist</p>
+            <p className="text-muted-foreground font-source">Peer Support Specialist</p>
           </div>}
 
         {/* Status Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-lg font-semibold">Active Sessions</h3>
-              <p className="text-muted-foreground">Current live chat sessions</p>
+              <h3 className="text-lg font-fjalla font-bold">Active Sessions</h3>
+              <p className="text-muted-foreground font-source">Current live chat sessions</p>
             </div>
             <Badge variant="default">{chatSessions.filter(s => s.status === 'active').length}</Badge>
           </Card>
           <Card className={`flex items-center justify-between p-6 ${hasMultipleWaitingSessions ? 'bg-warning border-warning-foreground/20' : ''}`}>
             <div>
-              <h3 className="text-lg font-semibold">Waiting Sessions</h3>
-              <p className="text-muted-foreground">Users waiting for a response</p>
+              <h3 className="text-lg font-fjalla font-bold">Waiting Sessions</h3>
+              <p className="text-muted-foreground font-source">Users waiting for a response</p>
             </div>
             <Badge variant="secondary">{chatSessions.filter(s => s.status === 'waiting').length}</Badge>
           </Card>
           <Card className="flex items-center justify-between p-6">
             <div>
-              <h3 className="text-lg font-semibold">Completed Sessions</h3>
-              <p className="text-muted-foreground">Total sessions completed today</p>
+              <h3 className="text-lg font-fjalla font-bold">Completed Sessions</h3>
+              <p className="text-muted-foreground font-source">Total sessions completed today</p>
             </div>
             <Badge variant="outline">{chatSessions.filter(s => s.status === 'ended').length}</Badge>
           </Card>
@@ -333,7 +333,7 @@ const PeerSpecialistDashboard = () => {
           {/* Chat Sessions List */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">Chat Sessions</h2>
+              <h2 className="text-xl font-fjalla font-bold">Chat Sessions</h2>
               <div className="flex gap-2">
                 <Button size="sm" variant={chatFilter === 'all' ? 'default' : 'outline'} onClick={() => setChatFilter('all')}>
                   All ({chatSessions.length})
@@ -356,12 +356,12 @@ const PeerSpecialistDashboard = () => {
                         </div>
                         <div>
                           <div className="flex items-center space-x-2">
-                            <span className="font-medium">Chat Session</span>
+                            <span className="font-fjalla font-bold">Chat Session</span>
                             <Badge variant={session.status === 'active' ? 'default' : session.status === 'waiting' ? 'secondary' : 'outline'}>
                               {session.status}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-muted-foreground font-source">
                             Started {format(new Date(session.started_at), 'MMM d, h:mm a')}
                           </p>
                         </div>
@@ -370,7 +370,7 @@ const PeerSpecialistDashboard = () => {
                     </div>
                   </div>) : <div className="text-center py-8 text-muted-foreground">
                   <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
-                  <p>No {chatFilter !== 'all' ? chatFilter : ''} chat sessions</p>
+                  <p className="font-source">No {chatFilter !== 'all' ? chatFilter : ''} chat sessions</p>
                 </div>}
             </div>
           </Card>
@@ -379,8 +379,8 @@ const PeerSpecialistDashboard = () => {
           <Card className="p-0 overflow-hidden">
             {selectedChatSession ? <SpecialistChatWindow session={selectedChatSession} onClose={handleCloseChatWindow} /> : <div className="p-6 text-center">
                 <MessageCircle size={64} className="mx-auto mb-4 text-muted-foreground/50" />
-                <h3 className="text-lg font-semibold mb-2">Select a Chat Session</h3>
-                <p className="text-muted-foreground">
+                <h3 className="text-lg font-fjalla font-bold mb-2">Select a Chat Session</h3>
+                <p className="text-muted-foreground font-source">
                   Choose a chat session from the list to start helping users with their recovery journey.
                 </p>
               </div>}
@@ -389,9 +389,9 @@ const PeerSpecialistDashboard = () => {
 
         {/* Recent Activity */}
         <div className="mt-6">
-          <h2 className="text-xl font-bold mb-4">Recent Activity</h2>
+          <h2 className="text-xl font-fjalla font-bold mb-4">Recent Activity</h2>
           <Card className="p-6">
-            <p className="text-muted-foreground">No recent activity to display.</p>
+            <p className="text-muted-foreground font-source">No recent activity to display.</p>
           </Card>
         </div>
       </div>
