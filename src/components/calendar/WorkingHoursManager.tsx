@@ -128,7 +128,7 @@ const WorkingHoursManager = ({ specialistId }: WorkingHoursManagerProps) => {
         .maybeSingle();
 
       if (existingSettings) {
-        // Update existing settings
+        // Update existing settings - triggers will automatically sync to schedules
         const { error } = await supabase
           .from('specialist_calendar_settings')
           .update({
@@ -139,7 +139,7 @@ const WorkingHoursManager = ({ specialistId }: WorkingHoursManagerProps) => {
 
         if (error) throw error;
       } else {
-        // Create new settings with all required fields
+        // Create new settings with all required fields - triggers will sync to schedules
         const { error } = await supabase
           .from('specialist_calendar_settings')
           .insert({
@@ -167,9 +167,24 @@ const WorkingHoursManager = ({ specialistId }: WorkingHoursManagerProps) => {
         if (error) throw error;
       }
 
+      // Manually call the sync function to ensure schedules are created immediately
+      try {
+        const { error: syncError } = await supabase.rpc('sync_working_hours_to_schedules', {
+          p_specialist_id: specialistId,
+          p_working_hours: workingHours as any
+        });
+        
+        if (syncError) {
+          console.warn('Manual sync warning:', syncError);
+          // Don't throw here as the triggers should handle it
+        }
+      } catch (syncError) {
+        console.warn('Manual sync failed, relying on triggers:', syncError);
+      }
+
       toast({
         title: "Success",
-        description: "Working hours updated successfully"
+        description: "Working hours updated and calendar schedules synchronized"
       });
       setHasChanges(false);
     } catch (error) {

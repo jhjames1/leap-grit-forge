@@ -155,9 +155,16 @@ const BlockTimeManager = ({ specialistId }: BlockTimeManagerProps) => {
   };
 
   const createQuickBlock = (preset: typeof blockTimePresets[0]) => {
-    const now = new Date();
     const startTime = new Date(selectedDate);
-    startTime.setHours(12, 0, 0, 0); // Default to noon
+    
+    // Set appropriate default times based on the preset
+    if (preset.reason === 'Lunch break') {
+      startTime.setHours(12, 0, 0, 0); // Lunch at noon
+    } else if (preset.reason === 'Team meeting') {
+      startTime.setHours(14, 0, 0, 0); // Meeting at 2 PM
+    } else {
+      startTime.setHours(9, 0, 0, 0); // Personal time at 9 AM
+    }
     
     const endTime = new Date(startTime);
     endTime.setMinutes(endTime.getMinutes() + preset.duration);

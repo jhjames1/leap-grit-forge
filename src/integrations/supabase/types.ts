@@ -1664,6 +1664,10 @@ export type Database = {
         Args: { specialist_id: string }
         Returns: Json
       }
+      sync_working_hours_to_schedules: {
+        Args: { p_specialist_id: string; p_working_hours: Json }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
