@@ -324,35 +324,44 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="space-y-2">
-                          <p className="text-sm font-medium">Chat Completion</p>
+                          <div>
+                            <p className="text-sm font-bold">Chat Completion</p>
+                            <p className="text-xs text-muted-foreground">Chat session completion rate (Target ≥ 75%)</p>
+                          </div>
                           <div className={`text-xl font-bold ${getMetricColor(specialist.chat_completion_rate, 75)}`}>
                             {specialist.chat_completion_rate?.toFixed(1) || '0.0'}%
                           </div>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Target ≥ 75%</p>
+                        <p>Percentage of chat sessions successfully completed</p>
                       </TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="space-y-2">
-                          <p className="text-sm font-medium">Check-in Completion</p>
+                          <div>
+                            <p className="text-sm font-bold">Check-in Completion</p>
+                            <p className="text-xs text-muted-foreground">Scheduled check-in completion rate (Target ≥ 75%)</p>
+                          </div>
                           <div className={`text-xl font-bold ${getMetricColor(specialist.checkin_completion_rate, 75)}`}>
                             {specialist.checkin_completion_rate?.toFixed(1) || '0.0'}%
                           </div>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Target ≥ 75%</p>
+                        <p>Percentage of scheduled check-ins completed on time</p>
                       </TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="space-y-2">
-                          <p className="text-sm font-medium">User Rating</p>
+                          <div>
+                            <p className="text-sm font-bold">User Rating</p>
+                            <p className="text-xs text-muted-foreground">Average user satisfaction rating (Target ≥ 4.5★)</p>
+                          </div>
                           <div className={`text-xl font-bold ${getMetricColor(specialist.avg_user_rating, 4.5)} flex items-center gap-1`}>
                             <Star className="h-4 w-4 fill-current" />
                             {specialist.avg_user_rating?.toFixed(1) || '0.0'}
@@ -360,14 +369,17 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Target ≥ 4.5★</p>
+                        <p>Average rating given by users after sessions</p>
                       </TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="space-y-2">
-                          <p className="text-sm font-medium">Streak Impact</p>
+                          <div>
+                            <p className="text-sm font-bold">Streak Impact</p>
+                            <p className="text-xs text-muted-foreground">Average recovery streak improvement (Target ≥ +1d)</p>
+                          </div>
                           <div className={`text-xl font-bold ${getMetricColor(specialist.avg_streak_impact, 1)} flex items-center gap-1`}>
                             {(specialist.avg_streak_impact || 0) >= 0 ? (
                               <TrendingUp className="h-4 w-4" />
@@ -379,14 +391,17 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Target ≥ +1d</p>
+                        <p>Average days added to users' recovery streaks after sessions</p>
                       </TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="space-y-2">
-                          <p className="text-sm font-medium">Response Time</p>
+                          <div>
+                            <p className="text-sm font-bold">Response Time</p>
+                            <p className="text-xs text-muted-foreground">Average first response time (Target ≤ 45s)</p>
+                          </div>
                           <div className={`text-xl font-bold ${getMetricColor(specialist.avg_response_time_seconds, 45, true)} flex items-center gap-1`}>
                             <Clock className="h-4 w-4" />
                             {formatResponseTime(specialist.avg_response_time_seconds) || '0s'}
@@ -394,7 +409,7 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Target ≤ 45s</p>
+                        <p>Average time to first response in chat sessions</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
