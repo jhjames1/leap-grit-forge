@@ -382,9 +382,9 @@ const PeerSpecialistDashboard = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">
-                  Calendar Status: {calendarAvailability.isAvailable ? 'Available' : 'Not Available'}
-                </span>
+                 <span className="text-sm font-medium">
+                   Current Status: {calendarAvailability.isAvailable ? 'Available' : 'Not Available'}
+                 </span>
                 {calendarAvailability.reason && (
                   <span className="text-sm text-muted-foreground">- {calendarAvailability.reason}</span>
                 )}
