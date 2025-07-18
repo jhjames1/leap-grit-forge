@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, dateFnsLocalizer, Views, View } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import './calendar.css';
 import { format, parse, startOfWeek, getDay, addDays, isSameDay, startOfDay, endOfDay } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -118,7 +119,7 @@ const SpecialistCalendar = ({ specialistId, onBlockTimeChange }: SpecialistCalen
           const dayName = dayNames[currentDate.getDay()];
           const daySettings = workingHours[dayName];
           
-          if (daySettings?.enabled) {
+          if (daySettings?.start && daySettings?.end) {
             const [startHour, startMinute] = daySettings.start.split(':').map(Number);
             const [endHour, endMinute] = daySettings.end.split(':').map(Number);
             
@@ -206,18 +207,20 @@ const SpecialistCalendar = ({ specialistId, onBlockTimeChange }: SpecialistCalen
               <CardTitle className="font-fjalla">Your Schedule</CardTitle>
             </CardHeader>
             <CardContent>
-              <Calendar
-                localizer={localizer}
-                events={events}
-                startAccessor="start"
-                endAccessor="end"
-                style={{ height: 500 }}
-                onView={setView}
-                view={view}
-                date={date}
-                onNavigate={setDate}
-                eventPropGetter={eventStyleGetter}
-              />
+              <div className="calendar-container font-source">
+                <Calendar
+                  localizer={localizer}
+                  events={events}
+                  startAccessor="start"
+                  endAccessor="end"
+                  style={{ height: 500 }}
+                  onView={setView}
+                  view={view}
+                  date={date}
+                  onNavigate={setDate}
+                  eventPropGetter={eventStyleGetter}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
