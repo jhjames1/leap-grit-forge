@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, dateFnsLocalizer, Views, View } from 'react-big-calendar';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
-import './calendar.css';
 import { format, parse, startOfWeek, getDay, addDays, isSameDay, startOfDay, endOfDay } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,7 +49,6 @@ const SpecialistCalendar = ({ specialistId, onBlockTimeChange }: SpecialistCalen
       const start = startOfDay(date);
       const end = endOfDay(addDays(date, 7));
 
-      // Fetch appointments
       const { data: appointments, error: appointmentsError } = await supabase
         .from('specialist_appointments')
         .select('*')
@@ -61,7 +58,6 @@ const SpecialistCalendar = ({ specialistId, onBlockTimeChange }: SpecialistCalen
 
       if (appointmentsError) throw appointmentsError;
 
-      // Fetch blocked time
       const { data: exceptions, error: exceptionsError } = await supabase
         .from('specialist_availability_exceptions')
         .select('*')
@@ -71,18 +67,8 @@ const SpecialistCalendar = ({ specialistId, onBlockTimeChange }: SpecialistCalen
 
       if (exceptionsError) throw exceptionsError;
 
-      // Fetch working hours
-      const { data: settings, error: settingsError } = await supabase
-        .from('specialist_calendar_settings')
-        .select('working_hours')
-        .eq('specialist_id', specialistId)
-        .single();
-
-      if (settingsError) throw settingsError;
-
       const calendarEvents: CalendarEvent[] = [];
 
-      // Add appointments
       if (appointments) {
         appointments.forEach(appointment => {
           calendarEvents.push({
@@ -90,12 +76,10 @@ const SpecialistCalendar = ({ specialistId, onBlockTimeChange }: SpecialistCalen
             title: `Appointment - ${appointment.user_id}`,
             start: new Date(appointment.scheduled_start),
             end: new Date(appointment.scheduled_end),
-            resource: { type: 'appointment' }
           });
         });
       }
 
-      // Add blocked time
       if (exceptions) {
         exceptions.forEach(exception => {
           calendarEvents.push({
@@ -103,41 +87,8 @@ const SpecialistCalendar = ({ specialistId, onBlockTimeChange }: SpecialistCalen
             title: `Blocked Time - ${exception.reason}`,
             start: new Date(exception.start_time),
             end: new Date(exception.end_time),
-            resource: { type: 'blocked' }
           });
         });
-      }
-
-      // Add working hours as background events
-      if (settings?.working_hours) {
-        const workingHours = settings.working_hours;
-        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        
-        // Generate working hour blocks for each day in the current week
-        for (let i = 0; i < 7; i++) {
-          const currentDate = addDays(start, i);
-          const dayName = dayNames[currentDate.getDay()];
-          const daySettings = workingHours[dayName];
-          
-          if (daySettings?.start && daySettings?.end) {
-            const [startHour, startMinute] = daySettings.start.split(':').map(Number);
-            const [endHour, endMinute] = daySettings.end.split(':').map(Number);
-            
-            const workingStart = new Date(currentDate);
-            workingStart.setHours(startHour, startMinute, 0, 0);
-            
-            const workingEnd = new Date(currentDate);
-            workingEnd.setHours(endHour, endMinute, 0, 0);
-            
-            calendarEvents.push({
-              id: `working-${dayName}-${currentDate.toISOString()}`,
-              title: 'Available Hours',
-              start: workingStart,
-              end: workingEnd,
-              resource: { type: 'working_hours' }
-            });
-          }
-        }
       }
 
       setEvents(calendarEvents);
@@ -165,27 +116,16 @@ const SpecialistCalendar = ({ specialistId, onBlockTimeChange }: SpecialistCalen
 
   const eventStyleGetter = (event: CalendarEvent, start: Date, end: Date, isSelected: boolean) => {
     let backgroundColor = '#3182CE';
-    let opacity = 0.8;
-    let color = 'white';
-    let border = '0px';
-    
-    if (event.resource?.type === 'working_hours') {
-      backgroundColor = '#10B981'; // Green for available hours
-      opacity = 0.3;
-      color = '#065F46';
-      border = '1px solid #10B981';
-    } else if (event.title.startsWith('Blocked Time')) {
-      backgroundColor = '#E53E3E'; // Red for blocked time
-    } else if (event.resource?.type === 'appointment') {
-      backgroundColor = '#3182CE'; // Blue for appointments
+    if (event.title.startsWith('Blocked Time')) {
+      backgroundColor = '#E53E3E';
     }
 
     const style = {
       backgroundColor,
       borderRadius: '5px',
-      opacity,
-      color,
-      border,
+      opacity: 0.8,
+      color: 'white',
+      border: '0px',
       display: 'block'
     };
     return {
@@ -207,20 +147,18 @@ const SpecialistCalendar = ({ specialistId, onBlockTimeChange }: SpecialistCalen
               <CardTitle className="font-fjalla">Your Schedule</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="calendar-container font-source">
-                <Calendar
-                  localizer={localizer}
-                  events={events}
-                  startAccessor="start"
-                  endAccessor="end"
-                  style={{ height: 500 }}
-                  onView={setView}
-                  view={view}
-                  date={date}
-                  onNavigate={setDate}
-                  eventPropGetter={eventStyleGetter}
-                />
-              </div>
+              <Calendar
+                localizer={localizer}
+                events={events}
+                startAccessor="start"
+                endAccessor="end"
+                style={{ height: 500 }}
+                onView={setView}
+                view={view}
+                date={date}
+                onNavigate={setDate}
+                eventPropGetter={eventStyleGetter}
+              />
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,12 +1,6 @@
 /* Custom styles for React Big Calendar */
 .calendar-container {
-  font-family: 'Source Sans 3', sans-serif;
-}
-
-.calendar-container *,
-.calendar-container .rbc-calendar,
-.calendar-container .rbc-calendar * {
-  font-family: 'Source Sans 3', sans-serif !important;
+  font-family: var(--font-family);
 }
 
 .calendar-container .rbc-calendar {
