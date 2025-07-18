@@ -88,8 +88,8 @@ const PeerSpecialistDashboard = () => {
       const waiting = data?.filter(session => session.status === 'waiting') || [];
       const active = data?.filter(session => session.status === 'active') || [];
       
-      setPendingSessions(waiting);
-      setActiveSessions(active);
+      setPendingSessions(waiting as ChatSession[]);
+      setActiveSessions(active as ChatSession[]);
     } catch (error) {
       console.error('Error loading chat sessions:', error);
     }
@@ -368,11 +368,16 @@ const PeerSpecialistDashboard = () => {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <SpecialistAnalyticsDashboard specialistId={specialistData?.id} />
+            <SpecialistAnalyticsDashboard />
           </TabsContent>
 
           <TabsContent value="settings">
-            <SpecialistSettings />
+            <div className="grid gap-6">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Specialist Settings</h3>
+                <p className="text-muted-foreground">Settings panel coming soon...</p>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
