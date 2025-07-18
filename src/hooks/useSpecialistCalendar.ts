@@ -324,6 +324,79 @@ export function useSpecialistCalendar({ specialistId }: UseSpecialistCalendarPro
     }
   }, [specialistId, fetchCalendarSettings]);
 
+  // Set up real-time subscriptions
+  useEffect(() => {
+    if (!specialistId) return;
+
+    console.log('🔄 Setting up real-time subscriptions for specialist:', specialistId);
+
+    // Create a channel for real-time updates
+    const channel = supabase
+      .channel('specialist-calendar-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'specialist_calendar_settings',
+          filter: `specialist_id=eq.${specialistId}`
+        },
+        (payload) => {
+          console.log('🔄 Calendar settings changed:', payload);
+          fetchCalendarSettings();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'specialist_schedules',
+          filter: `specialist_id=eq.${specialistId}`
+        },
+        (payload) => {
+          console.log('🔄 Schedule changed:', payload);
+          // Trigger calendar refresh in components listening to this hook
+          setSettings(prev => ({ ...prev, updated_at: new Date().toISOString() } as CalendarSettings));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'specialist_appointments',
+          filter: `specialist_id=eq.${specialistId}`
+        },
+        (payload) => {
+          console.log('🔄 Appointment changed:', payload);
+          // Trigger calendar refresh in components listening to this hook
+          setSettings(prev => ({ ...prev, updated_at: new Date().toISOString() } as CalendarSettings));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'specialist_availability_exceptions',
+          filter: `specialist_id=eq.${specialistId}`
+        },
+        (payload) => {
+          console.log('🔄 Availability exception changed:', payload);
+          // Trigger calendar refresh in components listening to this hook
+          setSettings(prev => ({ ...prev, updated_at: new Date().toISOString() } as CalendarSettings));
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log('🔄 Cleaning up real-time subscriptions');
+      supabase.removeChannel(channel);
+    };
+  }, [specialistId, fetchCalendarSettings]);
+
   // Clear error after some time
   useEffect(() => {
     if (error) {

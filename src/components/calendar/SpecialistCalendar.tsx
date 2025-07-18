@@ -263,6 +263,76 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
     fetchEvents();
   }, [fetchSpecialistInfo, fetchAppointmentTypes, fetchEvents]);
 
+  // Set up real-time subscriptions for calendar updates
+  useEffect(() => {
+    if (!specialistId) return;
+
+    console.log('🔄 SpecialistCalendar - Setting up real-time subscriptions');
+
+    // Create a channel for real-time updates
+    const channel = supabase
+      .channel('calendar-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'specialist_appointments',
+          filter: `specialist_id=eq.${specialistId}`
+        },
+        (payload) => {
+          console.log('🔄 SpecialistCalendar - Appointment changed:', payload);
+          fetchEvents();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'specialist_schedules',
+          filter: `specialist_id=eq.${specialistId}`
+        },
+        (payload) => {
+          console.log('🔄 SpecialistCalendar - Schedule changed:', payload);
+          fetchEvents();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'specialist_availability_exceptions',
+          filter: `specialist_id=eq.${specialistId}`
+        },
+        (payload) => {
+          console.log('🔄 SpecialistCalendar - Availability exception changed:', payload);
+          fetchEvents();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'scheduled_appointments',
+          filter: `specialist_id=eq.${specialistId}`
+        },
+        (payload) => {
+          console.log('🔄 SpecialistCalendar - Scheduled appointment changed:', payload);
+          fetchEvents();
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      console.log('🔄 SpecialistCalendar - Cleaning up real-time subscriptions');
+      supabase.removeChannel(channel);
+    };
+  }, [specialistId, fetchEvents]);
+
   // Enhanced event style getter with dynamic color coding
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const baseStyle = {
