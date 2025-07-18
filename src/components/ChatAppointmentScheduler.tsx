@@ -78,7 +78,7 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
     if (!selectedDate || !settings) return;
 
     const slots: string[] = [];
-    const dayName = selectedDate.toLocaleLowerCase().slice(0, 3); // e.g., 'mon', 'tue'
+    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase().slice(0, 3); // e.g., 'mon', 'tue'
     const workingHours = settings.working_hours;
     
     if (workingHours && typeof workingHours === 'object' && dayName in workingHours) {

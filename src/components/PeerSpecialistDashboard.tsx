@@ -67,14 +67,21 @@ const PeerSpecialistDashboard = () => {
         // Fetch peer specialist data
         const { data: specialistData, error: specialistError } = await supabase
           .from('peer_specialists')
-          .select('*, status:peer_specialist_status(status, last_active)')
+          .select('*, status:specialist_status(status, last_seen)')
           .eq('user_id', user.id)
           .single();
 
         if (specialistError) {
           console.error('Error fetching peer specialist data:', specialistError);
-        } else {
-          setPeerSpecialist(specialistData || null);
+        } else if (specialistData) {
+          // Add missing email and phone_number from auth user
+          const specialistWithUserData = {
+            ...specialistData,
+            email: user.email || '',
+            phone_number: user.phone || '',
+            status: specialistData.status?.[0] || { status: 'offline' as const, last_active: null }
+          };
+          setPeerSpecialist(specialistWithUserData);
         }
       } finally {
         setLoading(false);
@@ -96,7 +103,12 @@ const PeerSpecialistDashboard = () => {
     if (error) {
       console.error('Error fetching chat sessions:', error);
     } else {
-      setChatSessions(data || []);
+      // Type cast the status field to match our interface
+      const typedSessions = (data || []).map(session => ({
+        ...session,
+        status: session.status as 'waiting' | 'active' | 'ended'
+      }));
+      setChatSessions(typedSessions);
     }
   };
 
