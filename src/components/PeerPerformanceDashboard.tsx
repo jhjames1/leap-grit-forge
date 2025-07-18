@@ -311,19 +311,7 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
 
       {/* Individual Specialist Metrics */}
       <div className="grid grid-cols-1 gap-4">
-        {metrics.length === 0 && !isLoading ? (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center text-muted-foreground">
-                <p className="text-lg mb-2">No specialist metrics available</p>
-                <p className="text-sm">
-                  Click "Compute Metrics" to generate performance data for {new Date(`${selectedMonth}-01`).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          metrics.map((specialist) => (
+        {metrics.map((specialist) => (
             <Card key={specialist.peer_id}>
               <CardHeader>
                 <CardTitle className="text-lg">
@@ -413,8 +401,7 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                 </div>
               </CardContent>
             </Card>
-          ))
-        )}
+        ))}
       </div>
     </div>
   );

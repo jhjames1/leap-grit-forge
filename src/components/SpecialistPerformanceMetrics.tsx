@@ -49,9 +49,14 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
     );
   }
 
-  if (!metrics) {
-    return null;
-  }
+  // Always show metrics with "0" values when no data is available
+  const displayMetrics = metrics || {
+    chat_completion_rate: 0,
+    checkin_completion_rate: 0,
+    avg_user_rating: 0,
+    avg_streak_impact: 0,
+    avg_response_time_seconds: 0
+  };
 
   return (
     <div className="space-y-3">
@@ -63,10 +68,10 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Chat Rate</p>
                 <Badge 
-                  variant={getMetricBadgeVariant(metrics.chat_completion_rate, 75)}
+                  variant={getMetricBadgeVariant(displayMetrics.chat_completion_rate, 75)}
                   className="text-xs"
                 >
-                  {metrics.chat_completion_rate?.toFixed(0) || '0'}%
+                  {displayMetrics.chat_completion_rate?.toFixed(0) || '0'}%
                 </Badge>
               </div>
             </TooltipTrigger>
@@ -80,10 +85,10 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Check-ins</p>
                 <Badge 
-                  variant={getMetricBadgeVariant(metrics.checkin_completion_rate, 75)}
+                  variant={getMetricBadgeVariant(displayMetrics.checkin_completion_rate, 75)}
                   className="text-xs"
                 >
-                  {metrics.checkin_completion_rate?.toFixed(0) || '0'}%
+                  {displayMetrics.checkin_completion_rate?.toFixed(0) || '0'}%
                 </Badge>
               </div>
             </TooltipTrigger>
@@ -97,11 +102,11 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Rating</p>
                 <Badge 
-                  variant={getMetricBadgeVariant(metrics.avg_user_rating, 4.5)}
+                  variant={getMetricBadgeVariant(displayMetrics.avg_user_rating, 4.5)}
                   className="text-xs flex items-center gap-1"
                 >
                   <Star className="h-3 w-3 fill-current" />
-                  {metrics.avg_user_rating?.toFixed(1) || '0.0'}
+                  {displayMetrics.avg_user_rating?.toFixed(1) || '0.0'}
                 </Badge>
               </div>
             </TooltipTrigger>
@@ -115,11 +120,11 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Response</p>
                 <Badge 
-                  variant={getMetricBadgeVariant(metrics.avg_response_time_seconds, 45, true)}
+                  variant={getMetricBadgeVariant(displayMetrics.avg_response_time_seconds, 45, true)}
                   className="text-xs flex items-center gap-1"
                 >
                   <Clock className="h-3 w-3" />
-                  {formatResponseTime(metrics.avg_response_time_seconds)}
+                  {formatResponseTime(displayMetrics.avg_response_time_seconds)}
                 </Badge>
               </div>
             </TooltipTrigger>
@@ -136,15 +141,15 @@ const SpecialistPerformanceMetrics = ({ specialistId, month }: SpecialistPerform
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Streak Impact</p>
               <Badge 
-                variant={getMetricBadgeVariant(metrics.avg_streak_impact, 1)}
+                variant={getMetricBadgeVariant(displayMetrics.avg_streak_impact, 1)}
                 className="text-xs flex items-center gap-1 w-fit"
               >
-                {(metrics.avg_streak_impact || 0) >= 0 ? (
+                {(displayMetrics.avg_streak_impact || 0) >= 0 ? (
                   <TrendingUp className="h-3 w-3" />
                 ) : (
                   <TrendingDown className="h-3 w-3" />
                 )}
-                {(metrics.avg_streak_impact || 0) >= 0 ? '+' : ''}{metrics.avg_streak_impact?.toFixed(1) || '0.0'}d
+                {(displayMetrics.avg_streak_impact || 0) >= 0 ? '+' : ''}{displayMetrics.avg_streak_impact?.toFixed(1) || '0.0'}d
               </Badge>
             </div>
           </TooltipTrigger>
