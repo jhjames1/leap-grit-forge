@@ -94,14 +94,26 @@ const AvailabilityRulesManager = ({ specialistId }: AvailabilityRulesManagerProp
   const saveRules = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
+      // First try to update existing settings
+      const { data: updateData, error: updateError } = await supabase
         .from('specialist_calendar_settings')
-        .upsert({
-          specialist_id: specialistId,
-          ...rules
-        });
+        .update(rules)
+        .eq('specialist_id', specialistId)
+        .select();
 
-      if (error) throw error;
+      // If no rows were updated (settings don't exist), create them
+      if (updateData && updateData.length === 0) {
+        const { error: insertError } = await supabase
+          .from('specialist_calendar_settings')
+          .insert({
+            specialist_id: specialistId,
+            ...rules
+          });
+        
+        if (insertError) throw insertError;
+      } else if (updateError) {
+        throw updateError;
+      }
 
       toast({
         title: "Success",
