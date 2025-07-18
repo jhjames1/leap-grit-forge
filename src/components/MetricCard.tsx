@@ -45,25 +45,25 @@ const MetricCard = ({ metricKey, value, title, formatValue, icon: Icon }: Metric
 
   return (
     <div className={getCardStyling()}>
-      <div className="flex items-center space-x-2">
-        <Icon className={`h-4 w-4 ${getIconColor()} flex-shrink-0`} />
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-bold text-card-foreground">
-            {formatValue(value)}
-          </div>
+      <div className="space-y-1">
+        <div className="text-sm font-bold text-card-foreground">
+          {formatValue(value)}
+        </div>
+        <div className="flex items-center gap-2">
+          <Icon className={`h-4 w-4 ${getIconColor()} flex-shrink-0`} />
           <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">
             {title}
           </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {description} (Goal: {goalText})
-          </div>
-          {isBelowGoal && (
-            <div className="flex items-start gap-1 mt-2 text-xs text-red-600 font-bold">
-              <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0 text-red-500" />
-              <span className="leading-relaxed">{coachingTip}</span>
-            </div>
-          )}
         </div>
+        <div className="text-xs text-muted-foreground">
+          {description} (Goal: {goalText})
+        </div>
+        {isBelowGoal && (
+          <div className="flex items-start gap-1 mt-2 text-xs text-red-600 font-bold">
+            <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0 text-red-500" />
+            <span className="leading-relaxed">{coachingTip}</span>
+          </div>
+        )}
       </div>
     </div>
   );
