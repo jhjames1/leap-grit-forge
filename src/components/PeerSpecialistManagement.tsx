@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSpecialistPresence } from '@/hooks/useSpecialistPresence';
 import SpecialistPerformanceMetrics from './SpecialistPerformanceMetrics';
+import CoachingTips from './CoachingTips';
 import { 
   UserPlus, 
   Edit, 
@@ -108,65 +109,40 @@ const PeerSpecialistManagement = () => {
     fetchRemovedSpecialists();
   }, []);
 
-  useEffect(() => {
-    if (specialists.length > 0) {
-      fetchSpecialistMetrics();
-    }
-  }, [specialists]);
 
-  const fetchSpecialistMetrics = async () => {
+  const fetchCoachingTips = async (specialistId: string): Promise<string[]> => {
     try {
-      const metricsData: {[key: string]: SpecialistMetrics} = {};
+      const { data: metrics } = await supabase
+        .from('peer_monthly_metrics')
+        .select('*')
+        .eq('peer_id', specialistId)
+        .order('month', { ascending: false })
+        .limit(1);
 
-      for (const specialist of specialists) {
-        // Calculate live metrics for each specialist
-        
-        // Chat Sessions
-        const { data: chatSessions } = await supabase
-          .from('chat_sessions')
-          .select('id, status')
-          .eq('specialist_id', specialist.id);
-
-        // Check-ins
-        const { data: checkins } = await supabase
-          .from('peer_checkins')
-          .select('id, status')
-          .eq('peer_id', specialist.id);
-
-        // Ratings
-        const { data: ratings } = await supabase
-          .from('peer_session_ratings')
-          .select('rating')
-          .eq('peer_id', specialist.id);
-
-        const totalSessions = chatSessions?.length || 0;
-        const completedSessions = chatSessions?.filter(s => s.status === 'ended').length || 0;
-        const chatCompletionRate = totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0;
-
-        const totalCheckins = checkins?.length || 0;
-        const completedCheckins = checkins?.filter(c => c.status === 'completed').length || 0;
-        const checkinCompletionRate = totalCheckins > 0 ? (completedCheckins / totalCheckins) * 100 : 0;
-
-        const totalRatings = ratings?.length || 0;
-        const avgUserRating = totalRatings > 0 
-          ? ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings 
-          : 0;
-
-        metricsData[specialist.id] = {
-          chat_completion_rate: Math.round(chatCompletionRate * 10) / 10,
-          checkin_completion_rate: Math.round(checkinCompletionRate * 10) / 10,
-          avg_user_rating: Math.round(avgUserRating * 10) / 10,
-          avg_streak_impact: 0, // Placeholder
-          avg_response_time_seconds: 30 + Math.random() * 60, // Placeholder
-          total_sessions: totalSessions,
-          total_checkins: totalCheckins,
-          total_ratings: totalRatings,
-        };
+      if (!metrics || metrics.length === 0) {
+        return ["Focus on establishing consistent communication patterns with users"];
       }
 
-      setSpecialistMetrics(metricsData);
+      const latest = metrics[0];
+      const tips: string[] = [];
+
+      if (latest.chat_completion_rate < 80) {
+        tips.push("Improve chat completion rates by setting clear session goals at the start");
+      }
+      if (latest.avg_user_rating < 4) {
+        tips.push("Focus on active listening and empathy to improve user satisfaction");
+      }
+      if (latest.avg_response_time_seconds > 60) {
+        tips.push("Aim for quicker response times to maintain user engagement");
+      }
+      if (latest.checkin_completion_rate < 90) {
+        tips.push("Set regular reminders for user check-ins to improve completion rates");
+      }
+
+      return tips.length > 0 ? tips : ["Keep up the excellent work! Your performance metrics are strong"];
     } catch (error) {
-      console.error('Error fetching specialist metrics:', error);
+      console.error('Error generating coaching tips:', error);
+      return ["Focus on maintaining consistent communication with your assigned users"];
     }
   };
 
@@ -644,7 +620,6 @@ const PeerSpecialistManagement = () => {
           <Button
             onClick={() => {
               fetchSpecialists();
-              fetchSpecialistMetrics();
             }}
             size="sm"
             variant="outline"
@@ -1028,156 +1003,8 @@ const PeerSpecialistManagement = () => {
                             </div>
                           </div>
 
-                          {/* Performance Metrics & Coaching Tips */}
-                          {metrics && (
-                            <div className="pt-4 border-t border-muted/30">
-                              <h4 className="text-sm font-medium mb-3">Performance Metrics & Coaching</h4>
-                              
-                              {/* Performance Grid */}
-                              <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
-                                <div className="space-y-1">
-                                  <p className="text-xs font-bold">Chat Completion</p>
-                                  <div className={`text-lg font-bold ${getMetricColor(metrics.chat_completion_rate, 75)}`}>
-                                    {metrics.chat_completion_rate?.toFixed(1) || '0.0'}%
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">Target ≥ 75%</p>
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <p className="text-xs font-bold">Check-in Rate</p>
-                                  <div className={`text-lg font-bold ${getMetricColor(metrics.checkin_completion_rate, 75)}`}>
-                                    {metrics.checkin_completion_rate?.toFixed(1) || '0.0'}%
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">Target ≥ 75%</p>
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <p className="text-xs font-bold">User Rating</p>
-                                  <div className={`text-lg font-bold ${getMetricColor(metrics.avg_user_rating, 4.5)} flex items-center gap-1`}>
-                                    <Star className="h-4 w-4 fill-current" />
-                                    {metrics.avg_user_rating?.toFixed(1) || '0.0'}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">Target ≥ 4.5★</p>
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <p className="text-xs font-bold">Streak Impact</p>
-                                  <div className={`text-lg font-bold ${getMetricColor(metrics.avg_streak_impact, 1)} flex items-center gap-1`}>
-                                    {(metrics.avg_streak_impact || 0) >= 0 ? (
-                                      <TrendingUp className="h-4 w-4" />
-                                    ) : (
-                                      <TrendingDown className="h-4 w-4" />
-                                    )}
-                                    {(metrics.avg_streak_impact || 0) >= 0 ? '+' : ''}{metrics.avg_streak_impact?.toFixed(1) || '0.0'}d
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">Target ≥ +1d</p>
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  <p className="text-xs font-bold">Response Time</p>
-                                  <div className={`text-lg font-bold ${getMetricColor(metrics.avg_response_time_seconds, 45, true)} flex items-center gap-1`}>
-                                    <Clock className="h-4 w-4" />
-                                    {formatResponseTime(metrics.avg_response_time_seconds)}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">Target ≤ 45s</p>
-                                </div>
-                              </div>
-
-                              {/* Performance Alerts & Coaching */}
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Performance Alerts */}
-                                <div>
-                                  <h5 className="text-xs font-medium text-destructive mb-2 flex items-center gap-1">
-                                    <TrendingDown className="h-3 w-3" />
-                                    Performance Alerts
-                                  </h5>
-                                  <div className="space-y-1">
-                                    {(metrics.chat_completion_rate || 0) < 75 && (
-                                      <Badge variant="destructive" className="text-xs mr-1 mb-1">
-                                        Chat: {(metrics.chat_completion_rate || 0).toFixed(1)}%
-                                      </Badge>
-                                    )}
-                                    {(metrics.checkin_completion_rate || 0) < 75 && (
-                                      <Badge variant="destructive" className="text-xs mr-1 mb-1">
-                                        Check-in: {(metrics.checkin_completion_rate || 0).toFixed(1)}%
-                                      </Badge>
-                                    )}
-                                    {(metrics.avg_response_time_seconds || 0) > 45 && (
-                                      <Badge variant="destructive" className="text-xs mr-1 mb-1">
-                                        Response: {formatResponseTime(metrics.avg_response_time_seconds)}
-                                      </Badge>
-                                    )}
-                                    {(metrics.avg_user_rating || 0) < 4.5 && (
-                                      <Badge variant="destructive" className="text-xs mr-1 mb-1">
-                                        Rating: {(metrics.avg_user_rating || 0).toFixed(1)}★
-                                      </Badge>
-                                    )}
-                                    {(metrics.avg_streak_impact || 0) < 1 && (
-                                      <Badge variant="destructive" className="text-xs mr-1 mb-1">
-                                        Streak: {(metrics.avg_streak_impact || 0).toFixed(1)}d
-                                      </Badge>
-                                    )}
-                                    {(metrics.chat_completion_rate || 0) >= 75 && 
-                                     (metrics.checkin_completion_rate || 0) >= 75 &&
-                                     (metrics.avg_response_time_seconds || 0) <= 45 &&
-                                     (metrics.avg_user_rating || 0) >= 4.5 &&
-                                     (metrics.avg_streak_impact || 0) >= 1 && (
-                                      <p className="text-xs text-muted-foreground">All metrics on target ✓</p>
-                                    )}
-                                  </div>
-                                </div>
-                                
-                                {/* Coaching Tips */}
-                                <div>
-                                  <h5 className="text-xs font-medium text-primary mb-2 flex items-center gap-1">
-                                    <TrendingUp className="h-3 w-3" />
-                                    Coaching Tips
-                                  </h5>
-                                  <div className="space-y-1">
-                                    {(metrics.chat_completion_rate || 0) < 75 && (
-                                      <div className="text-xs bg-muted/50 rounded p-2">
-                                        Focus on session engagement and follow-through
-                                      </div>
-                                    )}
-                                    {(metrics.checkin_completion_rate || 0) < 75 && (
-                                      <div className="text-xs bg-muted/50 rounded p-2">
-                                        Improve scheduling adherence and time management
-                                      </div>
-                                    )}
-                                    {(metrics.avg_response_time_seconds || 0) > 45 && (
-                                      <div className="text-xs bg-muted/50 rounded p-2">
-                                        Practice quicker responses and use templates
-                                      </div>
-                                    )}
-                                    {(metrics.avg_user_rating || 0) < 4.5 && (
-                                      <div className="text-xs bg-muted/50 rounded p-2">
-                                        Focus on active listening and empathy
-                                      </div>
-                                    )}
-                                    {(metrics.avg_streak_impact || 0) < 1 && (
-                                      <div className="text-xs bg-muted/50 rounded p-2">
-                                        Incorporate goal-setting techniques
-                                      </div>
-                                    )}
-                                    {(metrics.chat_completion_rate || 0) >= 75 && 
-                                     (metrics.checkin_completion_rate || 0) >= 75 &&
-                                     (metrics.avg_response_time_seconds || 0) <= 45 &&
-                                     (metrics.avg_user_rating || 0) >= 4.5 &&
-                                     (metrics.avg_streak_impact || 0) >= 1 && (
-                                      <div className="text-xs bg-muted/50 rounded p-2">
-                                        Excellent performance! Continue maintaining these standards.
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Performance Metrics */}
-                          <div className="mt-4 pt-4 border-t border-muted/30">
-                            <SpecialistPerformanceMetrics specialistId={specialist.id} />
-                          </div>
+                          {/* Coaching Tips */}
+                          <CoachingTips specialistId={specialist.id} />
                         </div>
                       </div>
                       
