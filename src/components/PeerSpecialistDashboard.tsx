@@ -164,15 +164,32 @@ const PeerSpecialistDashboard = () => {
   };
   const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
     if (!peerSpecialist) return;
+    
     try {
-      const {
-        error
-      } = await supabase.from('specialist_status').upsert({
-        specialist_id: peerSpecialist.id,
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      });
-      if (error) throw error;
+      // First, try to update existing status
+      const { data: updateData, error: updateError } = await supabase
+        .from('specialist_status')
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('specialist_id', peerSpecialist.id)
+        .select();
+
+      // If no rows were updated (status doesn't exist), create it
+      if (updateData && updateData.length === 0) {
+        const { error: insertError } = await supabase
+          .from('specialist_status')
+          .insert({
+            specialist_id: peerSpecialist.id,
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          });
+        
+        if (insertError) throw insertError;
+      } else if (updateError) {
+        throw updateError;
+      }
 
       // Update local state
       setPeerSpecialist(prev => prev ? {
@@ -182,6 +199,7 @@ const PeerSpecialistDashboard = () => {
           status: newStatus
         }
       } : null);
+      
       toast({
         title: "Status Updated",
         description: `Your status has been changed to ${newStatus}`
@@ -210,11 +228,13 @@ const PeerSpecialistDashboard = () => {
     try {
       // Set status to offline before logging out
       if (peerSpecialist) {
-        await supabase.from('specialist_status').upsert({
-          specialist_id: peerSpecialist.id,
-          status: 'offline',
-          updated_at: new Date().toISOString()
-        });
+        await supabase
+          .from('specialist_status')
+          .update({
+            status: 'offline',
+            updated_at: new Date().toISOString()
+          })
+          .eq('specialist_id', peerSpecialist.id);
       }
 
       // Sign out the user
