@@ -50,14 +50,16 @@ const PeerSpecialistDashboard = () => {
   const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
 
-  // Use the new calendar-aware presence hook
+  // Use the enhanced calendar-aware presence hook
   const {
     calendarAvailability,
     manualStatus,
     isCalendarControlled,
+    blockTimeStatus,
     setManualAwayStatus,
     toggleCalendarControl,
     refreshAvailability,
+    handleBlockTimeChange,
     specialistId
   } = useCalendarAwarePresence();
 
@@ -226,6 +228,7 @@ const PeerSpecialistDashboard = () => {
 
   const getStatusMessage = () => {
     if (manualStatus) return 'Manually set to away';
+    if (blockTimeStatus) return blockTimeStatus;
     if (calendarAvailability?.reason) return calendarAvailability.reason;
     return null;
   };
@@ -296,7 +299,7 @@ const PeerSpecialistDashboard = () => {
             <p className="text-muted-foreground font-source">Manage your chat sessions and support users in their recovery journey.</p>
           </div>
           <div className="flex items-center space-x-4">
-            {/* Calendar Control Toggle with Tooltip */}
+            {/* Calendar Control Toggle with Enhanced Tooltip */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -316,10 +319,13 @@ const PeerSpecialistDashboard = () => {
                     <p className="text-sm">When enabled, your status is automatically set based on your calendar:</p>
                     <ul className="text-sm space-y-1">
                       <li>• <strong>Online</strong> during working hours</li>
-                      <li>• <strong>Busy</strong> during appointments</li>
+                      <li>• <strong>Busy</strong> during appointments & blocked time</li>
                       <li>• <strong>Offline</strong> outside working hours</li>
                     </ul>
                     <p className="text-sm">When disabled, you can manually control your status.</p>
+                    {blockTimeStatus && (
+                      <p className="text-sm text-orange-600 font-medium">Currently in blocked time</p>
+                    )}
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -354,7 +360,7 @@ const PeerSpecialistDashboard = () => {
                   </SelectContent>
                 </Select>
                 {getStatusMessage() && (
-                  <span className="text-xs text-muted-foreground mt-1">
+                  <span className={`text-xs mt-1 ${blockTimeStatus ? 'text-orange-600 font-medium' : 'text-muted-foreground'}`}>
                     {getStatusMessage()}
                   </span>
                 )}
@@ -376,17 +382,19 @@ const PeerSpecialistDashboard = () => {
           </div>
         </div>
 
-        {/* Calendar Availability Info */}
+        {/* Enhanced Calendar Availability Info */}
         {calendarAvailability && (
-          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+          <div className={`mt-4 p-3 rounded-lg ${blockTimeStatus ? 'bg-orange-50 border border-orange-200' : 'bg-muted/50'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                 <span className="text-sm font-medium">
+                <CalendarClock className={`h-4 w-4 ${blockTimeStatus ? 'text-orange-600' : 'text-muted-foreground'}`} />
+                 <span className={`text-sm font-medium ${blockTimeStatus ? 'text-orange-700' : ''}`}>
                    Current Status: {calendarAvailability.isAvailable ? 'Available' : 'Not Available'}
                  </span>
                 {calendarAvailability.reason && (
-                  <span className="text-sm text-muted-foreground">- {calendarAvailability.reason}</span>
+                  <span className={`text-sm ${blockTimeStatus ? 'text-orange-600' : 'text-muted-foreground'}`}>
+                    - {calendarAvailability.reason}
+                  </span>
                 )}
               </div>
               {calendarAvailability.nextAvailable && (
@@ -493,7 +501,7 @@ const PeerSpecialistDashboard = () => {
           </Card>
         </div>
 
-        {/* Calendar Section */}
+        {/* Calendar Section with Enhanced Block Time Integration */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-fjalla font-bold">Your Schedule</h2>
@@ -509,7 +517,10 @@ const PeerSpecialistDashboard = () => {
             </div>
           </div>
           {peerSpecialist && (
-            <SpecialistCalendar specialistId={peerSpecialist.id} />
+            <SpecialistCalendar 
+              specialistId={peerSpecialist.id} 
+              onBlockTimeChange={handleBlockTimeChange}
+            />
           )}
         </div>
 
