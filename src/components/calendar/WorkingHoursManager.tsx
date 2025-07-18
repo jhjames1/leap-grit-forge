@@ -120,14 +120,52 @@ const WorkingHoursManager = ({ specialistId }: WorkingHoursManagerProps) => {
   const saveWorkingHours = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
+      // First check if settings exist
+      const { data: existingSettings } = await supabase
         .from('specialist_calendar_settings')
-        .upsert({
-          specialist_id: specialistId,
-          working_hours: workingHours as any
-        });
+        .select('id')
+        .eq('specialist_id', specialistId)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existingSettings) {
+        // Update existing settings
+        const { error } = await supabase
+          .from('specialist_calendar_settings')
+          .update({
+            working_hours: workingHours as any,
+            updated_at: new Date().toISOString()
+          })
+          .eq('specialist_id', specialistId);
+
+        if (error) throw error;
+      } else {
+        // Create new settings with all required fields
+        const { error } = await supabase
+          .from('specialist_calendar_settings')
+          .insert({
+            specialist_id: specialistId,
+            timezone: 'UTC',
+            default_appointment_duration: 30,
+            buffer_time_minutes: 15,
+            minimum_notice_hours: 2,
+            maximum_booking_days: 30,
+            auto_confirm_bookings: true,
+            allow_back_to_back_bookings: false,
+            working_hours: workingHours as any,
+            notification_preferences: {
+              email: true,
+              sms: false,
+              app: true
+            },
+            external_calendar_sync: {
+              enabled: false,
+              provider: null,
+              calendar_id: null
+            }
+          });
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",
