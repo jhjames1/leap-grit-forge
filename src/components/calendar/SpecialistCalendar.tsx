@@ -9,7 +9,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Clock, Users, MapPin } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { CalendarIcon, Clock, Users, MapPin, Settings, Ban } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SetAvailabilityDialog } from './SetAvailabilityDialog';
 import { BlockTimeDialog } from './BlockTimeDialog';
@@ -349,35 +350,79 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
               <CalendarIcon className="h-5 w-5" />
               {specialistName ? `${specialistName}'s Calendar` : 'Specialist Calendar'}
             </CardTitle>
-            <div className="flex flex-wrap gap-2 pt-4">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => {
-                  console.log('🗓️ Refresh button clicked');
-                  fetchEvents();
-                }}
-              >
-                <Clock className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
-              <SetAvailabilityDialog 
-                specialistId={specialistId}
-                appointmentTypes={appointmentTypes}
-                onSuccess={() => {
-                  console.log('🗓️ Availability set successfully, refreshing events');
-                  fetchEvents();
-                }}
-              />
-              <BlockTimeDialog 
-                specialistId={specialistId}
-                onSuccess={() => {
-                  console.log('🗓️ Time blocked successfully, refreshing events');
-                  fetchEvents();
-                }}
-              />
-            </div>
+            
+            <TooltipProvider>
+              <div className="space-y-3 pt-4">
+                <div className="text-sm font-medium text-muted-foreground mb-2">
+                  Schedule Management
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          console.log('🗓️ Refresh button clicked');
+                          fetchEvents();
+                        }}
+                      >
+                        <Clock className="w-4 h-4 mr-2" />
+                        Refresh
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Refresh calendar events</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <SetAvailabilityDialog 
+                        specialistId={specialistId}
+                        appointmentTypes={appointmentTypes}
+                        onSuccess={() => {
+                          console.log('🗓️ Availability set successfully, refreshing events');
+                          fetchEvents();
+                        }}
+                        trigger={
+                          <Button size="sm" variant="outline">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Set Weekly Hours
+                          </Button>
+                        }
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Define your regular working hours and availability</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <BlockTimeDialog 
+                        specialistId={specialistId}
+                        onSuccess={() => {
+                          console.log('🗓️ Time blocked successfully, refreshing events');
+                          fetchEvents();
+                        }}
+                        trigger={
+                          <Button size="sm" variant="outline">
+                            <Ban className="w-4 h-4 mr-2" />
+                            Block Specific Time
+                          </Button>
+                        }
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Block out meetings, appointments, or time off</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+            </TooltipProvider>
           </CardHeader>
+          
           <CardContent>
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
