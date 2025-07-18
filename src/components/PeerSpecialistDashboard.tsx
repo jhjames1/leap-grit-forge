@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   MessageCircle, 
   Calendar, 
@@ -17,6 +18,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import SpecialistChatWindow from './SpecialistChatWindow';
+import SpecialistSettings from './SpecialistSettings';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatSession {
   id: string;
@@ -47,10 +50,12 @@ interface PeerSpecialist {
 
 const PeerSpecialistDashboard = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [chatFilter, setChatFilter] = useState<'all' | 'waiting' | 'active'>('all');
   const [peerSpecialist, setPeerSpecialist] = useState<PeerSpecialist | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Add state for selected chat session
   const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
@@ -200,23 +205,92 @@ const PeerSpecialistDashboard = () => {
     loadChatSessions();
   };
 
+  const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
+    if (!peerSpecialist) return;
+
+    try {
+      const { error } = await supabase
+        .from('specialist_status')
+        .upsert({
+          specialist_id: peerSpecialist.id,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      // Update local state
+      setPeerSpecialist(prev => prev ? {
+        ...prev,
+        status: { ...prev.status, status: newStatus }
+      } : null);
+
+      toast({
+        title: "Status Updated",
+        description: `Your status has been changed to ${newStatus}`
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateSpecialist = (updatedSpecialist: any) => {
+    setPeerSpecialist(updatedSpecialist);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-card border-b border-border p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Peer Specialist Dashboard</h1>
+            <h1 className="text-2xl font-bold">Peer Support Specialist Dashboard</h1>
             <p className="text-muted-foreground">Manage your chat sessions and profile settings.</p>
           </div>
           <div className="flex items-center space-x-4">
             {peerSpecialist?.status && (
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <div className={`w-2 h-2 rounded-full ${peerSpecialist.status.status === 'online' ? 'bg-green-500' : peerSpecialist.status.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'}`}></div>
-                <span>{peerSpecialist.status.status}</span>
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <div className={`w-2 h-2 rounded-full ${
+                    peerSpecialist.status.status === 'online' ? 'bg-green-500' : 
+                    peerSpecialist.status.status === 'away' ? 'bg-yellow-500' : 
+                    'bg-gray-500'
+                  }`}></div>
+                  <span className="capitalize">{peerSpecialist.status.status}</span>
+                </div>
+                <Select value={peerSpecialist.status.status} onValueChange={handleStatusChange}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="online">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        Online
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="away">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                        Away
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="offline">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-gray-500" />
+                        Offline
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>
               <Settings size={16} className="mr-2" />
               Settings
             </Button>
@@ -352,6 +426,16 @@ const PeerSpecialistDashboard = () => {
           </Card>
         </div>
       </div>
+
+      {/* Settings Dialog */}
+      {peerSpecialist && (
+        <SpecialistSettings
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          specialist={peerSpecialist}
+          onUpdateSpecialist={handleUpdateSpecialist}
+        />
+      )}
     </div>
   );
 };

@@ -13,7 +13,7 @@ import {
   Shield,
   Clock
 } from 'lucide-react';
-import { useChatSession } from '@/hooks/useChatSession';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
 import ChatAppointmentScheduler from './ChatAppointmentScheduler';
@@ -42,14 +42,124 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
-  const {
-    messages,
-    loading,
-    error,
-    connectionStatus,
-    sendMessage,
-    endSession
-  } = useChatSession(session.specialist_id);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+
+  // Load messages for this specific session
+  useEffect(() => {
+    loadMessages();
+    setupRealTimeSubscription();
+  }, [session.id]);
+
+  const loadMessages = async () => {
+    try {
+      setLoading(true);
+      console.log('Loading messages for session:', session.id);
+      
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', session.id)
+        .order('created_at');
+
+      if (error) throw error;
+
+      console.log('Loaded messages:', data?.length || 0);
+      setMessages(data || []);
+    } catch (err) {
+      console.error('Error loading messages:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load messages');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const setupRealTimeSubscription = () => {
+    console.log('Setting up real-time subscription for session:', session.id);
+    setConnectionStatus('connecting');
+    
+    const channel = supabase
+      .channel(`specialist-chat-${session.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `session_id=eq.${session.id}`
+        },
+        (payload) => {
+          console.log('New message received:', payload);
+          const newMessage = payload.new;
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.find(msg => msg.id === newMessage.id)) {
+              return prev;
+            }
+            return [...prev, newMessage].sort((a, b) => 
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+        setConnectionStatus(status === 'SUBSCRIBED' ? 'connected' : 'disconnected');
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
+
+  const sendMessage = async (messageData: { content: string; sender_type?: string }) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: session.id,
+          sender_id: user.id,
+          sender_type: messageData.sender_type || 'specialist',
+          message_type: 'text',
+          content: messageData.content
+        });
+
+      if (error) throw error;
+
+      console.log('Message sent successfully');
+      
+      // Update session status to active if it was waiting
+      if (session.status === 'waiting') {
+        await supabase
+          .from('chat_sessions')
+          .update({ status: 'active' })
+          .eq('id', session.id);
+      }
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    }
+  };
+
+  const endSession = async () => {
+    try {
+      await supabase
+        .from('chat_sessions')
+        .update({ 
+          status: 'ended',
+          ended_at: new Date().toISOString()
+        })
+        .eq('id', session.id);
+      
+      onClose();
+    } catch (err) {
+      console.error('Error ending session:', err);
+    }
+  };
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -74,8 +184,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   };
 
   const handleEndSession = async () => {
-    await endSession('completed_by_specialist');
-    onClose();
+    await endSession();
   };
 
   const handleSchedulerSuccess = () => {
