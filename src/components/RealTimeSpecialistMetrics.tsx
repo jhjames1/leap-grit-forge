@@ -42,11 +42,11 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
             <div className="h-4 bg-muted rounded w-16"></div>
           </div>
         </div>
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="animate-pulse p-3 rounded-lg border border-muted/30">
-              <div className="h-4 bg-muted rounded w-32 mb-2"></div>
-              <div className="h-3 bg-muted rounded w-48"></div>
+            <div key={i} className="animate-pulse bg-muted/50 p-3 rounded-sm">
+              <div className="h-4 bg-muted rounded w-full mb-2"></div>
+              <div className="h-3 bg-muted rounded w-3/4"></div>
             </div>
           ))}
         </div>
@@ -121,7 +121,7 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
         Cumulative up to yesterday: {displayMetrics.total_sessions} sessions • {displayMetrics.total_checkins} check-ins • {displayMetrics.total_ratings} ratings
       </div>
       
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <MetricCard
           metricKey="CHAT_COMPLETION_RATE"
           value={displayMetrics.chat_completion_rate}
@@ -165,11 +165,13 @@ const RealTimeSpecialistMetrics = ({ specialistId }: RealTimeSpecialistMetricsPr
 
       {/* Success message when all metrics meet goals */}
       {allMetricsMeetGoals && hasData && (
-        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded text-green-800 text-xs mt-3">
-          <CheckCircle className="h-4 w-4 flex-shrink-0" />
-          <span className="leading-relaxed font-medium">
-            Excellent work! All your performance metrics are meeting their goals. Keep up the great support!
-          </span>
+        <div className="bg-muted/50 p-3 rounded-sm">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+            <div className="text-sm font-medium text-green-800">
+              Excellent work! All your performance metrics are meeting their goals.
+            </div>
+          </div>
         </div>
       )}
 
