@@ -286,16 +286,16 @@ const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
                 <Label className="text-sm font-medium text-card-foreground mb-3 block">
                   Gender (Optional)
                 </Label>
-                <RadioGroup value={gender} onValueChange={setGender} className="space-y-2">
-                  <div className="flex items-center space-x-2">
+                <RadioGroup value={gender} onValueChange={setGender} className="flex justify-center space-x-8">
+                  <div className="flex flex-col items-center space-y-2">
                     <RadioGroupItem value="male" id="male" />
                     <Label htmlFor="male" className="text-sm cursor-pointer">Male</Label>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-col items-center space-y-2">
                     <RadioGroupItem value="female" id="female" />
                     <Label htmlFor="female" className="text-sm cursor-pointer">Female</Label>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-col items-center space-y-2">
                     <RadioGroupItem value="other" id="other" />
                     <Label htmlFor="other" className="text-sm cursor-pointer">Other</Label>
                   </div>
