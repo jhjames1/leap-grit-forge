@@ -61,10 +61,7 @@ const PeerSpecialistDashboard = () => {
 
       setLoading(true);
       try {
-        // Fetch chat sessions
-        await loadChatSessions();
-
-        // Fetch peer specialist data
+        // Fetch peer specialist data FIRST
         const { data: specialistData, error: specialistError } = await supabase
           .from('peer_specialists')
           .select('*, status:specialist_status(status, last_seen)')
@@ -82,6 +79,9 @@ const PeerSpecialistDashboard = () => {
             status: specialistData.status?.[0] || { status: 'offline' as const, last_active: null }
           };
           setPeerSpecialist(specialistWithUserData);
+          
+          // Now load chat sessions with the specialist ID
+          await loadChatSessionsForSpecialist(specialistWithUserData.id);
         }
       } finally {
         setLoading(false);
@@ -90,6 +90,33 @@ const PeerSpecialistDashboard = () => {
 
     loadData();
   }, [user]);
+
+  const loadChatSessionsForSpecialist = async (specialistId: string) => {
+    console.log('Loading chat sessions for specialist:', specialistId);
+    
+    const { data, error } = await supabase
+      .from('chat_sessions')
+      .select('*')
+      .eq('specialist_id', specialistId)
+      .order('started_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching chat sessions:', error);
+    } else {
+      console.log('Loaded chat sessions:', data?.length || 0, 'sessions');
+      // Type cast the status field to match our interface
+      const typedSessions = (data || []).map(session => ({
+        ...session,
+        status: session.status as 'waiting' | 'active' | 'ended'
+      }));
+      setChatSessions(typedSessions);
+    }
+  };
+
+  const loadChatSessions = async () => {
+    if (!peerSpecialist) return;
+    await loadChatSessionsForSpecialist(peerSpecialist.id);
+  };
 
   // Separate effect for real-time subscriptions
   useEffect(() => {
@@ -154,26 +181,6 @@ const PeerSpecialistDashboard = () => {
     };
   }, [user?.id]);
 
-  const loadChatSessions = async () => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('chat_sessions')
-      .select('*')
-      .eq('specialist_id', user.id)
-      .order('started_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching chat sessions:', error);
-    } else {
-      // Type cast the status field to match our interface
-      const typedSessions = (data || []).map(session => ({
-        ...session,
-        status: session.status as 'waiting' | 'active' | 'ended'
-      }));
-      setChatSessions(typedSessions);
-    }
-  };
 
   const filterSessions = () => {
     if (chatFilter === 'all') {
