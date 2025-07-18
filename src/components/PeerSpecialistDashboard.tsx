@@ -1,16 +1,33 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, Settings } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  MessageSquare, 
+  Calendar, 
+  Users, 
+  BarChart3, 
+  Settings, 
+  Clock,
+  Star,
+  TrendingUp,
+  Activity,
+  Phone,
+  Video,
+  Bell
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { format } from 'date-fns';
 import SpecialistChatWindow from './SpecialistChatWindow';
 import SpecialistCalendar from './calendar/SpecialistCalendar';
-import ScheduleManagementModal from './calendar/ScheduleManagementModal';
-import { useToast } from '@/hooks/use-toast';
+import SpecialistPerformanceMetrics from './SpecialistPerformanceMetrics';
+import SpecialistSettings from './SpecialistSettings';
+import SpecialistAnalyticsDashboard from './SpecialistAnalyticsDashboard';
+import RecentActivityDisplay from './RecentActivityDisplay';
+import { format } from 'date-fns';
+
 interface ChatSession {
   id: string;
   user_id: string;
@@ -19,442 +36,346 @@ interface ChatSession {
   started_at: string;
   ended_at?: string;
 }
-interface PeerSpecialist {
-  id: string;
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone_number: string;
-  bio: string;
-  is_active: boolean;
-  is_verified: boolean;
-  created_at: string;
-  updated_at: string;
-  status: {
-    status: 'online' | 'offline' | 'away';
-    last_active: string | null;
-  };
-}
+
 const PeerSpecialistDashboard = () => {
-  const {
-    user
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
-  const [chatFilter, setChatFilter] = useState<'all' | 'waiting' | 'active'>('all');
-  const [peerSpecialist, setPeerSpecialist] = useState<PeerSpecialist | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [pendingSessions, setPendingSessions] = useState<ChatSession[]>([]);
+  const [activeSessions, setActiveSessions] = useState<ChatSession[]>([]);
+  const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
+  const [specialistData, setSpecialistData] = useState<any>(null);
+  const [todayStats, setTodayStats] = useState({
+    sessionsToday: 0,
+    avgResponseTime: 0,
+    appointmentsToday: 0,
+    totalUsers: 0
+  });
+  const { user } = useAuth();
 
-  // Add state for selected chat session
-  const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
   useEffect(() => {
-    const loadData = async () => {
-      if (!user) return;
-      setLoading(true);
-      try {
-        // Fetch peer specialist data FIRST
-        const {
-          data: specialistData,
-          error: specialistError
-        } = await supabase.from('peer_specialists').select('*, status:specialist_status(status, last_seen)').eq('user_id', user.id).single();
-        if (specialistError) {
-          console.error('Error fetching peer specialist data:', specialistError);
-        } else if (specialistData) {
-          // Add missing email and phone_number from auth user
-          const specialistWithUserData = {
-            ...specialistData,
-            email: user.email || '',
-            phone_number: user.phone || '',
-            status: specialistData.status?.[0] || {
-              status: 'offline' as const,
-              last_active: null
-            }
-          };
-          setPeerSpecialist(specialistWithUserData);
-
-          // Now load chat sessions with the specialist ID
-          await loadChatSessionsForSpecialist(specialistWithUserData.id);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
+    if (user) {
+      loadSpecialistData();
+      loadChatSessions();
+      loadTodayStats();
+      setupRealTimeSubscriptions();
+    }
   }, [user]);
-  const loadChatSessionsForSpecialist = async (specialistId: string) => {
-    console.log('Loading chat sessions for specialist:', specialistId);
-    const {
-      data,
-      error
-    } = await supabase.from('chat_sessions').select('*').eq('specialist_id', specialistId).order('started_at', {
-      ascending: false
-    });
-    if (error) {
-      console.error('Error fetching chat sessions:', error);
-    } else {
-      console.log('Loaded chat sessions:', data?.length || 0, 'sessions');
-      // Type cast the status field to match our interface
-      const typedSessions = (data || []).map(session => ({
-        ...session,
-        status: session.status as 'waiting' | 'active' | 'ended'
-      }));
-      setChatSessions(typedSessions);
-    }
-  };
-  const loadChatSessions = async () => {
-    if (!peerSpecialist) return;
-    await loadChatSessionsForSpecialist(peerSpecialist.id);
-  };
 
-  // Separate effect for real-time subscriptions
-  useEffect(() => {
-    if (!user?.id) return;
-    console.log('Setting up real-time subscriptions for user:', user.id);
-
-    // Set up real-time subscriptions for live updates
-    const chatSessionsChannel = supabase.channel('chat-sessions-realtime').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'chat_sessions'
-    }, payload => {
-      console.log('Real-time chat session change:', payload);
-      loadChatSessions(); // Refresh sessions on any change
-    }).subscribe();
-    const appointmentProposalsChannel = supabase.channel('appointment-proposals-realtime').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'appointment_proposals'
-    }, payload => {
-      console.log('Real-time appointment proposal change:', payload);
-      loadChatSessions(); // Refresh to pick up new proposals
-    }).subscribe();
-    const chatMessagesChannel = supabase.channel('chat-messages-realtime').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'chat_messages'
-    }, payload => {
-      console.log('Real-time chat message change:', payload);
-      loadChatSessions(); // Refresh sessions when messages change
-    }).subscribe();
-    return () => {
-      console.log('Cleaning up real-time subscriptions');
-      supabase.removeChannel(chatSessionsChannel);
-      supabase.removeChannel(appointmentProposalsChannel);
-      supabase.removeChannel(chatMessagesChannel);
-    };
-  }, [user?.id]);
-  const filterSessions = () => {
-    if (chatFilter === 'all') {
-      return chatSessions;
-    } else {
-      return chatSessions.filter(session => session.status === chatFilter);
-    }
-  };
-  const handleChatClick = (session: ChatSession) => {
-    setSelectedChatSession(session);
-  };
-  const handleCloseChatWindow = () => {
-    setSelectedChatSession(null);
-    // Refresh sessions after closing
-    loadChatSessions();
-  };
-  const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
-    if (!peerSpecialist) return;
-    
+  const loadSpecialistData = async () => {
     try {
-      // First, try to update existing status
-      const { data: updateData, error: updateError } = await supabase
-        .from('specialist_status')
-        .update({
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('specialist_id', peerSpecialist.id)
-        .select();
+      const { data, error } = await supabase
+        .from('peer_specialists')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
 
-      // If no rows were updated (status doesn't exist), create it
-      if (updateData && updateData.length === 0) {
-        const { error: insertError } = await supabase
-          .from('specialist_status')
-          .insert({
-            specialist_id: peerSpecialist.id,
-            status: newStatus,
-            updated_at: new Date().toISOString()
-          });
-        
-        if (insertError) throw insertError;
-      } else if (updateError) {
-        throw updateError;
-      }
-
-      // Update local state
-      setPeerSpecialist(prev => prev ? {
-        ...prev,
-        status: {
-          ...prev.status,
-          status: newStatus
-        }
-      } : null);
-      
-      toast({
-        title: "Status Updated",
-        description: `Your status has been changed to ${newStatus}`
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update status. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Check if there are active or waiting sessions
-  const hasActiveSessions = chatSessions.some(session => session.status === 'active' || session.status === 'waiting');
-  const handleLogout = async () => {
-    if (hasActiveSessions) {
-      toast({
-        title: "Cannot Log Out",
-        description: "Please complete or close all active and waiting sessions before logging out.",
-        variant: "destructive"
-      });
-      return;
-    }
-    try {
-      // Set status to offline before logging out
-      if (peerSpecialist) {
-        await supabase
-          .from('specialist_status')
-          .update({
-            status: 'offline',
-            updated_at: new Date().toISOString()
-          })
-          .eq('specialist_id', peerSpecialist.id);
-      }
-
-      // Sign out the user
-      const {
-        error
-      } = await supabase.auth.signOut();
       if (error) throw error;
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out."
-      });
+      setSpecialistData(data);
     } catch (error) {
-      console.error('Error logging out:', error);
-      toast({
-        title: "Error",
-        description: "Failed to log out. Please try again.",
-        variant: "destructive"
-      });
+      console.error('Error loading specialist data:', error);
     }
   };
-  const handleUpdateSpecialist = (updatedSpecialist: any) => {
-    setPeerSpecialist(updatedSpecialist);
+
+  const loadChatSessions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .eq('specialist_id', specialistData?.id)
+        .in('status', ['waiting', 'active']);
+
+      if (error) throw error;
+
+      const waiting = data?.filter(session => session.status === 'waiting') || [];
+      const active = data?.filter(session => session.status === 'active') || [];
+      
+      setPendingSessions(waiting);
+      setActiveSessions(active);
+    } catch (error) {
+      console.error('Error loading chat sessions:', error);
+    }
   };
 
-  // Helper function to check if waiting session has been waiting more than 45 seconds
-  const isWaitingTooLong = (session: ChatSession) => {
-    if (session.status !== 'waiting') return false;
-    const now = new Date();
-    const startTime = new Date(session.started_at);
-    const waitTime = now.getTime() - startTime.getTime();
-    return waitTime > 45000; // 45 seconds in milliseconds
+  const loadTodayStats = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Count today's sessions
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('chat_sessions')
+        .select('id')
+        .eq('specialist_id', specialistData?.id)
+        .gte('started_at', `${today}T00:00:00`)
+        .lt('started_at', `${today}T23:59:59`);
+
+      if (sessionsError) throw sessionsError;
+
+      // Count today's appointments
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('specialist_appointments')
+        .select('id')
+        .eq('specialist_id', specialistData?.id)
+        .gte('scheduled_start', `${today}T00:00:00`)
+        .lt('scheduled_start', `${today}T23:59:59`);
+
+      if (appointmentsError) throw appointmentsError;
+
+      // Count total unique users
+      const { data: usersData, error: usersError } = await supabase
+        .from('chat_sessions')
+        .select('user_id')
+        .eq('specialist_id', specialistData?.id);
+
+      if (usersError) throw usersError;
+
+      const uniqueUsers = new Set(usersData?.map(session => session.user_id)).size;
+
+      setTodayStats({
+        sessionsToday: sessionsData?.length || 0,
+        avgResponseTime: 2.5, // This would come from performance metrics
+        appointmentsToday: appointmentsData?.length || 0,
+        totalUsers: uniqueUsers
+      });
+    } catch (error) {
+      console.error('Error loading today stats:', error);
+    }
   };
 
-  // Check if there are more than 2 users waiting
-  const waitingSessions = chatSessions.filter(s => s.status === 'waiting');
-  const hasMultipleWaitingSessions = waitingSessions.length > 2;
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b border-border p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-fjalla font-bold">Peer Support Specialist Dashboard</h1>
-            <p className="text-muted-foreground font-source">Manage your chat sessions and support users in their recovery journey.</p>
-          </div>
-          <div className="flex items-center space-x-4">
-            {peerSpecialist?.status && <div className="flex items-center space-x-3">
-                <Select value={peerSpecialist.status.status} onValueChange={handleStatusChange}>
-                  <SelectTrigger className="w-32 bg-background border-border z-50">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border-border shadow-lg z-50">
-                    <SelectItem value="online">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                        Online
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="away">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                        Away
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="offline">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-gray-500" />
-                        Offline
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowScheduleModal(true)}
-            >
-              <Settings size={16} className="mr-2" />
-              Manage Schedule
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleLogout} disabled={hasActiveSessions}>
-              <LogOut size={16} className="mr-2" />
-              {hasActiveSessions ? 'Sessions Active' : 'Log Out'}
-            </Button>
-          </div>
-        </div>
-      </div>
+  const setupRealTimeSubscriptions = () => {
+    const channel = supabase
+      .channel('specialist-dashboard')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'chat_sessions',
+        filter: `specialist_id=eq.${specialistData?.id}`
+      }, () => {
+        loadChatSessions();
+      })
+      .subscribe();
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Specialist Name */}
-        {peerSpecialist && <div className="mb-6">
-            <h2 className="text-xl font-fjalla font-bold text-foreground">
-              {peerSpecialist.first_name} {peerSpecialist.last_name}
-            </h2>
-            <p className="text-muted-foreground font-source">Peer Support Specialist</p>
-          </div>}
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
 
-        {/* Status Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="flex items-center justify-between p-6">
-            <div>
-              <h3 className="text-lg font-fjalla font-bold">Active Sessions</h3>
-              <p className="text-muted-foreground font-source">Current live chat sessions</p>
-            </div>
-            <Badge variant="default">{chatSessions.filter(s => s.status === 'active').length}</Badge>
-          </Card>
-          <Card className={`flex items-center justify-between p-6 ${hasMultipleWaitingSessions ? 'bg-warning border-warning-foreground/20' : ''}`}>
-            <div>
-              <h3 className="text-lg font-fjalla font-bold">Waiting Sessions</h3>
-              <p className="text-muted-foreground font-source">Users waiting for a response</p>
-            </div>
-            <Badge variant="secondary">{chatSessions.filter(s => s.status === 'waiting').length}</Badge>
-          </Card>
-          <Card className="flex items-center justify-between p-6">
-            <div>
-              <h3 className="text-lg font-fjalla font-bold">Completed Sessions</h3>
-              <p className="text-muted-foreground font-source">Total sessions completed today</p>
-            </div>
-            <Badge variant="outline">{chatSessions.filter(s => s.status === 'ended').length}</Badge>
-          </Card>
-        </div>
+  const handleAcceptSession = async (session: ChatSession) => {
+    try {
+      const { error } = await supabase
+        .from('chat_sessions')
+        .update({ status: 'active' })
+        .eq('id', session.id);
 
-        {/* Chat Management */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Chat Sessions List */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-fjalla font-bold">Chat Sessions</h2>
-              <div className="flex gap-2">
-                <Button size="sm" variant={chatFilter === 'all' ? 'default' : 'outline'} onClick={() => setChatFilter('all')}>
-                  All ({chatSessions.length})
-                </Button>
-                <Button size="sm" variant={chatFilter === 'waiting' ? 'default' : 'outline'} onClick={() => setChatFilter('waiting')}>
-                  Waiting ({chatSessions.filter(s => s.status === 'waiting').length})
-                </Button>
-                <Button size="sm" variant={chatFilter === 'active' ? 'default' : 'outline'} onClick={() => setChatFilter('active')}>
-                  Active ({chatSessions.filter(s => s.status === 'active').length})
-                </Button>
-              </div>
-            </div>
+      if (error) throw error;
+      
+      setSelectedSession(session);
+      loadChatSessions();
+    } catch (error) {
+      console.error('Error accepting session:', error);
+    }
+  };
 
-            <div className="space-y-4">
-              {filterSessions().length > 0 ? filterSessions().map(session => <div key={session.id} className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${selectedChatSession?.id === session.id ? 'border-primary bg-primary/5' : 'border-border'} ${isWaitingTooLong(session) ? 'bg-warning border-warning-foreground/20' : ''}`} onClick={() => handleChatClick(session)}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <User className="text-primary" size={16} />
-                        </div>
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-fjalla font-bold">Chat Session</span>
-                            <Badge variant={session.status === 'active' ? 'default' : session.status === 'waiting' ? 'secondary' : 'outline'}>
-                              {session.status}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground font-source">
-                            Started {format(new Date(session.started_at), 'MMM d, h:mm a')}
-                          </p>
-                        </div>
-                      </div>
-                      <ChevronRight size={16} className="text-muted-foreground" />
-                    </div>
-                  </div>) : <div className="text-center py-8 text-muted-foreground">
-                  <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
-                  <p className="font-source">No {chatFilter !== 'all' ? chatFilter : ''} chat sessions</p>
-                </div>}
-            </div>
-          </Card>
-
-          {/* Chat Window or Welcome */}
-          <Card className="p-0 overflow-hidden">
-            {selectedChatSession ? <SpecialistChatWindow session={selectedChatSession} onClose={handleCloseChatWindow} /> : <div className="p-6 text-center">
-                <MessageCircle size={64} className="mx-auto mb-4 text-muted-foreground/50" />
-                <h3 className="text-lg font-fjalla font-bold mb-2">Select a Chat Session</h3>
-                <p className="text-muted-foreground font-source">
-                  Choose a chat session from the list to start helping users with their recovery journey.
-                </p>
-              </div>}
-          </Card>
-        </div>
-
-        {/* Calendar Section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-fjalla font-bold">Your Schedule</h2>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowScheduleModal(true)}
-              >
-                <Settings size={16} className="mr-2" />
-                Schedule Settings
-              </Button>
-            </div>
-          </div>
-          {peerSpecialist && (
-            <SpecialistCalendar specialistId={peerSpecialist.id} />
+  const StatCard = ({ title, value, icon: Icon, change }: any) => (
+    <Card className="p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="text-2xl font-bold">{value}</p>
+          {change && (
+            <p className="text-xs text-green-600 flex items-center mt-1">
+              <TrendingUp size={12} className="mr-1" />
+              {change}
+            </p>
           )}
         </div>
-
-        {/* Recent Activity */}
-        <div className="mt-6">
-          <h2 className="text-xl font-fjalla font-bold mb-4">Recent Activity</h2>
-          <Card className="p-6">
-            <p className="text-muted-foreground font-source">No recent activity to display.</p>
-          </Card>
-        </div>
+        <Icon className="h-8 w-8 text-muted-foreground" />
       </div>
+    </Card>
+  );
 
-      {/* Schedule Management Modal */}
-      {peerSpecialist && (
-        <ScheduleManagementModal
-          isOpen={showScheduleModal}
-          onClose={() => setShowScheduleModal(false)}
-          specialistId={peerSpecialist.id}
-        />
-      )}
+  if (selectedSession) {
+    return (
+      <SpecialistChatWindow 
+        session={selectedSession}
+        onClose={() => setSelectedSession(null)}
+      />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">Specialist Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome back, {specialistData?.first_name} {specialistData?.last_name}
+          </p>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="chat">Chat Sessions</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard
+                title="Sessions Today"
+                value={todayStats.sessionsToday}
+                icon={MessageSquare}
+                change="+12% from yesterday"
+              />
+              <StatCard
+                title="Avg Response Time"
+                value={`${todayStats.avgResponseTime}min`}
+                icon={Clock}
+                change="-8% from yesterday"
+              />
+              <StatCard
+                title="Appointments Today"
+                value={todayStats.appointmentsToday}
+                icon={Calendar}
+              />
+              <StatCard
+                title="Total Users"
+                value={todayStats.totalUsers}
+                icon={Users}
+                change="+5 this week"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Pending Sessions */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Bell className="text-orange-500" size={20} />
+                    Pending Sessions ({pendingSessions.length})
+                  </h3>
+                </div>
+                
+                {pendingSessions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageSquare size={48} className="mx-auto mb-3 opacity-50" />
+                    <p>No pending sessions</p>
+                    <p className="text-sm">New chat requests will appear here</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingSessions.map((session) => (
+                      <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">New Chat Request</p>
+                          <p className="text-sm text-muted-foreground">
+                            Started {format(new Date(session.started_at), 'HH:mm')}
+                          </p>
+                        </div>
+                        <Button 
+                          size="sm"
+                          onClick={() => handleAcceptSession(session)}
+                        >
+                          Accept
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              {/* Recent Activity */}
+              <RecentActivityDisplay specialistId={specialistData?.id} />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="chat">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Active Sessions */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Activity className="text-green-500" size={20} />
+                  Active Sessions ({activeSessions.length})
+                </h3>
+                
+                {activeSessions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageSquare size={48} className="mx-auto mb-3 opacity-50" />
+                    <p>No active sessions</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {activeSessions.map((session) => (
+                      <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">Active Chat</p>
+                          <p className="text-sm text-muted-foreground">
+                            Started {format(new Date(session.started_at), 'HH:mm')}
+                          </p>
+                        </div>
+                        <Button 
+                          size="sm"
+                          onClick={() => setSelectedSession(session)}
+                        >
+                          Join Chat
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              {/* Pending Sessions */}
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Clock className="text-orange-500" size={20} />
+                  Pending Sessions ({pendingSessions.length})
+                </h3>
+                
+                {pendingSessions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Bell size={48} className="mx-auto mb-3 opacity-50" />
+                    <p>No pending sessions</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingSessions.map((session) => (
+                      <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium">New Chat Request</p>
+                          <p className="text-sm text-muted-foreground">
+                            Waiting since {format(new Date(session.started_at), 'HH:mm')}
+                          </p>
+                        </div>
+                        <Button 
+                          size="sm"
+                          onClick={() => handleAcceptSession(session)}
+                        >
+                          Accept
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="calendar">
+            <SpecialistCalendar specialistId={specialistData?.id} />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <SpecialistAnalyticsDashboard specialistId={specialistData?.id} />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <SpecialistSettings />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
