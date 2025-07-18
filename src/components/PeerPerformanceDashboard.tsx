@@ -421,6 +421,15 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                    const issues: string[] = [];
                    const coachingTips: string[] = [];
                    
+                   // Debug logging to see what metrics we have
+                   console.log(`Specialist ${specialist.first_name} ${specialist.last_name} metrics:`, {
+                     chat_completion_rate: specialist.chat_completion_rate,
+                     checkin_completion_rate: specialist.checkin_completion_rate,
+                     avg_response_time_seconds: specialist.avg_response_time_seconds,
+                     avg_user_rating: specialist.avg_user_rating,
+                     avg_streak_impact: specialist.avg_streak_impact
+                   });
+                   
                    // Check for performance issues and generate coaching tips
                    if ((specialist.chat_completion_rate || 0) < 50) {
                      issues.push('Chat completion rate critically low');
@@ -457,6 +466,11 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                      } else {
                        coachingTips.push('Incorporate more goal-setting and accountability practices');
                      }
+                   }
+                   
+                   // Always show at least one coaching tip for demo purposes
+                   if (coachingTips.length === 0) {
+                     coachingTips.push('Continue excellent work maintaining high performance standards');
                    }
 
                    if (issues.length > 0 || coachingTips.length > 0) {
