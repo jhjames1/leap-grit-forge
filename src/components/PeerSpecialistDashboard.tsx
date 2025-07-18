@@ -1,535 +1,436 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, Settings, CalendarClock } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { 
+  Calendar, 
+  Clock, 
+  MessageSquare, 
+  Users, 
+  Activity, 
+  Settings, 
+  Star,
+  CalendarClock,
+  Phone,
+  Video,
+  Bell,
+  BarChart3,
+  TrendingUp,
+  CheckCircle,
+  Calendar as CalendarIcon
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { format } from 'date-fns';
+import { useSpecialistMetrics } from '@/hooks/useSpecialistMetrics';
+import { useSpecialistPresence } from '@/hooks/useSpecialistPresence';
+import { useCalendarAwarePresence } from '@/hooks/useCalendarAwarePresence';
 import SpecialistChatWindow from './SpecialistChatWindow';
 import SpecialistCalendar from './calendar/SpecialistCalendar';
+import SpecialistSettings from './SpecialistSettings';
+import SpecialistFavorites from './SpecialistFavorites';
 import ScheduleManagementModal from './calendar/ScheduleManagementModal';
-import { useToast } from '@/hooks/use-toast';
-import { useCalendarAwarePresence } from '@/hooks/useCalendarAwarePresence';
+import RealTimeAvailabilityStatus from './calendar/RealTimeAvailabilityStatus';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 
-interface ChatSession {
+interface Specialist {
   id: string;
-  user_id: string;
-  specialist_id?: string;
-  status: 'waiting' | 'active' | 'ended';
-  started_at: string;
-  ended_at?: string;
-}
-interface PeerSpecialist {
-  id: string;
-  user_id: string;
   first_name: string;
   last_name: string;
-  email: string;
-  phone_number: string;
+  specialties: string[];
   bio: string;
-  is_active: boolean;
+  avatar_url?: string;
   is_verified: boolean;
-  created_at: string;
-  updated_at: string;
-  status: {
-    status: 'online' | 'offline' | 'away';
-    last_active: string | null;
-  };
+  years_experience: number;
 }
+
 const PeerSpecialistDashboard = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
-  const [chatFilter, setChatFilter] = useState<'all' | 'waiting' | 'active'>('all');
-  const [peerSpecialist, setPeerSpecialist] = useState<PeerSpecialist | null>(null);
+  const [specialist, setSpecialist] = useState<Specialist | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedChatSession, setSelectedChatSession] = useState<string | null>(null);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  
+  const { 
+    metrics, 
+    loading: metricsLoading,
+    refreshMetrics 
+  } = useSpecialistMetrics();
+  
+  const { 
+    updateStatus, 
+    trackActivity,
+    specialistStatuses 
+  } = useSpecialistPresence();
 
-  // Use the new calendar-aware presence hook
-  const {
+  const { 
     calendarAvailability,
     manualStatus,
     isCalendarControlled,
     setManualAwayStatus,
-    toggleCalendarControl,
-    refreshAvailability,
-    specialistId
+    toggleCalendarControl 
   } = useCalendarAwarePresence();
 
+  // Fetch specialist profile
   useEffect(() => {
-    const loadData = async () => {
+    const fetchSpecialist = async () => {
       if (!user) return;
-      setLoading(true);
-      try {
-        // Fetch peer specialist data FIRST
-        const {
-          data: specialistData,
-          error: specialistError
-        } = await supabase.from('peer_specialists').select('*, status:specialist_status(status, last_seen)').eq('user_id', user.id).single();
-        if (specialistError) {
-          console.error('Error fetching peer specialist data:', specialistError);
-        } else if (specialistData) {
-          // Add missing email and phone_number from auth user
-          const specialistWithUserData = {
-            ...specialistData,
-            email: user.email || '',
-            phone_number: user.phone || '',
-            status: specialistData.status?.[0] || {
-              status: 'offline' as const,
-              last_active: null
-            }
-          };
-          setPeerSpecialist(specialistWithUserData);
 
-          // Now load chat sessions with the specialist ID
-          await loadChatSessionsForSpecialist(specialistWithUserData.id);
+      try {
+        const { data, error } = await supabase
+          .from('peer_specialists')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching specialist:', error);
+          return;
         }
+
+        setSpecialist(data);
+      } catch (error) {
+        console.error('Error:', error);
       } finally {
         setLoading(false);
       }
     };
-    loadData();
+
+    fetchSpecialist();
   }, [user]);
-  const loadChatSessionsForSpecialist = async (specialistId: string) => {
-    console.log('Loading chat sessions for specialist:', specialistId);
-    const {
-      data,
-      error
-    } = await supabase.from('chat_sessions').select('*').eq('specialist_id', specialistId).order('started_at', {
-      ascending: false
-    });
-    if (error) {
-      console.error('Error fetching chat sessions:', error);
-    } else {
-      console.log('Loaded chat sessions:', data?.length || 0, 'sessions');
-      // Type cast the status field to match our interface
-      const typedSessions = (data || []).map(session => ({
-        ...session,
-        status: session.status as 'waiting' | 'active' | 'ended'
-      }));
-      setChatSessions(typedSessions);
-    }
-  };
-  const loadChatSessions = async () => {
-    if (!peerSpecialist) return;
-    await loadChatSessionsForSpecialist(peerSpecialist.id);
-  };
 
-  // Separate effect for real-time subscriptions
+  // Track activity when tab changes
   useEffect(() => {
-    if (!user?.id) return;
-    console.log('Setting up real-time subscriptions for user:', user.id);
+    if (activeTab) {
+      trackActivity('tab_change', { tab: activeTab });
+    }
+  }, [activeTab, trackActivity]);
 
-    // Set up real-time subscriptions for live updates
-    const chatSessionsChannel = supabase.channel('chat-sessions-realtime').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'chat_sessions'
-    }, payload => {
-      console.log('Real-time chat session change:', payload);
-      loadChatSessions(); // Refresh sessions on any change
-    }).subscribe();
-    const appointmentProposalsChannel = supabase.channel('appointment-proposals-realtime').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'appointment_proposals'
-    }, payload => {
-      console.log('Real-time appointment proposal change:', payload);
-      loadChatSessions(); // Refresh to pick up new proposals
-    }).subscribe();
-    const chatMessagesChannel = supabase.channel('chat-messages-realtime').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'chat_messages'
-    }, payload => {
-      console.log('Real-time chat message change:', payload);
-      loadChatSessions(); // Refresh sessions when messages change
-    }).subscribe();
-    return () => {
-      console.log('Cleaning up real-time subscriptions');
-      supabase.removeChannel(chatSessionsChannel);
-      supabase.removeChannel(appointmentProposalsChannel);
-      supabase.removeChannel(chatMessagesChannel);
-    };
-  }, [user?.id]);
-  const filterSessions = () => {
-    if (chatFilter === 'all') {
-      return chatSessions;
+  const handleStatusChange = async (status: 'online' | 'away' | 'busy' | 'offline') => {
+    if (status === 'away') {
+      await setManualAwayStatus(true, 'Manually set to away');
     } else {
-      return chatSessions.filter(session => session.status === chatFilter);
-    }
-  };
-  const handleChatClick = (session: ChatSession) => {
-    setSelectedChatSession(session);
-  };
-  const handleCloseChatWindow = () => {
-    setSelectedChatSession(null);
-    // Refresh sessions after closing
-    loadChatSessions();
-  };
-
-  // Update the status change handler to work with calendar control
-  const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
-    if (!peerSpecialist) return;
-    
-    try {
-      if (newStatus === 'away') {
-        // Set manual away status
-        await setManualAwayStatus(true, 'Manually set to away');
-      } else if (newStatus === 'offline') {
-        // Turn off calendar control and set offline
-        await toggleCalendarControl(false);
-        await supabase
-          .from('specialist_status')
-          .upsert({
-            specialist_id: peerSpecialist.id,
-            status: 'offline',
-            status_message: 'Manually set offline',
-            updated_at: new Date().toISOString(),
-            presence_data: {
-              calendar_controlled: false,
-              manual_override: true,
-              timestamp: Date.now()
-            }
-          });
-      } else {
-        // Return to calendar-controlled status
-        await setManualAwayStatus(false);
-        await toggleCalendarControl(true);
-      }
-
-      toast({
-        title: "Status Updated",
-        description: `Your status has been changed to ${newStatus}`
-      });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update status. Please try again.",
-        variant: "destructive"
-      });
+      await setManualAwayStatus(false);
+      await updateStatus(status);
     }
   };
 
-  // Get current effective status
-  const getEffectiveStatus = () => {
-    if (manualStatus) return manualStatus;
-    if (calendarAvailability) return calendarAvailability.status;
-    return 'offline';
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const getStatusMessage = () => {
-    if (manualStatus) return 'Manually set to away';
-    if (calendarAvailability?.reason) return calendarAvailability.reason;
-    return null;
-  };
+  if (!specialist) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Specialist profile not found</p>
+        </div>
+      </div>
+    );
+  }
 
-  const hasActiveSessions = chatSessions.some(session => session.status === 'active' || session.status === 'waiting');
-  const handleLogout = async () => {
-    if (hasActiveSessions) {
-      toast({
-        title: "Cannot Log Out",
-        description: "Please complete or close all active and waiting sessions before logging out.",
-        variant: "destructive"
-      });
-      return;
-    }
-    try {
-      // Set status to offline before logging out
-      if (peerSpecialist) {
-        await supabase
-          .from('specialist_status')
-          .update({
-            status: 'offline',
-            updated_at: new Date().toISOString()
-          })
-          .eq('specialist_id', peerSpecialist.id);
-      }
-
-      // Sign out the user
-      const {
-        error
-      } = await supabase.auth.signOut();
-      if (error) throw error;
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out."
-      });
-    } catch (error) {
-      console.error('Error logging out:', error);
-      toast({
-        title: "Error",
-        description: "Failed to log out. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-  const handleUpdateSpecialist = (updatedSpecialist: any) => {
-    setPeerSpecialist(updatedSpecialist);
-  };
-
-  // Helper function to check if waiting session has been waiting more than 45 seconds
-  const isWaitingTooLong = (session: ChatSession) => {
-    if (session.status !== 'waiting') return false;
-    const now = new Date();
-    const startTime = new Date(session.started_at);
-    const waitTime = now.getTime() - startTime.getTime();
-    return waitTime > 45000; // 45 seconds in milliseconds
-  };
-
-  // Check if there are more than 2 users waiting
-  const waitingSessions = chatSessions.filter(s => s.status === 'waiting');
-  const hasMultipleWaitingSessions = waitingSessions.length > 2;
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-card border-b border-border p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-fjalla font-bold">Peer Support Specialist Dashboard</h1>
-            <p className="text-muted-foreground font-source">Manage your chat sessions and support users in their recovery journey.</p>
-          </div>
-          <div className="flex items-center space-x-4">
-            {/* Calendar Control Toggle with Tooltip */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center space-x-2">
-                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                    <Switch
-                      checked={isCalendarControlled}
-                      onCheckedChange={toggleCalendarControl}
-                      className="data-[state=checked]:bg-primary"
-                    />
-                    <span className="text-sm text-muted-foreground">Auto</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <div className="space-y-1">
-                    <p className="font-medium">Calendar-Based Status Control</p>
-                    <p className="text-sm">When enabled, your status is automatically set based on your calendar:</p>
-                    <ul className="text-sm space-y-1">
-                      <li>• <strong>Online</strong> during working hours</li>
-                      <li>• <strong>Busy</strong> during appointments</li>
-                      <li>• <strong>Offline</strong> outside working hours</li>
-                    </ul>
-                    <p className="text-sm">When disabled, you can manually control your status.</p>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            {/* Status Selector */}
-            <div className="flex items-center space-x-3">
-              <div className="flex flex-col">
-                <Select value={getEffectiveStatus()} onValueChange={handleStatusChange}>
-                  <SelectTrigger className="w-32 bg-background border-border z-50">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border-border shadow-lg z-50">
-                    <SelectItem value="online">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                        Online
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="away">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                        Away
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="offline">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-gray-500" />
-                        Offline
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                {getStatusMessage() && (
-                  <span className="text-xs text-muted-foreground mt-1">
-                    {getStatusMessage()}
+      <div className="border-b bg-card">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={specialist.avatar_url} />
+                <AvatarFallback>
+                  {specialist.first_name?.[0]}{specialist.last_name?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">
+                  {specialist.first_name} {specialist.last_name}
+                </h1>
+                <div className="flex items-center space-x-2">
+                  {specialist.is_verified && (
+                    <Badge variant="secondary" className="text-xs">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Verified
+                    </Badge>
+                  )}
+                  <span className="text-sm text-muted-foreground">
+                    {specialist.years_experience} years experience
                   </span>
-                )}
+                </div>
               </div>
             </div>
 
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowScheduleModal(true)}
-            >
-              <Settings size={16} className="mr-2" />
-              Manage Schedule
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleLogout} disabled={hasActiveSessions}>
-              <LogOut size={16} className="mr-2" />
-              {hasActiveSessions ? 'Sessions Active' : 'Log Out'}
-            </Button>
+            <div className="flex items-center space-x-4">
+              {/* Real-time Availability Status */}
+              <div className="flex items-center space-x-3">
+                <div className="text-right">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                       <span className="text-sm font-medium">
+                         Current Status: {calendarAvailability?.isAvailable ? 'Available' : 'Not Available'}
+                       </span>
+                      {calendarAvailability?.reason && (
+                        <span className="text-sm text-muted-foreground">- {calendarAvailability.reason}</span>
+                      )}
+                    </div>
+                  </div>
+                  <RealTimeAvailabilityStatus 
+                    specialistId={specialist.id} 
+                    showDetails={false}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* Status Controls */}
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant={manualStatus === null ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleCalendarControl(!isCalendarControlled)}
+                >
+                  {isCalendarControlled ? 'Auto' : 'Manual'}
+                </Button>
+                
+                <Button
+                  variant={manualStatus === 'away' ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={() => handleStatusChange('away')}
+                >
+                  Away
+                </Button>
+              </div>
+
+              {/* Schedule Management */}
+              <Dialog open={scheduleModalOpen} onOpenChange={setScheduleModalOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Manage Schedule
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh]">
+                  <ScheduleManagementModal
+                    isOpen={scheduleModalOpen}
+                    onClose={() => setScheduleModalOpen(false)}
+                    specialistId={specialist.id}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
-
-        {/* Calendar Availability Info */}
-        {calendarAvailability && (
-          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                 <span className="text-sm font-medium">
-                   Current Status: {calendarAvailability.isAvailable ? 'Available' : 'Not Available'}
-                 </span>
-                {calendarAvailability.reason && (
-                  <span className="text-sm text-muted-foreground">- {calendarAvailability.reason}</span>
-                )}
-              </div>
-              {calendarAvailability.nextAvailable && (
-                <span className="text-sm text-muted-foreground">
-                  Next available: {format(calendarAvailability.nextAvailable, 'MMM d, h:mm a')}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6">
-        {/* Specialist Name */}
-        {peerSpecialist && <div className="mb-6">
-            <h2 className="text-xl font-fjalla font-bold text-foreground">
-              {peerSpecialist.first_name} {peerSpecialist.last_name}
-            </h2>
-            <p className="text-muted-foreground font-source">Peer Support Specialist</p>
-          </div>}
+      <div className="container mx-auto px-4 py-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="chat">Chat Sessions</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="favorites">Favorites</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
 
-        {/* Status Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="flex items-center justify-between p-6">
-            <div>
-              <h3 className="text-lg font-fjalla font-bold">Active Sessions</h3>
-              <p className="text-muted-foreground font-source">Current live chat sessions</p>
-            </div>
-            <Badge variant="default">{chatSessions.filter(s => s.status === 'active').length}</Badge>
-          </Card>
-          <Card className={`flex items-center justify-between p-6 ${hasMultipleWaitingSessions ? 'bg-warning border-warning-foreground/20' : ''}`}>
-            <div>
-              <h3 className="text-lg font-fjalla font-bold">Waiting Sessions</h3>
-              <p className="text-muted-foreground font-source">Users waiting for a response</p>
-            </div>
-            <Badge variant="secondary">{chatSessions.filter(s => s.status === 'waiting').length}</Badge>
-          </Card>
-          <Card className="flex items-center justify-between p-6">
-            <div>
-              <h3 className="text-lg font-fjalla font-bold">Completed Sessions</h3>
-              <p className="text-muted-foreground font-source">Total sessions completed today</p>
-            </div>
-            <Badge variant="outline">{chatSessions.filter(s => s.status === 'ended').length}</Badge>
-          </Card>
-        </div>
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {metricsLoading ? '...' : metrics?.activeSessions || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Currently active</p>
+                </CardContent>
+              </Card>
 
-        {/* Chat Management */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Chat Sessions List */}
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-fjalla font-bold">Chat Sessions</h2>
-              <div className="flex gap-2">
-                <Button size="sm" variant={chatFilter === 'all' ? 'default' : 'outline'} onClick={() => setChatFilter('all')}>
-                  All ({chatSessions.length})
-                </Button>
-                <Button size="sm" variant={chatFilter === 'waiting' ? 'default' : 'outline'} onClick={() => setChatFilter('waiting')}>
-                  Waiting ({chatSessions.filter(s => s.status === 'waiting').length})
-                </Button>
-                <Button size="sm" variant={chatFilter === 'active' ? 'default' : 'outline'} onClick={() => setChatFilter('active')}>
-                  Active ({chatSessions.filter(s => s.status === 'active').length})
-                </Button>
-              </div>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Today's Sessions</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {metricsLoading ? '...' : metrics?.todaySessions || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Sessions today</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {metricsLoading ? '...' : `${metrics?.avgResponseTime || 0}s`}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Average response</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">User Rating</CardTitle>
+                  <Star className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {metricsLoading ? '...' : (metrics?.avgRating?.toFixed(1) || 'N/A')}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Average rating</p>
+                </CardContent>
+              </Card>
             </div>
 
-            <div className="space-y-4">
-              {filterSessions().length > 0 ? filterSessions().map(session => <div key={session.id} className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${selectedChatSession?.id === session.id ? 'border-primary bg-primary/5' : 'border-border'} ${isWaitingTooLong(session) ? 'bg-warning border-warning-foreground/20' : ''}`} onClick={() => handleChatClick(session)}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <User className="text-primary" size={16} />
-                        </div>
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-fjalla font-bold">Chat Session</span>
-                            <Badge variant={session.status === 'active' ? 'default' : session.status === 'waiting' ? 'secondary' : 'outline'}>
-                              {session.status}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground font-source">
-                            Started {format(new Date(session.started_at), 'MMM d, h:mm a')}
+            {/* Recent Activity and Upcoming Appointments */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Recent Activity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {metrics?.recentSessions?.slice(0, 5).map((session) => (
+                      <div key={session.id} className="flex items-center space-x-3">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                        <div className="flex-1">
+                          <p className="text-sm">Chat session started</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(session.started_at), 'MMM d, h:mm a')}
                           </p>
                         </div>
                       </div>
-                      <ChevronRight size={16} className="text-muted-foreground" />
+                    )) || (
+                      <p className="text-sm text-muted-foreground">No recent activity</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CalendarIcon className="h-5 w-5" />
+                    Upcoming Appointments
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {metrics?.upcomingAppointments?.slice(0, 3).map((appointment) => (
+                      <div key={appointment.id} className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">
+                            {format(new Date(appointment.scheduled_start), 'MMM d, h:mm a')}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {appointment.meeting_type === 'video' ? 
+                              <><Video className="w-3 h-3 inline mr-1" />Video call</> :
+                              <><MessageSquare className="w-3 h-3 inline mr-1" />Chat session</>
+                            }
+                          </p>
+                        </div>
+                        <Badge variant="outline">{appointment.status}</Badge>
+                      </div>
+                    )) || (
+                      <p className="text-sm text-muted-foreground">No upcoming appointments</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Chat Sessions Tab */}
+          <TabsContent value="chat">
+            <SpecialistChatWindow 
+              specialistId={specialist.id}
+              onSessionSelect={setSelectedChatSession}
+            />
+          </TabsContent>
+
+          {/* Calendar Tab */}
+          <TabsContent value="calendar">
+            <SpecialistCalendar specialistId={specialist.id} />
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Performance Metrics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Total Sessions</span>
+                      <span className="font-semibold">{metrics?.totalSessions || 0}</span>
                     </div>
-                  </div>) : <div className="text-center py-8 text-muted-foreground">
-                  <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
-                  <p className="font-source">No {chatFilter !== 'all' ? chatFilter : ''} chat sessions</p>
-                </div>}
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Completion Rate</span>
+                      <span className="font-semibold">{metrics?.completionRate || 0}%</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">Response Time</span>
+                      <span className="font-semibold">{metrics?.avgResponseTime || 0}s</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Recent Trends
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Analytics data will be displayed here based on your recent performance.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-          </Card>
+          </TabsContent>
 
-          {/* Chat Window or Welcome */}
-          <Card className="p-0 overflow-hidden">
-            {selectedChatSession ? <SpecialistChatWindow session={selectedChatSession} onClose={handleCloseChatWindow} /> : <div className="p-6 text-center">
-                <MessageCircle size={64} className="mx-auto mb-4 text-muted-foreground/50" />
-                <h3 className="text-lg font-fjalla font-bold mb-2">Select a Chat Session</h3>
-                <p className="text-muted-foreground font-source">
-                  Choose a chat session from the list to start helping users with their recovery journey.
-                </p>
-              </div>}
-          </Card>
-        </div>
+          {/* Favorites Tab */}
+          <TabsContent value="favorites">
+            <SpecialistFavorites specialistId={specialist.id} />
+          </TabsContent>
 
-        {/* Calendar Section */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-fjalla font-bold">Your Schedule</h2>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowScheduleModal(true)}
-              >
-                <Settings size={16} className="mr-2" />
-                Schedule Settings
-              </Button>
-            </div>
-          </div>
-          {peerSpecialist && (
-            <SpecialistCalendar specialistId={peerSpecialist.id} />
-          )}
-        </div>
-
-        {/* Recent Activity */}
-        <div className="mt-6">
-          <h2 className="text-xl font-fjalla font-bold mb-4">Recent Activity</h2>
-          <Card className="p-6">
-            <p className="text-muted-foreground font-source">No recent activity to display.</p>
-          </Card>
-        </div>
+          {/* Settings Tab */}
+          <TabsContent value="settings">
+            <SpecialistSettings specialist={specialist} />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {/* Schedule Management Modal */}
-      {peerSpecialist && (
-        <ScheduleManagementModal
-          isOpen={showScheduleModal}
-          onClose={() => setShowScheduleModal(false)}
-          specialistId={peerSpecialist.id}
-        />
-      )}
     </div>
   );
 };

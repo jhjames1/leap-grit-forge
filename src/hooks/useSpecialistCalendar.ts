@@ -1,8 +1,9 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { startOfDay, endOfDay, addDays, format } from 'date-fns';
+import { startOfDay, endOfDay, addDays, format, addMinutes, isBefore, isAfter, parseISO, isSameDay } from 'date-fns';
 import { Json } from '@/integrations/supabase/types';
 
 interface CalendarSettings {
@@ -176,29 +177,20 @@ export function useSpecialistCalendar({ specialistId }: UseSpecialistCalendarPro
     }
   }, [specialistId]);
 
-  // Get availability slots for a date range
+  // Get availability slots for a date range - COMPLETED IMPLEMENTATION
   const getAvailabilitySlots = useCallback(async (startDate: Date, endDate: Date) => {
     try {
       setLoading(true);
       
-      // Fetch schedules
-      const { data: schedules, error: schedulesError } = await supabase
-        .from('specialist_schedules')
-        .select(`
-          *,
-          appointment_types (
-            id,
-            name,
-            default_duration,
-            color
-          )
-        `)
-        .eq('specialist_id', specialistId)
-        .eq('is_active', true);
+      if (!settings) {
+        console.log('No settings available for slot generation');
+        return;
+      }
 
-      if (schedulesError) throw schedulesError;
-
-      // Fetch appointments
+      const workingHours = getWorkingHours();
+      const slots: AvailabilitySlot[] = [];
+      
+      // Fetch existing appointments for the date range
       const { data: appointments, error: appointmentsError } = await supabase
         .from('specialist_appointments')
         .select('*')
@@ -209,7 +201,7 @@ export function useSpecialistCalendar({ specialistId }: UseSpecialistCalendarPro
 
       if (appointmentsError) throw appointmentsError;
 
-      // Fetch exceptions
+      // Fetch availability exceptions for the date range
       const { data: exceptions, error: exceptionsError } = await supabase
         .from('specialist_availability_exceptions')
         .select('*')
@@ -219,12 +211,129 @@ export function useSpecialistCalendar({ specialistId }: UseSpecialistCalendarPro
 
       if (exceptionsError) throw exceptionsError;
 
-      // Generate availability slots
-      const slots: AvailabilitySlot[] = [];
-      
-      // TODO: Implement slot generation logic based on schedules, appointments, and exceptions
-      // This would involve complex date/time calculations to generate available time slots
-      
+      // Fetch recurring patterns
+      const { data: recurringPatterns, error: recurringError } = await supabase
+        .from('specialist_availability_exceptions')
+        .select('*')
+        .eq('specialist_id', specialistId)
+        .eq('is_recurring', true);
+
+      if (recurringError) throw recurringError;
+
+      // Fetch appointment types
+      const { data: appointmentTypes, error: typesError } = await supabase
+        .from('appointment_types')
+        .select('*')
+        .eq('is_active', true);
+
+      if (typesError) throw typesError;
+
+      const defaultAppointmentType = appointmentTypes?.[0];
+      if (!defaultAppointmentType) {
+        console.log('No appointment types available');
+        setAvailabilitySlots([]);
+        return;
+      }
+
+      // Generate slots for each day in the range
+      const currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        const dayHours = workingHours[dayName];
+        
+        if (dayHours && dayHours.start && dayHours.end) {
+          // Parse working hours for this day
+          const dayStart = new Date(currentDate);
+          const [startHour, startMin] = dayHours.start.split(':').map(Number);
+          dayStart.setHours(startHour, startMin, 0, 0);
+          
+          const dayEnd = new Date(currentDate);
+          const [endHour, endMin] = dayHours.end.split(':').map(Number);
+          dayEnd.setHours(endHour, endMin, 0, 0);
+          
+          // Generate time slots
+          let slotStart = new Date(dayStart);
+          while (slotStart < dayEnd) {
+            const slotEnd = addMinutes(slotStart, settings.default_appointment_duration);
+            
+            if (slotEnd <= dayEnd) {
+              // Check if this slot conflicts with existing appointments
+              const hasAppointmentConflict = appointments?.some(apt => {
+                const aptStart = parseISO(apt.scheduled_start);
+                const aptEnd = parseISO(apt.scheduled_end);
+                return (slotStart < aptEnd && slotEnd > aptStart);
+              });
+
+              // Check if this slot conflicts with one-time exceptions
+              const hasExceptionConflict = exceptions?.some(exc => {
+                if (exc.exception_type !== 'unavailable') return false;
+                const excStart = parseISO(exc.start_time);
+                const excEnd = parseISO(exc.end_time);
+                return (slotStart < excEnd && slotEnd > excStart);
+              });
+
+              // Check if this slot conflicts with recurring patterns
+              const hasRecurringConflict = recurringPatterns?.some(pattern => {
+                if (pattern.exception_type !== 'unavailable' || !pattern.recurrence_pattern) return false;
+                
+                const dayOfWeek = currentDate.getDay();
+                const recurrenceData = pattern.recurrence_pattern as any;
+                
+                if (!recurrenceData.days_of_week?.includes(dayOfWeek)) return false;
+                
+                const patternStartTime = new Date(pattern.start_time);
+                const patternEndTime = new Date(pattern.end_time);
+                
+                const patternStart = new Date(currentDate);
+                patternStart.setHours(patternStartTime.getHours(), patternStartTime.getMinutes(), 0, 0);
+                
+                const patternEnd = new Date(currentDate);
+                patternEnd.setHours(patternEndTime.getHours(), patternEndTime.getMinutes(), 0, 0);
+                
+                return (slotStart < patternEnd && slotEnd > patternStart);
+              });
+
+              // Apply minimum notice requirement
+              const now = new Date();
+              const minimumNoticeTime = addMinutes(now, settings.minimum_notice_hours * 60);
+              const isWithinNoticeWindow = slotStart <= minimumNoticeTime;
+
+              const isAvailable = !hasAppointmentConflict && !hasExceptionConflict && !hasRecurringConflict && !isWithinNoticeWindow;
+
+              // Find the conflicting appointment if any
+              const conflictingAppointment = hasAppointmentConflict ? 
+                appointments?.find(apt => {
+                  const aptStart = parseISO(apt.scheduled_start);
+                  const aptEnd = parseISO(apt.scheduled_end);
+                  return (slotStart < aptEnd && slotEnd > aptStart);
+                }) : undefined;
+
+              slots.push({
+                id: `slot-${slotStart.toISOString()}`,
+                start: new Date(slotStart),
+                end: new Date(slotEnd),
+                appointmentTypeId: defaultAppointmentType.id,
+                isAvailable,
+                isBooked: hasAppointmentConflict,
+                appointment: conflictingAppointment ? {
+                  id: conflictingAppointment.id,
+                  user_id: conflictingAppointment.user_id,
+                  status: conflictingAppointment.status,
+                  meeting_type: conflictingAppointment.meeting_type
+                } : undefined
+              });
+            }
+            
+            // Move to next slot (30-minute intervals)
+            slotStart = addMinutes(slotStart, 30);
+          }
+        }
+        
+        // Move to next day
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      console.log(`Generated ${slots.length} slots for date range`);
       setAvailabilitySlots(slots);
     } catch (error) {
       console.error('Error fetching availability slots:', error);
@@ -232,7 +341,7 @@ export function useSpecialistCalendar({ specialistId }: UseSpecialistCalendarPro
     } finally {
       setLoading(false);
     }
-  }, [specialistId]);
+  }, [specialistId, settings, getWorkingHours]);
 
   // Create availability block
   const createAvailabilityBlock = useCallback(async (
