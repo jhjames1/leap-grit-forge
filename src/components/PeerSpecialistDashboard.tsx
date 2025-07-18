@@ -3,7 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, Settings } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, Settings, CalendarClock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
@@ -11,6 +12,8 @@ import SpecialistChatWindow from './SpecialistChatWindow';
 import SpecialistCalendar from './calendar/SpecialistCalendar';
 import ScheduleManagementModal from './calendar/ScheduleManagementModal';
 import { useToast } from '@/hooks/use-toast';
+import { useCalendarAwarePresence } from '@/hooks/useCalendarAwarePresence';
+
 interface ChatSession {
   id: string;
   user_id: string;
@@ -37,20 +40,26 @@ interface PeerSpecialist {
   };
 }
 const PeerSpecialistDashboard = () => {
-  const {
-    user
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [chatFilter, setChatFilter] = useState<'all' | 'waiting' | 'active'>('all');
   const [peerSpecialist, setPeerSpecialist] = useState<PeerSpecialist | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Add state for selected chat session
   const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+  // Use the new calendar-aware presence hook
+  const {
+    calendarAvailability,
+    manualStatus,
+    isCalendarControlled,
+    setManualAwayStatus,
+    toggleCalendarControl,
+    refreshAvailability,
+    specialistId
+  } = useCalendarAwarePresence();
+
   useEffect(() => {
     const loadData = async () => {
       if (!user) return;
@@ -162,44 +171,37 @@ const PeerSpecialistDashboard = () => {
     // Refresh sessions after closing
     loadChatSessions();
   };
+
+  // Update the status change handler to work with calendar control
   const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
     if (!peerSpecialist) return;
     
     try {
-      // First, try to update existing status
-      const { data: updateData, error: updateError } = await supabase
-        .from('specialist_status')
-        .update({
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('specialist_id', peerSpecialist.id)
-        .select();
-
-      // If no rows were updated (status doesn't exist), create it
-      if (updateData && updateData.length === 0) {
-        const { error: insertError } = await supabase
+      if (newStatus === 'away') {
+        // Set manual away status
+        await setManualAwayStatus(true, 'Manually set to away');
+      } else if (newStatus === 'offline') {
+        // Turn off calendar control and set offline
+        await toggleCalendarControl(false);
+        await supabase
           .from('specialist_status')
-          .insert({
+          .upsert({
             specialist_id: peerSpecialist.id,
-            status: newStatus,
-            updated_at: new Date().toISOString()
+            status: 'offline',
+            status_message: 'Manually set offline',
+            updated_at: new Date().toISOString(),
+            presence_data: {
+              calendar_controlled: false,
+              manual_override: true,
+              timestamp: Date.now()
+            }
           });
-        
-        if (insertError) throw insertError;
-      } else if (updateError) {
-        throw updateError;
+      } else {
+        // Return to calendar-controlled status
+        await setManualAwayStatus(false);
+        await toggleCalendarControl(true);
       }
 
-      // Update local state
-      setPeerSpecialist(prev => prev ? {
-        ...prev,
-        status: {
-          ...prev.status,
-          status: newStatus
-        }
-      } : null);
-      
       toast({
         title: "Status Updated",
         description: `Your status has been changed to ${newStatus}`
@@ -214,7 +216,34 @@ const PeerSpecialistDashboard = () => {
     }
   };
 
-  // Check if there are active or waiting sessions
+  // Get current effective status
+  const getEffectiveStatus = () => {
+    if (manualStatus) return manualStatus;
+    if (calendarAvailability) return calendarAvailability.status;
+    return 'offline';
+  };
+
+  const getStatusMessage = () => {
+    if (manualStatus) return 'Manually set to away';
+    if (calendarAvailability?.reason) return calendarAvailability.reason;
+    return null;
+  };
+
+  const filterSessions = () => {
+    if (chatFilter === 'all') {
+      return chatSessions;
+    } else {
+      return chatSessions.filter(session => session.status === chatFilter);
+    }
+  };
+  const handleChatClick = (session: ChatSession) => {
+    setSelectedChatSession(session);
+  };
+  const handleCloseChatWindow = () => {
+    setSelectedChatSession(null);
+    // Refresh sessions after closing
+    loadChatSessions();
+  };
   const hasActiveSessions = chatSessions.some(session => session.status === 'active' || session.status === 'waiting');
   const handleLogout = async () => {
     if (hasActiveSessions) {
@@ -281,8 +310,21 @@ const PeerSpecialistDashboard = () => {
             <p className="text-muted-foreground font-source">Manage your chat sessions and support users in their recovery journey.</p>
           </div>
           <div className="flex items-center space-x-4">
-            {peerSpecialist?.status && <div className="flex items-center space-x-3">
-                <Select value={peerSpecialist.status.status} onValueChange={handleStatusChange}>
+            {/* Calendar Control Toggle */}
+            <div className="flex items-center space-x-2">
+              <CalendarClock className="h-4 w-4 text-muted-foreground" />
+              <Switch
+                checked={isCalendarControlled}
+                onCheckedChange={toggleCalendarControl}
+                className="data-[state=checked]:bg-primary"
+              />
+              <span className="text-sm text-muted-foreground">Auto</span>
+            </div>
+
+            {/* Status Selector */}
+            <div className="flex items-center space-x-3">
+              <div className="flex flex-col">
+                <Select value={getEffectiveStatus()} onValueChange={handleStatusChange}>
                   <SelectTrigger className="w-32 bg-background border-border z-50">
                     <SelectValue />
                   </SelectTrigger>
@@ -307,7 +349,14 @@ const PeerSpecialistDashboard = () => {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-              </div>}
+                {getStatusMessage() && (
+                  <span className="text-xs text-muted-foreground mt-1">
+                    {getStatusMessage()}
+                  </span>
+                )}
+              </div>
+            </div>
+
             <Button 
               variant="outline" 
               size="sm" 
@@ -322,6 +371,28 @@ const PeerSpecialistDashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Calendar Availability Info */}
+        {calendarAvailability && (
+          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <CalendarClock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  Calendar Status: {calendarAvailability.isAvailable ? 'Available' : 'Not Available'}
+                </span>
+                {calendarAvailability.reason && (
+                  <span className="text-sm text-muted-foreground">- {calendarAvailability.reason}</span>
+                )}
+              </div>
+              {calendarAvailability.nextAvailable && (
+                <span className="text-sm text-muted-foreground">
+                  Next available: {format(calendarAvailability.nextAvailable, 'MMM d, h:mm a')}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content */}

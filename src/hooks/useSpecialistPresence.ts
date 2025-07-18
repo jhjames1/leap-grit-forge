@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { updateSpecialistStatusFromCalendar } from '@/utils/calendarAvailability';
 
 interface SpecialistStatus {
   id: string;
@@ -26,7 +27,7 @@ export const useSpecialistPresence = () => {
   const [analytics, setAnalytics] = useState<SpecialistAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Update specialist status
+  // Enhanced update status function that considers calendar availability
   const updateStatus = async (status: 'online' | 'away' | 'busy' | 'offline', message?: string) => {
     if (!user) return;
 
@@ -40,20 +41,27 @@ export const useSpecialistPresence = () => {
 
       if (!specialist) return;
 
-      // Update status
-      await supabase
-        .from('specialist_status')
-        .upsert({
-          specialist_id: specialist.id,
-          status,
-          status_message: message || null,
-          last_seen: new Date().toISOString(),
-          presence_data: {
-            browser: navigator.userAgent,
-            timestamp: Date.now(),
-            activity: 'active'
-          }
-        });
+      // If setting to online, check calendar availability first
+      if (status === 'online') {
+        await updateSpecialistStatusFromCalendar(specialist.id);
+      } else {
+        // For other statuses, update directly with manual override
+        await supabase
+          .from('specialist_status')
+          .upsert({
+            specialist_id: specialist.id,
+            status,
+            status_message: message || null,
+            last_seen: new Date().toISOString(),
+            presence_data: {
+              calendar_controlled: false,
+              manual_override: true,
+              browser: navigator.userAgent,
+              timestamp: Date.now(),
+              activity: 'manual_status_change'
+            }
+          });
+      }
     } catch (error) {
       console.error('Error updating specialist status:', error);
     }
@@ -175,7 +183,7 @@ export const useSpecialistPresence = () => {
     }
   };
 
-  // Set up real-time subscriptions
+  // Enhanced presence tracking that syncs with calendar
   useEffect(() => {
     fetchStatuses();
     fetchAnalytics();
@@ -239,10 +247,14 @@ export const useSpecialistPresence = () => {
         .single()
         .then(({ data }) => {
           if (data) {
+            // Initialize with calendar-based status
+            updateSpecialistStatusFromCalendar(data.id);
+            
             presenceChannel.track({
               specialist_id: data.id,
               online_at: new Date().toISOString(),
-              status: 'online'
+              status: 'online',
+              calendar_aware: true
             });
           }
         });
