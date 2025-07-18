@@ -436,30 +436,48 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                         Performance Alerts
                       </h4>
                       <div className="space-y-1">
-                        {(specialist.chat_completion_rate || 0) < 50 && (
+                        {/* Chat Completion Rate Alert */}
+                        {(specialist.chat_completion_rate || 0) < 75 && (
                           <Badge variant="destructive" className="text-xs mr-2 mb-1">
-                            Chat completion rate critically low
+                            Chat completion: {(specialist.chat_completion_rate || 0).toFixed(1)}% (Target: ≥75%)
                           </Badge>
                         )}
-                        {(specialist.checkin_completion_rate || 0) < 50 && (
+                        
+                        {/* Check-in Completion Rate Alert */}
+                        {(specialist.checkin_completion_rate || 0) < 75 && (
                           <Badge variant="destructive" className="text-xs mr-2 mb-1">
-                            Check-in completion rate critically low
+                            Check-in completion: {(specialist.checkin_completion_rate || 0).toFixed(1)}% (Target: ≥75%)
                           </Badge>
                         )}
-                        {(specialist.avg_response_time_seconds || 0) > 60 && (
+                        
+                        {/* Response Time Alert */}
+                        {(specialist.avg_response_time_seconds || 0) > 45 && (
                           <Badge variant="destructive" className="text-xs mr-2 mb-1">
-                            Response time exceeds 60 seconds
+                            Response time: {formatResponseTime(specialist.avg_response_time_seconds)} (Target: ≤45s)
                           </Badge>
                         )}
-                        {(specialist.avg_user_rating || 0) < 3.5 && (
+                        
+                        {/* User Rating Alert */}
+                        {(specialist.avg_user_rating || 0) < 4.5 && (
                           <Badge variant="destructive" className="text-xs mr-2 mb-1">
-                            User satisfaction below 3.5 stars
+                            User rating: {(specialist.avg_user_rating || 0).toFixed(1)}★ (Target: ≥4.5★)
                           </Badge>
                         )}
-                        {(specialist.avg_streak_impact || 0) < 0 && (
+                        
+                        {/* Streak Impact Alert */}
+                        {(specialist.avg_streak_impact || 0) < 1 && (
                           <Badge variant="destructive" className="text-xs mr-2 mb-1">
-                            Negative impact on recovery streaks
+                            Streak impact: {(specialist.avg_streak_impact || 0).toFixed(1)}d (Target: ≥1d)
                           </Badge>
+                        )}
+                        
+                        {/* Show message if no alerts */}
+                        {(specialist.chat_completion_rate || 0) >= 75 && 
+                         (specialist.checkin_completion_rate || 0) >= 75 &&
+                         (specialist.avg_response_time_seconds || 0) <= 45 &&
+                         (specialist.avg_user_rating || 0) >= 4.5 &&
+                         (specialist.avg_streak_impact || 0) >= 1 && (
+                          <p className="text-xs text-muted-foreground">All metrics meeting targets ✓</p>
                         )}
                       </div>
                     </div>
@@ -470,66 +488,47 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
                         <TrendingUp className="h-4 w-4" />
                         Coaching Tips
                       </h4>
-                      <div className="space-y-1">
-                        {(specialist.chat_completion_rate || 0) < 50 && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                            Focus on consistent session attendance and engagement strategies
-                          </p>
+                      <div className="space-y-2">
+                        {/* Always show at least one coaching tip */}
+                        {(specialist.chat_completion_rate || 0) < 75 && (
+                          <div className="text-xs bg-muted/50 rounded p-2">
+                            <strong>Chat Completion:</strong> Focus on consistent session attendance and engagement strategies
+                          </div>
                         )}
-                        {(specialist.chat_completion_rate || 0) >= 50 && (specialist.chat_completion_rate || 0) < 75 && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                            Consider improving session scheduling and reminder systems
-                          </p>
+                        
+                        {(specialist.checkin_completion_rate || 0) < 75 && (
+                          <div className="text-xs bg-muted/50 rounded p-2">
+                            <strong>Check-ins:</strong> Develop structured protocols and improve time management
+                          </div>
                         )}
-                        {(specialist.checkin_completion_rate || 0) < 50 && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                            Develop structured check-in protocols and time management
-                          </p>
+                        
+                        {(specialist.avg_response_time_seconds || 0) > 45 && (
+                          <div className="text-xs bg-muted/50 rounded p-2">
+                            <strong>Response Time:</strong> Practice quick responses and use message templates
+                          </div>
                         )}
-                        {(specialist.checkin_completion_rate || 0) >= 50 && (specialist.checkin_completion_rate || 0) < 75 && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                            Set regular check-in reminders and improve follow-up processes
-                          </p>
+                        
+                        {(specialist.avg_user_rating || 0) < 4.5 && (
+                          <div className="text-xs bg-muted/50 rounded p-2">
+                            <strong>User Satisfaction:</strong> Focus on active listening and empathy skills
+                          </div>
                         )}
-                        {(specialist.avg_response_time_seconds || 0) > 60 && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                            Practice quick response techniques and use message templates
-                          </p>
+                        
+                        {(specialist.avg_streak_impact || 0) < 1 && (
+                          <div className="text-xs bg-muted/50 rounded p-2">
+                            <strong>Streak Impact:</strong> Incorporate goal-setting and accountability practices
+                          </div>
                         )}
-                        {(specialist.avg_response_time_seconds || 0) > 45 && (specialist.avg_response_time_seconds || 0) <= 60 && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                            Aim to respond within 45 seconds to improve user experience
-                          </p>
-                        )}
-                        {(specialist.avg_user_rating || 0) < 3.5 && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                            Focus on active listening skills and empathy training
-                          </p>
-                        )}
-                        {(specialist.avg_user_rating || 0) >= 3.5 && (specialist.avg_user_rating || 0) < 4.5 && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                            Work on building stronger rapport and providing more personalized support
-                          </p>
-                        )}
-                        {(specialist.avg_streak_impact || 0) < 0 && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                            Review session techniques and focus on positive motivation strategies
-                          </p>
-                        )}
-                        {(specialist.avg_streak_impact || 0) >= 0 && (specialist.avg_streak_impact || 0) < 1 && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                            Incorporate more goal-setting and accountability practices
-                          </p>
-                        )}
-                        {/* Default coaching tip when all metrics are good or missing */}
-                        {((specialist.chat_completion_rate || 0) >= 75) && 
-                         ((specialist.checkin_completion_rate || 0) >= 75) &&
-                         ((specialist.avg_response_time_seconds || 0) <= 45) &&
-                         ((specialist.avg_user_rating || 0) >= 4.5) &&
-                         ((specialist.avg_streak_impact || 0) >= 1) && (
-                          <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                            Continue excellent work maintaining high performance standards
-                          </p>
+                        
+                        {/* Default tip if all metrics are good */}
+                        {(specialist.chat_completion_rate || 0) >= 75 && 
+                         (specialist.checkin_completion_rate || 0) >= 75 &&
+                         (specialist.avg_response_time_seconds || 0) <= 45 &&
+                         (specialist.avg_user_rating || 0) >= 4.5 &&
+                         (specialist.avg_streak_impact || 0) >= 1 && (
+                          <div className="text-xs bg-muted/50 rounded p-2">
+                            <strong>Excellent Performance:</strong> Continue maintaining these high standards!
+                          </div>
                         )}
                       </div>
                     </div>
