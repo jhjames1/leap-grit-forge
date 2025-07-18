@@ -229,21 +229,6 @@ const PeerSpecialistDashboard = () => {
     return null;
   };
 
-  const filterSessions = () => {
-    if (chatFilter === 'all') {
-      return chatSessions;
-    } else {
-      return chatSessions.filter(session => session.status === chatFilter);
-    }
-  };
-  const handleChatClick = (session: ChatSession) => {
-    setSelectedChatSession(session);
-  };
-  const handleCloseChatWindow = () => {
-    setSelectedChatSession(null);
-    // Refresh sessions after closing
-    loadChatSessions();
-  };
   const hasActiveSessions = chatSessions.some(session => session.status === 'active' || session.status === 'waiting');
   const handleLogout = async () => {
     if (hasActiveSessions) {

@@ -21,7 +21,7 @@ export const calculateRealTimeAvailability = async (
 ): Promise<CalendarAvailabilityResult> => {
   const now = new Date();
   const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
-  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'lowercase' });
+  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 
   try {
     // Get calendar settings
@@ -175,7 +175,12 @@ export const updateSpecialistStatusFromCalendar = async (specialistId: string): 
         last_seen: new Date().toISOString(),
         presence_data: {
           calendar_controlled: true,
-          availability_check: availability,
+          availability_check: {
+            isAvailable: availability.isAvailable,
+            status: availability.status,
+            reason: availability.reason || null,
+            nextAvailable: availability.nextAvailable?.toISOString() || null
+          },
           timestamp: Date.now()
         }
       });
