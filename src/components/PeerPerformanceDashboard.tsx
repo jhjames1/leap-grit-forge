@@ -126,6 +126,7 @@ const PeerPerformanceDashboard = ({ onRefresh }: PeerPerformanceDashboardProps) 
         });
       }
 
+      console.log('🔍 Debug: All metrics before setting:', allMetrics);
       setMetrics(allMetrics);
 
       // Calculate consolidated metrics
