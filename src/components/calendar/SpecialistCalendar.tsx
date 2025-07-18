@@ -349,6 +349,34 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
               <CalendarIcon className="h-5 w-5" />
               {specialistName ? `${specialistName} Calendar` : 'Specialist Calendar'}
             </CardTitle>
+            <div className="flex flex-wrap gap-2 pt-4">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => {
+                  console.log('🗓️ Refresh button clicked');
+                  fetchEvents();
+                }}
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+              <SetAvailabilityDialog 
+                specialistId={specialistId}
+                appointmentTypes={appointmentTypes}
+                onSuccess={() => {
+                  console.log('🗓️ Availability set successfully, refreshing events');
+                  fetchEvents();
+                }}
+              />
+              <BlockTimeDialog 
+                specialistId={specialistId}
+                onSuccess={() => {
+                  console.log('🗓️ Time blocked successfully, refreshing events');
+                  fetchEvents();
+                }}
+              />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -464,35 +492,6 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
                         </div>
                       </div>
                     )
-                  }}
-                />
-              </div>
-              
-              <div className="flex flex-wrap gap-2 pt-4 border-t">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={() => {
-                    console.log('🗓️ Refresh button clicked');
-                    fetchEvents();
-                  }}
-                >
-                  <Clock className="w-4 h-4 mr-2" />
-                  Refresh
-                </Button>
-                <SetAvailabilityDialog 
-                  specialistId={specialistId}
-                  appointmentTypes={appointmentTypes}
-                  onSuccess={() => {
-                    console.log('🗓️ Availability set successfully, refreshing events');
-                    fetchEvents();
-                  }}
-                />
-                <BlockTimeDialog 
-                  specialistId={specialistId}
-                  onSuccess={() => {
-                    console.log('🗓️ Time blocked successfully, refreshing events');
-                    fetchEvents();
                   }}
                 />
               </div>
