@@ -838,7 +838,17 @@ const PeerSpecialistDashboard = () => {
             </div>
           </Card>
 
-          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+          <Card className={`bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 ${
+            (() => {
+              const waitingCount = chatSessions.filter(s => s.status === 'waiting').length;
+              if (waitingCount >= 1 && waitingCount <= 2) {
+                return 'animate-pulse bg-yellow-100/50 border border-yellow-200/50';
+              } else if (waitingCount > 2) {
+                return 'animate-pulse bg-red-100/50 border border-red-200/50';
+              }
+              return '';
+            })()
+          }`}>
             <div className="flex items-center space-x-3 mb-2">
               <div className="bg-primary p-3 rounded-sm">
                 <Clock className="text-primary-foreground" size={20} />
