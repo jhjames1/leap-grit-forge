@@ -78,25 +78,62 @@ const RecurringAppointmentScheduler = ({
         throw proposalError;
       }
 
+      // Get the current user's ID (the specialist)
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+
       // Send proposal message to chat with proposal ID
-      await sendMessage({
-        content: `🗓️ **Recurring Appointment Proposal**\n\n**${formData.title}**\n\n${formData.description}\n\n📅 **Schedule:** ${formData.frequency} starting ${formData.startDate} at ${formData.startTime}\n⏱️ **Duration:** ${formData.duration} minutes\n🔄 **Occurrences:** ${formData.occurrences} sessions\n\n*Please respond with "accept" or "reject" to this proposal. It expires in 7 days.*`,
-        message_type: 'system',
-        metadata: { 
-          proposal_id: proposal.id,
-          action_type: 'recurring_appointment_proposal',
-          proposal_data: {
-            id: proposal.id,
-            title: formData.title,
-            description: formData.description,
-            start_date: formData.startDate,
-            start_time: formData.startTime,
-            duration: formData.duration,
-            frequency: formData.frequency,
-            occurrences: formData.occurrences
+      const messageResult = await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: chatSessionId,
+          sender_id: currentUser.id,
+          sender_type: 'specialist',
+          message_type: 'system',
+          content: `🗓️ **Recurring Appointment Proposal**\n\n**${formData.title}**\n\n${formData.description}\n\n📅 **Schedule:** ${formData.frequency} starting ${formData.startDate} at ${formData.startTime}\n⏱️ **Duration:** ${formData.duration} minutes\n🔄 **Occurrences:** ${formData.occurrences} sessions\n\n*Please respond with "accept" or "reject" to this proposal. It expires in 7 days.*`,
+          metadata: { 
+            proposal_id: proposal.id,
+            action_type: 'recurring_appointment_proposal',
+            proposal_data: {
+              id: proposal.id,
+              title: formData.title,
+              description: formData.description,
+              start_date: formData.startDate,
+              start_time: formData.startTime,
+              duration: formData.duration,
+              frequency: formData.frequency,
+              occurrences: formData.occurrences
+            }
           }
+        });
+
+      if (messageResult.error) {
+        console.error('Error sending chat message:', messageResult.error);
+        throw messageResult.error;
+      }
+
+      // Activate the session if it's in waiting status
+      console.log('Checking session status and activating if needed...');
+      const { data: sessionData } = await supabase
+        .from('chat_sessions')
+        .select('status')
+        .eq('id', chatSessionId)
+        .single();
+
+      if (sessionData?.status === 'waiting') {
+        const { error: updateError } = await supabase
+          .from('chat_sessions')
+          .update({ status: 'active' })
+          .eq('id', chatSessionId);
+
+        if (updateError) {
+          console.error('Error updating session status:', updateError);
+        } else {
+          console.log('Session status updated to active');
         }
-      });
+      }
 
       toast({
         title: "Success",

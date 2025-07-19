@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -45,7 +44,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
   const { toast } = useToast();
   const { checkAvailability, settings } = useSpecialistCalendar({ specialistId });
 
-  // Load appointment types
   useEffect(() => {
     const loadAppointmentTypes = async () => {
       const { data, error } = await supabase
@@ -67,7 +65,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
     }
   }, [isOpen]);
 
-  // Generate available time slots when date changes
   useEffect(() => {
     if (selectedDate && settings) {
       generateAvailableSlots();
@@ -78,7 +75,7 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
     if (!selectedDate || !settings) return;
 
     const slots: string[] = [];
-    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase(); // e.g., 'monday', 'tuesday'
+    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
     const workingHours = settings.working_hours;
     
     console.log('Generating slots for:', { dayName, workingHours, selectedDate });
@@ -98,7 +95,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
           const slotEnd = addMinutes(currentTime, duration);
           
           if (isBefore(slotEnd, endTime) || slotEnd.getTime() === endTime.getTime()) {
-            // Check if slot is available
             console.log('Checking availability for slot:', format(currentTime, 'HH:mm'));
             const isAvailable = await checkAvailability(currentTime, slotEnd);
             console.log('Slot availability:', { time: format(currentTime, 'HH:mm'), isAvailable });
@@ -108,7 +104,7 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
             }
           }
           
-          currentTime = addMinutes(currentTime, 30); // 30-minute intervals
+          currentTime = addMinutes(currentTime, 30);
         }
       }
     } else {
@@ -206,7 +202,7 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
         .from('chat_messages')
         .insert({
           session_id: chatSessionId,
-          sender_id: currentUser.id, // Use the authenticated user's ID (the specialist)
+          sender_id: currentUser.id,
           sender_type: 'specialist',
           message_type: 'system',
           content: `I'd like to schedule a ${title} appointment with you on ${format(selectedDate, 'MMMM d, yyyy')} at ${selectedTime}. Please let me know if this works for you!`,
@@ -232,6 +228,27 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
       }
 
       console.log('Chat message sent successfully:', messageResult);
+
+      // Activate the session if it's in waiting status
+      console.log('Checking session status and activating if needed...');
+      const { data: sessionData } = await supabase
+        .from('chat_sessions')
+        .select('status')
+        .eq('id', chatSessionId)
+        .single();
+
+      if (sessionData?.status === 'waiting') {
+        const { error: updateError } = await supabase
+          .from('chat_sessions')
+          .update({ status: 'active' })
+          .eq('id', chatSessionId);
+
+        if (updateError) {
+          console.error('Error updating session status:', updateError);
+        } else {
+          console.log('Session status updated to active');
+        }
+      }
 
       toast({
         title: "Appointment Proposed",
@@ -274,7 +291,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Appointment Type Selection */}
           <div className="space-y-2">
             <Label>Appointment Type</Label>
             <Select value={selectedType} onValueChange={handleTypeChange}>
@@ -291,7 +307,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
             </Select>
           </div>
 
-          {/* Title */}
           <div className="space-y-2">
             <Label>Title</Label>
             <Input
@@ -301,7 +316,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
             />
           </div>
 
-          {/* Description */}
           <div className="space-y-2">
             <Label>Description (Optional)</Label>
             <Textarea
@@ -313,7 +327,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Date Selection */}
             <div className="space-y-2">
               <Label>Select Date</Label>
               <Calendar
@@ -328,7 +341,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
               />
             </div>
 
-            {/* Time Selection */}
             <div className="space-y-2">
               <Label>Available Times</Label>
               {selectedDate ? (
@@ -362,7 +374,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
             </div>
           </div>
 
-          {/* Duration Display */}
           {selectedType && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock size={16} />
@@ -370,7 +381,6 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
             </div>
           )}
 
-          {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button variant="outline" onClick={onClose}>
               Cancel
