@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useSpecialistStatus } from '@/hooks/useSpecialistStatus';
 import { logger } from '@/utils/logger';
 import ScheduleManagementModal from './calendar/ScheduleManagementModal';
-import ProposalManagement from './ProposalManagement';
 import { useProposalNotifications } from '@/hooks/useProposalNotifications';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
 
@@ -29,6 +29,8 @@ interface ChatSession {
   session_number: number;
   user_first_name?: string;
   user_last_name?: string;
+  pending_proposals_count?: number;
+  has_new_responses?: boolean;
 }
 
 interface PeerSpecialist {
@@ -145,19 +147,35 @@ const PeerSpecialistDashboard = () => {
       .select('user_id, first_name, last_name')
       .in('user_id', sessionIds);
 
+    // Get proposal counts for each session
+    const { data: proposalCounts } = await supabase
+      .from('appointment_proposals')
+      .select('user_id, status, responded_at')
+      .eq('specialist_id', specialistId)
+      .in('user_id', sessionIds);
+
     // Combine the data
     const typedSessions = (sessionsData || []).map(session => {
       const profile = profilesData?.find(p => p.user_id === session.user_id);
+      const userProposals = proposalCounts?.filter(p => p.user_id === session.user_id) || [];
+      const pendingProposals = userProposals.filter(p => p.status === 'pending');
+      const hasNewResponses = userProposals.some(p => 
+        p.status !== 'pending' && p.responded_at && 
+        new Date(p.responded_at) > new Date(session.started_at)
+      );
+      
       return {
         ...session,
         status: session.status as 'waiting' | 'active' | 'ended',
         user_first_name: profile?.first_name,
-        user_last_name: profile?.last_name
+        user_last_name: profile?.last_name,
+        pending_proposals_count: pendingProposals.length,
+        has_new_responses: hasNewResponses
       };
     });
     
     setChatSessions(typedSessions);
-    logger.debug('Loaded chat sessions with profiles', { count: typedSessions.length });
+    logger.debug('Loaded chat sessions with profiles and proposals', { count: typedSessions.length });
   }, []);
 
   const loadChatSessions = useCallback(async () => {
@@ -450,7 +468,7 @@ const PeerSpecialistDashboard = () => {
             <p className="text-muted-foreground font-source">Peer Support Specialist</p>
           </div>}
 
-        {/* Status Overview - Enhanced with proposal metrics */}
+        {/* Status Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Card className="flex items-center justify-between p-6">
             <div>
@@ -526,6 +544,19 @@ const PeerSpecialistDashboard = () => {
                           <Badge variant={session.status === 'active' ? 'default' : session.status === 'waiting' ? 'secondary' : 'outline'}>
                             {session.status}
                           </Badge>
+                          {/* Proposal indicators */}
+                          {session.pending_proposals_count && session.pending_proposals_count > 0 && (
+                            <Badge variant="outline" className="bg-yellow-50 text-orange-700 border-orange-200">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {session.pending_proposals_count} pending
+                            </Badge>
+                          )}
+                          {session.has_new_responses && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              New response
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground font-source">
                           Started {format(new Date(session.started_at), 'MMM d, h:mm a')}
@@ -559,16 +590,6 @@ const PeerSpecialistDashboard = () => {
             )}
           </Card>
         </div>
-
-        {/* Proposal Management Section */}
-        {peerSpecialist && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-fjalla font-bold">Appointment Proposals</h2>
-            </div>
-            <ProposalManagement specialistId={peerSpecialist.id} />
-          </div>
-        )}
 
         {/* Enhanced Calendar Section */}
         <div className="mb-6">

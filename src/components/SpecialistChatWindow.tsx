@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,10 @@ import {
   Video, 
   User,
   Shield,
-  Clock
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  Plus
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,6 +34,21 @@ interface ChatSession {
   user_last_name?: string;
 }
 
+interface AppointmentProposal {
+  id: string;
+  title: string;
+  description?: string;
+  start_date: string;
+  start_time: string;
+  duration: number;
+  frequency: string;
+  occurrences: number;
+  status: 'pending' | 'accepted' | 'rejected' | 'expired';
+  expires_at: string;
+  proposed_at: string;
+  responded_at?: string;
+}
+
 interface SpecialistChatWindowProps {
   session: ChatSession;
   onClose: () => void;
@@ -41,6 +60,8 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [showScheduler, setShowScheduler] = useState(false);
+  const [showProposals, setShowProposals] = useState(false);
+  const [proposals, setProposals] = useState<AppointmentProposal[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
@@ -52,6 +73,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   // Load messages for this specific session
   useEffect(() => {
     loadMessages();
+    loadProposals();
     setupRealTimeSubscription();
   }, [session.id]);
 
@@ -75,6 +97,22 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
       setError(err instanceof Error ? err.message : 'Failed to load messages');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadProposals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('appointment_proposals')
+        .select('*')
+        .eq('user_id', session.user_id)
+        .eq('specialist_id', session.specialist_id)
+        .order('proposed_at', { ascending: false });
+
+      if (error) throw error;
+      setProposals(data || []);
+    } catch (err) {
+      console.error('Error loading proposals:', err);
     }
   };
 
@@ -104,6 +142,18 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
               new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             );
           });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointment_proposals',
+          filter: `user_id=eq.${session.user_id}`
+        },
+        () => {
+          loadProposals();
         }
       )
       .subscribe((status) => {
@@ -191,6 +241,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
 
   const handleSchedulerSuccess = () => {
     setShowScheduler(false);
+    loadProposals();
   };
 
   // Helper function to format session display name
@@ -204,6 +255,23 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     
     return sessionName;
   };
+
+  const getProposalStatusBadge = (proposal: AppointmentProposal) => {
+    const variants = {
+      'pending': 'secondary',
+      'accepted': 'default',
+      'rejected': 'destructive',
+      'expired': 'outline'
+    } as const;
+    
+    return (
+      <Badge variant={variants[proposal.status]}>
+        {proposal.status}
+      </Badge>
+    );
+  };
+
+  const pendingProposals = proposals.filter(p => p.status === 'pending');
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -224,6 +292,12 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                 <span className="capitalize">{session.status}</span>
                 <span>•</span>
                 <span>Started {format(new Date(session.started_at), 'HH:mm')}</span>
+                {proposals.length > 0 && (
+                  <>
+                    <span>•</span>
+                    <span>{proposals.length} proposal{proposals.length > 1 ? 's' : ''}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -257,6 +331,52 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           <span className="text-sm">Secure & Confidential Chat</span>
         </div>
       </div>
+
+      {/* Proposals Section */}
+      {proposals.length > 0 && (
+        <div className="bg-blue-50/50 border-b border-blue-200/50">
+          <div 
+            className="flex items-center justify-between p-3 cursor-pointer hover:bg-blue-100/50 transition-colors"
+            onClick={() => setShowProposals(!showProposals)}
+          >
+            <div className="flex items-center space-x-2">
+              <Calendar size={16} className="text-blue-600" />
+              <span className="text-sm font-medium text-blue-800">
+                Appointment Proposals ({proposals.length})
+              </span>
+              {pendingProposals.length > 0 && (
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                  {pendingProposals.length} pending
+                </Badge>
+              )}
+            </div>
+            {showProposals ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+          
+          {showProposals && (
+            <div className="px-3 pb-3 space-y-2 max-h-48 overflow-y-auto">
+              {proposals.map(proposal => (
+                <div key={proposal.id} className="bg-white rounded-lg p-3 border border-blue-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-sm">{proposal.title}</h4>
+                    {getProposalStatusBadge(proposal)}
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>📅 {proposal.start_date} at {proposal.start_time}</div>
+                    <div>⏱️ {proposal.duration} minutes • {proposal.frequency}</div>
+                    <div>🔄 {proposal.occurrences} session{proposal.occurrences > 1 ? 's' : ''}</div>
+                    {proposal.status === 'pending' && (
+                      <div className="text-orange-600">
+                        ⏰ Expires {format(new Date(proposal.expires_at), 'MMM d, h:mm a')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Connection Status */}
       {connectionStatus === 'connected' && (
@@ -308,7 +428,10 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                 <AppointmentProposalHandler 
                   message={msg} 
                   isUser={msg.sender_type === 'user'} 
-                  onResponse={() => console.log('Appointment proposal response handled')}
+                  onResponse={() => {
+                    console.log('Appointment proposal response handled');
+                    loadProposals();
+                  }}
                 />
               )}
             </div>
