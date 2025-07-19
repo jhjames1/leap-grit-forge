@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,8 @@ import {
   ArrowLeft,
   User,
   Shield,
-  RefreshCw
+  RefreshCw,
+  Plus
 } from 'lucide-react';
 import PeerSelection from './PeerSelection';
 import RecurringAppointmentScheduler from './RecurringAppointmentScheduler';
@@ -42,7 +42,9 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     startSession,
     sendMessage,
     endSession,
-    refreshSession
+    refreshSession,
+    startFreshSession,
+    isSessionStale
   } = useChatSession(selectedPeer?.id);
 
   const handleSelectPeer = async (peer: PeerSpecialist) => {
@@ -137,11 +139,15 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   };
 
   const handleStartNewChat = async () => {
-    await refreshSession();
-    setIsInitialized(false);
-    setTimeout(() => {
-      startSession();
-    }, 100);
+    await startFreshSession();
+    setIsInitialized(true);
+  };
+
+  const getSessionAge = () => {
+    if (!session) return '';
+    const age = Date.now() - new Date(session.started_at).getTime();
+    const minutes = Math.floor(age / (1000 * 60));
+    return minutes < 1 ? 'just now' : `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
   };
 
   if (currentView === 'selection') {
@@ -155,6 +161,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
 
   // Show ended session message with option to start new chat
   const isSessionEnded = session && session.status === 'ended';
+  const isWaitingAndStale = session && session.status === 'waiting' && isSessionStale;
 
   return (
     <div className="flex flex-col h-screen bg-background pb-24">
@@ -185,17 +192,15 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
           </div>
           
           <div className="flex space-x-2">
-            {isSessionEnded && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
-                onClick={handleStartNewChat}
-              >
-                <RefreshCw size={16} className="mr-1" />
-                New Chat
-              </Button>
-            )}
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="border-construction text-construction hover:bg-construction/10"
+              onClick={handleStartNewChat}
+            >
+              <Plus size={16} className="mr-1" />
+              New Chat
+            </Button>
             <Button 
               size="sm" 
               variant="outline" 
@@ -237,6 +242,43 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
               className="bg-yellow-600 hover:bg-yellow-700 text-white"
             >
               Start New Chat
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {isWaitingAndStale && (
+        <div className="bg-orange-500/10 border-b border-orange-500/20 p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-orange-600 text-sm font-medium">This chat session has been waiting too long</p>
+              <p className="text-orange-500 text-xs">Started {getSessionAge()} - Consider starting fresh</p>
+            </div>
+            <Button 
+              size="sm" 
+              onClick={handleStartNewChat}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Start Fresh
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {session && session.status === 'waiting' && !isWaitingAndStale && (
+        <div className="bg-blue-500/10 border-b border-blue-500/20 p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-600 text-sm font-medium">Waiting for specialist...</p>
+              <p className="text-blue-500 text-xs">Started {getSessionAge()}</p>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={handleStartNewChat}
+              className="border-blue-500 text-blue-600 hover:bg-blue-50"
+            >
+              Start Fresh Instead
             </Button>
           </div>
         </div>

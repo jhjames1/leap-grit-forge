@@ -31,14 +31,14 @@ export function useChatSession(specialistId?: string) {
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
 
-  // Helper function to check if a session is stale (older than 30 minutes for waiting sessions)
+  // Helper function to check if a session is stale (older than 10 minutes for waiting sessions)
   const isSessionStale = (session: ChatSession): boolean => {
     if (session.status !== 'waiting') return false;
     
     const sessionAge = Date.now() - new Date(session.started_at).getTime();
-    const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
+    const tenMinutes = 10 * 60 * 1000; // 10 minutes in milliseconds
     
-    return sessionAge > thirtyMinutes;
+    return sessionAge > tenMinutes;
   };
 
   // Helper function to clean up stale waiting sessions
@@ -202,7 +202,7 @@ export function useChatSession(specialistId?: string) {
     }
   };
 
-  const startSession = async () => {
+  const startSession = async (forceNew: boolean = false) => {
     if (!user) {
       console.error('Cannot start session: missing user');
       return null;
@@ -212,19 +212,34 @@ export function useChatSession(specialistId?: string) {
     setError(null);
 
     try {
-      console.log('Starting new chat session...');
+      console.log('Starting new chat session...', forceNew ? '(forced new)' : '');
       
-      // First, clean up any stale waiting sessions for this user
-      const { data: staleWaitingSessions } = await supabase
-        .from('chat_sessions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'waiting');
+      // If forcing new session, clean up any existing waiting sessions
+      if (forceNew) {
+        const { data: existingSessions } = await supabase
+          .from('chat_sessions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'waiting');
 
-      if (staleWaitingSessions) {
-        for (const staleSession of staleWaitingSessions) {
-          if (isSessionStale(staleSession as ChatSession)) {
-            await cleanupStaleSession(staleSession.id);
+        if (existingSessions) {
+          for (const existingSession of existingSessions) {
+            await cleanupStaleSession(existingSession.id);
+          }
+        }
+      } else {
+        // Clean up any stale waiting sessions for this user
+        const { data: staleWaitingSessions } = await supabase
+          .from('chat_sessions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'waiting');
+
+        if (staleWaitingSessions) {
+          for (const staleSession of staleWaitingSessions) {
+            if (isSessionStale(staleSession as ChatSession)) {
+              await cleanupStaleSession(staleSession.id);
+            }
           }
         }
       }
@@ -434,6 +449,14 @@ export function useChatSession(specialistId?: string) {
     await checkExistingSession();
   };
 
+  // Start fresh session - abandons any existing waiting session
+  const startFreshSession = async () => {
+    setSession(null);
+    setMessages([]);
+    setError(null);
+    return await startSession(true);
+  };
+
   return {
     session,
     messages,
@@ -443,6 +466,8 @@ export function useChatSession(specialistId?: string) {
     startSession,
     sendMessage,
     endSession,
-    refreshSession
+    refreshSession,
+    startFreshSession,
+    isSessionStale: session ? isSessionStale(session) : false
   };
 }
