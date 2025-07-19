@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, CalendarClock, AlertTriangle } from 'lucide-react';
+import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, CalendarClock, AlertTriangle, History } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
@@ -58,6 +58,7 @@ const PeerSpecialistDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showChatHistory, setShowChatHistory] = useState(false);
 
   // Performance monitoring ref
   const renderCount = useRef(0);
@@ -245,22 +246,31 @@ const PeerSpecialistDashboard = () => {
     };
   }, [user?.id, currentSpecialistId, loadChatSessions]);
 
-  // Sort sessions by priority: waiting first, then active, then ended
+  // Sort sessions by priority: waiting first, then active
   // Within each group, sort by most recent first
-  const getSortedSessions = () => {
-    return [...chatSessions].sort((a, b) => {
-      // First sort by status priority
-      const statusPriority = { waiting: 0, active: 1, ended: 2 };
-      const aPriority = statusPriority[a.status];
-      const bPriority = statusPriority[b.status];
-      
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority;
-      }
-      
-      // Within same status, sort by most recent first
-      return new Date(b.started_at).getTime() - new Date(a.started_at).getTime();
-    });
+  const getSortedActiveSessions = () => {
+    return chatSessions
+      .filter(session => session.status === 'waiting' || session.status === 'active')
+      .sort((a, b) => {
+        // First sort by status priority
+        const statusPriority = { waiting: 0, active: 1 };
+        const aPriority = statusPriority[a.status];
+        const bPriority = statusPriority[b.status];
+        
+        if (aPriority !== bPriority) {
+          return aPriority - bPriority;
+        }
+        
+        // Within same status, sort by most recent first
+        return new Date(b.started_at).getTime() - new Date(a.started_at).getTime();
+      });
+  };
+
+  // Sort ended sessions by most recent first
+  const getSortedEndedSessions = () => {
+    return chatSessions
+      .filter(session => session.status === 'ended')
+      .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
   };
 
   const handleChatClick = async (session: ChatSession) => {
@@ -439,6 +449,17 @@ const PeerSpecialistDashboard = () => {
               </div>
             )}
 
+            {/* Chat History Button */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowChatHistory(true)}
+              className="flex items-center gap-2"
+            >
+              <History size={16} />
+              Chat History ({endedSessions.length})
+            </Button>
+
             {/* Status Error Display */}
             {statusError && (
               <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
@@ -563,12 +584,12 @@ const PeerSpecialistDashboard = () => {
                 </p>
               </div>
               <Badge variant="outline" className="text-muted-foreground">
-                {chatSessions.length} total
+                {getSortedActiveSessions().length} active
               </Badge>
             </div>
 
             <div className="space-y-4">
-              {getSortedSessions().length > 0 ? getSortedSessions().map(session => (
+              {getSortedActiveSessions().length > 0 ? getSortedActiveSessions().map(session => (
                 <div 
                   key={session.id} 
                   className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${
@@ -631,7 +652,8 @@ const PeerSpecialistDashboard = () => {
               )) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
-                  <p className="font-source">No chat sessions available</p>
+                  <p className="font-source">No active chat sessions</p>
+                  <p className="font-source text-sm mt-2">Waiting and active sessions will appear here</p>
                 </div>
               )}
             </div>
@@ -671,6 +693,65 @@ const PeerSpecialistDashboard = () => {
           </Card>
         </div>
       </div>
+
+      {/* Chat History Modal */}
+      {showChatHistory && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-4xl max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-fjalla font-bold">Chat History</h2>
+                  <p className="text-sm text-muted-foreground">Completed chat sessions</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setShowChatHistory(false)}>
+                  ×
+                </Button>
+              </div>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              <div className="space-y-4">
+                {getSortedEndedSessions().length > 0 ? getSortedEndedSessions().map(session => (
+                  <div 
+                    key={session.id} 
+                    className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 border-border`}
+                    onClick={() => {
+                      setSelectedChatSession(session);
+                      setShowChatHistory(false);
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                          <User className="text-muted-foreground" size={16} />
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-fjalla font-bold">{formatSessionName(session)}</span>
+                            <Badge variant="outline">ended</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground font-source">
+                            Started {format(new Date(session.started_at), 'MMM d, h:mm a')}
+                            {session.ended_at && (
+                              <span> • Ended {format(new Date(session.ended_at), 'MMM d, h:mm a')}</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight size={16} className="text-muted-foreground" />
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <History size={48} className="mx-auto mb-4 opacity-50" />
+                    <p className="font-source">No completed sessions yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
