@@ -11,33 +11,52 @@ import PeerSpecialistPortal from "./pages/PeerSpecialistPortal";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: (failureCount, error) => {
+        // Don't retry on auth errors
+        if (error?.message?.includes('JWT') || error?.message?.includes('auth')) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/admin" element={<AdminPortal />} />
-              <Route 
-                path="/specialist" 
-                element={
-                  <ErrorBoundary>
-                    <PeerSpecialistPortal />
-                  </ErrorBoundary>
-                } 
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </LanguageProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <TooltipProvider>
+            <ErrorBoundary>
+              <Toaster />
+            </ErrorBoundary>
+            <ErrorBoundary>
+              <Sonner />
+            </ErrorBoundary>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/admin" element={<AdminPortal />} />
+                <Route 
+                  path="/specialist" 
+                  element={
+                    <ErrorBoundary>
+                      <PeerSpecialistPortal />
+                    </ErrorBoundary>
+                  } 
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </LanguageProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

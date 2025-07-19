@@ -5,12 +5,14 @@ import SpecialistLogin from '@/components/SpecialistLogin';
 import PeerSpecialistDashboard from '@/components/PeerSpecialistDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const PeerSpecialistPortal = () => {
   const { user, loading } = useAuth();
   const [isVerifiedSpecialist, setIsVerifiedSpecialist] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasChecked, setHasChecked] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Use refs to prevent unnecessary re-renders and track operation state
   const isCheckingRef = useRef(false);
@@ -26,6 +28,7 @@ const PeerSpecialistPortal = () => {
     console.log('🔍 Checking specialist status for user:', user.id);
     isCheckingRef.current = true;
     setIsLoading(true);
+    setError(null);
 
     try {
       // Check if user is a verified peer specialist
@@ -55,6 +58,7 @@ const PeerSpecialistPortal = () => {
       if (mountedRef.current) {
         setIsVerifiedSpecialist(false);
         setHasChecked(true);
+        setError(error instanceof Error ? error.message : 'Failed to check specialist status');
       }
     } finally {
       if (mountedRef.current) {
@@ -86,8 +90,26 @@ const PeerSpecialistPortal = () => {
     // Reset states and re-check
     setIsVerifiedSpecialist(false);
     setHasChecked(false);
+    setError(null);
     isCheckingRef.current = false;
   }, []);
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-4">Error: {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-primary text-primary-foreground rounded"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading while auth is loading or we're checking specialist status
   if (loading || (isLoading && !hasChecked)) {
@@ -103,7 +125,11 @@ const PeerSpecialistPortal = () => {
     return <SpecialistLogin onLogin={handleLogin} onBack={() => window.history.back()} />;
   }
 
-  return <PeerSpecialistDashboard />;
+  return (
+    <ErrorBoundary>
+      <PeerSpecialistDashboard />
+    </ErrorBoundary>
+  );
 };
 
 export default PeerSpecialistPortal;

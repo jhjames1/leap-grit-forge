@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -8,47 +9,59 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state change event:', event, 'session:', session?.user?.id);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    let mounted = true;
+
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        // Log specific events that are important for onboarding
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('User signed in successfully, email verified:', session.user.email_confirmed_at);
+        if (error) {
+          console.error('Error getting initial session:', error);
         }
-        if (event === 'TOKEN_REFRESHED' && session?.user) {
-          console.log('Token refreshed for user:', session.user.id);
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Session initialization error:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event);
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          // Only set loading to false after we've handled the auth change
+          if (loading) {
+            setLoading(false);
+          }
         }
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [loading]);
 
   return {
     user,
     session,
     loading,
-    signOut,
-    isAuthenticated: !!user
+    signOut: () => supabase.auth.signOut()
   };
 }
