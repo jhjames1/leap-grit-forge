@@ -470,8 +470,8 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                 </div>
               </div>
 
-              {/* Display appointment proposal handler if this is a proposal message */}
-              {msg.metadata?.action_type === 'appointment_proposal' && (
+              {/* Display appointment proposal handler for both single and recurring proposals */}
+              {(msg.metadata?.action_type === 'appointment_proposal' || msg.metadata?.action_type === 'recurring_appointment_proposal') && (
                 <AppointmentProposalHandler 
                   message={msg} 
                   isUser={msg.sender_type === 'user'} 
