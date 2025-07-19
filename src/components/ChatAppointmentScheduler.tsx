@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -193,20 +192,20 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
 
       console.log('Appointment proposal created successfully:', data);
 
-      // Send chat message with the proposal
-      console.log('Sending chat message...');
-      
       // Get the current user's ID (the specialist)
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) {
         throw new Error('User not authenticated');
       }
       
+      // Send chat message with the proposal
+      console.log('Sending chat message...');
+      
       const messageResult = await supabase
         .from('chat_messages')
         .insert({
           session_id: chatSessionId,
-          sender_id: currentUser.id, // Use the authenticated user's ID (the specialist)
+          sender_id: currentUser.id,
           sender_type: 'specialist',
           message_type: 'system',
           content: `I'd like to schedule a ${title} appointment with you on ${format(selectedDate, 'MMMM d, yyyy')} at ${selectedTime}. Please let me know if this works for you!`,
@@ -232,6 +231,20 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
       }
 
       console.log('Chat message sent successfully:', messageResult);
+
+      // Update session status to active (this is the key fix)
+      console.log('Updating session status to active...');
+      const sessionUpdateResult = await supabase
+        .from('chat_sessions')
+        .update({ status: 'active' })
+        .eq('id', chatSessionId);
+
+      if (sessionUpdateResult.error) {
+        console.error('Error updating session status:', sessionUpdateResult.error);
+        // Don't throw here - the proposal was created successfully
+      } else {
+        console.log('Session status updated to active successfully');
+      }
 
       toast({
         title: "Appointment Proposed",
