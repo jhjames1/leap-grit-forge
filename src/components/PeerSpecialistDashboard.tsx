@@ -24,6 +24,8 @@ interface ChatSession {
   started_at: string;
   ended_at?: string;
   session_number: number;
+  user_first_name?: string;
+  user_last_name?: string;
 }
 
 interface PeerSpecialist {
@@ -117,7 +119,13 @@ const PeerSpecialistDashboard = () => {
     logger.debug('Loading chat sessions for specialist', { specialistId });
     const { data, error } = await supabase
       .from('chat_sessions')
-      .select('*')
+      .select(`
+        *,
+        profiles:user_id (
+          first_name,
+          last_name
+        )
+      `)
       .eq('specialist_id', specialistId)
       .order('started_at', { ascending: false });
 
@@ -127,7 +135,9 @@ const PeerSpecialistDashboard = () => {
       logger.debug('Loaded chat sessions', { count: data?.length || 0 });
       const typedSessions = (data || []).map(session => ({
         ...session,
-        status: session.status as 'waiting' | 'active' | 'ended'
+        status: session.status as 'waiting' | 'active' | 'ended',
+        user_first_name: session.profiles?.first_name,
+        user_last_name: session.profiles?.last_name
       }));
       setChatSessions(typedSessions);
     }
@@ -185,7 +195,6 @@ const PeerSpecialistDashboard = () => {
       })
       .subscribe();
 
-    // Subscribe to specialist status changes
     const statusChannel = supabase
       .channel(`specialist-status-realtime-${currentSpecialistId || 'unknown'}`)
       .on('postgres_changes', {
@@ -308,6 +317,18 @@ const PeerSpecialistDashboard = () => {
   }
 
   const currentStatus = effectiveStatus;
+
+  // Helper function to format session display name
+  const formatSessionName = (session: ChatSession) => {
+    let sessionName = `Session #${session.session_number}`;
+    
+    if (session.user_first_name) {
+      const lastInitial = session.user_last_name ? ` ${session.user_last_name.charAt(0)}.` : '';
+      sessionName += ` - ${session.user_first_name}${lastInitial}`;
+    }
+    
+    return sessionName;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -463,7 +484,7 @@ const PeerSpecialistDashboard = () => {
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <span className="font-fjalla font-bold">Session #{session.session_number}</span>
+                          <span className="font-fjalla font-bold">{formatSessionName(session)}</span>
                           <Badge variant={session.status === 'active' ? 'default' : session.status === 'waiting' ? 'secondary' : 'outline'}>
                             {session.status}
                           </Badge>

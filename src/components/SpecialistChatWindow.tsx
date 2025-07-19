@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +26,8 @@ interface ChatSession {
   started_at: string;
   ended_at?: string;
   session_number: number;
+  user_first_name?: string;
+  user_last_name?: string;
 }
 
 interface SpecialistChatWindowProps {
@@ -192,6 +193,18 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     setShowScheduler(false);
   };
 
+  // Helper function to format session display name
+  const formatSessionName = (session: ChatSession) => {
+    let sessionName = `Session #${session.session_number}`;
+    
+    if (session.user_first_name) {
+      const lastInitial = session.user_last_name ? ` ${session.user_last_name.charAt(0)}.` : '';
+      sessionName += ` - ${session.user_first_name}${lastInitial}`;
+    }
+    
+    return sessionName;
+  };
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
@@ -202,7 +215,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
               <User className="text-primary" size={16} />
             </div>
             <div>
-              <h3 className="font-semibold">Session #{session.session_number}</h3>
+              <h3 className="font-semibold">{formatSessionName(session)}</h3>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <div className={`w-2 h-2 rounded-full ${
                   session.status === 'active' ? 'bg-green-500' : 
