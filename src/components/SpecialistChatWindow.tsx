@@ -12,9 +12,8 @@ import {
   User,
   Shield,
   Clock,
-  ChevronDown,
-  ChevronUp,
-  Plus
+  X,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -60,8 +59,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
 }) => {
   const [message, setMessage] = useState('');
   const [showScheduler, setShowScheduler] = useState(false);
-  const [showProposals, setShowProposals] = useState(false);
-  const [proposals, setProposals] = useState<AppointmentProposal[]>([]);
+  const [sessionProposal, setSessionProposal] = useState<AppointmentProposal | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
@@ -70,10 +68,10 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
 
-  // Load messages for this specific session
+  // Load messages and session proposal
   useEffect(() => {
     loadMessages();
-    loadProposals();
+    loadSessionProposal();
     setupRealTimeSubscription();
   }, [session.id]);
 
@@ -100,19 +98,37 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     }
   };
 
-  const loadProposals = async () => {
+  const loadSessionProposal = async () => {
     try {
       const { data, error } = await supabase
         .from('appointment_proposals')
         .select('*')
-        .eq('user_id', session.user_id)
-        .eq('specialist_id', session.specialist_id)
-        .order('proposed_at', { ascending: false });
+        .eq('chat_session_id', session.id)
+        .maybeSingle();
 
       if (error) throw error;
-      setProposals((data || []) as AppointmentProposal[]);
+      setSessionProposal(data as AppointmentProposal | null);
     } catch (err) {
-      console.error('Error loading proposals:', err);
+      console.error('Error loading session proposal:', err);
+    }
+  };
+
+  const deleteExpiredProposal = async () => {
+    if (!sessionProposal) return;
+
+    try {
+      const { error } = await supabase
+        .from('appointment_proposals')
+        .delete()
+        .eq('id', sessionProposal.id);
+
+      if (error) throw error;
+      
+      setSessionProposal(null);
+      console.log('Expired proposal deleted successfully');
+    } catch (err) {
+      console.error('Error deleting proposal:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete proposal');
     }
   };
 
@@ -150,10 +166,10 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           event: '*',
           schema: 'public',
           table: 'appointment_proposals',
-          filter: `user_id=eq.${session.user_id}`
+          filter: `chat_session_id=eq.${session.id}`
         },
         () => {
-          loadProposals();
+          loadSessionProposal();
         }
       )
       .subscribe((status) => {
@@ -241,7 +257,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
 
   const handleSchedulerSuccess = () => {
     setShowScheduler(false);
-    loadProposals();
+    loadSessionProposal();
   };
 
   // Helper function to format session display name
@@ -271,7 +287,9 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     );
   };
 
-  const pendingProposals = proposals.filter(p => p.status === 'pending');
+  const isProposalExpired = (proposal: AppointmentProposal) => {
+    return new Date(proposal.expires_at) < new Date();
+  };
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -292,10 +310,10 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                 <span className="capitalize">{session.status}</span>
                 <span>•</span>
                 <span>Started {format(new Date(session.started_at), 'HH:mm')}</span>
-                {proposals.length > 0 && (
+                {sessionProposal && (
                   <>
                     <span>•</span>
-                    <span>{proposals.length} proposal{proposals.length > 1 ? 's' : ''}</span>
+                    <span>1 proposal</span>
                   </>
                 )}
               </div>
@@ -332,49 +350,43 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         </div>
       </div>
 
-      {/* Proposals Section */}
-      {proposals.length > 0 && (
-        <div className="bg-blue-50/50 border-b border-blue-200/50">
-          <div 
-            className="flex items-center justify-between p-3 cursor-pointer hover:bg-blue-100/50 transition-colors"
-            onClick={() => setShowProposals(!showProposals)}
-          >
-            <div className="flex items-center space-x-2">
-              <Calendar size={16} className="text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">
-                Appointment Proposals ({proposals.length})
-              </span>
-              {pendingProposals.length > 0 && (
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                  {pendingProposals.length} pending
-                </Badge>
+      {/* Session Proposal Section */}
+      {sessionProposal && (
+        <div className="bg-blue-50/50 border-b border-blue-200/50 p-3">
+          <div className="bg-white rounded-lg p-3 border border-blue-200">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-sm">{sessionProposal.title}</h4>
+              <div className="flex items-center space-x-2">
+                {getProposalStatusBadge(sessionProposal)}
+                {isProposalExpired(sessionProposal) && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={deleteExpiredProposal}
+                    className="text-red-600 hover:bg-red-50 h-6 w-6 p-0"
+                    title="Remove expired proposal"
+                  >
+                    <Trash2 size={12} />
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <div>📅 {sessionProposal.start_date} at {sessionProposal.start_time}</div>
+              <div>⏱️ {sessionProposal.duration} minutes • {sessionProposal.frequency}</div>
+              <div>🔄 {sessionProposal.occurrences} session{sessionProposal.occurrences > 1 ? 's' : ''}</div>
+              {sessionProposal.status === 'pending' && (
+                <div className="text-orange-600">
+                  ⏰ Expires {format(new Date(sessionProposal.expires_at), 'MMM d, h:mm a')}
+                </div>
+              )}
+              {isProposalExpired(sessionProposal) && (
+                <div className="text-red-600">
+                  ❌ This proposal has expired
+                </div>
               )}
             </div>
-            {showProposals ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </div>
-          
-          {showProposals && (
-            <div className="px-3 pb-3 space-y-2 max-h-48 overflow-y-auto">
-              {proposals.map(proposal => (
-                <div key={proposal.id} className="bg-white rounded-lg p-3 border border-blue-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-sm">{proposal.title}</h4>
-                    {getProposalStatusBadge(proposal)}
-                  </div>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div>📅 {proposal.start_date} at {proposal.start_time}</div>
-                    <div>⏱️ {proposal.duration} minutes • {proposal.frequency}</div>
-                    <div>🔄 {proposal.occurrences} session{proposal.occurrences > 1 ? 's' : ''}</div>
-                    {proposal.status === 'pending' && (
-                      <div className="text-orange-600">
-                        ⏰ Expires {format(new Date(proposal.expires_at), 'MMM d, h:mm a')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
@@ -430,7 +442,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                   isUser={msg.sender_type === 'user'} 
                   onResponse={() => {
                     console.log('Appointment proposal response handled');
-                    loadProposals();
+                    loadSessionProposal();
                   }}
                 />
               )}
