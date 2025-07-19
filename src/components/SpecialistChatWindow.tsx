@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -128,31 +129,6 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     } catch (err) {
       console.error('Error deleting proposal:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete proposal');
-    }
-  };
-
-  const withdrawProposal = async () => {
-    if (!sessionProposal) return;
-
-    try {
-      const { error } = await supabase
-        .from('appointment_proposals')
-        .delete()
-        .eq('id', sessionProposal.id);
-
-      if (error) throw error;
-      
-      setSessionProposal(null);
-      console.log('Proposal withdrawn successfully');
-      
-      // Optionally send a message to the chat about the withdrawal
-      await sendMessage({ 
-        content: 'The appointment proposal has been withdrawn.',
-        sender_type: 'specialist'
-      });
-    } catch (err) {
-      console.error('Error withdrawing proposal:', err);
-      setError(err instanceof Error ? err.message : 'Failed to withdraw proposal');
     }
   };
 
@@ -393,17 +369,6 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                     <Trash2 size={12} />
                   </Button>
                 )}
-                {sessionProposal.status === 'pending' && !isProposalExpired(sessionProposal) && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={withdrawProposal}
-                    className="text-orange-600 hover:bg-orange-50 h-6 px-2 text-xs"
-                    title="Withdraw this proposal"
-                  >
-                    Withdraw
-                  </Button>
-                )}
               </div>
             </div>
             <div className="text-xs text-muted-foreground space-y-1">
@@ -470,8 +435,8 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                 </div>
               </div>
 
-              {/* Display appointment proposal handler for both single and recurring proposals */}
-              {(msg.metadata?.action_type === 'appointment_proposal' || msg.metadata?.action_type === 'recurring_appointment_proposal') && (
+              {/* Display appointment proposal handler if this is a proposal message */}
+              {msg.metadata?.action_type === 'appointment_proposal' && (
                 <AppointmentProposalHandler 
                   message={msg} 
                   isUser={msg.sender_type === 'user'} 

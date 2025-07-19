@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -18,7 +17,7 @@ interface AppointmentProposalHandlerProps {
       proposal_data?: {
         id: string;
         title: string;
-        description?: string;
+        description: string;
         start_date: string;
         start_time: string;
         duration: string;
@@ -41,11 +40,8 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
   const [expired, setExpired] = useState(false);
   const { toast } = useToast();
 
-  // Show proposal actions for user messages and if it's any type of appointment proposal
-  const isAppointmentProposal = message.metadata?.action_type === 'appointment_proposal' || 
-                               message.metadata?.action_type === 'recurring_appointment_proposal';
-
-  if (isUser || !isAppointmentProposal || !message.metadata?.proposal_id) {
+  // Only show proposal actions for user messages and if it's an appointment proposal
+  if (isUser || message.metadata?.action_type !== 'recurring_appointment_proposal' || !message.metadata?.proposal_id) {
     return null;
   }
 
@@ -85,48 +81,20 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
       }
 
       if (response === 'accepted') {
-        // For single appointments, create a scheduled appointment directly
-        if (message.metadata?.action_type === 'appointment_proposal') {
-          const startDateTime = new Date(`${proposalData.start_date}T${proposalData.start_time}`);
-          const endDateTime = new Date(startDateTime.getTime() + parseInt(proposalData.duration) * 60000);
+        // Call edge function to create recurring appointments
+        const { error: functionError } = await supabase.functions.invoke('create-recurring-appointments', {
+          body: { proposalId: proposalData.id }
+        });
 
-          const { error: appointmentError } = await supabase
-            .from('scheduled_appointments')
-            .insert({
-              proposal_id: proposalData.id,
-              user_id: (await supabase.auth.getUser()).data.user?.id,
-              specialist_id: '', // This should be set from the proposal
-              appointment_type_id: '', // This should be set from the proposal
-              scheduled_start: startDateTime.toISOString(),
-              scheduled_end: endDateTime.toISOString(),
-              status: 'scheduled'
-            });
-
-          if (appointmentError) {
-            console.error('Error creating scheduled appointment:', appointmentError);
-            // Don't throw - the proposal was still accepted
-          }
-
-          toast({
-            title: "Appointment Accepted",
-            description: "Your appointment has been scheduled successfully!"
-          });
-        } else {
-          // For recurring appointments, call the edge function
-          const { error: functionError } = await supabase.functions.invoke('create-recurring-appointments', {
-            body: { proposalId: proposalData.id }
-          });
-
-          if (functionError) {
-            console.error('Error creating appointments:', functionError);
-            throw functionError;
-          }
-
-          toast({
-            title: "Proposal Accepted",
-            description: "Recurring appointments have been scheduled successfully!"
-          });
+        if (functionError) {
+          console.error('Error creating appointments:', functionError);
+          throw functionError;
         }
+
+        toast({
+          title: "Proposal Accepted",
+          description: "Recurring appointments have been scheduled successfully!"
+        });
       } else {
         toast({
           title: "Proposal Rejected",
@@ -169,16 +137,12 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
     );
   }
 
-  const isRecurring = message.metadata?.action_type === 'recurring_appointment_proposal';
-
   return (
     <Card className="p-4 mt-2 border-primary/20 bg-primary/5">
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-primary" />
-          <span className="font-medium text-sm">
-            {isRecurring ? 'Recurring ' : ''}Appointment Proposal
-          </span>
+          <span className="font-medium text-sm">Appointment Proposal Response</span>
           <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
             Expires in 7 days
           </Badge>
@@ -195,35 +159,27 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
           )}
           <div className="flex items-center gap-2">
             <Clock className="w-3 h-3" />
-            <strong>Schedule:</strong> 
-            {isRecurring ? 
-              `${proposalData.frequency} starting ${proposalData.start_date} at ${proposalData.start_time}` :
-              `${proposalData.start_date} at ${proposalData.start_time}`
-            }
+            <strong>Schedule:</strong> {proposalData.frequency} starting {proposalData.start_date} at {proposalData.start_time}
           </div>
           <div className="flex items-center gap-2">
             <strong>Duration:</strong> {proposalData.duration} minutes per session
           </div>
-          {isRecurring && (
-            <div className="flex items-center gap-2">
-              <strong>Total Sessions:</strong> {proposalData.occurrences}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <strong>Total Sessions:</strong> {proposalData.occurrences}
+          </div>
         </div>
 
-        {isRecurring && (
-          <div className="bg-blue-50 p-3 rounded-lg">
-            <p className="text-sm text-blue-800">
-              💡 <strong>What happens next:</strong>
-            </p>
-            <ul className="text-xs text-blue-700 mt-1 ml-4 space-y-1">
-              <li>• If you accept, recurring appointments will be automatically scheduled</li>
-              <li>• You'll receive reminders before each session</li>
-              <li>• You can reschedule individual sessions if needed</li>
-              <li>• This proposal expires in 7 days</li>
-            </ul>
-          </div>
-        )}
+        <div className="bg-blue-50 p-3 rounded-lg">
+          <p className="text-sm text-blue-800">
+            💡 <strong>What happens next:</strong>
+          </p>
+          <ul className="text-xs text-blue-700 mt-1 ml-4 space-y-1">
+            <li>• If you accept, recurring appointments will be automatically scheduled</li>
+            <li>• You'll receive reminders before each session</li>
+            <li>• You can reschedule individual sessions if needed</li>
+            <li>• This proposal expires in 7 days</li>
+          </ul>
+        </div>
 
         <div className="flex gap-2 pt-2">
           <Button
