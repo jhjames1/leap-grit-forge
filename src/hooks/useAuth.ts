@@ -62,6 +62,7 @@ export function useAuth() {
     user,
     session,
     loading,
+    isAuthenticated: !!session?.user,
     signOut: () => supabase.auth.signOut()
   };
 }
