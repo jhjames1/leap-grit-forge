@@ -558,9 +558,11 @@ const PeerSpecialistDashboard = () => {
               <h3 className="text-lg font-fjalla font-bold">Meeting Proposals</h3>
               <p className="text-muted-foreground font-source">Awaiting user responses</p>
             </div>
-            <Badge variant={pendingCount > 0 ? "secondary" : "outline"} className={pendingCount > 0 ? "bg-yellow-100 text-yellow-800" : ""}>
-              {pendingCount}
-            </Badge>
+            {pendingCount > 0 && (
+              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                {pendingCount}
+              </Badge>
+            )}
           </Card>
           
           <Card className="flex items-center justify-between p-6">
