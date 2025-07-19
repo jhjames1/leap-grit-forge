@@ -117,30 +117,39 @@ const PeerSpecialistDashboard = () => {
 
   const loadChatSessionsForSpecialist = useCallback(async (specialistId: string) => {
     logger.debug('Loading chat sessions for specialist', { specialistId });
-    const { data, error } = await supabase
+    
+    // First get the chat sessions
+    const { data: sessionsData, error: sessionsError } = await supabase
       .from('chat_sessions')
-      .select(`
-        *,
-        profiles:user_id (
-          first_name,
-          last_name
-        )
-      `)
+      .select('*')
       .eq('specialist_id', specialistId)
       .order('started_at', { ascending: false });
 
-    if (error) {
-      logger.error('Error fetching chat sessions', error);
-    } else {
-      logger.debug('Loaded chat sessions', { count: data?.length || 0 });
-      const typedSessions = (data || []).map(session => ({
+    if (sessionsError) {
+      logger.error('Error loading chat sessions', sessionsError);
+      return;
+    }
+
+    // Then get the profile data for each session
+    const sessionIds = (sessionsData || []).map(session => session.user_id);
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('user_id, first_name, last_name')
+      .in('user_id', sessionIds);
+
+    // Combine the data
+    const typedSessions = (sessionsData || []).map(session => {
+      const profile = profilesData?.find(p => p.user_id === session.user_id);
+      return {
         ...session,
         status: session.status as 'waiting' | 'active' | 'ended',
-        user_first_name: session.profiles?.first_name,
-        user_last_name: session.profiles?.last_name
-      }));
-      setChatSessions(typedSessions);
-    }
+        user_first_name: profile?.first_name,
+        user_last_name: profile?.last_name
+      };
+    });
+    
+    setChatSessions(typedSessions);
+    logger.debug('Loaded chat sessions with profiles', { count: typedSessions.length });
   }, []);
 
   const loadChatSessions = useCallback(async () => {
