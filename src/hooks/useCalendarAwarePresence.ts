@@ -1,13 +1,13 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect,callback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { calculateRealTimeAvailability, updateSpecialistStatusFromCalendar, CalendarAvailabilityResult } from '@/utils/calendarAvailability';
+import { calculateRealTimeAvailability, CalendarAvailabilityResult } from '@/utils/calendarAvailability';
 
 export const useCalendarAwarePresence = (specialistId?: string) => {
   const { user } = useAuth();
   const [calendarAvailability, setCalendarAvailability] = useState<CalendarAvailabilityResult | null>(null);
-  const [manualStatus, setManualStatus] = useState<'away' | null>(null);
+  const [manualStatusOverride, setManualStatusOverride] = useState<'online' | 'away' | 'offline' | null>(null);
   const [isCalendarControlled, setIsCalendarControlled] = useState(true);
   const [currentSpecialistId, setCurrentSpecialistId] = useState<string | null>(specialistId || null);
 
@@ -48,170 +48,184 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
     lastUpdateRef.current = now;
 
     try {
-      console.log('Updating calendar availability for specialist:', currentSpecialistId);
+      console.log('🔄 Updating calendar availability for specialist:', currentSpecialistId);
       const availability = await calculateRealTimeAvailability(currentSpecialistId);
       
       if (!mountedRef.current) return;
       
-      console.log('Calendar availability result:', availability);
+      console.log('📅 Calendar availability result:', availability);
       setCalendarAvailability(availability);
 
-      // If calendar-controlled and no manual override, update the status automatically
-      if (isCalendarControlled && !manualStatus && mountedRef.current) {
-        console.log('Updating specialist status from calendar...');
-        await updateSpecialistStatusFromCalendar(currentSpecialistId);
+      // Only update from calendar if no manual override and calendar-controlled
+      if (isCalendarControlled && !manualStatusOverride && mountedRef.current) {
+        console.log('🤖 Auto-updating specialist status from calendar...');
+        await updateSpecialistStatusInDB(currentSpecialistId, availability.status, availability.reason || null, {
+          calendar_controlled: true,
+          availability_check: availability,
+          timestamp: Date.now()
+        });
       }
     } catch (error) {
-      console.error('Error updating calendar availability:', error);
+      console.error('❌ Error updating calendar availability:', error);
     } finally {
       isUpdatingRef.current = false;
     }
-  }, [currentSpecialistId, isCalendarControlled, manualStatus]);
+  }, [currentSpecialistId, isCalendarControlled, manualStatusOverride]);
 
-  // Manual status override (for "away" status)
-  const setManualAwayStatus = useCallback(async (isAway: boolean, message?: string) => {
+  // Centralized database update function
+  const updateSpecialistStatusInDB = async (
+    specialistId: string, 
+    status: 'online' | 'away' | 'offline' | 'busy', 
+    message?: string | null,
+    presenceData?: any
+  ) => {
+    try {
+      console.log('💾 Updating specialist status in DB:', { specialistId, status, message });
+      
+      const { error } = await supabase
+        .from('specialist_status')
+        .upsert({
+          specialist_id: specialistId,
+          status,
+          status_message: message || null,
+          last_seen: new Date().toISOString(),
+          presence_data: presenceData || {
+            manual_override: true,
+            timestamp: Date.now()
+          }
+        }, {
+          onConflict: 'specialist_id'
+        });
+      
+      if (error) {
+        console.error('❌ Database update error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Successfully updated specialist status');
+    } catch (error) {
+      console.error('❌ Error updating specialist status in database:', error);
+      throw error;
+    }
+  };
+
+  // Manual status override function
+  const setManualStatus = useCallback(async (status: 'online' | 'away' | 'offline' | null, message?: string) => {
     if (!currentSpecialistId || !mountedRef.current) {
-      console.error('No specialist ID available for manual status change');
-      return;
+      console.error('❌ No specialist ID available for manual status change');
+      throw new Error('No specialist ID available');
     }
 
     try {
-      console.log('Setting manual away status:', isAway, message);
+      console.log('👤 Setting manual status override:', { status, message });
       
-      if (isAway) {
-        setManualStatus('away');
-        const { error } = await supabase
-          .from('specialist_status')
-          .upsert({
-            specialist_id: currentSpecialistId,
-            status: 'away',
-            status_message: message || 'Temporarily away',
-            last_seen: new Date().toISOString(),
-            presence_data: {
-              calendar_controlled: false,
-              manual_override: true,
+      if (status === null) {
+        // Clear manual override and return to calendar control
+        if (mountedRef.current) {
+          setManualStatusOverride(null);
+        }
+        
+        if (isCalendarControlled && calendarAvailability) {
+          console.log('🔄 Returning to calendar-controlled status');
+          await updateSpecialistStatusInDB(
+            currentSpecialistId, 
+            calendarAvailability.status, 
+            calendarAvailability.reason,
+            {
+              calendar_controlled: true,
+              availability_check: calendarAvailability,
               timestamp: Date.now()
             }
-          });
-        
-        if (error) {
-          console.error('Error setting away status:', error);
-          throw error;
+          );
         }
-        console.log('Successfully set away status');
       } else {
+        // Set manual override
         if (mountedRef.current) {
-          setManualStatus(null);
+          setManualStatusOverride(status);
         }
-        // Return to calendar-controlled status
-        console.log('Clearing manual status, returning to calendar control');
-        if (isCalendarControlled) {
-          await updateSpecialistStatusFromCalendar(currentSpecialistId);
-        }
+        
+        await updateSpecialistStatusInDB(
+          currentSpecialistId, 
+          status, 
+          message || `Manually set to ${status}`,
+          {
+            calendar_controlled: false,
+            manual_override: true,
+            manual_status: status,
+            timestamp: Date.now()
+          }
+        );
       }
+
+      console.log('✅ Successfully set manual status');
     } catch (error) {
-      console.error('Error setting manual status:', error);
+      console.error('❌ Error setting manual status:', error);
       throw error;
     }
-  }, [currentSpecialistId, isCalendarControlled]);
-
-  // Manual online status override
-  const setManualOnlineStatus = useCallback(async (isOnline: boolean, message?: string) => {
-    if (!currentSpecialistId || !mountedRef.current) {
-      console.error('No specialist ID available for manual online status change');
-      return;
-    }
-
-    try {
-      console.log('Setting manual online status:', isOnline, message);
-      
-      if (isOnline) {
-        // Set manual online status, overriding calendar
-        if (mountedRef.current) {
-          setManualStatus(null); // Clear any manual away status
-        }
-        
-        const { error } = await supabase
-          .from('specialist_status')
-          .upsert({
-            specialist_id: currentSpecialistId,
-            status: 'online',
-            status_message: message || 'Manually set online',
-            last_seen: new Date().toISOString(),
-            presence_data: {
-              calendar_controlled: false,
-              manual_override: true,
-              manual_online: true,
-              timestamp: Date.now()
-            }
-          });
-        
-        if (error) {
-          console.error('Error setting manual online status:', error);
-          throw error;
-        }
-        console.log('Successfully set manual online status');
-      } else {
-        // Return to calendar-controlled status
-        console.log('Clearing manual online status, returning to calendar control');
-        if (isCalendarControlled) {
-          await updateSpecialistStatusFromCalendar(currentSpecialistId);
-        }
-      }
-    } catch (error) {
-      console.error('Error setting manual online status:', error);
-      throw error;
-    }
-  }, [currentSpecialistId, isCalendarControlled]);
+  }, [currentSpecialistId, isCalendarControlled, calendarAvailability]);
 
   // Toggle calendar control
   const toggleCalendarControl = useCallback(async (enabled: boolean) => {
     if (!mountedRef.current) return;
     
-    console.log('Toggling calendar control:', enabled);
+    console.log('🔄 Toggling calendar control:', enabled);
     setIsCalendarControlled(enabled);
     
     if (enabled && currentSpecialistId) {
-      // Return to calendar-controlled status
+      // Clear manual override and return to calendar control
       if (mountedRef.current) {
-        setManualStatus(null);
+        setManualStatusOverride(null);
       }
-      console.log('Returning to calendar-controlled status');
-      await updateSpecialistStatusFromCalendar(currentSpecialistId);
-      // Refresh availability after enabling calendar control
-      setTimeout(() => {
-        if (mountedRef.current) {
-          updateCalendarAvailability();
-        }
-      }, 100);
+      
+      console.log('🤖 Enabling calendar control');
+      await updateCalendarAvailability();
     } else if (!enabled && currentSpecialistId) {
       // When disabling calendar control, set to offline by default
-      console.log('Disabling calendar control, setting offline');
-      const { error } = await supabase
-        .from('specialist_status')
-        .upsert({
-          specialist_id: currentSpecialistId,
-          status: 'offline',
-          status_message: 'Manual control mode',
-          last_seen: new Date().toISOString(),
-          presence_data: {
-            calendar_controlled: false,
-            manual_override: true,
-            timestamp: Date.now()
-          }
-        });
-      
-      if (error) {
-        console.error('Error setting manual offline status:', error);
-      }
+      console.log('👤 Disabling calendar control, setting offline');
+      await updateSpecialistStatusInDB(
+        currentSpecialistId,
+        'offline',
+        'Manual control mode',
+        {
+          calendar_controlled: false,
+          manual_override: true,
+          timestamp: Date.now()
+        }
+      );
     }
   }, [currentSpecialistId, updateCalendarAvailability]);
+
+  // Get effective status with clear precedence
+  const getEffectiveStatus = (): 'online' | 'away' | 'offline' | 'busy' => {
+    // Manual override takes highest precedence
+    if (manualStatusOverride) {
+      console.log('📍 Using manual status override:', manualStatusOverride);
+      return manualStatusOverride;
+    }
+    
+    // Calendar status if calendar controlled
+    if (isCalendarControlled && calendarAvailability) {
+      console.log('📅 Using calendar status:', calendarAvailability.status);
+      return calendarAvailability.status;
+    }
+    
+    // Default to offline
+    console.log('🔌 Defaulting to offline status');
+    return 'offline';
+  };
+
+  const getStatusMessage = () => {
+    if (manualStatusOverride) return `Manually set to ${manualStatusOverride}`;
+    if (!isCalendarControlled) return 'Manual control mode';
+    if (calendarAvailability?.reason) return calendarAvailability.reason;
+    return null;
+  };
 
   // Set up real-time monitoring with proper cleanup
   useEffect(() => {
     if (!currentSpecialistId) return;
 
-    console.log('Setting up calendar availability monitoring for specialist:', currentSpecialistId);
+    console.log('🔗 Setting up calendar availability monitoring for specialist:', currentSpecialistId);
     mountedRef.current = true;
 
     // Initial availability check with delay to prevent rapid calls
@@ -224,7 +238,7 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
     // Set up interval to check availability every minute
     const interval = setInterval(() => {
       if (mountedRef.current) {
-        console.log('Running scheduled availability check...');
+        console.log('⏰ Running scheduled availability check...');
         updateCalendarAvailability();
       }
     }, 60000);
@@ -242,26 +256,7 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
         },
         () => {
           if (mountedRef.current && !isUpdatingRef.current) {
-            console.log('Appointment changed, updating availability');
-            setTimeout(() => {
-              if (mountedRef.current) {
-                updateCalendarAvailability();
-              }
-            }, 500); // Debounce real-time updates
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'specialist_calendar_settings',
-          filter: `specialist_id=eq.${currentSpecialistId}`
-        },
-        () => {
-          if (mountedRef.current && !isUpdatingRef.current) {
-            console.log('Calendar settings changed, updating availability');
+            console.log('📅 Appointment changed, updating availability');
             setTimeout(() => {
               if (mountedRef.current) {
                 updateCalendarAvailability();
@@ -275,12 +270,12 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
         {
           event: '*',
           schema: 'public',
-          table: 'specialist_availability_exceptions',
+          table: 'specialist_calendar_settings',
           filter: `specialist_id=eq.${currentSpecialistId}`
         },
         () => {
           if (mountedRef.current && !isUpdatingRef.current) {
-            console.log('Availability exceptions changed, updating availability');
+            console.log('⚙️ Calendar settings changed, updating availability');
             setTimeout(() => {
               if (mountedRef.current) {
                 updateCalendarAvailability();
@@ -304,7 +299,7 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
   useEffect(() => {
     const handleBeforeUnload = async () => {
       if (currentSpecialistId) {
-        console.log('Setting specialist offline on page unload');
+        console.log('🔌 Setting specialist offline on page unload');
         await supabase
           .from('specialist_status')
           .update({
@@ -327,12 +322,13 @@ export const useCalendarAwarePresence = (specialistId?: string) => {
 
   return {
     calendarAvailability,
-    manualStatus,
+    manualStatusOverride,
     isCalendarControlled,
-    setManualAwayStatus,
-    setManualOnlineStatus,
+    setManualStatus,
     toggleCalendarControl,
     refreshAvailability: updateCalendarAvailability,
-    specialistId: currentSpecialistId
+    specialistId: currentSpecialistId,
+    getEffectiveStatus,
+    getStatusMessage
   };
 };

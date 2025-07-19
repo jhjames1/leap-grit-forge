@@ -64,13 +64,14 @@ const PeerSpecialistDashboard = () => {
   // Use the calendar-aware presence hook
   const {
     calendarAvailability,
-    manualStatus,
+    manualStatusOverride,
     isCalendarControlled,
-    setManualAwayStatus,
-    setManualOnlineStatus,
+    setManualStatus,
     toggleCalendarControl,
     refreshAvailability,
-    specialistId
+    specialistId,
+    getEffectiveStatus,
+    getStatusMessage
   } = useCalendarAwarePresence();
 
   // Load specialist data and sessions with useCallback to prevent recreation
@@ -109,7 +110,7 @@ const PeerSpecialistDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]); // Only depend on user.id
+  }, [user?.id]);
 
   const loadChatSessionsForSpecialist = useCallback(async (specialistId: string) => {
     console.log('📨 Loading chat sessions for specialist:', specialistId);
@@ -194,7 +195,7 @@ const PeerSpecialistDashboard = () => {
       }, payload => {
         console.log('Real-time status change:', payload);
         if (refreshAvailability) {
-          setTimeout(refreshAvailability, 100); // Debounce the refresh
+          setTimeout(refreshAvailability, 100);
         }
       })
       .subscribe();
@@ -225,10 +226,15 @@ const PeerSpecialistDashboard = () => {
     loadChatSessions();
   };
 
-  // Fixed status change handler using the calendar-aware presence hook
+  // Simplified status change handler using the new hook
   const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
     if (!specialistId) {
-      console.error('No specialist ID available');
+      console.error('❌ No specialist ID available');
+      toast({
+        title: "Error",
+        description: "No specialist ID available",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -236,46 +242,16 @@ const PeerSpecialistDashboard = () => {
     console.log('🔄 Changing status to:', newStatus);
     
     try {
-      if (newStatus === 'away') {
-        // Set manual away status
-        await setManualAwayStatus(true, 'Manually set to away');
-        console.log('Set manual away status');
-      } else if (newStatus === 'offline') {
-        // Turn off calendar control and set offline
-        await toggleCalendarControl(false);
-        await setManualAwayStatus(false); // Clear any manual away status
-        
-        // Set offline status directly
-        await supabase
-          .from('specialist_status')
-          .upsert({
-            specialist_id: specialistId,
-            status: 'offline',
-            status_message: 'Manually set offline',
-            last_seen: new Date().toISOString(),
-            presence_data: {
-              calendar_controlled: false,
-              manual_override: true,
-              timestamp: Date.now()
-            }
-          });
-        console.log('Set offline status');
-      } else if (newStatus === 'online') {
-        // Set manual online status to override calendar
-        await setManualAwayStatus(false); // Clear any manual away status
-        await setManualOnlineStatus(true, 'Manually set online');
-        console.log('Set manual online status');
-      }
-
-      // Refresh availability to get updated status
-      await refreshAvailability();
-
+      await setManualStatus(newStatus, `Manually set to ${newStatus}`);
+      
       toast({
         title: "Status Updated",
-        description: `Your status has been changed to ${newStatus}`
+        description: `Your status has been changed to ${newStatus}`,
       });
+      
+      console.log('✅ Status change successful');
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error('❌ Error updating status:', error);
       toast({
         title: "Error",
         description: `Failed to update status: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -284,32 +260,6 @@ const PeerSpecialistDashboard = () => {
     } finally {
       setStatusLoading(false);
     }
-  };
-
-  // Get current effective status with proper precedence
-  const getEffectiveStatus = (): 'online' | 'away' | 'offline' | 'busy' => {
-    // Manual status takes precedence
-    if (manualStatus === 'away') return 'away';
-    
-    // Check if specialist status has manual online override
-    if (peerSpecialist?.status && !isCalendarControlled) {
-      return peerSpecialist.status.status;
-    }
-    
-    // If calendar controlled and we have calendar availability data
-    if (isCalendarControlled && calendarAvailability) {
-      return calendarAvailability.status;
-    }
-    
-    // Fallback to offline
-    return 'offline';
-  };
-
-  const getStatusMessage = () => {
-    if (manualStatus === 'away') return 'Manually set to away';
-    if (!isCalendarControlled) return 'Manual control mode';
-    if (calendarAvailability?.reason) return calendarAvailability.reason;
-    return null;
   };
 
   const hasActiveSessions = chatSessions.some(session => session.status === 'active' || session.status === 'waiting');
@@ -382,6 +332,9 @@ const PeerSpecialistDashboard = () => {
     );
   }
 
+  const currentStatus = getEffectiveStatus();
+  const statusMessage = getStatusMessage();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -426,7 +379,7 @@ const PeerSpecialistDashboard = () => {
             <div className="flex items-center space-x-3">
               <div className="flex flex-col">
                 <Select 
-                  value={getEffectiveStatus()} 
+                  value={currentStatus} 
                   onValueChange={handleStatusChange}
                   disabled={statusLoading}
                 >
@@ -454,9 +407,14 @@ const PeerSpecialistDashboard = () => {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                {getStatusMessage() && (
+                {statusMessage && (
                   <span className="text-xs text-muted-foreground mt-1">
-                    {getStatusMessage()}
+                    {statusMessage}
+                  </span>
+                )}
+                {statusLoading && (
+                  <span className="text-xs text-primary mt-1">
+                    Updating...
                   </span>
                 )}
               </div>
@@ -502,7 +460,6 @@ const PeerSpecialistDashboard = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
-        {/* Specialist Name */}
         {peerSpecialist && <div className="mb-6">
             <h2 className="text-xl font-fjalla font-bold text-foreground">
               {peerSpecialist.first_name} {peerSpecialist.last_name}
