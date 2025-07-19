@@ -187,6 +187,18 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     if (!user) return;
 
     try {
+      // Get specialist ID for this user
+      const { data: specialistData } = await supabase
+        .from('peer_specialists')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!specialistData) {
+        console.error('No specialist found for user');
+        return;
+      }
+
       const { error } = await supabase
         .from('chat_messages')
         .insert({
@@ -201,8 +213,23 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
 
       console.log('Message sent successfully');
       
-      // Update session status to active if it was waiting
-      if (session.status === 'waiting') {
+      // If this is a specialist's first message to a waiting session without assigned specialist, assign them
+      if (session.status === 'waiting' && !session.specialist_id) {
+        const { error: updateError } = await supabase
+          .from('chat_sessions')
+          .update({ 
+            status: 'active',
+            specialist_id: specialistData.id
+          })
+          .eq('id', session.id);
+
+        if (updateError) {
+          console.error('Error updating session:', updateError);
+        } else {
+          console.log('Session assigned to specialist and activated');
+        }
+      } else if (session.status === 'waiting') {
+        // Update session to active if it was waiting
         await supabase
           .from('chat_sessions')
           .update({ status: 'active' })
@@ -322,7 +349,9 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                   session.status === 'active' ? 'bg-green-500' : 
                   session.status === 'waiting' ? 'bg-yellow-500' : 'bg-gray-500'
                 }`}></div>
-                <span className="capitalize">{session.status}</span>
+                <span className="capitalize">
+                  {session.status === 'waiting' && !session.specialist_id ? 'Available to claim' : session.status}
+                </span>
                 <span>•</span>
                 <span>Started {format(new Date(session.started_at), 'h:mm a')}</span>
                 {sessionProposal && (
@@ -469,7 +498,12 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           ))
         ) : (
           <div className="text-center text-muted-foreground py-8">
-            <p>Chat session started. Send a message to begin the conversation.</p>
+            <p>
+              {session.status === 'waiting' && !session.specialist_id 
+                ? 'This session is waiting for a specialist. Send a message to claim it and begin the conversation.'
+                : 'Chat session started. Send a message to begin the conversation.'
+              }
+            </p>
           </div>
         )}
         

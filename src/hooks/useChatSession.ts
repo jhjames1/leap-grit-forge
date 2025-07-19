@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -32,11 +31,11 @@ export function useChatSession(specialistId?: string) {
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
 
   useEffect(() => {
-    if (!user || !specialistId) return;
+    if (!user) return;
 
-    console.log('Setting up chat session for user:', user.id, 'specialist:', specialistId);
+    console.log('Setting up chat session for user:', user.id);
     checkExistingSession();
-  }, [user, specialistId]);
+  }, [user]);
 
   useEffect(() => {
     if (!session) return;
@@ -109,15 +108,16 @@ export function useChatSession(specialistId?: string) {
   }, [session]);
 
   const checkExistingSession = async () => {
-    if (!user || !specialistId) return;
+    if (!user) return;
 
     try {
       console.log('Checking for existing session...');
+      // For users, check for any waiting or active session they have
+      // For specialists, this will be handled differently in the dashboard
       const { data, error } = await supabase
         .from('chat_sessions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('specialist_id', specialistId)
         .in('status', ['waiting', 'active'])
         .order('created_at', { ascending: false })
         .limit(1)
@@ -142,8 +142,8 @@ export function useChatSession(specialistId?: string) {
   };
 
   const startSession = async () => {
-    if (!user || !specialistId) {
-      console.error('Cannot start session: missing user or specialist');
+    if (!user) {
+      console.error('Cannot start session: missing user');
       return null;
     }
 
@@ -153,12 +153,12 @@ export function useChatSession(specialistId?: string) {
     try {
       console.log('Starting new chat session...');
       
-      // Create new chat session
+      // Create new chat session without a specific specialist - any available specialist can pick it up
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
         .insert({
           user_id: user.id,
-          specialist_id: specialistId,
+          specialist_id: null, // Changed: no specific specialist assigned initially
           status: 'waiting'
         })
         .select()
@@ -177,7 +177,7 @@ export function useChatSession(specialistId?: string) {
 
       // Send initial system message
       await sendMessage({
-        content: 'Chat session started. You are now connected with a Peer Support Specialist.',
+        content: 'Chat session started. You are now in the queue to be connected with a Peer Support Specialist.',
         message_type: 'system'
       }, sessionData.id);
 
@@ -289,8 +289,30 @@ export function useChatSession(specialistId?: string) {
 
       console.log('Message sent successfully');
 
-      // Update session to active if it was waiting
-      if (currentSession && currentSession.status === 'waiting') {
+      // If this is a specialist's first message to a waiting session, assign them to it
+      if (sender_type === 'specialist' && currentSession && currentSession.status === 'waiting' && !currentSession.specialist_id) {
+        // Find the specialist ID for this user
+        const { data: specialistData } = await supabase
+          .from('peer_specialists')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (specialistData) {
+          const { error: updateError } = await supabase
+            .from('chat_sessions')
+            .update({ 
+              status: 'active',
+              specialist_id: specialistData.id
+            })
+            .eq('id', currentSession.id);
+
+          if (!updateError) {
+            setSession(prev => prev ? { ...prev, status: 'active', specialist_id: specialistData.id } : null);
+          }
+        }
+      } else if (currentSession && currentSession.status === 'waiting') {
+        // Update session to active if it was waiting (for regular user messages)
         const { error: updateError } = await supabase
           .from('chat_sessions')
           .update({ status: 'active' })

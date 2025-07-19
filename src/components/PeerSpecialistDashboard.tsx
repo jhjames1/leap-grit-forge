@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,7 +54,6 @@ const PeerSpecialistDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
-  const [chatFilter, setChatFilter] = useState<'all' | 'waiting' | 'active'>('all');
   const [peerSpecialist, setPeerSpecialist] = useState<PeerSpecialist | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
@@ -117,22 +115,22 @@ const PeerSpecialistDashboard = () => {
         };
         setPeerSpecialist(specialistWithUserData);
 
-        // Load chat sessions with the specialist ID
-        await loadChatSessionsForSpecialist(specialistWithUserData.id);
+        // Load chat sessions for this specialist
+        await loadChatSessions(specialistWithUserData.id);
       }
     } finally {
       setLoading(false);
     }
   }, [user?.id]);
 
-  const loadChatSessionsForSpecialist = useCallback(async (specialistId: string) => {
+  const loadChatSessions = useCallback(async (specialistId: string) => {
     logger.debug('Loading chat sessions for specialist', { specialistId });
     
-    // First get the chat sessions
+    // Load both assigned sessions and unassigned waiting sessions
     const { data: sessionsData, error: sessionsError } = await supabase
       .from('chat_sessions')
       .select('*')
-      .eq('specialist_id', specialistId)
+      .or(`specialist_id.eq.${specialistId},and(specialist_id.is.null,status.eq.waiting)`)
       .order('started_at', { ascending: false });
 
     if (sessionsError) {
@@ -147,7 +145,7 @@ const PeerSpecialistDashboard = () => {
       .select('user_id, first_name, last_name')
       .in('user_id', sessionIds);
 
-    // Get proposal counts for each session - fixed to only count actual pending proposals for each session
+    // Get proposal counts for each session
     const { data: proposalData } = await supabase
       .from('appointment_proposals')
       .select('chat_session_id, status, responded_at')
@@ -178,11 +176,6 @@ const PeerSpecialistDashboard = () => {
     logger.debug('Loaded chat sessions with profiles and proposals', { count: typedSessions.length });
   }, []);
 
-  const loadChatSessions = useCallback(async () => {
-    if (!peerSpecialist) return;
-    await loadChatSessionsForSpecialist(peerSpecialist.id);
-  }, [peerSpecialist?.id, loadChatSessionsForSpecialist]);
-
   // Load data when component mounts or user changes
   useEffect(() => {
     loadData();
@@ -202,7 +195,7 @@ const PeerSpecialistDashboard = () => {
         table: 'chat_sessions'
       }, payload => {
         logger.debug('Real-time chat session change', payload);
-        loadChatSessions();
+        loadChatSessions(currentSpecialistId || '');
       })
       .subscribe();
 
@@ -214,7 +207,7 @@ const PeerSpecialistDashboard = () => {
         table: 'appointment_proposals'
       }, payload => {
         logger.debug('Real-time appointment proposal change', payload);
-        loadChatSessions();
+        loadChatSessions(currentSpecialistId || '');
       })
       .subscribe();
 
@@ -226,7 +219,7 @@ const PeerSpecialistDashboard = () => {
         table: 'chat_messages'
       }, payload => {
         logger.debug('Real-time chat message change', payload);
-        loadChatSessions();
+        loadChatSessions(currentSpecialistId || '');
       })
       .subscribe();
 
@@ -252,24 +245,75 @@ const PeerSpecialistDashboard = () => {
     };
   }, [user?.id, currentSpecialistId, loadChatSessions]);
 
-  const filterSessions = () => {
-    if (chatFilter === 'all') {
-      return chatSessions;
-    } else {
-      return chatSessions.filter(session => session.status === chatFilter);
-    }
+  // Sort sessions by priority: waiting first, then active, then ended
+  // Within each group, sort by most recent first
+  const getSortedSessions = () => {
+    return [...chatSessions].sort((a, b) => {
+      // First sort by status priority
+      const statusPriority = { waiting: 0, active: 1, ended: 2 };
+      const aPriority = statusPriority[a.status];
+      const bPriority = statusPriority[b.status];
+      
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      
+      // Within same status, sort by most recent first
+      return new Date(b.started_at).getTime() - new Date(a.started_at).getTime();
+    });
   };
 
-  const handleChatClick = (session: ChatSession) => {
-    setSelectedChatSession(session);
+  const handleChatClick = async (session: ChatSession) => {
+    // If this is an unassigned waiting session, assign it to this specialist
+    if (session.status === 'waiting' && !session.specialist_id && peerSpecialist) {
+      try {
+        const { error } = await supabase
+          .from('chat_sessions')
+          .update({ specialist_id: peerSpecialist.id })
+          .eq('id', session.id);
+
+        if (error) {
+          console.error('Error claiming session:', error);
+          toast({
+            title: "Error",
+            description: "Failed to claim this session. Please try again.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Update local state
+        setChatSessions(prev => prev.map(s => 
+          s.id === session.id ? { ...s, specialist_id: peerSpecialist.id } : s
+        ));
+
+        // Update the selected session
+        setSelectedChatSession({ ...session, specialist_id: peerSpecialist.id });
+
+        toast({
+          title: "Session Claimed",
+          description: "You are now assigned to this chat session.",
+        });
+      } catch (error) {
+        console.error('Error claiming session:', error);
+        toast({
+          title: "Error",
+          description: "Failed to claim this session. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      setSelectedChatSession(session);
+    }
   };
 
   const handleCloseChatWindow = () => {
     setSelectedChatSession(null);
-    loadChatSessions();
+    if (peerSpecialist) {
+      loadChatSessions(peerSpecialist.id);
+    }
   };
 
-  // Simplified status change handler
   const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
     try {
       await updateStatus(newStatus, `Manually set to ${newStatus}`);
@@ -335,8 +379,10 @@ const PeerSpecialistDashboard = () => {
     return waitTime > 45000; // 45 seconds in milliseconds
   };
 
-  // Check if there are more than 2 users waiting
+  // Get session counts
   const waitingSessions = chatSessions.filter(s => s.status === 'waiting');
+  const activeSessions = chatSessions.filter(s => s.status === 'active');
+  const endedSessions = chatSessions.filter(s => s.status === 'ended');
   const hasMultipleWaitingSessions = waitingSessions.length > 2;
 
   // Show loading state
@@ -475,7 +521,7 @@ const PeerSpecialistDashboard = () => {
               <h3 className="text-lg font-fjalla font-bold">Active Sessions</h3>
               <p className="text-muted-foreground font-source">Current live chat sessions</p>
             </div>
-            <Badge variant="default">{chatSessions.filter(s => s.status === 'active').length}</Badge>
+            <Badge variant="default">{activeSessions.length}</Badge>
           </Card>
           
           <Card className={`flex items-center justify-between p-6 ${hasMultipleWaitingSessions ? 'bg-warning border-warning-foreground/20' : ''}`}>
@@ -483,7 +529,7 @@ const PeerSpecialistDashboard = () => {
               <h3 className="text-lg font-fjalla font-bold">Waiting Sessions</h3>
               <p className="text-muted-foreground font-source">Users waiting for a response</p>
             </div>
-            <Badge variant="secondary">{chatSessions.filter(s => s.status === 'waiting').length}</Badge>
+            <Badge variant="secondary">{waitingSessions.length}</Badge>
           </Card>
           
           <Card className={`flex items-center justify-between p-6 ${pendingCount > 0 ? 'bg-yellow-50 border-yellow-200' : ''}`}>
@@ -501,36 +547,35 @@ const PeerSpecialistDashboard = () => {
               <h3 className="text-lg font-fjalla font-bold">Completed Sessions</h3>
               <p className="text-muted-foreground font-source">Total sessions completed today</p>
             </div>
-            <Badge variant="outline">{chatSessions.filter(s => s.status === 'ended').length}</Badge>
+            <Badge variant="outline">{endedSessions.length}</Badge>
           </Card>
         </div>
 
         {/* Chat Management */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Chat Sessions List */}
+          {/* Unified Chat Sessions List */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-fjalla font-bold">Chat Sessions</h2>
-              <div className="flex gap-2">
-                <Button size="sm" variant={chatFilter === 'all' ? 'default' : 'outline'} onClick={() => setChatFilter('all')}>
-                  All ({chatSessions.length})
-                </Button>
-                <Button size="sm" variant={chatFilter === 'waiting' ? 'default' : 'outline'} onClick={() => setChatFilter('waiting')}>
-                  Waiting ({chatSessions.filter(s => s.status === 'waiting').length})
-                </Button>
-                <Button size="sm" variant={chatFilter === 'active' ? 'default' : 'outline'} onClick={() => setChatFilter('active')}>
-                  Active ({chatSessions.filter(s => s.status === 'active').length})
-                </Button>
+              <div>
+                <h2 className="text-xl font-fjalla font-bold">Chat Sessions</h2>
+                <p className="text-sm text-muted-foreground">
+                  Waiting sessions appear first. Click to claim unassigned sessions.
+                </p>
               </div>
+              <Badge variant="outline" className="text-muted-foreground">
+                {chatSessions.length} total
+              </Badge>
             </div>
 
             <div className="space-y-4">
-              {filterSessions().length > 0 ? filterSessions().map(session => (
+              {getSortedSessions().length > 0 ? getSortedSessions().map(session => (
                 <div 
                   key={session.id} 
                   className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${
                     selectedChatSession?.id === session.id ? 'border-primary bg-primary/5' : 'border-border'
-                  } ${isWaitingTooLong(session) ? 'bg-warning border-warning-foreground/20' : ''}`} 
+                  } ${isWaitingTooLong(session) ? 'bg-warning border-warning-foreground/20' : ''} ${
+                    session.status === 'waiting' && !session.specialist_id ? 'bg-blue-50/50 border-blue-200' : ''
+                  }`} 
                   onClick={() => handleChatClick(session)}
                 >
                   <div className="flex items-center justify-between">
@@ -541,9 +586,23 @@ const PeerSpecialistDashboard = () => {
                       <div>
                         <div className="flex items-center space-x-2">
                           <span className="font-fjalla font-bold">{formatSessionName(session)}</span>
-                          <Badge variant={session.status === 'active' ? 'default' : session.status === 'waiting' ? 'secondary' : 'outline'}>
-                            {session.status}
+                          <Badge 
+                            variant={
+                              session.status === 'active' ? 'default' : 
+                              session.status === 'waiting' ? 'secondary' : 'outline'
+                            }
+                            className={
+                              session.status === 'waiting' && !session.specialist_id ? 
+                              'bg-blue-100 text-blue-800 border-blue-200' : ''
+                            }
+                          >
+                            {session.status === 'waiting' && !session.specialist_id ? 'Available' : session.status}
                           </Badge>
+                          {session.status === 'waiting' && !session.specialist_id && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Click to claim
+                            </Badge>
+                          )}
                           {/* Proposal indicators - only show if there are actual pending proposals for this session */}
                           {session.pending_proposals_count && session.pending_proposals_count > 0 && (
                             <Badge variant="outline" className="bg-yellow-50 text-orange-700 border-orange-200">
@@ -560,6 +619,9 @@ const PeerSpecialistDashboard = () => {
                         </div>
                         <p className="text-sm text-muted-foreground font-source">
                           Started {format(new Date(session.started_at), 'MMM d, h:mm a')}
+                          {session.status === 'waiting' && !session.specialist_id && (
+                            <span className="ml-2 text-blue-600">• Unassigned</span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -569,7 +631,7 @@ const PeerSpecialistDashboard = () => {
               )) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
-                  <p className="font-source">No {chatFilter !== 'all' ? chatFilter : ''} chat sessions</p>
+                  <p className="font-source">No chat sessions available</p>
                 </div>
               )}
             </div>
