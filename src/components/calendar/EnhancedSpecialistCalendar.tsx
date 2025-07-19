@@ -205,9 +205,13 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
 
       const { data: proposals, error: proposalsError } = await supabase
         .from('appointment_proposals')
-        .select('*')
+        .select(`
+          *,
+          chat_sessions!inner(status)
+        `)
         .eq('specialist_id', specialistId)
         .eq('status', 'pending')
+        .in('chat_sessions.status', ['waiting', 'active'])
         .gt('expires_at', new Date().toISOString());
 
       if (proposalsError) throw proposalsError;
@@ -435,7 +439,7 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
             {pendingProposalsCount > 0 && (
               <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 ml-2">
                 <AlertCircle className="w-3 h-3 mr-1" />
-                {pendingProposalsCount} Pending
+                {pendingProposalsCount} Pending Meeting Proposals
               </Badge>
             )}
           </CardTitle>
@@ -488,7 +492,7 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
               </Badge>
               <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
                 <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
-                Pending Proposals
+                Pending Meeting Proposals
               </Badge>
             </div>
             

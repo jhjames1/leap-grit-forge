@@ -435,7 +435,7 @@ const PeerSpecialistDashboard = () => {
             {pendingCount > 0 && (
               <div className="flex items-center gap-2 text-sm bg-yellow-100 text-yellow-800 px-3 py-2 rounded-lg">
                 <AlertCircle className="h-4 w-4" />
-                <span>{pendingCount} pending proposal{pendingCount > 1 ? 's' : ''}</span>
+                <span>{pendingCount} pending meeting proposal{pendingCount > 1 ? 's' : ''}</span>
               </div>
             )}
 

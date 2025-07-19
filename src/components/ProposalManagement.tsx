@@ -18,12 +18,15 @@ interface AppointmentProposal {
   duration: number;
   frequency: string;
   occurrences: number;
-  status: 'pending' | 'accepted' | 'rejected' | 'expired';
+  status: 'pending' | 'accepted' | 'rejected' | 'expired' | 'withdrawn';
   expires_at: string;
   proposed_at: string;
   responded_at?: string;
   user_first_name?: string;
   user_last_name?: string;
+  chat_sessions?: {
+    status: string;
+  };
 }
 
 interface ProposalManagementProps {
@@ -37,15 +40,16 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
 
   const fetchProposals = async () => {
     try {
-      const { data, error } = await supabase
-        .from('appointment_proposals')
-        .select(`
-          *,
-          appointment_types(name, color)
-        `)
-        .eq('specialist_id', specialistId)
-        .in('status', ['pending', 'accepted', 'rejected'])
-        .order('proposed_at', { ascending: false });
+        const { data, error } = await supabase
+          .from('appointment_proposals')
+          .select(`
+            *,
+            appointment_types(name, color),
+            chat_sessions!inner(status)
+          `)
+          .eq('specialist_id', specialistId)
+          .in('status', ['pending', 'accepted', 'rejected', 'withdrawn'])
+          .order('proposed_at', { ascending: false });
 
       if (error) throw error;
 
@@ -119,7 +123,7 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
     try {
       const { error } = await supabase
         .from('appointment_proposals')
-        .update({ status: 'expired' })
+        .update({ status: 'withdrawn' })
         .eq('id', proposalId);
 
       if (error) throw error;
@@ -180,8 +184,18 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
     return 'User';
   };
 
-  const pendingProposals = proposals.filter(p => p.status === 'pending' && !isPast(new Date(p.expires_at)));
-  const respondedProposals = proposals.filter(p => p.status !== 'pending' || isPast(new Date(p.expires_at)));
+  // Only show pending proposals from active chat sessions
+  const pendingProposals = proposals.filter(p => 
+    p.status === 'pending' && 
+    !isPast(new Date(p.expires_at)) &&
+    p.chat_sessions?.status && 
+    ['waiting', 'active'].includes(p.chat_sessions.status)
+  );
+  const respondedProposals = proposals.filter(p => 
+    p.status !== 'pending' || 
+    isPast(new Date(p.expires_at)) ||
+    (p.chat_sessions?.status && !['waiting', 'active'].includes(p.chat_sessions.status))
+  );
 
   if (loading) {
     return (
@@ -200,12 +214,12 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-yellow-600" />
-            Pending Proposals ({pendingProposals.length})
+            Pending Meeting Proposals ({pendingProposals.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {pendingProposals.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No pending proposals</p>
+            <p className="text-muted-foreground text-center py-4">No pending meeting proposals</p>
           ) : (
             <div className="space-y-4">
               {pendingProposals.map(proposal => (

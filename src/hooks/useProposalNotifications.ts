@@ -18,14 +18,18 @@ export function useProposalNotifications(specialistId: string) {
   useEffect(() => {
     if (!specialistId) return;
 
-    // Fetch initial counts
+    // Fetch initial counts - only from active chat sessions
     const fetchCounts = async () => {
       try {
         const { data: pendingData, error: pendingError } = await supabase
           .from('appointment_proposals')
-          .select('id', { count: 'exact' })
+          .select(`
+            id,
+            chat_sessions!inner(status)
+          `, { count: 'exact' })
           .eq('specialist_id', specialistId)
           .eq('status', 'pending')
+          .in('chat_sessions.status', ['waiting', 'active'])
           .gt('expires_at', new Date().toISOString());
 
         if (pendingError) throw pendingError;
