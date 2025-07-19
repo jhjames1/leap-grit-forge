@@ -41,21 +41,30 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
         .from('appointment_proposals')
         .select(`
           *,
-          profiles!appointment_proposals_user_id_fkey (
-            first_name,
-            last_name
-          )
+          appointment_types(name, color)
         `)
         .eq('specialist_id', specialistId)
+        .in('status', ['pending', 'accepted', 'rejected'])
         .order('proposed_at', { ascending: false });
 
       if (error) throw error;
 
-      const proposalsWithUserInfo = (data || []).map(proposal => ({
-        ...proposal,
-        user_first_name: proposal.profiles?.first_name,
-        user_last_name: proposal.profiles?.last_name
-      }));
+      // Fetch user profiles separately
+      const userIds = (data || []).map(p => p.user_id);
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', userIds);
+
+      const proposalsWithUserInfo = (data || []).map(proposal => {
+        const userProfile = profiles?.find(p => p.user_id === proposal.user_id);
+        return {
+          ...proposal,
+          user_first_name: userProfile?.first_name || 'Unknown',
+          user_last_name: userProfile?.last_name || 'User',
+          status: proposal.status as 'pending' | 'accepted' | 'rejected' | 'expired'
+        };
+      });
 
       setProposals(proposalsWithUserInfo);
     } catch (error) {

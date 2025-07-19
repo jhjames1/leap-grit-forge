@@ -45,6 +45,7 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
   const [specialistName, setSpecialistName] = useState<string>('');
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [pendingProposalsCount, setPendingProposalsCount] = useState(0);
+  const [appointmentTypes, setAppointmentTypes] = useState<any[]>([]);
 
   const fetchSpecialistInfo = useCallback(async () => {
     try {
@@ -75,7 +76,7 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
         .order('name');
 
       if (error) throw error;
-      setAppointmentTypes(data || []);
+      if (data) setAppointmentTypes(data);
     } catch (error) {
       console.error('Error fetching appointment types:', error);
       toast({
@@ -204,10 +205,7 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
 
       const { data: proposals, error: proposalsError } = await supabase
         .from('appointment_proposals')
-        .select(`
-          *,
-          profiles (first_name, last_name)
-        `)
+        .select('*')
         .eq('specialist_id', specialistId)
         .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString());
@@ -217,12 +215,20 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
       if (proposals) {
         setPendingProposalsCount(proposals.length);
         
+        // Fetch user profiles for proposals
+        const userIds = proposals.map(p => p.user_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', userIds);
+        
         proposals.forEach(proposal => {
           const startDateTime = new Date(`${proposal.start_date}T${proposal.start_time}`);
           const endDateTime = new Date(startDateTime.getTime() + proposal.duration * 60000);
           
-          const userName = proposal.profiles?.first_name 
-            ? `${proposal.profiles.first_name} ${proposal.profiles?.last_name?.charAt(0) || ''}.`
+          const userProfile = profiles?.find(p => p.user_id === proposal.user_id);
+          const userName = userProfile?.first_name 
+            ? `${userProfile.first_name} ${userProfile.last_name?.charAt(0) || ''}.`
             : 'User';
 
           events.push({
