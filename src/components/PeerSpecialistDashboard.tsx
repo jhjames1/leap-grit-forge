@@ -147,19 +147,19 @@ const PeerSpecialistDashboard = () => {
       .select('user_id, first_name, last_name')
       .in('user_id', sessionIds);
 
-    // Get proposal counts for each session
-    const { data: proposalCounts } = await supabase
+    // Get proposal counts for each session - fixed to only count actual pending proposals for each session
+    const { data: proposalData } = await supabase
       .from('appointment_proposals')
-      .select('user_id, status, responded_at')
+      .select('chat_session_id, status, responded_at')
       .eq('specialist_id', specialistId)
-      .in('user_id', sessionIds);
+      .in('chat_session_id', (sessionsData || []).map(s => s.id).filter(Boolean));
 
     // Combine the data
     const typedSessions = (sessionsData || []).map(session => {
       const profile = profilesData?.find(p => p.user_id === session.user_id);
-      const userProposals = proposalCounts?.filter(p => p.user_id === session.user_id) || [];
-      const pendingProposals = userProposals.filter(p => p.status === 'pending');
-      const hasNewResponses = userProposals.some(p => 
+      const sessionProposals = proposalData?.filter(p => p.chat_session_id === session.id) || [];
+      const pendingProposals = sessionProposals.filter(p => p.status === 'pending');
+      const hasNewResponses = sessionProposals.some(p => 
         p.status !== 'pending' && p.responded_at && 
         new Date(p.responded_at) > new Date(session.started_at)
       );
@@ -488,7 +488,7 @@ const PeerSpecialistDashboard = () => {
           
           <Card className={`flex items-center justify-between p-6 ${pendingCount > 0 ? 'bg-yellow-50 border-yellow-200' : ''}`}>
             <div>
-              <h3 className="text-lg font-fjalla font-bold">Pending Proposals</h3>
+              <h3 className="text-lg font-fjalla font-bold">Meeting Proposals</h3>
               <p className="text-muted-foreground font-source">Awaiting user responses</p>
             </div>
             <Badge variant={pendingCount > 0 ? "secondary" : "outline"} className={pendingCount > 0 ? "bg-yellow-100 text-yellow-800" : ""}>
@@ -544,7 +544,7 @@ const PeerSpecialistDashboard = () => {
                           <Badge variant={session.status === 'active' ? 'default' : session.status === 'waiting' ? 'secondary' : 'outline'}>
                             {session.status}
                           </Badge>
-                          {/* Proposal indicators */}
+                          {/* Proposal indicators - only show if there are actual pending proposals for this session */}
                           {session.pending_proposals_count && session.pending_proposals_count > 0 && (
                             <Badge variant="outline" className="bg-yellow-50 text-orange-700 border-orange-200">
                               <Calendar className="w-3 h-3 mr-1" />

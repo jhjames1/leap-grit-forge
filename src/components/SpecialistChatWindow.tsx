@@ -309,7 +309,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                 }`}></div>
                 <span className="capitalize">{session.status}</span>
                 <span>•</span>
-                <span>Started {format(new Date(session.started_at), 'HH:mm')}</span>
+                <span>Started {format(new Date(session.started_at), 'h:mm a')}</span>
                 {sessionProposal && (
                   <>
                     <span>•</span>
@@ -430,7 +430,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                   <p className={`text-xs ${
                     msg.sender_type === 'specialist' ? 'text-primary-foreground/70' : 'text-muted-foreground'
                   }`}>
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
                   </p>
                 </div>
               </div>
