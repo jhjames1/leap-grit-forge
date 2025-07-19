@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, Settings, CalendarClock } from 'lucide-react';
+import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, Settings, CalendarClock, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
@@ -14,6 +14,7 @@ import SpecialistCalendar from './calendar/SpecialistCalendar';
 import ScheduleManagementModal from './calendar/ScheduleManagementModal';
 import { useToast } from '@/hooks/use-toast';
 import { useCalendarAwarePresence } from '@/hooks/useCalendarAwarePresence';
+import { logger } from '@/utils/logger';
 
 interface ChatSession {
   id: string;
@@ -52,6 +53,7 @@ const PeerSpecialistDashboard = () => {
   const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   // Performance monitoring ref
   const renderCount = useRef(0);
@@ -59,7 +61,10 @@ const PeerSpecialistDashboard = () => {
 
   // Increment render count for debugging
   renderCount.current += 1;
-  console.log(`🔄 PeerSpecialistDashboard render #${renderCount.current} (mounted ${Date.now() - mountTime.current}ms ago)`);
+  logger.debug(`PeerSpecialistDashboard render`, { 
+    renderCount: renderCount.current, 
+    mountedTime: Date.now() - mountTime.current 
+  });
 
   // Use the calendar-aware presence hook
   const {
@@ -78,7 +83,7 @@ const PeerSpecialistDashboard = () => {
   const loadData = useCallback(async () => {
     if (!user) return;
     
-    console.log('📊 Loading specialist data for user:', user.id);
+    logger.debug('Loading specialist data for user', { userId: user.id });
     setLoading(true);
     
     try {
@@ -90,7 +95,7 @@ const PeerSpecialistDashboard = () => {
         .single();
 
       if (specialistError) {
-        console.error('Error fetching peer specialist data:', specialistError);
+        logger.error('Error fetching peer specialist data', specialistError);
       } else if (specialistData) {
         // Add missing email and phone_number from auth user
         const specialistWithUserData = {
@@ -113,7 +118,7 @@ const PeerSpecialistDashboard = () => {
   }, [user?.id]);
 
   const loadChatSessionsForSpecialist = useCallback(async (specialistId: string) => {
-    console.log('📨 Loading chat sessions for specialist:', specialistId);
+    logger.debug('Loading chat sessions for specialist', { specialistId });
     const { data, error } = await supabase
       .from('chat_sessions')
       .select('*')
@@ -121,9 +126,9 @@ const PeerSpecialistDashboard = () => {
       .order('started_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching chat sessions:', error);
+      logger.error('Error fetching chat sessions', error);
     } else {
-      console.log('Loaded chat sessions:', data?.length || 0, 'sessions');
+      logger.debug('Loaded chat sessions', { count: data?.length || 0 });
       const typedSessions = (data || []).map(session => ({
         ...session,
         status: session.status as 'waiting' | 'active' | 'ended'
@@ -146,7 +151,7 @@ const PeerSpecialistDashboard = () => {
   useEffect(() => {
     if (!user?.id) return;
     
-    console.log('🔗 Setting up real-time subscriptions for user:', user.id);
+    logger.debug('Setting up real-time subscriptions for user', { userId: user.id });
 
     const chatSessionsChannel = supabase
       .channel(`chat-sessions-realtime-${user.id}`)
@@ -155,7 +160,7 @@ const PeerSpecialistDashboard = () => {
         schema: 'public',
         table: 'chat_sessions'
       }, payload => {
-        console.log('Real-time chat session change:', payload);
+        logger.debug('Real-time chat session change', payload);
         loadChatSessions();
       })
       .subscribe();
@@ -167,7 +172,7 @@ const PeerSpecialistDashboard = () => {
         schema: 'public',
         table: 'appointment_proposals'
       }, payload => {
-        console.log('Real-time appointment proposal change:', payload);
+        logger.debug('Real-time appointment proposal change', payload);
         loadChatSessions();
       })
       .subscribe();
@@ -179,7 +184,7 @@ const PeerSpecialistDashboard = () => {
         schema: 'public',
         table: 'chat_messages'
       }, payload => {
-        console.log('Real-time chat message change:', payload);
+        logger.debug('Real-time chat message change', payload);
         loadChatSessions();
       })
       .subscribe();
@@ -193,7 +198,7 @@ const PeerSpecialistDashboard = () => {
         table: 'specialist_status',
         filter: specialistId ? `specialist_id=eq.${specialistId}` : undefined
       }, payload => {
-        console.log('Real-time status change:', payload);
+        logger.debug('Real-time status change', payload);
         if (refreshAvailability) {
           setTimeout(refreshAvailability, 100);
         }
@@ -201,7 +206,7 @@ const PeerSpecialistDashboard = () => {
       .subscribe();
 
     return () => {
-      console.log('🧹 Cleaning up real-time subscriptions');
+      logger.debug('Cleaning up real-time subscriptions');
       supabase.removeChannel(chatSessionsChannel);
       supabase.removeChannel(appointmentProposalsChannel);
       supabase.removeChannel(chatMessagesChannel);
@@ -226,20 +231,35 @@ const PeerSpecialistDashboard = () => {
     loadChatSessions();
   };
 
-  // Simplified status change handler using the new hook
+  // Enhanced status change handler with detailed error handling
   const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
     if (!specialistId) {
-      console.error('❌ No specialist ID available');
+      const errorMsg = 'No specialist ID available';
+      logger.error(errorMsg);
+      setStatusError(errorMsg);
       toast({
         title: "Error",
-        description: "No specialist ID available",
+        description: errorMsg,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!user) {
+      const errorMsg = 'User not authenticated';
+      logger.error(errorMsg);
+      setStatusError(errorMsg);
+      toast({
+        title: "Error",
+        description: errorMsg,
         variant: "destructive"
       });
       return;
     }
 
     setStatusLoading(true);
-    console.log('🔄 Changing status to:', newStatus);
+    setStatusError(null);
+    logger.debug('Changing status', { newStatus, specialistId, userId: user.id });
     
     try {
       await setManualStatus(newStatus, `Manually set to ${newStatus}`);
@@ -249,12 +269,15 @@ const PeerSpecialistDashboard = () => {
         description: `Your status has been changed to ${newStatus}`,
       });
       
-      console.log('✅ Status change successful');
+      logger.debug('Status change successful', { newStatus });
     } catch (error) {
-      console.error('❌ Error updating status:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Error updating status', { error: errorMessage, newStatus });
+      setStatusError(errorMessage);
+      
       toast({
-        title: "Error",
-        description: `Failed to update status: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        title: "Status Update Failed",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -294,7 +317,7 @@ const PeerSpecialistDashboard = () => {
         description: "You have been successfully logged out."
       });
     } catch (error) {
-      console.error('Error logging out:', error);
+      logger.error('Error logging out', error);
       toast({
         title: "Error",
         description: "Failed to log out. Please try again.",
@@ -375,15 +398,17 @@ const PeerSpecialistDashboard = () => {
               </Tooltip>
             </TooltipProvider>
 
-            {/* Status Selector */}
+            {/* Status Selector with Error Handling */}
             <div className="flex items-center space-x-3">
               <div className="flex flex-col">
                 <Select 
                   value={currentStatus} 
                   onValueChange={handleStatusChange}
-                  disabled={statusLoading}
+                  disabled={statusLoading || !specialistId}
                 >
-                  <SelectTrigger className="w-32 bg-background border-border z-50">
+                  <SelectTrigger className={`w-32 bg-background border-border z-50 ${
+                    statusError ? 'border-destructive' : ''
+                  }`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-border shadow-lg z-50">
@@ -407,14 +432,28 @@ const PeerSpecialistDashboard = () => {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                {statusMessage && (
-                  <span className="text-xs text-muted-foreground mt-1">
+                
+                {/* Status Message or Error */}
+                {statusError ? (
+                  <div className="flex items-center gap-1 text-xs text-destructive mt-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span className="truncate">{statusError}</span>
+                  </div>
+                ) : statusMessage ? (
+                  <span className="text-xs text-muted-foreground mt-1 truncate">
                     {statusMessage}
                   </span>
-                )}
+                ) : null}
+                
                 {statusLoading && (
                   <span className="text-xs text-primary mt-1">
                     Updating...
+                  </span>
+                )}
+                
+                {!specialistId && (
+                  <span className="text-xs text-muted-foreground mt-1">
+                    Loading specialist...
                   </span>
                 )}
               </div>
