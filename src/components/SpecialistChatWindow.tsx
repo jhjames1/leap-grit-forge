@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,6 +60,8 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   const [showScheduler, setShowScheduler] = useState(false);
   const [sessionProposal, setSessionProposal] = useState<AppointmentProposal | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const { user } = useAuth();
 
   const [messages, setMessages] = useState<any[]>([]);
@@ -229,10 +230,24 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     }
   };
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change, but only after initial load
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (hasInitiallyLoaded && messages.length > 0 && messagesContainerRef.current) {
+      // Use scrollTop instead of scrollIntoView to avoid affecting page scroll
+      const container = messagesContainerRef.current;
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [messages, hasInitiallyLoaded]);
+
+  // Set initial load flag after messages are loaded
+  useEffect(() => {
+    if (messages.length > 0 && !hasInitiallyLoaded) {
+      // Small delay to allow DOM to render before marking as loaded
+      setTimeout(() => {
+        setHasInitiallyLoaded(true);
+      }, 100);
+    }
+  }, [messages, hasInitiallyLoaded]);
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
@@ -414,7 +429,11 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+        style={{ scrollBehavior: 'smooth' }}
+      >
         {Array.isArray(messages) && messages.length > 0 ? (
           messages.map((msg) => (
             <div key={msg.id}>
@@ -436,7 +455,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
               </div>
 
               {/* Display appointment proposal handler if this is a proposal message */}
-              {msg.metadata?.action_type === 'appointment_proposal' && (
+              {(msg.metadata?.action_type === 'appointment_proposal' || msg.metadata?.action_type === 'recurring_appointment_proposal') && (
                 <AppointmentProposalHandler 
                   message={msg} 
                   isUser={msg.sender_type === 'user'} 
