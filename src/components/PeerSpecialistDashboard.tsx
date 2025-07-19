@@ -15,6 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useSpecialistStatus } from '@/hooks/useSpecialistStatus';
 import { logger } from '@/utils/logger';
 import ScheduleManagementModal from './calendar/ScheduleManagementModal';
+import ProposalManagement from './ProposalManagement';
+import { useProposalNotifications } from '@/hooks/useProposalNotifications';
+import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
 
 interface ChatSession {
   id: string;
@@ -76,6 +79,11 @@ const PeerSpecialistDashboard = () => {
     updateStatus,
     clearError
   } = useSpecialistStatus(currentSpecialistId);
+
+  // Add proposal notifications
+  const { pendingCount, hasNewResponses, clearNewResponses } = useProposalNotifications(
+    currentSpecialistId || ''
+  );
 
   // Load specialist data and sessions with useCallback to prevent recreation
   const loadData = useCallback(async () => {
@@ -349,6 +357,24 @@ const PeerSpecialistDashboard = () => {
             <p className="text-muted-foreground font-source">Manage your chat sessions and support users in their recovery journey.</p>
           </div>
           <div className="flex items-center space-x-4">
+            {/* Proposal notifications indicator */}
+            {pendingCount > 0 && (
+              <div className="flex items-center gap-2 text-sm bg-yellow-100 text-yellow-800 px-3 py-2 rounded-lg">
+                <AlertCircle className="h-4 w-4" />
+                <span>{pendingCount} pending proposal{pendingCount > 1 ? 's' : ''}</span>
+              </div>
+            )}
+
+            {hasNewResponses && (
+              <div className="flex items-center gap-2 text-sm bg-green-100 text-green-800 px-3 py-2 rounded-lg">
+                <CheckCircle className="h-4 w-4" />
+                <span>New responses!</span>
+                <Button variant="ghost" size="sm" onClick={clearNewResponses}>
+                  ×
+                </Button>
+              </div>
+            )}
+
             {/* Status Error Display */}
             {statusError && (
               <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
@@ -424,8 +450,8 @@ const PeerSpecialistDashboard = () => {
             <p className="text-muted-foreground font-source">Peer Support Specialist</p>
           </div>}
 
-        {/* Status Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Status Overview - Enhanced with proposal metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Card className="flex items-center justify-between p-6">
             <div>
               <h3 className="text-lg font-fjalla font-bold">Active Sessions</h3>
@@ -433,6 +459,7 @@ const PeerSpecialistDashboard = () => {
             </div>
             <Badge variant="default">{chatSessions.filter(s => s.status === 'active').length}</Badge>
           </Card>
+          
           <Card className={`flex items-center justify-between p-6 ${hasMultipleWaitingSessions ? 'bg-warning border-warning-foreground/20' : ''}`}>
             <div>
               <h3 className="text-lg font-fjalla font-bold">Waiting Sessions</h3>
@@ -440,6 +467,17 @@ const PeerSpecialistDashboard = () => {
             </div>
             <Badge variant="secondary">{chatSessions.filter(s => s.status === 'waiting').length}</Badge>
           </Card>
+          
+          <Card className={`flex items-center justify-between p-6 ${pendingCount > 0 ? 'bg-yellow-50 border-yellow-200' : ''}`}>
+            <div>
+              <h3 className="text-lg font-fjalla font-bold">Pending Proposals</h3>
+              <p className="text-muted-foreground font-source">Awaiting user responses</p>
+            </div>
+            <Badge variant={pendingCount > 0 ? "secondary" : "outline"} className={pendingCount > 0 ? "bg-yellow-100 text-yellow-800" : ""}>
+              {pendingCount}
+            </Badge>
+          </Card>
+          
           <Card className="flex items-center justify-between p-6">
             <div>
               <h3 className="text-lg font-fjalla font-bold">Completed Sessions</h3>
@@ -522,13 +560,23 @@ const PeerSpecialistDashboard = () => {
           </Card>
         </div>
 
-        {/* Calendar Section - Now includes the consolidated Schedule Management */}
+        {/* Proposal Management Section */}
+        {peerSpecialist && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-fjalla font-bold">Appointment Proposals</h2>
+            </div>
+            <ProposalManagement specialistId={peerSpecialist.id} />
+          </div>
+        )}
+
+        {/* Enhanced Calendar Section */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-fjalla font-bold">Your Schedule</h2>
           </div>
           {peerSpecialist && (
-            <SpecialistCalendar specialistId={peerSpecialist.id} />
+            <EnhancedSpecialistCalendar specialistId={peerSpecialist.id} />
           )}
         </div>
 
