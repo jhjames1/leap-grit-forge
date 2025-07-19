@@ -26,6 +26,7 @@ interface ChatSession {
   status: 'waiting' | 'active' | 'ended';
   started_at: string;
   ended_at?: string;
+  session_number: number;
 }
 
 interface SpecialistChatWindowProps {
@@ -201,7 +202,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
               <User className="text-primary" size={16} />
             </div>
             <div>
-              <h3 className="font-semibold">Chat Session</h3>
+              <h3 className="font-semibold">Session #{session.session_number}</h3>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <div className={`w-2 h-2 rounded-full ${
                   session.status === 'active' ? 'bg-green-500' : 

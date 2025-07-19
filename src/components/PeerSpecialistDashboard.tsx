@@ -23,6 +23,7 @@ interface ChatSession {
   status: 'waiting' | 'active' | 'ended';
   started_at: string;
   ended_at?: string;
+  session_number: number;
 }
 
 interface PeerSpecialist {
@@ -462,7 +463,7 @@ const PeerSpecialistDashboard = () => {
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <span className="font-fjalla font-bold">Chat Session</span>
+                          <span className="font-fjalla font-bold">Session #{session.session_number}</span>
                           <Badge variant={session.status === 'active' ? 'default' : session.status === 'waiting' ? 'secondary' : 'outline'}>
                             {session.status}
                           </Badge>

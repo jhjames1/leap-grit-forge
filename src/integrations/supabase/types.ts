@@ -321,6 +321,7 @@ export type Database = {
           created_at: string
           ended_at: string | null
           id: string
+          session_number: number
           specialist_id: string | null
           started_at: string | null
           status: string
@@ -331,6 +332,7 @@ export type Database = {
           created_at?: string
           ended_at?: string | null
           id?: string
+          session_number?: number
           specialist_id?: string | null
           started_at?: string | null
           status?: string
@@ -341,6 +343,7 @@ export type Database = {
           created_at?: string
           ended_at?: string | null
           id?: string
+          session_number?: number
           specialist_id?: string | null
           started_at?: string | null
           status?: string
