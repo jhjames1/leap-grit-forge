@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Calendar, dateFnsLocalizer, Views, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, addHours, isSameDay, startOfDay, endOfDay, addDays, addWeeks } from 'date-fns';
@@ -10,10 +9,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Clock, Users, MapPin } from 'lucide-react';
+import { CalendarIcon, Clock, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { SetAvailabilityDialog } from './SetAvailabilityDialog';
-import { BlockTimeDialog } from './BlockTimeDialog';
+import ScheduleManagementModal from './ScheduleManagementModal';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './calendar.css';
 
@@ -68,6 +66,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [specialistName, setSpecialistName] = useState<string>('');
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   // Helper function to expand recurring patterns into individual events
   const expandRecurringPattern = useCallback((pattern: any, startDate: Date, endDate: Date): CalendarEvent[] => {
@@ -524,21 +523,15 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
                 <Clock className="w-4 h-4 mr-2" />
                 Refresh
               </Button>
-              <SetAvailabilityDialog 
-                specialistId={specialistId}
-                appointmentTypes={appointmentTypes}
-                onSuccess={() => {
-                  console.log('🗓️ Availability set successfully, refreshing events');
-                  fetchEvents();
-                }}
-              />
-              <BlockTimeDialog 
-                specialistId={specialistId}
-                onSuccess={() => {
-                  console.log('🗓️ Time blocked successfully, refreshing events');
-                  fetchEvents();
-                }}
-              />
+              <Button 
+                size="sm" 
+                variant="default"
+                onClick={() => setShowScheduleModal(true)}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Manage Schedule
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -665,6 +658,13 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
             </div>
           </CardContent>
         </Card>
+
+        {/* Schedule Management Modal */}
+        <ScheduleManagementModal
+          isOpen={showScheduleModal}
+          onClose={() => setShowScheduleModal(false)}
+          specialistId={specialistId}
+        />
       </div>
     </DndProvider>
   );

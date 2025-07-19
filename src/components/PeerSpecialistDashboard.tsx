@@ -5,16 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, Settings, CalendarClock, AlertTriangle } from 'lucide-react';
+import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, CalendarClock, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import SpecialistChatWindow from './SpecialistChatWindow';
 import SpecialistCalendar from './calendar/SpecialistCalendar';
-import ScheduleManagementModal from './calendar/ScheduleManagementModal';
 import { useToast } from '@/hooks/use-toast';
 import { useSpecialistStatus } from '@/hooks/useSpecialistStatus';
 import { logger } from '@/utils/logger';
+import ScheduleManagementModal from './calendar/ScheduleManagementModal';
 
 interface ChatSession {
   id: string;
@@ -407,21 +407,12 @@ const PeerSpecialistDashboard = () => {
               </div>
             </div>
 
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowScheduleModal(true)}
-            >
-              <Settings size={16} className="mr-2" />
-              Manage Schedule
-            </Button>
             <Button variant="outline" size="sm" onClick={handleLogout} disabled={hasActiveSessions}>
               <LogOut size={16} className="mr-2" />
               {hasActiveSessions ? 'Sessions Active' : 'Log Out'}
             </Button>
           </div>
         </div>
-
       </div>
 
       {/* Main Content */}
@@ -531,20 +522,10 @@ const PeerSpecialistDashboard = () => {
           </Card>
         </div>
 
-        {/* Calendar Section */}
+        {/* Calendar Section - Now includes the consolidated Schedule Management */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-fjalla font-bold">Your Schedule</h2>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowScheduleModal(true)}
-              >
-                <Settings size={16} className="mr-2" />
-                Schedule Settings
-              </Button>
-            </div>
           </div>
           {peerSpecialist && (
             <SpecialistCalendar specialistId={peerSpecialist.id} />
@@ -559,15 +540,6 @@ const PeerSpecialistDashboard = () => {
           </Card>
         </div>
       </div>
-
-      {/* Schedule Management Modal */}
-      {peerSpecialist && (
-        <ScheduleManagementModal
-          isOpen={showScheduleModal}
-          onClose={() => setShowScheduleModal(false)}
-          specialistId={peerSpecialist.id}
-        />
-      )}
     </div>
   );
 };
