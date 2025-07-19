@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -29,6 +30,32 @@ export function useChatSession(specialistId?: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+
+  // Helper function to check if a session is stale (older than 30 minutes for waiting sessions)
+  const isSessionStale = (session: ChatSession): boolean => {
+    if (session.status !== 'waiting') return false;
+    
+    const sessionAge = Date.now() - new Date(session.started_at).getTime();
+    const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
+    
+    return sessionAge > thirtyMinutes;
+  };
+
+  // Helper function to clean up stale waiting sessions
+  const cleanupStaleSession = async (sessionId: string) => {
+    try {
+      console.log('🧹 Cleaning up stale session:', sessionId);
+      await supabase
+        .from('chat_sessions')
+        .update({ 
+          status: 'ended',
+          ended_at: new Date().toISOString()
+        })
+        .eq('id', sessionId);
+    } catch (err) {
+      console.error('Error cleaning up stale session:', err);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -112,29 +139,63 @@ export function useChatSession(specialistId?: string) {
 
     try {
       console.log('Checking for existing session...');
-      // For users, check for any waiting or active session they have
-      // For specialists, this will be handled differently in the dashboard
-      const { data, error } = await supabase
+      
+      // Check for any active sessions first (these take priority)
+      const { data: activeSession, error: activeError } = await supabase
         .from('chat_sessions')
         .select('*')
         .eq('user_id', user.id)
-        .in('status', ['waiting', 'active'])
+        .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error checking existing session:', error);
-        throw error;
+      if (activeError) {
+        console.error('Error checking active sessions:', activeError);
+        throw activeError;
       }
 
-      if (data) {
-        console.log('Found existing session:', data);
-        setSession(data as ChatSession);
-        await loadMessages(data.id);
-      } else {
-        console.log('No existing session found');
+      if (activeSession) {
+        console.log('Found active session:', activeSession);
+        setSession(activeSession as ChatSession);
+        await loadMessages(activeSession.id);
+        return;
       }
+
+      // Check for waiting sessions
+      const { data: waitingSession, error: waitingError } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'waiting')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (waitingError) {
+        console.error('Error checking waiting sessions:', waitingError);
+        throw waitingError;
+      }
+
+      if (waitingSession) {
+        const waitingSessionTyped = waitingSession as ChatSession;
+        
+        // Check if the waiting session is stale
+        if (isSessionStale(waitingSessionTyped)) {
+          console.log('Found stale waiting session, cleaning up:', waitingSessionTyped.id);
+          await cleanupStaleSession(waitingSessionTyped.id);
+          // Don't set this session, let user start fresh
+          console.log('No valid existing session found after cleanup');
+          return;
+        }
+
+        console.log('Found valid waiting session:', waitingSessionTyped);
+        setSession(waitingSessionTyped);
+        await loadMessages(waitingSessionTyped.id);
+        return;
+      }
+
+      console.log('No existing session found');
     } catch (err) {
       console.error('Error checking existing session:', err);
       setError(err instanceof Error ? err.message : 'Failed to check existing session');
@@ -153,12 +214,27 @@ export function useChatSession(specialistId?: string) {
     try {
       console.log('Starting new chat session...');
       
+      // First, clean up any stale waiting sessions for this user
+      const { data: staleWaitingSessions } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'waiting');
+
+      if (staleWaitingSessions) {
+        for (const staleSession of staleWaitingSessions) {
+          if (isSessionStale(staleSession as ChatSession)) {
+            await cleanupStaleSession(staleSession.id);
+          }
+        }
+      }
+      
       // Create new chat session without a specific specialist - any available specialist can pick it up
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
         .insert({
           user_id: user.id,
-          specialist_id: null, // Changed: no specific specialist assigned initially
+          specialist_id: null,
           status: 'waiting'
         })
         .select()
@@ -350,6 +426,14 @@ export function useChatSession(specialistId?: string) {
     }
   };
 
+  // Force refresh session - useful for clearing ended sessions
+  const refreshSession = async () => {
+    setSession(null);
+    setMessages([]);
+    setError(null);
+    await checkExistingSession();
+  };
+
   return {
     session,
     messages,
@@ -358,6 +442,7 @@ export function useChatSession(specialistId?: string) {
     connectionStatus,
     startSession,
     sendMessage,
-    endSession
+    endSession,
+    refreshSession
   };
 }

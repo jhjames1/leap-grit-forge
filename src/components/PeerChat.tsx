@@ -11,7 +11,8 @@ import {
   Calendar, 
   ArrowLeft,
   User,
-  Shield
+  Shield,
+  RefreshCw
 } from 'lucide-react';
 import PeerSelection from './PeerSelection';
 import RecurringAppointmentScheduler from './RecurringAppointmentScheduler';
@@ -40,7 +41,8 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     connectionStatus,
     startSession,
     sendMessage,
-    endSession
+    endSession,
+    refreshSession
   } = useChatSession(selectedPeer?.id);
 
   const handleSelectPeer = async (peer: PeerSpecialist) => {
@@ -134,6 +136,14 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     }
   };
 
+  const handleStartNewChat = async () => {
+    await refreshSession();
+    setIsInitialized(false);
+    setTimeout(() => {
+      startSession();
+    }, 100);
+  };
+
   if (currentView === 'selection') {
     return (
       <PeerSelection 
@@ -142,6 +152,9 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
       />
     );
   }
+
+  // Show ended session message with option to start new chat
+  const isSessionEnded = session && session.status === 'ended';
 
   return (
     <div className="flex flex-col h-screen bg-background pb-24">
@@ -172,6 +185,17 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
           </div>
           
           <div className="flex space-x-2">
+            {isSessionEnded && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
+                onClick={handleStartNewChat}
+              >
+                <RefreshCw size={16} className="mr-1" />
+                New Chat
+              </Button>
+            )}
             <Button 
               size="sm" 
               variant="outline" 
@@ -202,6 +226,22 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         </div>
       </div>
 
+      {/* Session Status Messages */}
+      {isSessionEnded && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-yellow-600 text-sm">This chat session has ended.</p>
+            <Button 
+              size="sm" 
+              onClick={handleStartNewChat}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white"
+            >
+              Start New Chat
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Connection Status */}
       {loading && (
         <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-3">
@@ -215,7 +255,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         </div>
       )}
 
-      {connectionStatus === 'connected' && session && (
+      {connectionStatus === 'connected' && session && !isSessionEnded && (
         <div className="bg-green-500/10 border-b border-green-500/20 p-3">
           <p className="text-green-600 text-sm text-center">
             ✓ Real-time chat connected - Messages will appear instantly
@@ -223,7 +263,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         </div>
       )}
 
-      {connectionStatus === 'disconnected' && session && (
+      {connectionStatus === 'disconnected' && session && !isSessionEnded && (
         <div className="bg-orange-500/10 border-b border-orange-500/20 p-3">
           <p className="text-orange-600 text-sm text-center">
             ⚠ Connection issue - Messages may be delayed
@@ -236,7 +276,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         {/* Debug info - only show in development */}
         {process.env.NODE_ENV === 'development' && (
           <div className="fixed top-0 left-0 bg-black text-white p-2 text-xs z-50 max-w-sm opacity-80">
-            Messages: {messages?.length || 0} | Session: {session?.id ? session.id.slice(0,8) : 'None'} | Loading: {loading ? 'Yes' : 'No'} | Error: {error ? 'Yes' : 'No'}
+            Messages: {messages?.length || 0} | Session: {session?.id ? session.id.slice(0,8) : 'None'} | Status: {session?.status || 'None'} | Loading: {loading ? 'Yes' : 'No'} | Error: {error ? 'Yes' : 'No'}
           </div>
         )}
         
@@ -272,7 +312,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
           ))
         ) : (
           <>
-            {session && !loading && (
+            {session && !loading && !isSessionEnded && (
               <div className="text-center text-steel-light py-8">
                 <p>Chat session started. Send a message to begin the conversation.</p>
               </div>
@@ -289,6 +329,12 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                 <p>Loading chat...</p>
               </div>
             )}
+
+            {isSessionEnded && (
+              <div className="text-center text-steel-light py-8">
+                <p>This chat session has ended. Click "Start New Chat" to begin a new conversation.</p>
+              </div>
+            )}
           </>
         )}
         
@@ -297,7 +343,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
       </div>
 
       {/* Quick Actions */}
-      {session && (
+      {session && !isSessionEnded && (
         <div className="px-4 py-2">
           <div className="flex space-x-2 overflow-x-auto">
             <Button 
@@ -333,7 +379,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
       )}
 
       {/* Scheduled Check-in Banner */}
-      {selectedPeer?.status.status === 'online' && session && user && (
+      {selectedPeer?.status.status === 'online' && session && user && !isSessionEnded && (
         <div className="bg-steel/90 backdrop-blur-sm border-t border-steel-dark p-3">
           <div className="flex items-center space-x-3">
             <Calendar className="text-white" size={16} />
@@ -360,15 +406,15 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder={session ? "Type your message..." : "Starting chat session..."}
+            placeholder={session && !isSessionEnded ? "Type your message..." : isSessionEnded ? "Start a new chat to send messages" : "Starting chat session..."}
             className="flex-1 bg-white/10 border-steel-dark text-white placeholder:text-steel-light"
             onKeyPress={handleKeyPress}
-            disabled={!session || loading}
+            disabled={!session || loading || isSessionEnded}
           />
           <Button 
             onClick={handleSendMessage}
             className="bg-steel hover:bg-steel-light text-white px-6"
-            disabled={!session || loading || !message.trim()}
+            disabled={!session || loading || !message.trim() || isSessionEnded}
           >
             <Send size={16} />
           </Button>
