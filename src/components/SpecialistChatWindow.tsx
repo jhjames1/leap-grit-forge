@@ -110,7 +110,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         .order('proposed_at', { ascending: false });
 
       if (error) throw error;
-      setProposals(data || []);
+      setProposals((data || []) as AppointmentProposal[]);
     } catch (err) {
       console.error('Error loading proposals:', err);
     }
