@@ -13,7 +13,7 @@ import SpecialistChatWindow from './SpecialistChatWindow';
 import SpecialistCalendar from './calendar/SpecialistCalendar';
 import ScheduleManagementModal from './calendar/ScheduleManagementModal';
 import { useToast } from '@/hooks/use-toast';
-import { useCalendarAwarePresence } from '@/hooks/useCalendarAwarePresence';
+import { useSpecialistStatus } from '@/hooks/useSpecialistStatus';
 import { logger } from '@/utils/logger';
 
 interface ChatSession {
@@ -52,8 +52,6 @@ const PeerSpecialistDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [statusLoading, setStatusLoading] = useState(false);
-  const [statusError, setStatusError] = useState<string | null>(null);
 
   // Performance monitoring ref
   const renderCount = useRef(0);
@@ -66,18 +64,15 @@ const PeerSpecialistDashboard = () => {
     mountedTime: Date.now() - mountTime.current 
   });
 
-  // Use the calendar-aware presence hook
+  const currentSpecialistId = peerSpecialist?.id;
+
   const {
-    calendarAvailability,
-    manualStatusOverride,
-    isCalendarControlled,
-    setManualStatus,
-    toggleCalendarControl,
-    refreshAvailability,
-    specialistId,
-    getEffectiveStatus,
-    getStatusMessage
-  } = useCalendarAwarePresence();
+    status: effectiveStatus,
+    loading: statusLoading,
+    error: statusError,
+    updateStatus,
+    clearError
+  } = useSpecialistStatus(currentSpecialistId);
 
   // Load specialist data and sessions with useCallback to prevent recreation
   const loadData = useCallback(async () => {
@@ -191,17 +186,15 @@ const PeerSpecialistDashboard = () => {
 
     // Subscribe to specialist status changes
     const statusChannel = supabase
-      .channel(`specialist-status-realtime-${specialistId || 'unknown'}`)
+      .channel(`specialist-status-realtime-${currentSpecialistId || 'unknown'}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'specialist_status',
-        filter: specialistId ? `specialist_id=eq.${specialistId}` : undefined
+        filter: currentSpecialistId ? `specialist_id=eq.${currentSpecialistId}` : undefined
       }, payload => {
         logger.debug('Real-time status change', payload);
-        if (refreshAvailability) {
-          setTimeout(refreshAvailability, 100);
-        }
+        // Status updates are handled by the useSpecialistStatus hook
       })
       .subscribe();
 
@@ -212,7 +205,7 @@ const PeerSpecialistDashboard = () => {
       supabase.removeChannel(chatMessagesChannel);
       supabase.removeChannel(statusChannel);
     };
-  }, [user?.id, specialistId, refreshAvailability, loadChatSessions]);
+  }, [user?.id, currentSpecialistId, loadChatSessions]);
 
   const filterSessions = () => {
     if (chatFilter === 'all') {
@@ -231,57 +224,21 @@ const PeerSpecialistDashboard = () => {
     loadChatSessions();
   };
 
-  // Enhanced status change handler with detailed error handling
+  // Simplified status change handler
   const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
-    if (!specialistId) {
-      const errorMsg = 'No specialist ID available';
-      logger.error(errorMsg);
-      setStatusError(errorMsg);
-      toast({
-        title: "Error",
-        description: errorMsg,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!user) {
-      const errorMsg = 'User not authenticated';
-      logger.error(errorMsg);
-      setStatusError(errorMsg);
-      toast({
-        title: "Error",
-        description: errorMsg,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setStatusLoading(true);
-    setStatusError(null);
-    logger.debug('Changing status', { newStatus, specialistId, userId: user.id });
-    
     try {
-      await setManualStatus(newStatus, `Manually set to ${newStatus}`);
-      
+      await updateStatus(newStatus, `Manually set to ${newStatus}`);
       toast({
         title: "Status Updated",
         description: `Your status has been changed to ${newStatus}`,
       });
-      
-      logger.debug('Status change successful', { newStatus });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Error updating status', { error: errorMessage, newStatus });
-      setStatusError(errorMessage);
-      
+      // Error handling is done in the hook
       toast({
         title: "Status Update Failed",
-        description: errorMessage,
+        description: "Failed to update status. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setStatusLoading(false);
     }
   };
 
@@ -299,14 +256,8 @@ const PeerSpecialistDashboard = () => {
 
     try {
       // Set status to offline before logging out
-      if (specialistId) {
-        await supabase
-          .from('specialist_status')
-          .update({
-            status: 'offline',
-            last_seen: new Date().toISOString()
-          })
-          .eq('specialist_id', specialistId);
+      if (currentSpecialistId) {
+        await updateStatus('offline', 'Logging out');
       }
 
       const { error } = await supabase.auth.signOut();
@@ -355,8 +306,7 @@ const PeerSpecialistDashboard = () => {
     );
   }
 
-  const currentStatus = getEffectiveStatus();
-  const statusMessage = getStatusMessage();
+  const currentStatus = effectiveStatus;
 
   return (
     <div className="min-h-screen bg-background">
@@ -368,35 +318,16 @@ const PeerSpecialistDashboard = () => {
             <p className="text-muted-foreground font-source">Manage your chat sessions and support users in their recovery journey.</p>
           </div>
           <div className="flex items-center space-x-4">
-            {/* Calendar Control Toggle with Tooltip */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center space-x-2">
-                    <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                    <Switch
-                      checked={isCalendarControlled}
-                      onCheckedChange={toggleCalendarControl}
-                      className="data-[state=checked]:bg-primary"
-                      disabled={statusLoading}
-                    />
-                    <span className="text-sm text-muted-foreground">Auto</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <div className="space-y-1">
-                    <p className="font-medium">Calendar-Based Status Control</p>
-                    <p className="text-sm">When enabled, your status is automatically set based on your calendar:</p>
-                    <ul className="text-sm space-y-1">
-                      <li>• <strong>Online</strong> during working hours</li>
-                      <li>• <strong>Busy</strong> during appointments</li>
-                      <li>• <strong>Offline</strong> outside working hours</li>
-                    </ul>
-                    <p className="text-sm">When disabled, you can manually control your status.</p>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            {/* Status Error Display */}
+            {statusError && (
+              <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+                <AlertTriangle className="h-4 w-4" />
+                <span>{statusError}</span>
+                <Button variant="ghost" size="sm" onClick={clearError}>
+                  ×
+                </Button>
+              </div>
+            )}
 
             {/* Status Selector with Error Handling */}
             <div className="flex items-center space-x-3">
@@ -404,11 +335,9 @@ const PeerSpecialistDashboard = () => {
                 <Select 
                   value={currentStatus} 
                   onValueChange={handleStatusChange}
-                  disabled={statusLoading || !specialistId}
+                  disabled={statusLoading || !currentSpecialistId}
                 >
-                  <SelectTrigger className={`w-32 bg-background border-border z-50 ${
-                    statusError ? 'border-destructive' : ''
-                  }`}>
+                  <SelectTrigger className="w-32 bg-background border-border z-50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-border shadow-lg z-50">
@@ -433,25 +362,13 @@ const PeerSpecialistDashboard = () => {
                   </SelectContent>
                 </Select>
                 
-                {/* Status Message or Error */}
-                {statusError ? (
-                  <div className="flex items-center gap-1 text-xs text-destructive mt-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    <span className="truncate">{statusError}</span>
-                  </div>
-                ) : statusMessage ? (
-                  <span className="text-xs text-muted-foreground mt-1 truncate">
-                    {statusMessage}
-                  </span>
-                ) : null}
-                
                 {statusLoading && (
                   <span className="text-xs text-primary mt-1">
                     Updating...
                   </span>
                 )}
                 
-                {!specialistId && (
+                {!currentSpecialistId && (
                   <span className="text-xs text-muted-foreground mt-1">
                     Loading specialist...
                   </span>
@@ -474,27 +391,6 @@ const PeerSpecialistDashboard = () => {
           </div>
         </div>
 
-        {/* Calendar Availability Info */}
-        {calendarAvailability && (
-          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">
-                  Calendar Status: {calendarAvailability.isAvailable ? 'Available' : 'Not Available'}
-                </span>
-                {calendarAvailability.reason && (
-                  <span className="text-sm text-muted-foreground">- {calendarAvailability.reason}</span>
-                )}
-              </div>
-              {calendarAvailability.nextAvailable && (
-                <span className="text-sm text-muted-foreground">
-                  Next available: {format(calendarAvailability.nextAvailable, 'MMM d, h:mm a')}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Main Content */}
