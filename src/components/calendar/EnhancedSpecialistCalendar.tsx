@@ -47,13 +47,12 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
   const loadCalendarData = async () => {
     setLoading(true);
     try {
-      // Load appointments
+      // Load appointments without profiles join
       const { data: appointments, error: appointmentsError } = await supabase
         .from('specialist_appointments')
         .select(`
           *,
-          appointment_types(name, color),
-          profiles(first_name, last_name)
+          appointment_types(name, color)
         `)
         .eq('specialist_id', specialistId)
         .gte('scheduled_start', new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1).toISOString())
@@ -74,11 +73,11 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
       // Convert to calendar events
       const calendarEvents: CalendarEvent[] = [];
 
-      // Add appointments
+      // Add appointments (without user name since we don't have profiles relation)
       appointments?.forEach(apt => {
         calendarEvents.push({
           id: apt.id,
-          title: `${apt.profiles?.first_name || 'Unknown'} ${apt.profiles?.last_name || 'User'} - ${apt.appointment_types?.name || 'Appointment'}`,
+          title: `${apt.appointment_types?.name || 'Appointment'}`,
           start: new Date(apt.scheduled_start),
           end: new Date(apt.scheduled_end),
           type: 'appointment',
@@ -231,9 +230,9 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
                 <DialogTitle>Schedule Management</DialogTitle>
               </DialogHeader>
               <ScheduleManagementModal
-                specialistId={specialistId}
+                isOpen={showScheduleModal}
                 onClose={() => setShowScheduleModal(false)}
-                onScheduleUpdate={loadCalendarData}
+                specialistId={specialistId}
               />
             </DialogContent>
           </Dialog>
