@@ -236,12 +236,12 @@ const PeerSpecialistDashboard = () => {
       
       if (waitingError) throw waitingError;
 
-      // Get specialist's own active/ended sessions
+      // Get specialist's own active sessions only (remove 'ended' from filter)
       const { data: ownSessions, error: ownError } = await supabase
         .from('chat_sessions')
         .select('*')
         .eq('specialist_id', specialistId)
-        .in('status', ['active', 'ended'])
+        .in('status', ['active'])
         .order('started_at', { ascending: false })
         .limit(20);
       
@@ -626,7 +626,7 @@ const PeerSpecialistDashboard = () => {
         {/* Chat Sessions and Active Chat Session side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Left Column - Chat Sessions */}
-          <Card className="min-h-[400px]">
+          <Card className="min-h-[600px]">
             <CardHeader className="p-4 border-b">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Chat Sessions</CardTitle>
@@ -639,7 +639,7 @@ const PeerSpecialistDashboard = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0 flex-1">
-              <ScrollArea className="h-[350px]">
+              <ScrollArea className="h-[550px]">
                 <div className="p-3 space-y-2">
                   {sessions.length === 0 ? (
                     <Card className="p-4">
@@ -680,12 +680,12 @@ const PeerSpecialistDashboard = () => {
                               <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                   <Clock className="w-3 h-3" />
-                                  {format(new Date(session.started_at), 'HH:mm')}
+                                  {format(new Date(session.started_at), 'h:mm a')}
                                 </div>
                                 {session.status === 'ended' && session.ended_at && (
                                   <div className="flex items-center gap-1">
                                     <CheckCircle className="w-3 h-3" />
-                                    Ended {format(new Date(session.ended_at), 'HH:mm')}
+                                    Ended {format(new Date(session.ended_at), 'h:mm a')}
                                   </div>
                                 )}
                               </div>
@@ -714,7 +714,7 @@ const PeerSpecialistDashboard = () => {
           </Card>
 
           {/* Right Column - Active Chat Session */}
-          <Card className="min-h-[400px]">
+          <Card className="min-h-[600px]">
             <CardHeader className="p-4 border-b">
               <CardTitle className="text-lg">Active Chat Session</CardTitle>
             </CardHeader>
@@ -726,7 +726,7 @@ const PeerSpecialistDashboard = () => {
                   onSessionUpdate={handleSessionUpdate}
                 />
               ) : (
-                <div className="flex-1 flex items-center justify-center h-[350px] bg-muted/20">
+                <div className="flex-1 flex items-center justify-center h-[550px] bg-muted/20">
                   <div className="text-center text-muted-foreground">
                     <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
                     <h3 className="text-base font-medium mb-1">No Session Selected</h3>
