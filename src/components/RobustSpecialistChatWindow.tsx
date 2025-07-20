@@ -387,12 +387,47 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     setMessage('');
   };
 
-  // Handle ending session
+  // Handle ending session with proper specialist permission
   const handleEndSession = async () => {
+    if (!user) return;
+    
     try {
-      await chatOperations.endSession(session.id, 'ended_by_specialist');
+      logger.debug('Ending session with specialist permissions', {
+        sessionId: session.id,
+        userId: user.id,
+        sessionUserId: session.user_id,
+        specialistId: session.specialist_id
+      });
+
+      // Use the dedicated end_chat_session function for specialists
+      const { data, error } = await supabase.rpc('end_chat_session', {
+        p_session_id: session.id,
+        p_user_id: user.id, // Current user (specialist)
+        p_specialist_id: session.specialist_id
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast({
+          title: "Session Ended",
+          description: "The chat session has been ended successfully."
+        });
+        
+        // Update the session in parent component
+        if (onSessionUpdate && data.session) {
+          onSessionUpdate(data.session);
+        }
+      } else {
+        throw new Error(data?.error || 'Failed to end session');
+      }
     } catch (err) {
       logger.error('Failed to end session:', err);
+      toast({
+        title: "Error",
+        description: "Failed to end session. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 

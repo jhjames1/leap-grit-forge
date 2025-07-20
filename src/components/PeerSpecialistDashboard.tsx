@@ -9,7 +9,7 @@ import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, Chevro
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
-import SpecialistChatWindow from './SpecialistChatWindow';
+import RobustSpecialistChatWindow from './RobustSpecialistChatWindow';
 import SpecialistCalendar from './calendar/SpecialistCalendar';
 import SpecialistAnalyticsDashboard from './SpecialistAnalyticsDashboard';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ import { logger } from '@/utils/logger';
 import ScheduleManagementModal from './calendar/ScheduleManagementModal';
 import { useProposalNotifications } from '@/hooks/useProposalNotifications';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
+
 interface ChatSession {
   id: string;
   user_id: string;
@@ -729,7 +730,7 @@ const PeerSpecialistDashboard = () => {
 
           {/* Chat Window with Session Update Callback */}
           <Card className="p-0 overflow-hidden">
-            {selectedChatSession ? <SpecialistChatWindow session={selectedChatSession} onClose={handleCloseChatWindow} onSessionUpdate={handleSessionUpdate} /> : <div className="p-6 text-center">
+            {selectedChatSession ? <RobustSpecialistChatWindow session={selectedChatSession} onClose={handleCloseChatWindow} onSessionUpdate={handleSessionUpdate} /> : <div className="p-6 text-center">
                 <MessageCircle size={64} className="mx-auto mb-4 text-muted-foreground/50" />
                 <h3 className="text-lg font-fjalla font-bold mb-2">Select a Chat Session</h3>
                 <p className="text-muted-foreground font-source">
