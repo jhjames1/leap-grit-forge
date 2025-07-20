@@ -323,6 +323,7 @@ const PeerSpecialistManagement = () => {
       const { error } = await supabase
         .from('peer_specialists')
         .update({
+          email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
           bio: formData.bio,
@@ -386,7 +387,7 @@ const PeerSpecialistManagement = () => {
   const handleEdit = (specialist: PeerSpecialist) => {
     setEditingSpecialist(specialist);
     setFormData({
-      email: '', // Email can't be changed
+      email: specialist.email || '',
       first_name: specialist.first_name,
       last_name: specialist.last_name,
       bio: specialist.bio || '',
@@ -859,20 +860,23 @@ const PeerSpecialistManagement = () => {
             </Card>
             
             <form onSubmit={editingSpecialist ? handleEditSpecialist : handleInviteSpecialist} className="space-y-4">
-              {!editingSpecialist && (
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white">Email Address *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    required
-                    className="bg-steel border-steel-light text-white"
-                    placeholder="specialist@example.com"
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-white">
+                  Email Address * 
+                  {editingSpecialist && (
+                    <span className="text-sm text-muted-foreground ml-2">(Login username)</span>
+                  )}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                  className="bg-steel border-steel-light text-white"
+                  placeholder="specialist@example.com"
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
