@@ -1616,6 +1616,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      claim_chat_session: {
+        Args: { p_session_id: string; p_specialist_user_id: string }
+        Returns: Json
+      }
       debug_auth_context: {
         Args: Record<PropertyKey, never>
         Returns: Json

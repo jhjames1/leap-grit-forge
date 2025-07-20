@@ -327,11 +327,12 @@ const PeerSpecialistDashboard = () => {
           sessionId: session.id,
           specialistId: peerSpecialist.id
         });
-        const {
-          error
-        } = await supabase.from('chat_sessions').update({
-          specialist_id: peerSpecialist.id
-        }).eq('id', session.id);
+        // Use the secure claim_chat_session function
+        const { data, error } = await supabase.rpc('claim_chat_session', {
+          p_session_id: session.id,
+          p_specialist_user_id: user.id
+        });
+
         if (error) {
           logger.error('Error claiming session', error);
           toast({
@@ -342,28 +343,26 @@ const PeerSpecialistDashboard = () => {
           return;
         }
 
-        // Log session claim
-        await supabase.from('user_activity_logs').insert({
-          user_id: user.id,
-          action: 'session_claimed',
-          type: 'chat_session',
-          details: JSON.stringify({
-            session_id: session.id,
-            specialist_id: peerSpecialist.id
-          })
-        });
+        const result = data as unknown as { success: boolean; error?: string; session?: ChatSession };
 
-        // Update local state optimistically
-        setChatSessions(prev => prev.map(s => s.id === session.id ? {
-          ...s,
-          specialist_id: peerSpecialist.id
-        } : s));
+        if (!result?.success) {
+          logger.error('Session claim failed:', result?.error);
+          toast({
+            title: "Cannot Claim Session",
+            description: result?.error || "Session is no longer available for claiming.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Update local state with the claimed session data
+        const claimedSession = result.session!
+        setChatSessions(prev => prev.map(s => 
+          s.id === session.id ? claimedSession : s
+        ));
 
         // Update the selected session
-        setSelectedChatSession({
-          ...session,
-          specialist_id: peerSpecialist.id
-        });
+        setSelectedChatSession(claimedSession);
         toast({
           title: "Session Claimed",
           description: "You are now assigned to this chat session."

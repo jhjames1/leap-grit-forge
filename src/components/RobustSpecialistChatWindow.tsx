@@ -345,20 +345,21 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     try {
       logger.debug('Claiming session:', session.id);
       
-      const { data, error } = await supabase
-        .from('chat_sessions')
-        .update({ 
-          status: 'active',
-          specialist_id: specialistId,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', session.id)
-        .select()
-        .single();
+      // Use the secure claim_chat_session function
+      const { data, error } = await supabase.rpc('claim_chat_session', {
+        p_session_id: session.id,
+        p_specialist_user_id: user.id
+      });
 
       if (error) throw error;
 
-      const updatedSession = data as ChatSession;
+      const result = data as unknown as { success: boolean; error?: string; session?: ChatSession };
+
+      if (!result?.success) {
+        throw new Error(result?.error || 'Failed to claim session');
+      }
+
+      const updatedSession = result.session!
       setSession(updatedSession);
       
       if (onSessionUpdate) {
