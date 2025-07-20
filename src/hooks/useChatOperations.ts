@@ -154,10 +154,7 @@ export const useChatOperations = (): ChatOperationsHook => {
     
     try {
       const result = await executeWithRetry(async () => {
-        logger.debug('Sending message to session:', sessionId, {
-          sender_type: messageData.sender_type,
-          content: messageData.content?.substring(0, 50) + '...'
-        });
+        logger.debug('Sending message to session:', sessionId);
         
         // If this is a specialist message, ensure we have proper sender_type
         const finalMessageData = {

@@ -804,9 +804,12 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       {/* Scheduler Modal */}
       {showScheduler && (
         <ChatAppointmentScheduler
-          sessionId={session.id}
+          isOpen={showScheduler}
           onClose={() => setShowScheduler(false)}
-          onProposalSent={() => {
+          specialistId={specialistId || ''}
+          userId={session.user_id}
+          chatSessionId={session.id}
+          onScheduled={() => {
             setShowScheduler(false);
             loadSessionProposal();
           }}
