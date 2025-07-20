@@ -12,7 +12,7 @@ export interface ConnectionStatus {
 
 export const useConnectionMonitor = () => {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
-    status: 'disconnected',
+    status: 'connecting',
     lastConnected: null,
     reconnectAttempts: 0,
     error: null
@@ -21,6 +21,7 @@ export const useConnectionMonitor = () => {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000;
+  const testChannelRef = useRef<any>(null);
 
   const clearReconnectTimeout = () => {
     if (reconnectTimeoutRef.current) {
@@ -35,6 +36,32 @@ export const useConnectionMonitor = () => {
       ...updates
     }));
   }, []);
+
+  const testConnection = useCallback(async () => {
+    try {
+      const { error } = await supabase.from('chat_sessions').select('count').limit(1);
+      
+      if (error) {
+        throw error;
+      }
+
+      updateConnectionStatus({
+        status: 'connected',
+        lastConnected: new Date(),
+        reconnectAttempts: 0,
+        error: null
+      });
+      
+      return true;
+    } catch (error) {
+      logger.error('Connection test failed', error);
+      updateConnectionStatus({
+        status: 'disconnected',
+        error: 'Connection test failed'
+      });
+      return false;
+    }
+  }, [updateConnectionStatus]);
 
   const scheduleReconnect = useCallback(() => {
     setConnectionStatus(current => {
@@ -58,95 +85,62 @@ export const useConnectionMonitor = () => {
       });
 
       clearReconnectTimeout();
-      reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = setTimeout(async () => {
         setConnectionStatus(prev => ({
           ...prev,
           status: 'connecting',
           reconnectAttempts: prev.reconnectAttempts + 1,
           error: null
         }));
+        
+        // Test the connection
+        await testConnection();
       }, delay);
 
       return current;
     });
-  }, []);
+  }, [testConnection]);
 
-  const handleConnectionChange = useCallback((status: string) => {
-    logger.debug('Connection status changed', { status });
-
-    switch (status) {
-      case 'SUBSCRIBED':
-        updateConnectionStatus({
-          status: 'connected',
-          lastConnected: new Date(),
-          reconnectAttempts: 0,
-          error: null
-        });
-        clearReconnectTimeout();
-        break;
-
-      case 'CHANNEL_ERROR':
-      case 'TIMED_OUT':
-      case 'CLOSED':
-        updateConnectionStatus({
-          status: 'disconnected',
-          error: `Connection failed: ${status}`
-        });
-        scheduleReconnect();
-        break;
-
-      case 'CONNECTING':
-        updateConnectionStatus({
-          status: 'connecting',
-          error: null
-        });
-        break;
-
-      default:
-        logger.warn('Unknown connection status', { status });
-    }
-  }, [updateConnectionStatus, scheduleReconnect]);
-
-  const createChannel = useCallback((channelName: string) => {
-    logger.debug('Creating channel', { channelName });
-    
-    updateConnectionStatus({
-      status: 'connecting',
-      error: null
-    });
-
-    const channel = supabase.channel(channelName);
-    
-    // Monitor subscription status
-    channel.subscribe(handleConnectionChange);
-
-    return channel;
-  }, [handleConnectionChange]);
-
-  const testConnection = useCallback(async () => {
-    try {
-      const { error } = await supabase.from('chat_sessions').select('count').limit(1);
-      
-      if (error) {
-        throw error;
-      }
-
-      return true;
-    } catch (error) {
-      logger.error('Connection test failed', error);
-      return false;
-    }
-  }, []);
-
-  const forceReconnect = useCallback(() => {
+  const forceReconnect = useCallback(async () => {
     logger.debug('Force reconnecting');
+    clearReconnectTimeout();
     updateConnectionStatus({
       status: 'connecting',
       reconnectAttempts: 0,
       error: null
     });
-    clearReconnectTimeout();
-  }, [updateConnectionStatus]);
+    
+    // Immediately test connection
+    await testConnection();
+  }, [updateConnectionStatus, testConnection]);
+
+  // Create a simple channel without subscription monitoring (let components handle their own)
+  const createChannel = useCallback((channelName: string) => {
+    logger.debug('Creating channel', { channelName });
+    return supabase.channel(channelName);
+  }, []);
+
+  // Initial connection test and periodic health checks
+  useEffect(() => {
+    // Initial connection test
+    testConnection();
+
+    // Set up periodic health checks every 30 seconds
+    const healthCheckInterval = setInterval(async () => {
+      if (connectionStatus.status === 'connected') {
+        const isHealthy = await testConnection();
+        if (!isHealthy) {
+          scheduleReconnect();
+        }
+      } else if (connectionStatus.status === 'disconnected' && connectionStatus.reconnectAttempts < maxReconnectAttempts) {
+        scheduleReconnect();
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(healthCheckInterval);
+    };
+  }, [testConnection, scheduleReconnect, connectionStatus.status, connectionStatus.reconnectAttempts]);
 
   // Monitor online/offline status
   useEffect(() => {
@@ -177,6 +171,9 @@ export const useConnectionMonitor = () => {
   useEffect(() => {
     return () => {
       clearReconnectTimeout();
+      if (testChannelRef.current) {
+        supabase.removeChannel(testChannelRef.current);
+      }
     };
   }, []);
 

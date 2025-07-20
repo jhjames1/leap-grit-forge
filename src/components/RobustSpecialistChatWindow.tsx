@@ -235,11 +235,12 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   // Enhanced real-time subscription with better session update handling
   const setupRealtimeSubscription = useCallback(() => {
     if (channelRef.current || !session?.id) return;
+    
     logger.debug('Setting up realtime subscription for session:', session.id);
-    // Connection status is now managed by useConnectionMonitor
-    reconnectAttemptsRef.current = 0;
+    
     const channelName = `specialist-robust-chat-${session.id}-${Date.now()}`;
     const channel = createChannel(channelName);
+    
     channel.on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
@@ -247,16 +248,15 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       filter: `session_id=eq.${session.id}`
     }, payload => {
       logger.debug('New message received via realtime:', payload);
-      console.log('Realtime message details:', {
-        messageType: payload.new.message_type,
-        senderType: payload.new.sender_type,
-        hasMetadata: !!payload.new.metadata,
-        actionType: payload.new.metadata?.action_type
-      });
       const newMessage = payload.new as RealMessage;
       setMessages(prev => {
         // Remove matching optimistic message
-        const withoutOptimistic = prev.filter(msg => !(msg.isOptimistic && msg.content === newMessage.content && msg.sender_type === newMessage.sender_type && Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 30000));
+        const withoutOptimistic = prev.filter(msg => 
+          !(msg.isOptimistic && 
+            msg.content === newMessage.content && 
+            msg.sender_type === newMessage.sender_type && 
+            Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 30000)
+        );
 
         // Avoid duplicates
         if (withoutOptimistic.find(msg => msg.id === newMessage.id)) {
@@ -264,7 +264,9 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         }
 
         // Add new message and sort
-        const updated = [...withoutOptimistic, newMessage].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        const updated = [...withoutOptimistic, newMessage].sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
         return updated;
       });
 
@@ -285,9 +287,11 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       // Fetch user details if not present
       if (!updatedSession.user_first_name && updatedSession.user_id) {
         try {
-          const {
-            data: profile
-          } = await supabase.from('profiles').select('first_name, last_name').eq('user_id', updatedSession.user_id).single();
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('user_id', updatedSession.user_id)
+            .single();
           if (profile) {
             updatedSession.user_first_name = profile.first_name;
             updatedSession.user_last_name = profile.last_name;
@@ -321,30 +325,14 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       loadSessionProposal();
     });
     
-    // Note: Do NOT call .subscribe() here - the connection monitor handles this
-    // The createChannel() function already sets up the subscription with status monitoring
+    // Subscribe to the channel
+    channel.subscribe((status) => {
+      logger.debug('Channel subscription status:', status);
+    });
+    
     channelRef.current = channel;
-  }, [session.id, handleSessionUpdate, loadSessionProposal, toast]);
+  }, [session.id, createChannel, handleSessionUpdate, loadSessionProposal, toast]);
 
-  // Schedule reconnection with exponential backoff
-  const scheduleReconnection = useCallback(() => {
-    if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
-      logger.error('Max reconnection attempts reached');
-      // Force reconnect using connection monitor
-      forceReconnect();
-      return;
-    }
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-    const delay = Math.min(RECONNECT_INTERVAL * Math.pow(2, reconnectAttemptsRef.current), 30000);
-    reconnectAttemptsRef.current++;
-    logger.debug(`Scheduling reconnection attempt ${reconnectAttemptsRef.current} in ${delay}ms`);
-    reconnectTimeoutRef.current = setTimeout(() => {
-      cleanupRealtimeSubscription();
-      setupRealtimeSubscription();
-    }, delay);
-  }, [cleanupRealtimeSubscription, setupRealtimeSubscription]);
 
   // Enhanced claim session with immediate state update
   const claimSession = useCallback(async () => {
