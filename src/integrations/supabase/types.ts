@@ -321,6 +321,7 @@ export type Database = {
           created_at: string
           ended_at: string | null
           id: string
+          last_activity: string | null
           session_number: number
           specialist_id: string | null
           started_at: string | null
@@ -332,6 +333,7 @@ export type Database = {
           created_at?: string
           ended_at?: string | null
           id?: string
+          last_activity?: string | null
           session_number?: number
           specialist_id?: string | null
           started_at?: string | null
@@ -343,6 +345,7 @@ export type Database = {
           created_at?: string
           ended_at?: string | null
           id?: string
+          last_activity?: string | null
           session_number?: number
           specialist_id?: string | null
           started_at?: string | null
