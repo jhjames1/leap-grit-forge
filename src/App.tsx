@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "next-themes";
 import { SafeToastProvider } from "@/components/SafeToastProvider";
@@ -12,8 +12,6 @@ import AdminPortal from "./pages/AdminPortal";
 import PeerSpecialistPortal from "./pages/PeerSpecialistPortal";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { AuthForm } from "./components/AuthForm";
-import { useAuth } from "./hooks/useAuth";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,7 +37,19 @@ function App() {
             <TooltipProvider>
               <SafeToastProvider>
                 <BrowserRouter>
-                  <AuthWrapper />
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/admin" element={<AdminPortal />} />
+                    <Route 
+                      path="/specialist" 
+                      element={
+                        <ErrorBoundary>
+                          <PeerSpecialistPortal />
+                        </ErrorBoundary>
+                      } 
+                    />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
                 </BrowserRouter>
               </SafeToastProvider>
             </TooltipProvider>
@@ -47,38 +57,6 @@ function App() {
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
-  );
-}
-
-function AuthWrapper() {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-
-  return (
-    <Routes>
-      <Route 
-        path="/login" 
-        element={
-          isAuthenticated ? 
-            <Navigate to="/" replace /> : 
-            <AuthForm onAuthSuccess={() => {}} />
-        } 
-      />
-      <Route path="/" element={<Index />} />
-      <Route path="/admin" element={<AdminPortal />} />
-      <Route 
-        path="/specialist" 
-        element={
-          <ErrorBoundary>
-            <PeerSpecialistPortal />
-          </ErrorBoundary>
-        } 
-      />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
   );
 }
 

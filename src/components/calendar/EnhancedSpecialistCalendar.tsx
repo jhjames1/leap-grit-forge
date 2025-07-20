@@ -1,143 +1,371 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, momentLocalizer } from 'react-big-calendar';
+
+import { useState, useEffect } from 'react';
+import { Calendar, momentLocalizer, View } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Card } from '@/components/ui/card';
+import './calendar.css';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Calendar as CalendarIcon, Settings, Clock, Users, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import ScheduleManagementModal from './ScheduleManagementModal';
-
-interface EnhancedSpecialistCalendarProps {
-  specialistId: string;
-  onClose: () => void;
-}
+import { format } from 'date-fns';
 
 const localizer = momentLocalizer(moment);
 
-const EnhancedSpecialistCalendar: React.FC<EnhancedSpecialistCalendarProps> = ({
-  specialistId,
-  onClose,
-}) => {
-  const [events, setEvents] = useState([]);
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  resource?: any;
+  type: 'appointment' | 'availability' | 'blocked';
+}
+
+interface EnhancedSpecialistCalendarProps {
+  specialistId: string;
+}
+
+const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendarProps) => {
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [currentView, setCurrentView] = useState<View>('week');
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  // Set default view to business hours (7 AM - 6 PM) but allow full day scrolling
-  const getDefaultTimeRange = () => {
-    const defaultMin = new Date();
-    defaultMin.setHours(7, 0, 0, 0); // 7 AM default start
-    
-    const defaultMax = new Date();
-    defaultMax.setHours(18, 0, 0, 0); // 6 PM default end
-    
-    return { defaultMin, defaultMax };
+  // Set business hours (8 AM to 5 PM)
+  const minTime = new Date();
+  minTime.setHours(8, 0, 0);
+  
+  const maxTime = new Date();
+  maxTime.setHours(17, 0, 0);
+
+  const loadCalendarData = async () => {
+    setLoading(true);
+    try {
+      // Load appointments without profiles join
+      const { data: appointments, error: appointmentsError } = await supabase
+        .from('specialist_appointments')
+        .select(`
+          *,
+          appointment_types(name, color)
+        `)
+        .eq('specialist_id', specialistId)
+        .gte('scheduled_start', new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1).toISOString())
+        .lte('scheduled_end', new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0).toISOString());
+
+      if (appointmentsError) throw appointmentsError;
+
+      // Load availability exceptions (blocked time)
+      const { data: exceptions, error: exceptionsError } = await supabase
+        .from('specialist_availability_exceptions')
+        .select('*')
+        .eq('specialist_id', specialistId)
+        .gte('start_time', new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1).toISOString())
+        .lte('end_time', new Date(currentDate.getFullYear(), currentDate.getMonth() + 2, 0).toISOString());
+
+      if (exceptionsError) throw exceptionsError;
+
+      // Convert to calendar events
+      const calendarEvents: CalendarEvent[] = [];
+
+      // Add appointments (without user name since we don't have profiles relation)
+      appointments?.forEach(apt => {
+        calendarEvents.push({
+          id: apt.id,
+          title: `${apt.appointment_types?.name || 'Appointment'}`,
+          start: new Date(apt.scheduled_start),
+          end: new Date(apt.scheduled_end),
+          type: 'appointment',
+          resource: {
+            ...apt,
+            color: apt.appointment_types?.color || '#3B82F6'
+          }
+        });
+      });
+
+      // Add blocked time
+      exceptions?.forEach(exc => {
+        if (exc.exception_type === 'unavailable') {
+          calendarEvents.push({
+            id: exc.id,
+            title: exc.reason || 'Blocked Time',
+            start: new Date(exc.start_time),
+            end: new Date(exc.end_time),
+            type: 'blocked',
+            resource: exc
+          });
+        }
+      });
+
+      setEvents(calendarEvents);
+    } catch (error) {
+      console.error('Error loading calendar data:', error);
+      toast({
+        title: "Error Loading Calendar",
+        description: "Could not load calendar data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
-
-  // Allow full 24-hour scrolling range
-  const getFullTimeRange = () => {
-    const fullMin = new Date();
-    fullMin.setHours(0, 0, 0, 0); // Midnight start
-    
-    const fullMax = new Date();
-    fullMax.setHours(23, 59, 59, 999); // Midnight end
-    
-    return { fullMin, fullMax };
-  };
-
-  const { defaultMin, defaultMax } = getDefaultTimeRange();
-  const { fullMin, fullMax } = getFullTimeRange();
 
   useEffect(() => {
-    // Fetch events based on specialistId
-    // Replace this with your actual data fetching logic
-    const mockEvents = [
-      {
-        id: 1,
-        title: 'Morning Session',
-        start: new Date(new Date().setHours(9, 0, 0, 0)),
-        end: new Date(new Date().setHours(10, 0, 0, 0)),
-        color: '#e53935'
-      },
-      {
-        id: 2,
-        title: 'Afternoon Break',
-        start: new Date(new Date().setHours(14, 0, 0, 0)),
-        end: new Date(new Date().setHours(15, 0, 0, 0)),
-        color: '#1e88e5'
-      }
-    ];
+    if (specialistId) {
+      loadCalendarData();
+    }
+  }, [specialistId, currentDate]);
 
-    setEvents(mockEvents);
-  }, [specialistId]);
+  const eventStyleGetter = (event: CalendarEvent) => {
+    let backgroundColor = '#3B82F6';
+    let borderColor = '#3B82F6';
+    
+    switch (event.type) {
+      case 'appointment':
+        backgroundColor = event.resource?.color || '#10B981';
+        borderColor = event.resource?.color || '#10B981';
+        break;
+      case 'blocked':
+        backgroundColor = '#EF4444';
+        borderColor = '#EF4444';
+        break;
+      case 'availability':
+        backgroundColor = '#F59E0B';
+        borderColor = '#F59E0B';
+        break;
+    }
+
+    return {
+      style: {
+        backgroundColor,
+        borderColor,
+        color: 'white',
+        border: `1px solid ${borderColor}`,
+        borderRadius: '4px',
+        fontSize: '12px',
+        padding: '2px 4px'
+      }
+    };
+  };
+
+  const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
+    console.log('Selected slot:', { start, end });
+    // Handle slot selection for creating new appointments or blocking time
+  };
+
+  const handleSelectEvent = (event: CalendarEvent) => {
+    console.log('Selected event:', event);
+    // Handle event selection for editing
+  };
+
+  const formats = {
+    timeGutterFormat: (date: Date) => format(date, 'h a'),
+    eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) => 
+      `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`,
+    agendaTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) => 
+      `${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`,
+    agendaTimeFormat: (date: Date) => format(date, 'h:mm a'),
+    dayFormat: (date: Date) => format(date, 'eee M/d'),
+    dayHeaderFormat: (date: Date) => format(date, 'eeee, MMM d'),
+    dayRangeHeaderFormat: ({ start, end }: { start: Date; end: Date }) => 
+      `${format(start, 'MMM d')} - ${format(end, 'd, yyyy')}`,
+    monthHeaderFormat: (date: Date) => format(date, 'MMMM yyyy'),
+    weekdayFormat: (date: Date) => format(date, 'eee'),
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-6xl h-[90vh] flex flex-col bg-card">
-        <div className="flex items-center justify-between p-6 border-b border-border">
-          <div>
-            <h2 className="text-2xl font-semibold text-foreground">Calendar & Schedule</h2>
-            <p className="text-muted-foreground">Manage your appointments and availability</p>
+    <div className="space-y-4">
+      {/* Calendar Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5" />
+            <h3 className="text-lg font-semibold">Specialist Calendar</h3>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowScheduleModal(true)}
-              className="flex items-center space-x-2"
-            >
-              <Settings size={16} />
-              <span>Manage Schedule</span>
-            </Button>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X size={20} />
-            </Button>
+          
+          {/* View Controls */}
+          <div className="flex gap-1">
+            {(['month', 'week', 'work_week', 'day'] as View[]).map((view) => (
+              <Button
+                key={view}
+                variant={currentView === view ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setCurrentView(view)}
+                className="capitalize"
+              >
+                {view === 'work_week' ? 'Work Week' : view}
+              </Button>
+            ))}
           </div>
         </div>
 
-        <div className="flex-1 p-6 overflow-hidden">
-          <Calendar
-            localizer={localizer}
-            events={events}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: '100%' }}
-            views={['month', 'week', 'day']}
-            defaultView="week"
-            min={fullMin} // Allow scrolling from midnight
-            max={fullMax} // Allow scrolling to midnight
-            scrollToTime={defaultMin} // But default scroll to 7 AM
-            eventPropGetter={(event) => ({
-              style: {
-                backgroundColor: event.color || '#3174ad',
-                borderRadius: '4px',
-                border: 'none',
-                color: 'white',
-                fontSize: '12px',
-                padding: '2px 6px'
-              }
-            })}
-            onSelectEvent={(event) => {
-              console.log('Selected event:', event);
-            }}
-            onSelectSlot={(slotInfo) => {
-              console.log('Selected slot:', slotInfo);
-            }}
-            selectable
-            step={15}
-            timeslots={4}
-            formats={{
-              timeGutterFormat: 'h:mm A',
-              eventTimeRangeFormat: ({ start, end }, culture, local) => 
-                `${local.format(start, 'h:mm A', culture)} - ${local.format(end, 'h:mm A', culture)}`
-            }}
-          />
+        <div className="flex items-center gap-2">
+          {/* Legend */}
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-green-500 rounded"></div>
+              <span>Appointments</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 bg-red-500 rounded"></div>
+              <span>Blocked</span>
+            </div>
+          </div>
+
+          {/* Schedule Management */}
+          <Dialog open={showScheduleModal} onOpenChange={setShowScheduleModal}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Settings className="w-4 h-4" />
+                Manage Schedule
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Schedule Management</DialogTitle>
+              </DialogHeader>
+              <ScheduleManagementModal
+                isOpen={showScheduleModal}
+                onClose={() => setShowScheduleModal(false)}
+                specialistId={specialistId}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
+      </div>
+
+      {/* Calendar */}
+      <Card>
+        <CardContent className="p-0">
+          <div style={{ height: '600px' }}>
+            <Calendar
+              localizer={localizer}
+              events={events}
+              startAccessor="start"
+              endAccessor="end"
+              view={currentView}
+              onView={setCurrentView}
+              date={currentDate}
+              onNavigate={setCurrentDate}
+              onSelectSlot={handleSelectSlot}
+              onSelectEvent={handleSelectEvent}
+              selectable
+              eventPropGetter={eventStyleGetter}
+              formats={formats}
+              min={minTime}
+              max={maxTime}
+              step={15}
+              timeslots={4}
+              defaultView="week"
+              views={['month', 'week', 'work_week', 'day']}
+              toolbar={true}
+              components={{
+                toolbar: (props) => (
+                  <div className="flex items-center justify-between p-4 border-b">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => props.onNavigate('PREV')}
+                      >
+                        ‹
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => props.onNavigate('NEXT')}
+                      >
+                        ›
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => props.onNavigate('TODAY')}
+                      >
+                        Today
+                      </Button>
+                    </div>
+                    
+                    <h2 className="text-lg font-semibold">
+                      {props.label}
+                    </h2>
+                    
+                    <div className="text-sm text-muted-foreground">
+                      Business Hours: 8:00 AM - 5:00 PM
+                    </div>
+                  </div>
+                )
+              }}
+            />
+          </div>
+        </CardContent>
       </Card>
 
-      {/* Schedule Management Modal */}
-      <ScheduleManagementModal
-        isOpen={showScheduleModal}
-        onClose={() => setShowScheduleModal(false)}
-        specialistId={specialistId}
-      />
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Today's Appointments */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Today's Appointments</p>
+                <p className="text-2xl font-bold">
+                  {events.filter(e => 
+                    e.type === 'appointment' && 
+                    e.start.toDateString() === new Date().toDateString()
+                  ).length}
+                </p>
+              </div>
+              <CalendarIcon className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* This Week's Appointments */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">This Week</p>
+                <p className="text-2xl font-bold">
+                  {events.filter(e => {
+                    if (e.type !== 'appointment') return false;
+                    const weekStart = new Date();
+                    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+                    const weekEnd = new Date(weekStart);
+                    weekEnd.setDate(weekEnd.getDate() + 6);
+                    return e.start >= weekStart && e.start <= weekEnd;
+                  }).length}
+                </p>
+              </div>
+              <Clock className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Available Hours Today */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Available Hours Today</p>
+                <p className="text-2xl font-bold">
+                  {9 - events.filter(e => 
+                    (e.type === 'appointment' || e.type === 'blocked') && 
+                    e.start.toDateString() === new Date().toDateString()
+                  ).length}h
+                </p>
+              </div>
+              <Users className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
