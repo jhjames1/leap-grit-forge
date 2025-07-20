@@ -207,23 +207,6 @@ const PeerSpecialistManagement = () => {
     }
   };
 
-  const getMetricColor = (value: number | undefined, threshold: number, isReversed = false): string => {
-    if (value === undefined || value === null) return 'text-muted-foreground';
-    
-    if (isReversed) {
-      return value <= threshold ? 'text-success' : 'text-destructive';
-    }
-    return value >= threshold ? 'text-success' : 'text-destructive';
-  };
-
-  const formatResponseTime = (seconds: number | undefined): string => {
-    if (!seconds) return '0s';
-    if (seconds < 60) return `${Math.round(seconds)}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.round(seconds % 60);
-    return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
-  };
-
   const resetForm = () => {
     setFormData({
       email: '',
@@ -319,23 +302,31 @@ const PeerSpecialistManagement = () => {
     
     if (!editingSpecialist) return;
 
-    // Debug: Check current user and admin status
-    console.log('Current user:', user?.id);
-    console.log('Editing specialist:', editingSpecialist.id);
-    console.log('Form data:', formData);
-
-    // Test admin access
-    const { data: adminTest, error: adminError } = await supabase.rpc('is_admin', { _user_id: user?.id });
-    console.log('Admin check:', { adminTest, adminError });
-
-    console.log('Updating specialist with data:', {
-      id: editingSpecialist.id,
-      email: formData.email,
-      first_name: formData.first_name,
-      last_name: formData.last_name
-    });
-
     try {
+      // Debug: Check current user and admin status first
+      console.log('Current user ID:', user?.id);
+      console.log('Current user email:', user?.email);
+      
+      // Test admin access first
+      const { data: adminTest, error: adminError } = await supabase.rpc('is_admin', { _user_id: user?.id });
+      console.log('Admin check result:', { adminTest, adminError });
+      
+      if (!adminTest) {
+        toast({
+          title: "Permission Error",
+          description: "You don't have admin permissions to update specialists",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('Updating specialist with data:', {
+        id: editingSpecialist.id,
+        email: formData.email,
+        first_name: formData.first_name,
+        last_name: formData.last_name
+      });
+
       const { data, error } = await supabase
         .from('peer_specialists')
         .update({
@@ -365,44 +356,13 @@ const PeerSpecialistManagement = () => {
       await fetchSpecialists(); // Refresh the list
       setIsDialogOpen(false);
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating specialist:', error);
       toast({
         title: "Error",
-        description: `Failed to update specialist: ${error.message}`,
+        description: `Failed to update specialist: ${error?.message || 'Unknown error'}`,
         variant: "destructive"
       });
-    }
-  };
-
-  const handleResendInvitation = async (specialist: PeerSpecialist) => {
-    try {
-      setIsInviting(true);
-
-      const { error } = await supabase.functions.invoke('send-specialist-invitation', {
-        body: {
-          specialistId: specialist.id,
-          adminId: user?.id
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Invitation email resent successfully"
-      });
-
-      fetchSpecialists();
-    } catch (error) {
-      console.error('Error resending invitation:', error);
-      toast({
-        title: "Error",
-        description: "Failed to resend invitation",
-        variant: "destructive"
-      });
-    } finally {
-      setIsInviting(false);
     }
   };
 
@@ -418,111 +378,6 @@ const PeerSpecialistManagement = () => {
       avatar_url: specialist.avatar_url || ''
     });
     setIsDialogOpen(true);
-  };
-
-  const handleSoftDelete = async (specialist: PeerSpecialist) => {
-    try {
-      console.log('Starting soft delete for specialist:', specialist.id);
-      
-      // First, test the debug function to see what's happening in the database context
-      const { data: debugData, error: debugError } = await supabase
-        .rpc('debug_auth_context');
-      
-      console.log('Debug auth context:', debugData, 'Error:', debugError);
-      
-      // Use the security definer function to bypass RLS issues
-      const { data, error } = await supabase.rpc('soft_delete_specialist', {
-        specialist_id: specialist.id
-      });
-
-      if (error) {
-        console.error('Database function error:', error);
-        throw error;
-      }
-
-      // Type the response properly
-      const response = data as { success: boolean; error?: string; message?: string };
-      
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to deactivate specialist');
-      }
-
-      console.log('Update result:', response);
-
-      console.log('Specialist soft deleted successfully, refreshing lists...');
-
-      toast({
-        title: "Specialist moved to removed",
-        description: "Specialist has been moved to the Removed tab while preserving their history",
-      });
-
-      // Refresh both lists to update the UI
-      await Promise.all([
-        fetchSpecialists(),
-        fetchRemovedSpecialists()
-      ]);
-      
-      console.log('Lists refreshed after soft delete');
-    } catch (error) {
-      console.error('Error deactivating specialist:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to deactivate specialist';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleStatusToggle = async (specialist: PeerSpecialist, field: 'is_active' | 'is_verified') => {
-    try {
-      let updateData: any = {};
-      
-      if (field === 'is_active') {
-        // Can only activate if verified
-        if (!specialist.is_verified) {
-          toast({
-            title: "Cannot activate specialist",
-            description: "Specialist must be verified before they can be activated",
-            variant: "destructive"
-          });
-          return;
-        }
-        updateData.is_active = !specialist.is_active;
-        
-        // Set activated_at when activating
-        if (!specialist.is_active) {
-          updateData.activated_at = new Date().toISOString();
-        }
-      } else if (field === 'is_verified') {
-        updateData.is_verified = !specialist.is_verified;
-        
-        // If unverifying, also deactivate
-        if (specialist.is_verified) {
-          updateData.is_active = false;
-        }
-      }
-
-      const { error } = await supabase
-        .from('peer_specialists')
-        .update(updateData)
-        .eq('id', specialist.id);
-
-      if (error) throw error;
-      
-      fetchSpecialists();
-      toast({
-        title: "Success",
-        description: `Specialist ${field === 'is_active' ? 'status' : 'verification'} updated`
-      });
-    } catch (error) {
-      console.error('Error updating specialist:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update specialist",
-        variant: "destructive"
-      });
-    }
   };
 
   const handleForceActivate = async (specialist: PeerSpecialist) => {
@@ -558,14 +413,6 @@ const PeerSpecialistManagement = () => {
         .eq('id', specialist.id);
 
       if (error) throw error;
-      
-      // Debug: Check what email data we have
-      console.log('Specialist data for force activation:', {
-        id: specialist.id,
-        email: specialist.email,
-        first_name: specialist.first_name,
-        last_name: specialist.last_name
-      });
       
       // Use the stored email from the specialist record
       const specialistEmail = specialist.email || 'Email not available - contact admin';
@@ -628,49 +475,6 @@ const PeerSpecialistManagement = () => {
     }
   };
 
-  const addSpecialty = () => {
-    if (newSpecialty.trim() && !formData.specialties.includes(newSpecialty.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        specialties: [...prev.specialties, newSpecialty.trim()]
-      }));
-      setNewSpecialty('');
-    }
-  };
-
-  const removeSpecialty = (specialty: string) => {
-    setFormData(prev => ({
-      ...prev,
-      specialties: prev.specialties.filter(s => s !== specialty)
-    }));
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500';
-      case 'away': return 'bg-yellow-500';
-      case 'busy': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      case 'away': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'busy': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  const getSpecialistStatus = (specialistId: string) => {
-    return specialistStatuses.find(s => s.specialist_id === specialistId);
-  };
-
-  const getSpecialistAnalytics = (specialistId: string) => {
-    return analytics.find(a => a.specialist_id === specialistId);
-  };
-
   const getInvitationStatus = (specialist: PeerSpecialist) => {
     if (specialist.activated_at) {
       const activationMethod = specialist.activation_method || 'email';
@@ -692,499 +496,302 @@ const PeerSpecialistManagement = () => {
     return { status: 'not_sent', color: 'bg-gray-500/20 text-gray-400', text: 'Not Sent' };
   };
 
-  const handlePermanentDelete = async (specialist: PeerSpecialist) => {
-    // Show confirmation dialog
-    const confirmed = window.confirm(
-      `⚠️ PERMANENT DELETION WARNING ⚠️\n\n` +
-      `This will PERMANENTLY DELETE:\n` +
-      `• ${specialist.first_name} ${specialist.last_name}'s specialist profile\n` +
-      `• All their schedules and content views\n` +
-      `• Their specialist status records\n\n` +
-      `Chat sessions will be preserved but anonymized.\n\n` +
-      `This action CANNOT be undone!\n\n` +
-      `Type "DELETE" to confirm this permanent deletion.`
-    );
-
-    if (!confirmed) return;
-
-    // Double confirmation
-    const doubleConfirm = prompt(
-      `Final confirmation required.\n\nType "DELETE" exactly to permanently delete ${specialist.first_name} ${specialist.last_name}:`
-    );
-
-    if (doubleConfirm !== 'DELETE') {
-      toast({
-        title: "Deletion cancelled",
-        description: "Permanent deletion was cancelled",
-      });
-      return;
-    }
-
-    try {
-      setDeletingSpecialistId(specialist.id);
-
-      console.log('Attempting to permanently delete specialist:', specialist.id);
-
-      // Call the edge function to permanently delete the specialist
-      const { data, error } = await supabase.functions.invoke('permanently-delete-specialist', {
-        body: {
-          specialistId: specialist.id
-        }
-      });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      if (data && !data.success) {
-        throw new Error(data.error || 'Failed to permanently delete specialist');
-      }
-
-      console.log('Specialist permanently deleted successfully');
-
-      toast({
-        title: "Specialist permanently deleted",
-        description: `${specialist.first_name} ${specialist.last_name} has been permanently removed from the system`,
-      });
-
-      // Refresh the removed specialists list
-      await fetchRemovedSpecialists();
-
-    } catch (error) {
-      console.error('Error permanently deleting specialist:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to permanently delete specialist';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setDeletingSpecialistId(null);
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Header with refresh button */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold">Peer Specialist Management</h2>
-          <Button
-            onClick={() => {
-              fetchSpecialists();
-            }}
-            size="sm"
-            variant="outline"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Data
-          </Button>
+    <div className="p-6 bg-background min-h-screen">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="bg-primary p-3 rounded-sm">
+              <UserPlus className="text-primary-foreground" size={24} />
+            </div>
+            <h1 className="font-fjalla font-bold text-primary text-2xl tracking-wide">PEER SPECIALIST MANAGEMENT</h1>
+          </div>
         </div>
-      </div>
 
-      {/* Real-time Status Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-          <div className="flex items-center space-x-3">
-            <div className="bg-primary p-3 rounded-sm">
-              <Users className="text-primary-foreground" size={20} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-card-foreground">{specialists.length}</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Specialists</div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-          <div className="flex items-center space-x-3">
-            <div className="bg-green-500/20 p-3 rounded-sm">
-              <Wifi className="text-green-400" size={20} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-card-foreground">
-                {specialistStatuses.filter(s => s.status === 'online').length}
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+            <div className="flex items-center space-x-3">
+              <div className="bg-primary p-3 rounded-sm">
+                <Users className="text-primary-foreground" size={20} />
               </div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Online Now</div>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-          <div className="flex items-center space-x-3">
-            <div className="bg-primary p-3 rounded-sm">
-              <MessageSquare className="text-primary-foreground" size={20} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-card-foreground">
-                {analytics.reduce((sum, a) => sum + a.active_sessions, 0)}
+              <div>
+                <div className="text-2xl font-bold text-card-foreground">{specialists.length}</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Active Specialists</div>
               </div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Active Sessions</div>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-          <div className="flex items-center space-x-3">
-            <div className="bg-primary p-3 rounded-sm">
-              <TrendingUp className="text-primary-foreground" size={20} />
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-card-foreground">
-                {Math.round(analytics.reduce((sum, a) => sum + a.total_messages, 0) / Math.max(analytics.length, 1))}
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+            <div className="flex items-center space-x-3">
+              <div className="bg-primary p-3 rounded-sm">
+                <MessageSquare className="text-primary-foreground" size={20} />
               </div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Avg Messages</div>
+              <div>
+                <div className="text-2xl font-bold text-card-foreground">
+                  {analytics.reduce((sum, a) => sum + a.active_sessions, 0)}
+                </div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Active Sessions</div>
+              </div>
             </div>
-          </div>
-        </Card>
-      </div>
+          </Card>
 
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+            <div className="flex items-center space-x-3">
+              <div className="bg-primary p-3 rounded-sm">
+                <TrendingUp className="text-primary-foreground" size={20} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-card-foreground">
+                  {Math.round(analytics.reduce((sum, a) => sum + a.total_messages, 0) / Math.max(analytics.length, 1))}
+                </div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Avg Messages</div>
+              </div>
+            </div>
+          </Card>
 
-      {/* Add Specialist Section */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="bg-primary p-3 rounded-sm">
-            <UserPlus className="text-primary-foreground" size={20} />
-          </div>
-          <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">MANAGE SPECIALISTS</h3>
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
+            <div className="flex items-center space-x-3">
+              <div className="bg-primary p-3 rounded-sm">
+                <Clock className="text-primary-foreground" size={20} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-card-foreground">
+                  {Math.round(analytics.reduce((sum, a) => sum + a.avg_response_time, 0) / Math.max(analytics.length, 1))}s
+                </div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Avg Response</div>
+              </div>
+            </div>
+          </Card>
         </div>
-        
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              onClick={resetForm}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Mail className="mr-2 h-4 w-4" />
-              {editingSpecialist ? 'Edit Specialist' : 'Create & Invite Specialist'}
-            </Button>
-          </DialogTrigger>
+
+        {/* Add Specialist Section */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="bg-primary p-3 rounded-sm">
+              <UserPlus className="text-primary-foreground" size={20} />
+            </div>
+            <h3 className="font-fjalla font-bold text-card-foreground text-xl tracking-wide">MANAGE SPECIALISTS</h3>
+          </div>
           
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-steel-dark border-steel">
-            <DialogHeader>
-              <DialogTitle className="text-white">
-                {editingSpecialist ? 'Edit Specialist' : 'Create & Invite New Specialist'}
-              </DialogTitle>
-            </DialogHeader>
-
-            {/* NEW ADMIN-CONTROLLED SPECIALIST ONBOARDING Card */}
-            <Card className="bg-primary/10 border-primary/30 p-4 mb-4">
-              <h4 className="font-fjalla font-bold text-primary text-lg tracking-wide mb-2">
-                NEW ADMIN-CONTROLLED SPECIALIST ONBOARDING
-              </h4>
-              <p className="text-sm text-muted-foreground mb-1">
-                1. Creates a peer support specialist account. An invitation email with temporary password will be sent.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                2. The invited Peer Support Specialist clicks email verification link to activate account and access the portal.
-              </p>
-            </Card>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                onClick={resetForm}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                {editingSpecialist ? 'Edit Specialist' : 'Create & Invite Specialist'}
+              </Button>
+            </DialogTrigger>
             
-            <form onSubmit={editingSpecialist ? handleEditSpecialist : handleInviteSpecialist} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">
-                  Email Address * 
-                  {editingSpecialist && (
-                    <span className="text-sm text-muted-foreground ml-2">(Login username)</span>
-                  )}
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  required
-                  className="bg-steel border-steel-light text-white"
-                  placeholder="specialist@example.com"
-                />
-              </div>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-steel-dark border-steel">
+              <DialogHeader>
+                <DialogTitle className="text-white">
+                  {editingSpecialist ? 'Edit Specialist' : 'Create & Invite New Specialist'}
+                </DialogTitle>
+              </DialogHeader>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* NEW ADMIN-CONTROLLED SPECIALIST ONBOARDING Card */}
+              <Card className="bg-primary/10 border-primary/30 p-4 mb-4">
+                <h4 className="font-fjalla font-bold text-primary text-lg tracking-wide mb-2">
+                  NEW ADMIN-CONTROLLED SPECIALIST ONBOARDING
+                </h4>
+                <p className="text-sm text-muted-foreground mb-1">
+                  1. Creates a peer support specialist account. An invitation email with temporary password will be sent.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  2. The invited Peer Support Specialist clicks email verification link to activate account and access the portal.
+                </p>
+              </Card>
+              
+              <form onSubmit={editingSpecialist ? handleEditSpecialist : handleInviteSpecialist} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="first_name" className="text-white">First Name *</Label>
+                  <Label htmlFor="email" className="text-white">
+                    Email Address * 
+                    {editingSpecialist && (
+                      <span className="text-sm text-muted-foreground ml-2">(Login username)</span>
+                    )}
+                  </Label>
                   <Input
-                    id="first_name"
-                    value={formData.first_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     required
                     className="bg-steel border-steel-light text-white"
+                    placeholder="specialist@example.com"
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="first_name" className="text-white">First Name *</Label>
+                    <Input
+                      id="first_name"
+                      value={formData.first_name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                      required
+                      className="bg-steel border-steel-light text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="last_name" className="text-white">Last Name *</Label>
+                    <Input
+                      id="last_name"
+                      value={formData.last_name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                      required
+                      className="bg-steel border-steel-light text-white"
+                    />
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="last_name" className="text-white">Last Name *</Label>
-                  <Input
-                    id="last_name"
-                    value={formData.last_name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
-                    required
+                  <Label htmlFor="bio" className="text-white">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={formData.bio}
+                    onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                    rows={3}
                     className="bg-steel border-steel-light text-white"
+                    placeholder="Brief description of experience and approach..."
                   />
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="bio" className="text-white">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={formData.bio}
-                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                  rows={3}
-                  className="bg-steel border-steel-light text-white"
-                  placeholder="Brief description of experience and approach..."
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="years_experience" className="text-white">Years of Experience</Label>
+                    <Input
+                      id="years_experience"
+                      type="number"
+                      min="0"
+                      value={formData.years_experience}
+                      onChange={(e) => setFormData(prev => ({ ...prev, years_experience: parseInt(e.target.value) || 0 }))}
+                      className="bg-steel border-steel-light text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="avatar_url" className="text-white">Avatar URL</Label>
+                    <Input
+                      id="avatar_url"
+                      value={formData.avatar_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, avatar_url: e.target.value }))}
+                      placeholder="https://..."
+                      className="bg-steel border-steel-light text-white"
+                    />
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="years_experience" className="text-white">Years of Experience</Label>
-                  <Input
-                    id="years_experience"
-                    type="number"
-                    min="0"
-                    value={formData.years_experience}
-                    onChange={(e) => setFormData(prev => ({ ...prev, years_experience: parseInt(e.target.value) || 0 }))}
-                    className="bg-steel border-steel-light text-white"
-                  />
+                  <Label className="text-white">Specialties</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      value={newSpecialty}
+                      onChange={(e) => setNewSpecialty(e.target.value)}
+                      placeholder="Add specialty (e.g. Addiction Recovery, Trauma)"
+                      className="bg-steel border-steel-light text-white"
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
+                    />
+                    <Button type="button" onClick={addSpecialty} variant="outline">
+                      Add
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.specialties.map((specialty, index) => (
+                      <Badge key={index} className="bg-construction/20 text-construction border-construction/30">
+                        {specialty}
+                        <button
+                          type="button"
+                          onClick={() => removeSpecialty(specialty)}
+                          className="ml-2 hover:text-red-400"
+                        >
+                          <X size={12} />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="avatar_url" className="text-white">Avatar URL</Label>
-                  <Input
-                    id="avatar_url"
-                    value={formData.avatar_url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, avatar_url: e.target.value }))}
-                    placeholder="https://..."
-                    className="bg-steel border-steel-light text-white"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-white">Specialties</Label>
-                <div className="flex space-x-2">
-                  <Input
-                    value={newSpecialty}
-                    onChange={(e) => setNewSpecialty(e.target.value)}
-                    placeholder="Add specialty (e.g. Addiction Recovery, Trauma)"
-                    className="bg-steel border-steel-light text-white"
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
-                  />
-                  <Button type="button" onClick={addSpecialty} variant="outline">
-                    Add
+                
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setIsDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    disabled={isInviting}
+                  >
+                    {isInviting ? 'Processing...' : editingSpecialist ? 'Update Specialist' : 'Create & Send Invitation'}
                   </Button>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.specialties.map((specialty, index) => (
-                    <Badge key={index} className="bg-construction/20 text-construction border-construction/30">
-                      {specialty}
-                      <button
-                        type="button"
-                        onClick={() => removeSpecialty(specialty)}
-                        className="ml-2 hover:text-red-400"
-                      >
-                        <X size={12} />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-construction text-midnight hover:bg-construction/90"
-                  disabled={isInviting}
-                >
-                  {isInviting ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-midnight border-t-transparent"></div>
-                      <span>Sending...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      {editingSpecialist ? 'Update' : 'Create & Send Invitation'}
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-      {/* Specialists List with Tabs */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'active' | 'removed')} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="active" className="text-foreground">
-            Active Specialists ({specialists.length})
-          </TabsTrigger>
-          <TabsTrigger value="removed" className="text-foreground">
-            Removed Specialists ({removedSpecialists.length})
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="active" className="mt-6">
-          {loading ? (
-            <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
-              <p className="text-muted-foreground text-center">Loading specialists...</p>
-            </Card>
-          ) : (
+        {/* Specialists List */}
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'active' | 'removed')}>
+          <TabsList className="bg-steel border-steel-light">
+            <TabsTrigger value="active" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Active Specialists ({specialists.length})
+            </TabsTrigger>
+            <TabsTrigger value="removed" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Removed Specialists ({removedSpecialists.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active">
             <div className="space-y-4">
               {specialists.map((specialist) => {
-                const status = getSpecialistStatus(specialist.id);
-                const analyticsData = getSpecialistAnalytics(specialist.id);
+                const status = specialistStatuses.find(s => s.specialist_id === specialist.id);
                 const invitationStatus = getInvitationStatus(specialist);
                 
                 return (
                   <Card key={specialist.id} className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        <div className="bg-primary p-3 rounded-sm">
-                          {specialist.avatar_url ? (
-                            <img 
-                              src={specialist.avatar_url} 
-                              alt={`${specialist.first_name} ${specialist.last_name}`}
-                              className="w-8 h-8 rounded object-cover"
-                            />
-                          ) : (
-                            <Users className="text-primary-foreground" size={20} />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="relative">
+                          <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                            <span className="text-primary-foreground font-bold">
+                              {specialist.first_name[0]}{specialist.last_name[0]}
+                            </span>
+                          </div>
+                          {status?.status === 'online' && (
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"></div>
                           )}
                         </div>
                         
                         <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="font-fjalla font-bold text-card-foreground text-lg tracking-wide">
+                          <div className="flex items-center space-x-3 mb-1">
+                            <h3 className="font-bold text-card-foreground">
                               {specialist.first_name} {specialist.last_name}
                             </h3>
-                            
-                            {/* Invitation Status */}
-                            <Badge className={`${invitationStatus.color} text-xs uppercase font-oswald tracking-wide`}>
+                            <Badge className={`${invitationStatus.color} border-0`}>
                               {invitationStatus.text}
                             </Badge>
-                            
-                            {/* Real-time status */}
-                            {status && (
-                              <div className="flex items-center space-x-2">
-                                <div className={`w-3 h-3 rounded-full ${getStatusColor(status.status)}`}></div>
-                                <Badge className={`${getStatusBadge(status.status)} text-xs uppercase font-oswald tracking-wide`}>
-                                  {status.status}
-                                </Badge>
-                              </div>
+                            {specialist.email && (
+                              <Badge variant="outline" className="text-xs">
+                                {specialist.email}
+                              </Badge>
                             )}
                           </div>
                           
-                          <p className="text-muted-foreground text-sm mb-2">
-                            {specialist.years_experience} years experience
-                          </p>
-                          
-                          {specialist.bio && (
-                            <p className="text-muted-foreground text-sm mb-3 max-w-2xl">
-                              {specialist.bio}
-                            </p>
-                          )}
-                          
-                          {specialist.specialties && specialist.specialties.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {specialist.specialties.map((specialty, index) => (
-                                <Badge key={index} className="bg-primary/20 text-primary border-primary/30 text-xs">
-                                  {specialty}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                          
-                          {/* Current Activity Stats */}
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                            <div className="bg-muted/50 p-3 rounded-sm">
-                              <div className="flex items-center space-x-2">
-                                <Activity className="text-primary" size={14} />
-                                <div>
-                                  <div className="text-sm font-bold text-card-foreground">
-                                    {analyticsData?.total_sessions || 0}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Sessions</div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="bg-muted/50 p-3 rounded-sm">
-                              <div className="flex items-center space-x-2">
-                                <MessageSquare className="text-primary" size={14} />
-                                <div>
-                                  <div className="text-sm font-bold text-card-foreground">
-                                    {analyticsData?.active_sessions || 0}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Active Now</div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="bg-muted/50 p-3 rounded-sm">
-                              <div className="flex items-center space-x-2">
-                                <TrendingUp className="text-primary" size={14} />
-                                <div>
-                                  <div className="text-sm font-bold text-card-foreground">
-                                    {analyticsData?.total_messages || 0}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Messages</div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="bg-muted/50 p-3 rounded-sm">
-                              <div className="flex items-center space-x-2">
-                                <Clock className="text-primary" size={14} />
-                                <div>
-                                  <div className="text-sm font-bold text-card-foreground">
-                                    {status?.last_seen ? new Date(status.last_seen).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--'}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Last Seen</div>
-                                </div>
-                              </div>
-                            </div>
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                            <span>{specialist.years_experience} years experience</span>
+                            {specialist.specialties && specialist.specialties.length > 0 && (
+                              <span>• {specialist.specialties.join(', ')}</span>
+                            )}
                           </div>
-
-                          {/* Replace the old performance metrics section with the new real-time component */}
-                          <div className="pt-4 border-t border-muted/30">
-                            <RealTimeSpecialistMetrics specialistId={specialist.id} />
-                          </div>
-
-                          {/* Coaching Tips */}
-                          <CoachingTips specialistId={specialist.id} />
                         </div>
                       </div>
-                      
-                      <div className="flex items-start space-x-4">
-                        <div className="flex flex-col space-y-3">
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              checked={specialist.is_active}
-                              onCheckedChange={() => handleStatusToggle(specialist, 'is_active')}
-                              disabled={!specialist.is_verified}
-                              className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted scale-75"
-                            />
-                            <span className={`text-xs ${specialist.is_verified ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}>
-                              Active {!specialist.is_verified && '(requires verification)'}
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              checked={specialist.is_verified}
-                              onCheckedChange={() => handleStatusToggle(specialist, 'is_verified')}
-                              className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted scale-75"
-                            />
-                            <span className="text-xs text-muted-foreground">Verified</span>
-                          </div>
-                        </div>
-                        
+
+                      <div className="flex items-center space-x-2">
                         <div className="flex flex-col space-y-2">
                           <Button
                             onClick={() => handleEdit(specialist)}
@@ -1198,17 +805,6 @@ const PeerSpecialistManagement = () => {
                           {!specialist.activated_at && (
                             <>
                               <Button
-                                onClick={() => handleResendInvitation(specialist)}
-                                variant="outline"
-                                size="sm"
-                                className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
-                                disabled={isInviting}
-                                title="Resend invitation email"
-                              >
-                                <Send size={16} />
-                              </Button>
-                              
-                              <Button
                                 onClick={() => handleForceActivate(specialist)}
                                 variant="outline"
                                 size="sm"
@@ -1219,16 +815,6 @@ const PeerSpecialistManagement = () => {
                               </Button>
                             </>
                           )}
-                          
-                          <Button
-                            onClick={() => handleSoftDelete(specialist)}
-                            variant="outline"
-                            size="sm"
-                            className="border-red-500 text-red-500 hover:bg-red-500/10"
-                            title="Move to removed tab while preserving history"
-                          >
-                            <X size={16} />
-                          </Button>
                         </div>
                       </div>
                     </div>
@@ -1238,100 +824,55 @@ const PeerSpecialistManagement = () => {
               
               {specialists.length === 0 && (
                 <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
-                  <p className="text-muted-foreground text-center">No active specialists found. Create and invite your first specialist to get started.</p>
+                  <p className="text-muted-foreground text-center">No active specialists found.</p>
                 </Card>
               )}
             </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="removed" className="mt-6">
-          <div className="space-y-4">
-            {removedSpecialists.map((specialist) => {
-              const invitationStatus = getInvitationStatus(specialist);
-              
-              return (
-                <Card key={specialist.id} className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300 opacity-75">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        <div className="bg-muted p-3 rounded-sm">
-                          {specialist.avatar_url ? (
-                            <img 
-                              src={specialist.avatar_url} 
-                              alt={`${specialist.first_name} ${specialist.last_name}`}
-                              className="w-8 h-8 rounded object-cover grayscale"
-                            />
-                          ) : (
-                            <Users className="text-muted-foreground" size={20} />
-                          )}
-                        </div>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="font-fjalla font-bold text-muted-foreground text-lg tracking-wide">
-                              {specialist.first_name} {specialist.last_name}
-                            </h3>
-                            
-                            <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs uppercase font-oswald tracking-wide">
-                              REMOVED
-                            </Badge>
-                          </div>
-                          
-                          <p className="text-muted-foreground text-sm mb-2">
-                            {specialist.years_experience} years experience
-                          </p>
-                          
-                          {specialist.bio && (
-                            <p className="text-muted-foreground text-sm mb-3 max-w-2xl">
-                              {specialist.bio}
-                            </p>
-                          )}
-                          
-                          {specialist.specialties && specialist.specialties.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {specialist.specialties.map((specialty, index) => (
-                                <Badge key={index} className="bg-muted/20 text-muted-foreground border-muted/30 text-xs">
-                                  {specialty}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                          
-                          <p className="text-xs text-muted-foreground">
-                            Removed on: {new Date(specialist.updated_at).toLocaleDateString()}
-                          </p>
-                        </div>
+          </TabsContent>
+
+          <TabsContent value="removed">
+            <div className="space-y-4">
+              {removedSpecialists.map((specialist) => (
+                <Card key={specialist.id} className="bg-card/50 p-6 rounded-lg border-0 shadow-none transition-colors duration-300 opacity-75">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                        <span className="text-muted-foreground font-bold">
+                          {specialist.first_name[0]}{specialist.last_name[0]}
+                        </span>
                       </div>
                       
-                      <div className="flex items-start space-x-2">
-                        <Button
-                          onClick={() => handlePermanentDelete(specialist)}
-                          variant="outline"
-                          size="sm"
-                          className="border-red-500 text-red-500 hover:bg-red-500/10 min-w-[40px] bg-background"
-                          disabled={deletingSpecialistId === specialist.id}
-                          title="Permanently delete this specialist and all their data"
-                        >
-                          {deletingSpecialistId === specialist.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-500 border-t-transparent"></div>
-                          ) : (
-                            <Trash2 size={16} />
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-1">
+                          <h3 className="font-bold text-muted-foreground line-through">
+                            {specialist.first_name} {specialist.last_name}
+                          </h3>
+                          <Badge variant="outline" className="text-red-500 border-red-500">
+                            Removed
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                          <span>{specialist.years_experience} years experience</span>
+                          {specialist.specialties && specialist.specialties.length > 0 && (
+                            <span>• {specialist.specialties.join(', ')}</span>
                           )}
-                        </Button>
+                        </div>
                       </div>
                     </div>
+                  </div>
                 </Card>
-              );
-            })}
-            
-            {removedSpecialists.length === 0 && (
-              <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
-                <p className="text-muted-foreground text-center">No removed specialists found.</p>
-              </Card>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+              ))}
+              
+              {removedSpecialists.length === 0 && (
+                <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
+                  <p className="text-muted-foreground text-center">No removed specialists found.</p>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* Credentials Dialog */}
       <Dialog open={credentialsDialog.isOpen} onOpenChange={(open) => 
@@ -1423,6 +964,23 @@ const PeerSpecialistManagement = () => {
       </Dialog>
     </div>
   );
+
+  function addSpecialty() {
+    if (newSpecialty.trim() && !formData.specialties.includes(newSpecialty.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        specialties: [...prev.specialties, newSpecialty.trim()]
+      }));
+      setNewSpecialty('');
+    }
+  }
+
+  function removeSpecialty(specialty: string) {
+    setFormData(prev => ({
+      ...prev,
+      specialties: prev.specialties.filter(s => s !== specialty)
+    }));
+  }
 };
 
 export default PeerSpecialistManagement;
