@@ -451,10 +451,9 @@ const PeerSpecialistDashboard = () => {
 
       {/* Main Content */}
       <div className="flex h-[calc(100vh-4rem)] gap-4 p-4">
-        {/* Left Column - Chat Sessions and Calendar */}
-        <div className="w-1/2 flex flex-col gap-4">
-          {/* Chat Sessions Card */}
-          <Card className="h-1/2">
+        {/* Left Column - Chat Sessions Full Height */}
+        <div className="w-1/2">
+          <Card className="h-full">
             <CardHeader className="p-4 border-b">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Chat Sessions</CardTitle>
@@ -513,16 +512,6 @@ const PeerSpecialistDashboard = () => {
                     </Card>)}
                 </div>
               </ScrollArea>
-            </CardContent>
-          </Card>
-
-          {/* Calendar Card */}
-          <Card className="h-1/2">
-            <CardHeader className="p-4 border-b">
-              <CardTitle className="text-lg">Calendar & Schedule</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 h-[calc(100%-5rem)]">
-              {specialistId && <EnhancedSpecialistCalendar specialistId={specialistId} />}
             </CardContent>
           </Card>
         </div>
