@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useChatOperations, MessageData } from '@/hooks/useChatOperations';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
+import { useConnectionMonitor } from '@/hooks/useConnectionMonitor';
 import { supabase } from '@/integrations/supabase/client';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
 import ChatAppointmentScheduler from './ChatAppointmentScheduler';
@@ -79,8 +80,11 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const [sessionProposal, setSessionProposal] = useState<AppointmentProposal | null>(null);
   const [session, setSession] = useState<ChatSession>(initialSession);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connected'); // Default to connected for testing
   const [specialistId, setSpecialistId] = useState<string | null>(null);
+  
+  // Use connection monitor for proper connection tracking
+  const { connectionStatus, createChannel, forceReconnect } = useConnectionMonitor();
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const channelRef = useRef<any>(null);
@@ -225,17 +229,17 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     // Clear all message timeouts
     messageTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
     messageTimeoutsRef.current.clear();
-    setConnectionStatus('disconnected');
+    // Connection status is now managed by useConnectionMonitor
   }, []);
 
   // Enhanced real-time subscription with better session update handling
   const setupRealtimeSubscription = useCallback(() => {
     if (channelRef.current || !session?.id) return;
     logger.debug('Setting up realtime subscription for session:', session.id);
-    setConnectionStatus('connecting');
+    // Connection status is now managed by useConnectionMonitor
     reconnectAttemptsRef.current = 0;
     const channelName = `specialist-robust-chat-${session.id}-${Date.now()}`;
-    const channel = supabase.channel(channelName);
+    const channel = createChannel(channelName);
     channel.on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
@@ -318,10 +322,10 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }).subscribe(status => {
       logger.debug('Realtime subscription status:', status);
       if (status === 'SUBSCRIBED') {
-        setConnectionStatus('connected');
+        // Connection status is now managed by useConnectionMonitor
         reconnectAttemptsRef.current = 0;
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        setConnectionStatus('disconnected');
+        // Connection status is now managed by useConnectionMonitor
         scheduleReconnection();
       }
     });
@@ -332,7 +336,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const scheduleReconnection = useCallback(() => {
     if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
       logger.error('Max reconnection attempts reached');
-      setConnectionStatus('disconnected');
+      // Force reconnect using connection monitor
+      forceReconnect();
       return;
     }
     if (reconnectTimeoutRef.current) {
@@ -653,7 +658,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         
         <div className="flex items-center space-x-2">
           {/* Connection status indicator */}
-          <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500' : connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} title={`Connection: ${connectionStatus}`} />
+          <div className={`w-2 h-2 rounded-full ${connectionStatus.status === 'connected' ? 'bg-green-500' : connectionStatus.status === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} title={`Connection: ${connectionStatus.status}`} />
           
           {!isSessionEnded && <Button size="sm" variant="destructive" onClick={handleEndSession} disabled={chatOperations.loading}>
               <X size={12} className="mr-1" />
@@ -684,7 +689,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
           </div>
         </div>}
 
-      {connectionStatus === 'disconnected' && !isSessionEnded && <div className="bg-destructive/10 border-b border-destructive/20 p-3">
+      {connectionStatus.status === 'disconnected' && !isSessionEnded && <div className="bg-destructive/10 border-b border-destructive/20 p-3">
           <p className="text-destructive text-sm text-center">
             ⚠ Connection issue - Messages may be delayed
           </p>
