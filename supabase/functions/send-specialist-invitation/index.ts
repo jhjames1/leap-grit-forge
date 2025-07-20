@@ -148,7 +148,8 @@ const handler = async (req: Request): Promise<Response> => {
             years_experience: years_experience || 0,
             avatar_url: avatar_url || null,
             is_active: true,
-            invited_by_admin_id: adminId
+            invited_by_admin_id: adminId,
+            email: email
           })
           .eq("user_id", authData.user.id)
           .select()
@@ -178,7 +179,8 @@ const handler = async (req: Request): Promise<Response> => {
             avatar_url: avatar_url || null,
             is_verified: false,
             is_active: true,
-            invited_by_admin_id: adminId
+            invited_by_admin_id: adminId,
+            email: email
           })
           .select()
           .single();

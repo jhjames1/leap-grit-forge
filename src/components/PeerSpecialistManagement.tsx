@@ -45,6 +45,7 @@ interface PeerSpecialist {
   user_id: string;
   first_name: string;
   last_name: string;
+  email: string | null;
   bio: string | null;
   specialties: string[] | null;
   years_experience: number;
@@ -534,23 +535,8 @@ const PeerSpecialistManagement = () => {
 
       if (error) throw error;
       
-      // Get specialist's email using the edge function
-      let specialistEmail = 'Email not available';
-      try {
-        const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-email', {
-          body: { userId: specialist.user_id }
-        });
-        
-        if (!emailError && emailData?.email) {
-          specialistEmail = emailData.email;
-        } else {
-          console.error('Error getting user email:', emailError);
-          specialistEmail = `Contact admin for email (User ID: ${specialist.user_id})`;
-        }
-      } catch (e) {
-        console.error('Could not retrieve email:', e);
-        specialistEmail = `Contact admin for email (User ID: ${specialist.user_id})`;
-      }
+      // Use the stored email from the specialist record
+      const specialistEmail = specialist.email || 'Email not available - contact admin';
       
       // Show credentials dialog
       setCredentialsDialog({
