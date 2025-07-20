@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, User, AlertCircle, CheckCircle, XCircle, Timer, Trash2 } from 'lucide-react';
+import { Calendar, Clock, User, AlertCircle, CheckCircle, XCircle, Timer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
@@ -23,7 +24,6 @@ interface AppointmentProposal {
   responded_at?: string;
   user_first_name?: string;
   user_last_name?: string;
-  chat_session_id?: string;
   chat_sessions?: {
     status: string;
   };
@@ -36,7 +36,6 @@ interface ProposalManagementProps {
 const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId }) => {
   const [proposals, setProposals] = useState<AppointmentProposal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [withdrawing, setWithdrawing] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchProposals = async () => {
@@ -121,38 +120,18 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
   }, [specialistId, toast]);
 
   const withdrawProposal = async (proposalId: string) => {
-    setWithdrawing(proposalId);
     try {
       const { error } = await supabase
         .from('appointment_proposals')
-        .update({ 
-          status: 'withdrawn',
-          responded_at: new Date().toISOString()
-        })
+        .update({ status: 'withdrawn' })
         .eq('id', proposalId);
 
       if (error) throw error;
 
-      // Send withdrawal message to chat
-      const proposal = proposals.find(p => p.id === proposalId);
-      if (proposal?.chat_session_id) {
-        await supabase
-          .from('chat_messages')
-          .insert({
-            session_id: proposal.chat_session_id,
-            sender_id: (await supabase.auth.getUser()).data.user?.id,
-            sender_type: 'specialist',
-            message_type: 'system',
-            content: `📋 **Meeting Proposal Withdrawn**\n\nThe recurring appointment proposal "${proposal.title}" has been withdrawn by the specialist.`
-          });
-      }
-
       toast({
         title: "Success",
-        description: "Meeting proposal withdrawn successfully"
+        description: "Proposal withdrawn successfully"
       });
-
-      fetchProposals(); // Refresh the list
     } catch (error) {
       console.error('Error withdrawing proposal:', error);
       toast({
@@ -160,8 +139,6 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
         description: "Failed to withdraw proposal",
         variant: "destructive"
       });
-    } finally {
-      setWithdrawing(null);
     }
   };
 
@@ -232,19 +209,12 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
 
   return (
     <div className="space-y-6">
-      {/* Pending Proposals - Enhanced with withdraw functionality */}
+      {/* Pending Proposals */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-yellow-600" />
-              Pending Meeting Proposals ({pendingProposals.length})
-            </div>
-            {pendingProposals.length > 0 && (
-              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                Awaiting Response
-              </Badge>
-            )}
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-yellow-600" />
+            Pending Meeting Proposals ({pendingProposals.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -253,7 +223,7 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
           ) : (
             <div className="space-y-4">
               {pendingProposals.map(proposal => (
-                <div key={proposal.id} className="border rounded-lg p-4 bg-yellow-50 border-yellow-200">
+                <div key={proposal.id} className="border rounded-lg p-4 bg-yellow-50">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-primary" />
@@ -270,7 +240,7 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
                     <p className="text-sm text-muted-foreground mb-3">{proposal.description}</p>
                   )}
                   
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm mb-3">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
                       <span>{format(new Date(proposal.start_date), 'MMM d, yyyy')}</span>
@@ -285,33 +255,15 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
                     <div>
                       <strong>Sessions:</strong> {proposal.occurrences}
                     </div>
-                    <div>
-                      <strong>Duration:</strong> {proposal.duration} minutes
-                    </div>
-                    <div>
-                      <strong>Sent:</strong> {formatDistanceToNow(new Date(proposal.proposed_at), { addSuffix: true })}
-                    </div>
                   </div>
                   
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      variant="destructive"
+                      variant="outline"
                       onClick={() => withdrawProposal(proposal.id)}
-                      disabled={withdrawing === proposal.id}
-                      className="gap-2"
                     >
-                      {withdrawing === proposal.id ? (
-                        <>
-                          <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-                          Withdrawing...
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="w-3 h-3" />
-                          Withdraw Proposal
-                        </>
-                      )}
+                      Withdraw
                     </Button>
                   </div>
                 </div>

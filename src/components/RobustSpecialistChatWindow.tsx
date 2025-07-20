@@ -10,9 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
-import RecurringAppointmentScheduler from './RecurringAppointmentScheduler';
+import ChatAppointmentScheduler from './ChatAppointmentScheduler';
 import { format } from 'date-fns';
-
 interface ChatSession {
   id: string;
   user_id: string;
@@ -26,7 +25,6 @@ interface ChatSession {
   last_activity?: string;
   end_reason?: string;
 }
-
 interface AppointmentProposal {
   id: string;
   title: string;
@@ -41,7 +39,6 @@ interface AppointmentProposal {
   proposed_at: string;
   responded_at?: string;
 }
-
 interface OptimisticMessage {
   id: string;
   content: string;
@@ -53,7 +50,6 @@ interface OptimisticMessage {
   isOptimistic: true;
   status: 'sending' | 'failed' | 'timeout';
 }
-
 interface RealMessage {
   id: string;
   content: string;
@@ -65,15 +61,12 @@ interface RealMessage {
   is_read?: boolean;
   isOptimistic?: false;
 }
-
 type ChatMessage = OptimisticMessage | RealMessage;
-
 interface RobustSpecialistChatWindowProps {
   session: ChatSession;
   onClose: () => void;
   onSessionUpdate?: (updatedSession: ChatSession) => void;
 }
-
 const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   session: initialSession,
   onClose,
@@ -96,7 +89,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
 
   // Add ref to track session updates
   const sessionUpdateTimeoutRef = useRef<NodeJS.Timeout>();
-
   const {
     user
   } = useAuth();
@@ -104,7 +96,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     toast
   } = useToast();
   const chatOperations = useChatOperations();
-
   const MESSAGE_TIMEOUT = 15000;
   const RECONNECT_INTERVAL = 5000;
   const MAX_RECONNECT_ATTEMPTS = 5;
@@ -114,39 +105,28 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   useEffect(() => {
     const getSpecialistId = async () => {
       if (!user) return;
-
       try {
         const {
           data,
           error
-        } = await supabase
-          .from('peer_specialists')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-
+        } = await supabase.from('peer_specialists').select('id').eq('user_id', user.id).single();
         if (error) throw error;
-
         setSpecialistId(data.id);
       } catch (err) {
         logger.error('Failed to get specialist ID:', err);
       }
     };
-
     getSpecialistId();
   }, [user]);
 
   // Load initial messages and session data
   const loadMessages = useCallback(async () => {
     if (!user) return;
-
     try {
       logger.debug('Loading messages for session:', session.id);
       const sessionData = await chatOperations.getSessionWithMessages(session.id);
-
       if (sessionData && !sessionData.error) {
         setMessages(sessionData.messages || []);
-
         if (sessionData.session) {
           const updatedSession = sessionData.session as ChatSession;
           setSession(updatedSession);
@@ -171,14 +151,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       const {
         data,
         error
-      } = await supabase
-        .from('appointment_proposals')
-        .select('*')
-        .eq('chat_session_id', session.id)
-        .maybeSingle();
-
+      } = await supabase.from('appointment_proposals').select('*').eq('chat_session_id', session.id).maybeSingle();
       if (error) throw error;
-
       setSessionProposal(data as AppointmentProposal | null);
     } catch (err) {
       logger.error('Error loading session proposal:', err);
@@ -227,7 +201,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
-
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = undefined;
@@ -242,127 +215,94 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   // Enhanced real-time subscription with better session update handling
   const setupRealtimeSubscription = useCallback(() => {
     if (channelRef.current || !session?.id) return;
-
     logger.debug('Setting up realtime subscription for session:', session.id);
     setConnectionStatus('connecting');
     reconnectAttemptsRef.current = 0;
-
     const channelName = `specialist-robust-chat-${session.id}-${Date.now()}`;
     const channel = supabase.channel(channelName);
+    channel.on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'chat_messages',
+      filter: `session_id=eq.${session.id}`
+    }, payload => {
+      logger.debug('New message received via realtime:', payload);
+      const newMessage = payload.new as RealMessage;
+      setMessages(prev => {
+        // Remove matching optimistic message
+        const withoutOptimistic = prev.filter(msg => !(msg.isOptimistic && msg.content === newMessage.content && msg.sender_type === newMessage.sender_type && Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 30000));
 
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `session_id=eq.${session.id}`
-        },
-        (payload) => {
-          logger.debug('New message received via realtime:', payload);
-          const newMessage = payload.new as RealMessage;
-
-          setMessages(prev => {
-            // Remove matching optimistic message
-            const withoutOptimistic = prev.filter(msg =>
-              !(msg.isOptimistic &&
-                msg.content === newMessage.content &&
-                msg.sender_type === newMessage.sender_type &&
-                Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 30000)
-            );
-
-            // Avoid duplicates
-            if (withoutOptimistic.find(msg => msg.id === newMessage.id)) {
-              return withoutOptimistic;
-            }
-
-            // Add new message and sort
-            const updated = [...withoutOptimistic, newMessage].sort((a, b) =>
-              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            );
-
-            return updated;
-          });
-
-          // Clear timeouts for successful messages
-          messageTimeoutsRef.current.forEach((timeout, messageId) => {
-            clearTimeout(timeout);
-            messageTimeoutsRef.current.delete(messageId);
-          });
+        // Avoid duplicates
+        if (withoutOptimistic.find(msg => msg.id === newMessage.id)) {
+          return withoutOptimistic;
         }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'chat_sessions',
-          filter: `id=eq.${session.id}`
-        },
-        async (payload) => {
-          logger.debug('Session updated via realtime:', payload);
-          const updatedSession = payload.new as ChatSession;
 
-          // Fetch user details if not present
-          if (!updatedSession.user_first_name && updatedSession.user_id) {
-            try {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('first_name, last_name')
-                .eq('user_id', updatedSession.user_id)
-                .single();
-
-              if (profile) {
-                updatedSession.user_first_name = profile.first_name;
-                updatedSession.user_last_name = profile.last_name;
-              }
-            } catch (err) {
-              logger.debug('Could not fetch user profile:', err);
-            }
-          }
-
-          // Handle the session update
-          handleSessionUpdate(updatedSession);
-
-          // Show appropriate toasts for status changes
-          if (updatedSession.status === 'active' && session.status === 'waiting') {
-            toast({
-              title: "Session Activated",
-              description: "You are now connected to the user."
-            });
-          } else if (updatedSession.status === 'ended' && session.status !== 'ended') {
-            toast({
-              title: "Session Ended",
-              description: "This chat session has been ended."
-            });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'appointment_proposals',
-          filter: `chat_session_id=eq.${session.id}`
-        },
-        () => {
-          loadSessionProposal();
-        }
-      )
-      .subscribe(status => {
-        logger.debug('Realtime subscription status:', status);
-
-        if (status === 'SUBSCRIBED') {
-          setConnectionStatus('connected');
-          reconnectAttemptsRef.current = 0;
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          setConnectionStatus('disconnected');
-          scheduleReconnection();
-        }
+        // Add new message and sort
+        const updated = [...withoutOptimistic, newMessage].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        return updated;
       });
 
+      // Clear timeouts for successful messages
+      messageTimeoutsRef.current.forEach((timeout, messageId) => {
+        clearTimeout(timeout);
+        messageTimeoutsRef.current.delete(messageId);
+      });
+    }).on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'chat_sessions',
+      filter: `id=eq.${session.id}`
+    }, async payload => {
+      logger.debug('Session updated via realtime:', payload);
+      const updatedSession = payload.new as ChatSession;
+
+      // Fetch user details if not present
+      if (!updatedSession.user_first_name && updatedSession.user_id) {
+        try {
+          const {
+            data: profile
+          } = await supabase.from('profiles').select('first_name, last_name').eq('user_id', updatedSession.user_id).single();
+          if (profile) {
+            updatedSession.user_first_name = profile.first_name;
+            updatedSession.user_last_name = profile.last_name;
+          }
+        } catch (err) {
+          logger.debug('Could not fetch user profile:', err);
+        }
+      }
+
+      // Handle the session update
+      handleSessionUpdate(updatedSession);
+
+      // Show appropriate toasts for status changes
+      if (updatedSession.status === 'active' && session.status === 'waiting') {
+        toast({
+          title: "Session Activated",
+          description: "You are now connected to the user."
+        });
+      } else if (updatedSession.status === 'ended' && session.status !== 'ended') {
+        toast({
+          title: "Session Ended",
+          description: "This chat session has been ended."
+        });
+      }
+    }).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'appointment_proposals',
+      filter: `chat_session_id=eq.${session.id}`
+    }, () => {
+      loadSessionProposal();
+    }).subscribe(status => {
+      logger.debug('Realtime subscription status:', status);
+      if (status === 'SUBSCRIBED') {
+        setConnectionStatus('connected');
+        reconnectAttemptsRef.current = 0;
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        setConnectionStatus('disconnected');
+        scheduleReconnection();
+      }
+    });
     channelRef.current = channel;
   }, [session.id, handleSessionUpdate, loadSessionProposal, toast]);
 
@@ -373,15 +313,12 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       setConnectionStatus('disconnected');
       return;
     }
-
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
     }
-
     const delay = Math.min(RECONNECT_INTERVAL * Math.pow(2, reconnectAttemptsRef.current), 30000);
     reconnectAttemptsRef.current++;
     logger.debug(`Scheduling reconnection attempt ${reconnectAttemptsRef.current} in ${delay}ms`);
-
     reconnectTimeoutRef.current = setTimeout(() => {
       cleanupRealtimeSubscription();
       setupRealtimeSubscription();
@@ -391,7 +328,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   // Enhanced claim session with immediate state update
   const claimSession = useCallback(async () => {
     if (!user || !specialistId || session.status !== 'waiting') return;
-
     try {
       logger.debug('Claiming session:', session.id);
 
@@ -410,19 +346,19 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       }
 
       // Use the secure claim_chat_session function
-      const { data, error } = await supabase.rpc('claim_chat_session', {
+      const {
+        data,
+        error
+      } = await supabase.rpc('claim_chat_session', {
         p_session_id: session.id,
         p_specialist_user_id: user.id
       });
-
       if (error) throw error;
-
       const result = data as unknown as {
         success: boolean;
         error?: string;
         session?: ChatSession;
       };
-
       if (!result?.success) {
         // Revert optimistic update on failure
         setSession(session);
@@ -431,7 +367,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         }
         throw new Error(result?.error || 'Failed to claim session');
       }
-
       const confirmedSession = result.session!;
       logger.debug('Session claim confirmed:', confirmedSession);
 
@@ -440,7 +375,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       if (onSessionUpdate) {
         onSessionUpdate(confirmedSession);
       }
-
       toast({
         title: "Session Claimed",
         description: "You are now connected to this user."
@@ -453,7 +387,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       if (onSessionUpdate) {
         onSessionUpdate(session);
       }
-
       toast({
         title: "Error",
         description: "Failed to claim session. Please try again.",
@@ -496,36 +429,30 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
 
     // Set timeout for message
     const timeoutId = setTimeout(() => {
-      setMessages(prev => prev.map(msg =>
-        msg.id === optimisticMessage.id && msg.isOptimistic
-          ? { ...msg, status: 'timeout' as const }
-          : msg
-      ));
+      setMessages(prev => prev.map(msg => msg.id === optimisticMessage.id && msg.isOptimistic ? {
+        ...msg,
+        status: 'timeout' as const
+      } : msg));
     }, MESSAGE_TIMEOUT);
-
     messageTimeoutsRef.current.set(optimisticMessage.id, timeoutId);
-
     try {
       const result = await chatOperations.sendMessage(session.id, {
         ...messageData,
         sender_type: 'specialist'
       });
-
       if (!result.success) {
         // Mark message as failed
-        setMessages(prev => prev.map(msg =>
-          msg.id === optimisticMessage.id && msg.isOptimistic
-            ? { ...msg, status: 'failed' as const }
-            : msg
-        ));
+        setMessages(prev => prev.map(msg => msg.id === optimisticMessage.id && msg.isOptimistic ? {
+          ...msg,
+          status: 'failed' as const
+        } : msg));
       }
     } catch (err) {
       logger.error('Failed to send message:', err);
-      setMessages(prev => prev.map(msg =>
-        msg.id === optimisticMessage.id && msg.isOptimistic
-          ? { ...msg, status: 'failed' as const }
-          : msg
-      ));
+      setMessages(prev => prev.map(msg => msg.id === optimisticMessage.id && msg.isOptimistic ? {
+        ...msg,
+        status: 'failed' as const
+      } : msg));
     }
   }, [user, specialistId, session.id, session.status, chatOperations, claimSession]);
 
@@ -535,12 +462,10 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     if (!failedMessage) return;
 
     // Update status to sending
-    setMessages(prev => prev.map(msg =>
-      msg.id === messageId && msg.isOptimistic
-        ? { ...msg, status: 'sending' as const }
-        : msg
-    ));
-
+    setMessages(prev => prev.map(msg => msg.id === messageId && msg.isOptimistic ? {
+      ...msg,
+      status: 'sending' as const
+    } : msg));
     try {
       const messageData: MessageData = {
         content: failedMessage.content,
@@ -548,18 +473,16 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         message_type: failedMessage.message_type,
         metadata: failedMessage.metadata
       };
-
       await sendMessage(messageData);
 
       // Remove the failed message since sendMessage will create a new optimistic one
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
     } catch (err) {
       logger.error('Failed to retry message:', err);
-      setMessages(prev => prev.map(msg =>
-        msg.id === messageId && msg.isOptimistic
-          ? { ...msg, status: 'failed' as const }
-          : msg
-      ));
+      setMessages(prev => prev.map(msg => msg.id === messageId && msg.isOptimistic ? {
+        ...msg,
+        status: 'failed' as const
+      } : msg));
     }
   }, [messages, sendMessage]);
 
@@ -587,14 +510,12 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   // Handle ending session with correct parameters
   const handleEndSession = async () => {
     if (!user || !specialistId) return;
-
     try {
       logger.debug('Ending session with correct parameters', {
         sessionId: session.id,
         userId: user.id,
         specialistId: specialistId
       });
-
       const {
         data,
         error
@@ -603,15 +524,12 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         p_user_id: user.id,
         p_specialist_id: specialistId
       });
-
       if (error) throw error;
-
       const response = data as {
         success: boolean;
         session?: any;
         error?: string;
       };
-
       if (response?.success) {
         toast({
           title: "Session Ended",
@@ -654,7 +572,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       loadSessionProposal();
       setupRealtimeSubscription();
     }
-
     return cleanupRealtimeSubscription;
   }, [user, loadMessages, loadSessionProposal, setupRealtimeSubscription, cleanupRealtimeSubscription]);
 
@@ -671,7 +588,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       claimSession();
     }
   }, [session.status, specialistId, claimSession]);
-
   const getSessionAge = () => {
     const age = Date.now() - new Date(session.started_at).getTime();
     const minutes = Math.floor(age / (1000 * 60));
@@ -691,8 +607,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     isInputEnabled
   });
 
-  return (
-    <Card className="h-[600px] flex flex-col bg-card border border-border shadow-sm">
+  return <Card className="h-[600px] flex flex-col bg-card border border-border shadow-sm">
       {/* Enhanced Header with better session info display */}
       <div className="bg-card border-b border-border p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -707,12 +622,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               <div className={`w-2 h-2 rounded-full ${session.status === 'active' ? 'bg-green-500' : session.status === 'waiting' ? 'bg-yellow-500' : 'bg-gray-500'}`}></div>
               <p className="text-muted-foreground text-sm">
                 Session #{session.session_number} • {getSessionAge()}
-                {session.specialist_id && session.status === 'active' && (
-                  <span className="ml-1 text-green-600">• Active</span>
-                )}
-                {session.status === 'waiting' && (
-                  <span className="ml-1 text-yellow-600">• Waiting</span>
-                )}
+                {session.specialist_id && session.status === 'active' && <span className="ml-1 text-green-600">• Active</span>}
+                {session.status === 'waiting' && <span className="ml-1 text-yellow-600">• Waiting</span>}
               </p>
             </div>
           </div>
@@ -722,12 +633,10 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
           {/* Connection status indicator */}
           <div className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500' : connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} title={`Connection: ${connectionStatus}`} />
           
-          {!isSessionEnded && (
-            <Button size="sm" variant="destructive" onClick={handleEndSession} disabled={chatOperations.loading}>
+          {!isSessionEnded && <Button size="sm" variant="destructive" onClick={handleEndSession} disabled={chatOperations.loading}>
               <X size={12} className="mr-1" />
               End Chat
-            </Button>
-          )}
+            </Button>}
           
           <Button size="sm" variant="ghost" onClick={onClose}>
             <X size={12} />
@@ -736,16 +645,13 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       </div>
 
       {/* Enhanced Status Messages */}
-      {isSessionEnded && (
-        <div className="bg-muted/50 border-b border-border p-3">
+      {isSessionEnded && <div className="bg-muted/50 border-b border-border p-3">
           <p className="text-muted-foreground text-sm text-center">
             This chat session has ended. {session.end_reason && `Reason: ${session.end_reason}`}
           </p>
-        </div>
-      )}
+        </div>}
 
-      {session.status === 'waiting' && (
-        <div className="bg-yellow-50 border-b border-yellow-200 p-3">
+      {session.status === 'waiting' && <div className="bg-yellow-50 border-b border-yellow-200 p-3">
           <div className="text-center">
             <p className="text-yellow-800 text-sm font-medium mb-2">
               This session is waiting to be claimed
@@ -754,33 +660,25 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               Claim Session
             </Button>
           </div>
-        </div>
-      )}
+        </div>}
 
-      {connectionStatus === 'disconnected' && !isSessionEnded && (
-        <div className="bg-destructive/10 border-b border-destructive/20 p-3">
+      {connectionStatus === 'disconnected' && !isSessionEnded && <div className="bg-destructive/10 border-b border-destructive/20 p-3">
           <p className="text-destructive text-sm text-center">
             ⚠ Connection issue - Messages may be delayed
           </p>
-        </div>
-      )}
+        </div>}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length > 0 ? (
-          messages.map(msg => (
-            <div
-              key={msg.id}
-              className={`flex flex-col ${msg.sender_type === 'specialist' ? 'items-end' : msg.message_type === 'system' ? 'items-center' : 'items-start'}`}
-            >
+        {messages.length > 0 ? messages.map(msg => <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'specialist' ? 'items-end' : msg.message_type === 'system' ? 'items-center' : 'items-start'}`}>
               {/* Message Bubble */}
               <div className={`max-w-[80%] rounded-2xl p-3 ${
-                msg.sender_type === 'specialist'
-                  ? 'bg-gray-100 text-gray-900'
-                  : msg.message_type === 'system'
-                    ? 'bg-muted text-muted-foreground border border-border'
+                msg.sender_type === 'specialist' 
+                  ? 'bg-gray-100 text-gray-900' 
+                  : msg.message_type === 'system' 
+                    ? 'bg-muted text-muted-foreground border border-border' 
                     : 'bg-green-100 text-gray-900'
-              } ${msg.isOptimistic && msg.status === 'failed' ? 'ring-1 ring-red-300' : ''} ${msg.isOptimistic && msg.status === 'timeout' ? 'ring-1 ring-yellow-300' : ''}`}>
+                } ${msg.isOptimistic && msg.status === 'failed' ? 'ring-1 ring-red-300' : ''} ${msg.isOptimistic && msg.status === 'timeout' ? 'ring-1 ring-yellow-300' : ''}`}>
                 <p className="text-sm leading-relaxed">{msg.content}</p>
               </div>
               
@@ -827,54 +725,49 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
                   </div>
                 )}
               </div>
-            </div>
-          ))
-        ) : (
-          <div className="text-center text-muted-foreground py-8">
+            </div>) : <div className="text-center text-muted-foreground py-8">
             <p className="text-sm">No messages yet. Send a message to start the conversation.</p>
-          </div>
-        )}
+          </div>}
         
         <div ref={messagesEndRef} />
       </div>
 
       {/* Proposal Section */}
-      {sessionProposal && sessionProposal.status === 'pending' && (
-        <div className="border-t border-border p-3">
-          <AppointmentProposalHandler
-            message={{
-              id: sessionProposal.id,
-              content: '',
-              metadata: {
-                action_type: 'recurring_appointment_proposal',
-                proposal_data: {
-                  id: sessionProposal.id,
-                  title: sessionProposal.title,
-                  description: sessionProposal.description || '',
-                  start_date: sessionProposal.start_date,
-                  start_time: sessionProposal.start_time,
-                  duration: sessionProposal.duration.toString(),
-                  frequency: sessionProposal.frequency,
-                  occurrences: sessionProposal.occurrences.toString()
-                }
-              }
-            }}
-            isUser={false}
-            onResponse={() => loadSessionProposal()}
-          />
-        </div>
-      )}
+      {sessionProposal && sessionProposal.status === 'pending' && <div className="border-t border-border p-3">
+          <AppointmentProposalHandler message={{
+        id: sessionProposal.id,
+        content: '',
+        metadata: {
+          action_type: 'recurring_appointment_proposal',
+          proposal_data: {
+            id: sessionProposal.id,
+            title: sessionProposal.title,
+            description: sessionProposal.description || '',
+            start_date: sessionProposal.start_date,
+            start_time: sessionProposal.start_time,
+            duration: sessionProposal.duration.toString(),
+            frequency: sessionProposal.frequency,
+            occurrences: sessionProposal.occurrences.toString()
+          }
+        }
+      }} isUser={false} onResponse={() => loadSessionProposal()} />
+        </div>}
 
-      {/* Input Section - Updated to use RecurringAppointmentScheduler */}
+      {/* Input Section - Simplified conditions */}
       {!isSessionEnded && (
         <div className="border-t border-border">
           {/* Action Buttons */}
           <div className="flex gap-2 p-3 border-b border-border">
-            <RecurringAppointmentScheduler
-              specialistId={specialistId || ''}
-              userId={session.user_id}
-              chatSessionId={session.id}
-            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowScheduler(true)}
+              className="gap-2"
+              disabled={!isInputEnabled}
+            >
+              <Calendar className="w-4 h-4" />
+              Schedule Meeting
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -922,8 +815,13 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
           </div>
         </div>
       )}
-    </Card>
-  );
+
+      {/* Scheduler Modal */}
+      {showScheduler && <ChatAppointmentScheduler isOpen={showScheduler} onClose={() => setShowScheduler(false)} specialistId={specialistId || ''} userId={session.user_id} chatSessionId={session.id} onScheduled={() => {
+      setShowScheduler(false);
+      loadSessionProposal();
+    }} />}
+    </Card>;
 };
 
 export default RobustSpecialistChatWindow;
