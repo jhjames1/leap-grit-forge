@@ -450,120 +450,127 @@ const PeerSpecialistDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex h-[calc(100vh-4rem)] gap-4 p-4">
-        {/* Left Column - Chat Sessions */}
-        <div className="w-1/2">
-          <Card className="h-1/2 mb-4">
-            <CardHeader className="p-4 border-b">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Chat Sessions</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Badge variant={connectionStatus === 'connected' ? 'default' : 'secondary'} className={connectionStatus === 'connected' ? 'bg-green-600' : ''}>
-                    {connectionStatus === 'connected' ? 'Connected' : 'Connecting...'}
-                  </Badge>
-                  {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
+      <div className="flex flex-col h-[calc(100vh-4rem)] gap-4 p-4">
+        {/* Top Row - Chat Sessions and Active Chat Session */}
+        <div className="flex gap-4 h-1/2">
+          {/* Chat Sessions Card */}
+          <div className="w-1/2">
+            <Card className="h-full">
+              <CardHeader className="p-4 border-b">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Chat Sessions</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={connectionStatus === 'connected' ? 'default' : 'secondary'} className={connectionStatus === 'connected' ? 'bg-green-600' : ''}>
+                      {connectionStatus === 'connected' ? 'Connected' : 'Connecting...'}
+                    </Badge>
+                    {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0 h-[calc(100%-5rem)]">
-              <ScrollArea className="h-full">
-                <div className="p-3 space-y-2">
-                  {sessions.length === 0 ? <Card className="p-4">
-                      <div className="text-center text-muted-foreground">
-                        <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
-                        <p className="text-xs">No active sessions</p>
-                        <p className="text-xs mt-1">Waiting sessions will appear here</p>
-                      </div>
-                    </Card> : sessions.map(session => <Card key={session.id} className={`cursor-pointer transition-all hover:shadow-md ${selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''}`} onClick={() => setSelectedSession(session)}>
-                      <CardContent className="p-3">
-                        <div className="flex items-start justify-between mb-1">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Badge variant={session.status === 'waiting' ? 'secondary' : session.status === 'active' ? 'default' : 'outline'} className={session.status === 'waiting' ? 'bg-yellow-100 text-yellow-800' : session.status === 'active' ? 'bg-green-100 text-green-800' : ''}>
-                                {session.status === 'waiting' ? 'Waiting' : session.status === 'active' ? 'Active' : 'Ended'}
-                              </Badge>
-                              <span className="text-sm font-medium">#{session.session_number}</span>
-                            </div>
-                            
-                            <p className="font-medium text-sm">
-                              {session.user_first_name && session.user_last_name ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.` : 'Anonymous User'}
-                            </p>
-                            
-                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {format(new Date(session.started_at), 'HH:mm')}
+              </CardHeader>
+              <CardContent className="p-0 h-[calc(100%-5rem)]">
+                <ScrollArea className="h-full">
+                  <div className="p-3 space-y-2">
+                    {sessions.length === 0 ? <Card className="p-4">
+                        <div className="text-center text-muted-foreground">
+                          <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                          <p className="text-xs">No active sessions</p>
+                          <p className="text-xs mt-1">Waiting sessions will appear here</p>
+                        </div>
+                      </Card> : sessions.map(session => <Card key={session.id} className={`cursor-pointer transition-all hover:shadow-md ${selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''}`} onClick={() => setSelectedSession(session)}>
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between mb-1">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant={session.status === 'waiting' ? 'secondary' : session.status === 'active' ? 'default' : 'outline'} className={session.status === 'waiting' ? 'bg-yellow-100 text-yellow-800' : session.status === 'active' ? 'bg-green-100 text-green-800' : ''}>
+                                  {session.status === 'waiting' ? 'Waiting' : session.status === 'active' ? 'Active' : 'Ended'}
+                                </Badge>
+                                <span className="text-sm font-medium">#{session.session_number}</span>
                               </div>
-                              {session.status === 'ended' && session.ended_at && <div className="flex items-center gap-1">
-                                  <CheckCircle className="w-3 h-3" />
-                                  Ended {format(new Date(session.ended_at), 'HH:mm')}
-                                </div>}
+                              
+                              <p className="font-medium text-sm">
+                                {session.user_first_name && session.user_last_name ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.` : 'Anonymous User'}
+                              </p>
+                              
+                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {format(new Date(session.started_at), 'HH:mm')}
+                                </div>
+                                {session.status === 'ended' && session.ended_at && <div className="flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Ended {format(new Date(session.ended_at), 'HH:mm')}
+                                  </div>}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        
-                        {session.status === 'waiting' && <Button size="sm" className="w-full mt-1 h-7 text-xs" onClick={e => {
-                      e.stopPropagation();
-                      setSelectedSession(session);
-                    }}>
-                            Join Session
-                          </Button>}
-                      </CardContent>
-                    </Card>)}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                          
+                          {session.status === 'waiting' && <Button size="sm" className="w-full mt-1 h-7 text-xs" onClick={e => {
+                        e.stopPropagation();
+                        setSelectedSession(session);
+                      }}>
+                              Join Session
+                            </Button>}
+                        </CardContent>
+                      </Card>)}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Calendar Card - Full Height */}
-          <Card className="h-1/2">
-            
+          {/* Active Chat Session Card */}
+          <div className="w-1/2">
+            <Card className="h-full">
+              <CardHeader className="p-4 border-b">
+                <CardTitle className="text-lg">Active Chat Session</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 h-[calc(100%-5rem)]">
+                {selectedSession ? <RobustSpecialistChatWindow session={selectedSession} onClose={() => setSelectedSession(null)} onSessionUpdate={handleSessionUpdate} /> : <div className="flex-1 flex items-center justify-center h-full bg-muted/20">
+                    <div className="text-center text-muted-foreground">
+                      <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <h3 className="text-base font-medium mb-1">No Session Selected</h3>
+                      <p className="text-sm">Select a session to start chatting</p>
+                    </div>
+                  </div>}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Bottom Row - Calendar Full Width */}
+        <div className="h-1/2">
+          <Card className="h-full">
+            <CardHeader className="p-4 border-b">
+              <CardTitle className="text-lg">Calendar & Schedule</CardTitle>
+            </CardHeader>
             <CardContent className="p-0 h-[calc(100%-5rem)]">
               {specialistId && <EnhancedSpecialistCalendar specialistId={specialistId} />}
             </CardContent>
           </Card>
         </div>
 
-        {/* Right Column - Active Chat Session */}
-        <div className="w-1/2">
-          <Card className="h-full">
-            <CardHeader className="p-4 border-b">
-              <CardTitle className="text-lg">Active Chat Session</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 h-[calc(100%-5rem)]">
-              {selectedSession ? <RobustSpecialistChatWindow session={selectedSession} onClose={() => setSelectedSession(null)} onSessionUpdate={handleSessionUpdate} /> : <div className="flex-1 flex items-center justify-center h-full bg-muted/20">
-                  <div className="text-center text-muted-foreground">
-                    <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <h3 className="text-base font-medium mb-1">No Session Selected</h3>
-                    <p className="text-sm">Select a session to start chatting</p>
+        {/* Chat History Modal */}
+        {specialistId && <ChatHistory isOpen={showChatHistory} onClose={() => setShowChatHistory(false)} specialistId={specialistId} />}
+
+        {/* End Chat Message Popup */}
+        {showEndChatMessage && <div className="fixed top-4 right-4 z-50">
+            <Card className="bg-card border shadow-lg max-w-sm">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground mb-1">Chat Ended</p>
+                    <p className="text-xs text-muted-foreground">
+                      This chat has ended and has been moved to the chat history.
+                    </p>
                   </div>
-                </div>}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Chat History Modal */}
-      {specialistId && <ChatHistory isOpen={showChatHistory} onClose={() => setShowChatHistory(false)} specialistId={specialistId} />}
-
-      {/* End Chat Message Popup */}
-      {showEndChatMessage && <div className="fixed top-4 right-4 z-50">
-          <Card className="bg-card border shadow-lg max-w-sm">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground mb-1">Chat Ended</p>
-                  <p className="text-xs text-muted-foreground">
-                    This chat has ended and has been moved to the chat history.
-                  </p>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-2" onClick={() => setShowEndChatMessage(false)}>
+                    ×
+                  </Button>
                 </div>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-2" onClick={() => setShowEndChatMessage(false)}>
-                  ×
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>}
+              </CardContent>
+            </Card>
+          </div>}
+      </div>
     </div>;
 };
 export default PeerSpecialistDashboard;
