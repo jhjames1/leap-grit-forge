@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { RefreshCw, MessageSquare, BarChart3, Settings, Activity, Clock, CheckCircle, User, History, TrendingUp } from 'lucide-react';
+import { RefreshCw, MessageSquare, BarChart3, Settings, Activity, Clock, CheckCircle, User, History, TrendingUp, Heart } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import RobustSpecialistChatWindow from './RobustSpecialistChatWindow';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
@@ -34,6 +34,11 @@ interface ChatSession {
   updated_at: string;
 }
 
+interface SpecialistProfile {
+  first_name: string;
+  last_name: string;
+}
+
 const PeerSpecialistDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -42,6 +47,7 @@ const PeerSpecialistDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   const [specialistId, setSpecialistId] = useState<string | null>(null);
+  const [specialistProfile, setSpecialistProfile] = useState<SpecialistProfile | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
@@ -50,6 +56,7 @@ const PeerSpecialistDashboard = () => {
   const [showEndChatMessage, setShowEndChatMessage] = useState(false);
   const [completedToday, setCompletedToday] = useState(0);
   const [avgResponseTime, setAvgResponseTime] = useState<number | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   // Use refs to track component state and prevent stale closures
   const currentSessionsRef = useRef<ChatSession[]>([]);
@@ -66,9 +73,73 @@ const PeerSpecialistDashboard = () => {
     selectedSessionRef.current = selectedSession;
   }, [selectedSession]);
 
-  // Calculate session metrics
+  // Update current time every 5 seconds for waiting time calculations
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Calculate session metrics with waiting times
   const activeSessions = sessions.filter(s => s.status === 'active' && s.specialist_id === specialistId).length;
-  const waitingSessions = sessions.filter(s => s.status === 'waiting' && !s.specialist_id).length;
+  const waitingSessions = sessions.filter(s => s.status === 'waiting' && !s.specialist_id);
+  
+  // Find longest waiting session and calculate if any have been waiting > 45 seconds
+  const longestWaitingSession = waitingSessions.reduce((longest, session) => {
+    const waitTime = currentTime.getTime() - new Date(session.started_at).getTime();
+    const longestWaitTime = longest ? currentTime.getTime() - new Date(longest.started_at).getTime() : 0;
+    return waitTime > longestWaitTime ? session : longest;
+  }, null as ChatSession | null);
+
+  const hasLongWaitingSessions = longestWaitingSession ? 
+    (currentTime.getTime() - new Date(longestWaitingSession.started_at).getTime()) > 45000 : false;
+
+  // Get waiting time in seconds for a session
+  const getWaitingTimeSeconds = (session: ChatSession) => {
+    return Math.floor((currentTime.getTime() - new Date(session.started_at).getTime()) / 1000);
+  };
+
+  // Format waiting time for display
+  const formatWaitingTime = (seconds: number) => {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+  };
+
+  // Motivational messages for specialists
+  const motivationalMessages = [
+    "Your compassion and expertise are changing lives today.",
+    "Every conversation you have plants seeds of hope and healing.",
+    "You are a beacon of strength for those on their recovery journey.",
+    "Your dedication to peer support makes a lasting difference.",
+    "Thank you for being a guiding light in someone's darkest moments.",
+    "Your lived experience and wisdom are invaluable gifts to others.",
+    "Each person you help creates ripples of positive change.",
+    "Your courage to share your story inspires others to heal."
+  ];
+
+  const [currentMotivationalMessage] = useState(() => 
+    motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)]
+  );
+
+  // Load specialist profile data
+  const loadSpecialistProfile = useCallback(async () => {
+    if (!specialistId) return;
+    try {
+      const { data, error } = await supabase
+        .from('peer_specialists')
+        .select('first_name, last_name')
+        .eq('id', specialistId)
+        .single();
+      
+      if (error) throw error;
+      setSpecialistProfile(data);
+    } catch (error) {
+      logger.error('Error loading specialist profile:', error);
+    }
+  }, [specialistId]);
 
   // Load completed sessions count for today
   const loadTodayStats = useCallback(async () => {
@@ -159,6 +230,13 @@ const PeerSpecialistDashboard = () => {
     getSpecialistId();
   }, [user]);
 
+  // Load specialist profile when specialistId is available
+  useEffect(() => {
+    if (specialistId) {
+      loadSpecialistProfile();
+    }
+  }, [specialistId, loadSpecialistProfile]);
+
   // Enhanced session update handler with better state synchronization
   const handleSessionUpdate = useCallback((updatedSession: ChatSession) => {
     logger.debug('Session update received:', updatedSession);
@@ -236,7 +314,7 @@ const PeerSpecialistDashboard = () => {
       
       if (waitingError) throw waitingError;
 
-      // Get specialist's own active sessions only (remove 'ended' from filter)
+      // Get specialist's own active sessions only
       const { data: ownSessions, error: ownError } = await supabase
         .from('chat_sessions')
         .select('*')
@@ -566,12 +644,29 @@ const PeerSpecialistDashboard = () => {
         </div>
       </div>
 
+      {/* Welcome Section */}
+      {specialistProfile && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b px-6 py-4">
+          <div className="flex items-center gap-3">
+            <Heart className="h-6 w-6 text-red-500" />
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">
+                Welcome, {specialistProfile.first_name} {specialistProfile.last_name}
+              </h2>
+              <p className="text-sm text-muted-foreground italic">
+                {currentMotivationalMessage}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content - Flexible scrollable layout */}
       <div className="flex-1 p-4 space-y-4 overflow-y-auto">
         {/* Metric Cards Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Active Chats Card */}
-          <Card>
+          <Card className={`min-h-[120px] ${activeSessions > 0 ? 'bg-green-50 border-green-200' : ''}`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -584,20 +679,33 @@ const PeerSpecialistDashboard = () => {
           </Card>
 
           {/* Waiting Chats Card */}
-          <Card>
+          <Card className={`min-h-[120px] ${
+            waitingSessions.length > 0 
+              ? hasLongWaitingSessions 
+                ? 'bg-red-50 border-red-200' 
+                : 'bg-yellow-50 border-yellow-200'
+              : ''
+          }`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Waiting Chats</p>
-                  <p className="text-2xl font-bold text-yellow-600">{waitingSessions}</p>
+                  <p className={`text-2xl font-bold ${hasLongWaitingSessions ? 'text-red-600' : 'text-yellow-600'}`}>
+                    {waitingSessions.length}
+                  </p>
+                  {hasLongWaitingSessions && longestWaitingSession && (
+                    <p className="text-xs text-red-600 mt-1">
+                      Longest: {formatWaitingTime(getWaitingTimeSeconds(longestWaitingSession))}
+                    </p>
+                  )}
                 </div>
-                <Clock className="h-8 w-8 text-yellow-600" />
+                <Clock className={`h-8 w-8 ${hasLongWaitingSessions ? 'text-red-600' : 'text-yellow-600'}`} />
               </div>
             </CardContent>
           </Card>
 
           {/* Completed Today Card */}
-          <Card>
+          <Card className="min-h-[120px]">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -610,7 +718,7 @@ const PeerSpecialistDashboard = () => {
           </Card>
 
           {/* Average Response Time Card */}
-          <Card>
+          <Card className="min-h-[120px]">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -650,63 +758,86 @@ const PeerSpecialistDashboard = () => {
                       </div>
                     </Card>
                   ) : (
-                    sessions.map(session => (
-                      <Card
-                        key={session.id}
-                        className={`cursor-pointer transition-all hover:shadow-md ${
-                          selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''
-                        }`}
-                        onClick={() => setSelectedSession(session)}
-                      >
-                        <CardContent className="p-3">
-                          <div className="flex items-start justify-between mb-1">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Badge
-                                  variant={session.status === 'waiting' ? 'secondary' : session.status === 'active' ? 'default' : 'outline'}
-                                  className={session.status === 'waiting' ? 'bg-yellow-100 text-yellow-800' : session.status === 'active' ? 'bg-green-100 text-green-800' : ''}
-                                >
-                                  {session.status === 'waiting' ? 'Waiting' : session.status === 'active' ? 'Active' : 'Ended'}
-                                </Badge>
-                                <span className="text-sm font-medium">#{session.session_number}</span>
-                              </div>
-                              
-                              <p className="font-medium text-sm">
-                                {session.user_first_name && session.user_last_name
-                                  ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.`
-                                  : 'Anonymous User'}
-                              </p>
-                              
-                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {format(new Date(session.started_at), 'h:mm a')}
+                    sessions.map(session => {
+                      const waitingTime = session.status === 'waiting' ? getWaitingTimeSeconds(session) : 0;
+                      const isLongestWaiting = longestWaitingSession?.id === session.id;
+                      const isLongWaiting = waitingTime > 45;
+                      
+                      return (
+                        <Card
+                          key={session.id}
+                          className={`cursor-pointer transition-all hover:shadow-md ${
+                            selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''
+                          } ${isLongestWaiting && isLongWaiting ? 'bg-red-50 border-red-200' : ''}`}
+                          onClick={() => setSelectedSession(session)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between mb-1">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge
+                                    variant={session.status === 'waiting' ? 'secondary' : session.status === 'active' ? 'default' : 'outline'}
+                                    className={`
+                                      ${session.status === 'waiting' 
+                                        ? isLongWaiting 
+                                          ? 'bg-red-100 text-red-800' 
+                                          : 'bg-yellow-100 text-yellow-800' 
+                                        : session.status === 'active' 
+                                          ? 'bg-green-100 text-green-800' 
+                                          : ''
+                                      }
+                                    `}
+                                  >
+                                    {session.status === 'waiting' ? 'Waiting' : session.status === 'active' ? 'Active' : 'Ended'}
+                                  </Badge>
+                                  <span className="text-sm font-medium">#{session.session_number}</span>
+                                  {session.status === 'waiting' && (
+                                    <span className={`text-xs px-2 py-1 rounded ${
+                                      isLongWaiting ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+                                    }`}>
+                                      {formatWaitingTime(waitingTime)}
+                                      {isLongestWaiting && isLongWaiting && ' (longest)'}
+                                    </span>
+                                  )}
                                 </div>
-                                {session.status === 'ended' && session.ended_at && (
+                                
+                                <p className="font-medium text-sm">
+                                  {session.user_first_name && session.user_last_name
+                                    ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.`
+                                    : 'Anonymous User'}
+                                </p>
+                                
+                                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                                   <div className="flex items-center gap-1">
-                                    <CheckCircle className="w-3 h-3" />
-                                    Ended {format(new Date(session.ended_at), 'h:mm a')}
+                                    <Clock className="w-3 h-3" />
+                                    {format(new Date(session.started_at), 'h:mm a')}
                                   </div>
-                                )}
+                                  {session.status === 'ended' && session.ended_at && (
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle className="w-3 h-3" />
+                                      Ended {format(new Date(session.ended_at), 'h:mm a')}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          {session.status === 'waiting' && (
-                            <Button
-                              size="sm"
-                              className="w-full mt-1 h-7 text-xs"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedSession(session);
-                              }}
-                            >
-                              Join Session
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))
+                            
+                            {session.status === 'waiting' && (
+                              <Button
+                                size="sm"
+                                className="w-full mt-1 h-7 text-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedSession(session);
+                                }}
+                              >
+                                Join Session
+                              </Button>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })
                   )}
                 </div>
               </ScrollArea>

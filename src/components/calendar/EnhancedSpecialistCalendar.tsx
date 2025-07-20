@@ -37,12 +37,12 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Set business hours (8 AM to 5 PM)
+  // Set business hours (7 AM to 6 PM)
   const minTime = new Date();
-  minTime.setHours(8, 0, 0);
+  minTime.setHours(7, 0, 0);
   
   const maxTime = new Date();
-  maxTime.setHours(17, 0, 0);
+  maxTime.setHours(18, 0, 0);
 
   const loadCalendarData = async () => {
     setLoading(true);
@@ -296,7 +296,7 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
                     </h2>
                     
                     <div className="text-sm text-muted-foreground">
-                      Business Hours: 8:00 AM - 5:00 PM
+                      Business Hours: 7:00 AM - 6:00 PM
                     </div>
                   </div>
                 )
@@ -355,7 +355,7 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Available Hours Today</p>
                 <p className="text-2xl font-bold">
-                  {9 - events.filter(e => 
+                  {11 - events.filter(e => 
                     (e.type === 'appointment' || e.type === 'blocked') && 
                     e.start.toDateString() === new Date().toDateString()
                   ).length}h
