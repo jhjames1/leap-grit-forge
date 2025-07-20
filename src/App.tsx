@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "next-themes";
+import { SafeToastProvider } from "@/components/SafeToastProvider";
 import Index from "./pages/Index";
 import AdminPortal from "./pages/AdminPortal";
 import PeerSpecialistPortal from "./pages/PeerSpecialistPortal";
@@ -31,29 +32,29 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <LanguageProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <LanguageProvider>
             <TooltipProvider>
-              <BrowserRouter>
-                <Toaster />
-                <Sonner />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/admin" element={<AdminPortal />} />
-                  <Route 
-                    path="/specialist" 
-                    element={
-                      <ErrorBoundary>
-                        <PeerSpecialistPortal />
-                      </ErrorBoundary>
-                    } 
-                  />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
+              <SafeToastProvider>
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/admin" element={<AdminPortal />} />
+                    <Route 
+                      path="/specialist" 
+                      element={
+                        <ErrorBoundary>
+                          <PeerSpecialistPortal />
+                        </ErrorBoundary>
+                      } 
+                    />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </SafeToastProvider>
             </TooltipProvider>
-          </ThemeProvider>
-        </LanguageProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

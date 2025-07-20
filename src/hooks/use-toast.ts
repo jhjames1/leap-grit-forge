@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type {
@@ -169,7 +170,30 @@ function toast({ ...props }: Toast) {
 }
 
 function useToast() {
-  const [state, setState] = React.useState<State>(memoryState)
+  // Add defensive check for React availability
+  if (typeof React === 'undefined' || !React.useState) {
+    console.warn('React not available, returning fallback toast functions');
+    return {
+      toasts: [],
+      toast: () => ({ id: '', dismiss: () => {}, update: () => {} }),
+      dismiss: () => {},
+    };
+  }
+
+  let state: State;
+  let setState: React.Dispatch<React.SetStateAction<State>>;
+
+  try {
+    [state, setState] = React.useState<State>(memoryState);
+  } catch (error) {
+    console.error('Failed to initialize toast state:', error);
+    // Return fallback implementation
+    return {
+      toasts: [],
+      toast: () => ({ id: '', dismiss: () => {}, update: () => {} }),
+      dismiss: () => {},
+    };
+  }
 
   React.useEffect(() => {
     listeners.push(setState)
