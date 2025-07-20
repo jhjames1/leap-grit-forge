@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RefreshCw, MessageSquare, Calendar, BarChart3, Settings, Users, Phone, Video, Clock, User, CheckCircle, AlertCircle } from 'lucide-react';
 import RobustSpecialistChatWindow from './RobustSpecialistChatWindow';
-import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
+import { EnhancedSpecialistCalendar } from './calendar/EnhancedSpecialistCalendar';
 import SpecialistPerformanceMetrics from './SpecialistPerformanceMetrics';
 import SpecialistSettings from './SpecialistSettings';
 import PeerPerformanceDashboard from './PeerPerformanceDashboard';
@@ -145,7 +145,10 @@ const PeerSpecialistDashboard = () => {
       // Get waiting sessions (unassigned) and active sessions assigned to this specialist
       const { data: waitingSessions, error: waitingError } = await supabase
         .from('chat_sessions')
-        .select('*')
+        .select(`
+          *,
+          profiles!inner(first_name, last_name)
+        `)
         .eq('status', 'waiting')
         .is('specialist_id', null)
         .order('started_at', { ascending: false });
@@ -155,7 +158,10 @@ const PeerSpecialistDashboard = () => {
       // Get specialist's own active/ended sessions
       const { data: ownSessions, error: ownError } = await supabase
         .from('chat_sessions')
-        .select('*')
+        .select(`
+          *,
+          profiles!inner(first_name, last_name)
+        `)
         .eq('specialist_id', specialistId)
         .in('status', ['active', 'ended'])
         .order('started_at', { ascending: false })
@@ -163,31 +169,18 @@ const PeerSpecialistDashboard = () => {
 
       if (ownError) throw ownError;
 
-      // Get user profiles for all sessions
-      const allSessions = [...(waitingSessions || []), ...(ownSessions || [])];
-      const userIds = allSessions.map(session => session.user_id);
-      
-      let userProfiles: any[] = [];
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, first_name, last_name')
-          .in('user_id', userIds);
-        userProfiles = profiles || [];
-      }
-
-      // Combine sessions with user data
-      const sessionsWithUserData: ChatSession[] = allSessions.map(session => {
-        const userProfile = userProfiles.find(p => p.user_id === session.user_id);
-        return {
-          ...session,
-          user_first_name: userProfile?.first_name,
-          user_last_name: userProfile?.last_name
-        } as ChatSession;
-      });
+      // Combine and format sessions
+      const allSessions = [
+        ...(waitingSessions || []),
+        ...(ownSessions || [])
+      ].map(session => ({
+        ...session,
+        user_first_name: session.profiles?.first_name,
+        user_last_name: session.profiles?.last_name
+      }));
 
       // Sort by most recent activity
-      const sortedSessions = sessionsWithUserData.sort((a, b) => 
+      const sortedSessions = allSessions.sort((a, b) => 
         new Date(b.updated_at || b.started_at).getTime() - 
         new Date(a.updated_at || a.started_at).getTime()
       );
@@ -535,35 +528,22 @@ const PeerSpecialistDashboard = () => {
               </TabsContent>
 
               <TabsContent value="calendar">
-                {specialistId && <EnhancedSpecialistCalendar specialistId={specialistId} />}
+                <EnhancedSpecialistCalendar />
               </TabsContent>
 
               <TabsContent value="metrics">
                 <div className="space-y-6">
-                  {specialistId && <SpecialistPerformanceMetrics specialistId={specialistId} />}
+                  <SpecialistPerformanceMetrics />
                   <PeerPerformanceDashboard onRefresh={handleRefresh} />
                 </div>
               </TabsContent>
 
               <TabsContent value="activity">
-                {specialistId && (
-                  <SpecialistActivityLog 
-                    isOpen={true}
-                    onClose={() => {}}
-                    specialistId={specialistId}
-                  />
-                )}
+                <SpecialistActivityLog />
               </TabsContent>
 
               <TabsContent value="settings">
-                {specialistId && (
-                  <SpecialistSettings 
-                    isOpen={true}
-                    onClose={() => {}}
-                    specialist={null}
-                    onUpdateSpecialist={() => {}}
-                  />
-                )}
+                <SpecialistSettings />
               </TabsContent>
             </Tabs>
           </div>
