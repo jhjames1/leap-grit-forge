@@ -9,7 +9,9 @@ interface SpecialistPerformanceMetricsProps {
 }
 
 const SpecialistPerformanceMetrics = ({ specialistId }: SpecialistPerformanceMetricsProps) => {
+  console.log('SpecialistPerformanceMetrics - specialistId:', specialistId);
   const { metrics, loading } = useSpecialistMetrics(specialistId);
+  console.log('SpecialistPerformanceMetrics - metrics:', metrics, 'loading:', loading);
 
   const formatResponseTime = (seconds: number | undefined): string => {
     if (!seconds) return '0s';
@@ -19,6 +21,7 @@ const SpecialistPerformanceMetrics = ({ specialistId }: SpecialistPerformanceMet
     return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
   };
 
+  console.log('SpecialistPerformanceMetrics - in loading state for specialistId:', specialistId);
   if (loading) {
     return (
       <div className="space-y-2">
@@ -52,6 +55,17 @@ const SpecialistPerformanceMetrics = ({ specialistId }: SpecialistPerformanceMet
     !isMetricBelowGoal(displayMetrics.avg_user_rating, 'AVG_USER_RATING') &&
     !isMetricBelowGoal(displayMetrics.avg_response_time_seconds, 'AVG_RESPONSE_TIME_SECONDS') &&
     !isMetricBelowGoal(displayMetrics.avg_streak_impact, 'AVG_STREAK_IMPACT');
+
+  console.log('SpecialistPerformanceMetrics - displayMetrics:', displayMetrics);
+  
+  if (!specialistId) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-muted-foreground">Live Performance Metrics</p>
+        <p className="text-xs text-muted-foreground">No specialist ID provided</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
