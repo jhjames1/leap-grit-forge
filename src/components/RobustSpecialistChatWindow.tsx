@@ -678,16 +678,29 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length > 0 ? messages.map(msg => <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'specialist' ? 'items-end' : msg.message_type === 'system' ? 'items-center' : 'items-start'}`}>
-              {/* Message Bubble */}
-              <div className={`max-w-[80%] rounded-2xl p-3 ${
-                msg.sender_type === 'specialist' 
-                  ? 'bg-gray-100 text-gray-900' 
-                  : msg.message_type === 'system' 
-                    ? 'bg-muted text-muted-foreground border border-border' 
-                    : 'bg-green-100 text-gray-900'
-                } ${msg.isOptimistic && msg.status === 'failed' ? 'ring-1 ring-red-300' : ''} ${msg.isOptimistic && msg.status === 'timeout' ? 'ring-1 ring-yellow-300' : ''}`}>
-                <p className="text-sm leading-relaxed">{msg.content}</p>
-              </div>
+              {/* Check if this is an appointment proposal message */}
+              {msg.message_type === 'system' && msg.metadata?.action_type === 'appointment_proposal' ? (
+                <div className="w-full max-w-md">
+                  <AppointmentProposalHandler 
+                    message={msg} 
+                    isUser={false} 
+                    onResponse={() => loadSessionProposal()} 
+                  />
+                </div>
+              ) : (
+                <>
+                  {/* Regular Message Bubble */}
+                  <div className={`max-w-[80%] rounded-2xl p-3 ${
+                    msg.sender_type === 'specialist' 
+                      ? 'bg-gray-100 text-gray-900' 
+                      : msg.message_type === 'system' 
+                        ? 'bg-muted text-muted-foreground border border-border' 
+                        : 'bg-green-100 text-gray-900'
+                    } ${msg.isOptimistic && msg.status === 'failed' ? 'ring-1 ring-red-300' : ''} ${msg.isOptimistic && msg.status === 'timeout' ? 'ring-1 ring-yellow-300' : ''}`}>
+                    <p className="text-sm leading-relaxed">{msg.content}</p>
+                  </div>
+                </>
+              )}
               
               {/* Timestamp and Status Row */}
               <div className="flex items-center gap-2 mt-1 px-1">
