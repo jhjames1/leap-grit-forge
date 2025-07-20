@@ -548,7 +548,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         .insert({
           session_id: currentSession.id,
           sender_id: user.id,
-          sender_type: 'system',
+          sender_type: 'specialist',
           message_type: 'text',
           content: 'This chat session has been ended by the specialist. Thank you for using our service.'
         });
