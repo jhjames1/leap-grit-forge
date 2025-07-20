@@ -3,9 +3,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import SpecialistLogin from '@/components/SpecialistLogin';
 import PeerSpecialistDashboard from '@/components/PeerSpecialistDashboard';
+import ChatErrorBoundary from '@/components/ChatErrorBoundary';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { logger } from '@/utils/logger';
 
 const PeerSpecialistPortal = () => {
   const { user, loading } = useAuth();
@@ -25,7 +27,7 @@ const PeerSpecialistPortal = () => {
       return;
     }
 
-    console.log('🔍 Checking specialist status for user:', user.id);
+    logger.debug('Checking specialist status for user', { userId: user.id });
     isCheckingRef.current = true;
     setIsLoading(true);
     setError(null);
@@ -40,21 +42,34 @@ const PeerSpecialistPortal = () => {
         .eq('is_verified', true)
         .single();
 
-      console.log('📋 Specialist check result:', { specialistData, error });
+      logger.debug('Specialist check result', { specialistData, error });
 
       if (!mountedRef.current) return; // Component unmounted, don't update state
 
       if (!error && specialistData) {
-        console.log('✅ User is verified specialist');
+        logger.debug('User is verified specialist');
         setIsVerifiedSpecialist(true);
+        
+        // Log portal access
+        await supabase
+          .from('user_activity_logs')
+          .insert({
+            user_id: user.id,
+            action: 'portal_access',
+            type: 'specialist_portal',
+            details: JSON.stringify({
+              specialist_id: specialistData.id,
+              access_time: new Date().toISOString()
+            })
+          });
       } else {
-        console.log('❌ User is not verified specialist');
+        logger.debug('User is not verified specialist', { error });
         setIsVerifiedSpecialist(false);
       }
       
       setHasChecked(true);
     } catch (error) {
-      console.error('❌ Error checking specialist status:', error);
+      logger.error('Error checking specialist status', error);
       if (mountedRef.current) {
         setIsVerifiedSpecialist(false);
         setHasChecked(true);
@@ -66,13 +81,16 @@ const PeerSpecialistPortal = () => {
       }
       isCheckingRef.current = false;
     }
-  }, [user?.id]); // Only depend on user.id to prevent recreation loops
+  }, [user?.id]);
 
   useEffect(() => {
     mountedRef.current = true;
     
     if (!loading && user && !hasChecked) {
-      console.log('👤 User state ready, checking specialist status:', { user: user?.id, loading });
+      logger.debug('User state ready, checking specialist status', { 
+        userId: user?.id, 
+        loading 
+      });
       checkSpecialistStatus();
     } else if (!loading && !user) {
       // User is not authenticated, stop loading
@@ -86,13 +104,40 @@ const PeerSpecialistPortal = () => {
   }, [user?.id, loading, hasChecked, checkSpecialistStatus]);
 
   const handleLogin = useCallback(() => {
-    console.log('🔄 Login handler called');
+    logger.debug('Login handler called');
     // Reset states and re-check
     setIsVerifiedSpecialist(false);
     setHasChecked(false);
     setError(null);
     isCheckingRef.current = false;
   }, []);
+
+  const handleError = useCallback((error: Error, errorInfo: any) => {
+    logger.error('Portal error caught by boundary', {
+      error: error.message,
+      stack: error.stack,
+      errorInfo
+    });
+
+    // Log error to database for monitoring
+    if (user?.id) {
+      supabase
+        .from('user_activity_logs')
+        .insert({
+          user_id: user.id,
+          action: 'portal_error',
+          type: 'error',
+          details: JSON.stringify({
+            error: error.message,
+            stack: error.stack,
+            timestamp: new Date().toISOString()
+          })
+        })
+        .catch(logError => {
+          logger.error('Failed to log portal error', logError);
+        });
+    }
+  }, [user?.id]);
 
   // Show error state if there's an error
   if (error) {
@@ -115,19 +160,28 @@ const PeerSpecialistPortal = () => {
   if (loading || (isLoading && !hasChecked)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-construction" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-construction mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading specialist portal...</p>
+        </div>
       </div>
     );
   }
 
   // Show login if no user or not verified specialist
   if (!user || !isVerifiedSpecialist) {
-    return <SpecialistLogin onLogin={handleLogin} onBack={() => window.history.back()} />;
+    return (
+      <ChatErrorBoundary onError={handleError}>
+        <SpecialistLogin onLogin={handleLogin} onBack={() => window.history.back()} />
+      </ChatErrorBoundary>
+    );
   }
 
   return (
     <ErrorBoundary>
-      <PeerSpecialistDashboard />
+      <ChatErrorBoundary onError={handleError}>
+        <PeerSpecialistDashboard />
+      </ChatErrorBoundary>
     </ErrorBoundary>
   );
 };
