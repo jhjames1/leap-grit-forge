@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -346,7 +347,16 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
       throw new Error('No specialist found for user');
     }
 
-    // Send to database
+    // CRITICAL FIX: Activate session FIRST if it's waiting and unassigned
+    if (currentSession.status === 'waiting' && !currentSession.specialist_id) {
+      logger.debug('Activating session before sending message');
+      await activateSession(specialistData.id);
+      
+      // Wait a moment for the session state to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Now send the message to database
     const { error } = await supabase
       .from('chat_messages')
       .insert({
@@ -358,11 +368,6 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
       });
 
     if (error) throw error;
-
-    // Update session status if it's waiting
-    if (currentSession.status === 'waiting') {
-      await activateSession(specialistData.id);
-    }
   };
 
   const activateSession = async (specialistId: string) => {
