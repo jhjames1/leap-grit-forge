@@ -181,6 +181,8 @@ const PeerSpecialistDashboard = () => {
     setActiveSession(null);
   };
 
+  console.log('Dashboard render state:', { user: !!user, specialist: !!specialist, loading, error, sessionsCount: sessions.length });
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
