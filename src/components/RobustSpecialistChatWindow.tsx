@@ -151,7 +151,14 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       const {
         data,
         error
-      } = await supabase.from('appointment_proposals').select('*').eq('chat_session_id', session.id).maybeSingle();
+      } = await supabase
+        .from('appointment_proposals')
+        .select('*')
+        .eq('chat_session_id', session.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       if (error) throw error;
       setSessionProposal(data as AppointmentProposal | null);
     } catch (err) {
