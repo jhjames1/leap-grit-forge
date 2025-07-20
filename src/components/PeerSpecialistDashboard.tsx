@@ -47,6 +47,7 @@ const PeerSpecialistDashboard = () => {
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
+  const [showEndChatMessage, setShowEndChatMessage] = useState(false);
 
   // Use refs to track component state and prevent stale closures
   const currentSessionsRef = useRef<ChatSession[]>([]);
@@ -128,14 +129,18 @@ const PeerSpecialistDashboard = () => {
         description: `Session #${updatedSession.session_number} is now active.`,
       });
     } else if (updatedSession.status === 'ended') {
-      toast({
-        title: "Session Ended",
-        description: `Session #${updatedSession.session_number} has ended.`,
-      });
+      // Remove ended sessions from the active list
+      setSessions(prevSessions => prevSessions.filter(s => s.id !== updatedSession.id));
       
-      // Close the chat window if it's the selected session
+      // Close the chat window if it's the selected session and show popup
       if (selectedSessionRef.current?.id === updatedSession.id) {
         setSelectedSession(null);
+        setShowEndChatMessage(true);
+        
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+          setShowEndChatMessage(false);
+        }, 3000);
       }
     }
   }, [specialistId, toast]);
@@ -618,6 +623,7 @@ const PeerSpecialistDashboard = () => {
                 {selectedSession ? (
                   <RobustSpecialistChatWindow
                     session={selectedSession}
+                    onClose={() => setSelectedSession(null)}
                     onSessionUpdate={handleSessionUpdate}
                   />
                 ) : (
@@ -654,6 +660,32 @@ const PeerSpecialistDashboard = () => {
           onClose={() => setShowChatHistory(false)}
           specialistId={specialistId}
         />
+      )}
+
+      {/* End Chat Message Popup */}
+      {showEndChatMessage && (
+        <div className="fixed top-4 right-4 z-50">
+          <Card className="bg-card border shadow-lg max-w-sm">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground mb-1">Chat Ended</p>
+                  <p className="text-xs text-muted-foreground">
+                    This chat has ended and has been moved to the chat history.
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 ml-2"
+                  onClick={() => setShowEndChatMessage(false)}
+                >
+                  ×
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
