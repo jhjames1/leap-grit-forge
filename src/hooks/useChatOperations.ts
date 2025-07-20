@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,6 +28,7 @@ export interface ChatOperationsHook {
   getSessionWithMessages: (sessionId: string) => Promise<any>;
   checkDuplicate: (sessionId: string, content: string) => Promise<boolean>;
   retryOperation: (operation: () => Promise<ChatOperationResult>) => Promise<ChatOperationResult>;
+  activateSession: (sessionId: string, specialistId: string) => Promise<ChatOperationResult>;
 }
 
 const MAX_RETRIES = 3;
@@ -152,15 +154,24 @@ export const useChatOperations = (): ChatOperationsHook => {
     
     try {
       const result = await executeWithRetry(async () => {
-        logger.debug('Sending message to session:', sessionId);
+        logger.debug('Sending message to session:', sessionId, {
+          sender_type: messageData.sender_type,
+          content: messageData.content?.substring(0, 50) + '...'
+        });
+        
+        // If this is a specialist message, ensure we have proper sender_type
+        const finalMessageData = {
+          ...messageData,
+          sender_type: messageData.sender_type || 'user'
+        };
         
         const { data, error } = await supabase.rpc('send_message_atomic', {
           p_session_id: sessionId,
           p_sender_id: user.id,
-          p_sender_type: messageData.sender_type || 'user',
-          p_content: messageData.content,
-          p_message_type: messageData.message_type || 'text',
-          p_metadata: messageData.metadata || null
+          p_sender_type: finalMessageData.sender_type,
+          p_content: finalMessageData.content,
+          p_message_type: finalMessageData.message_type || 'text',
+          p_metadata: finalMessageData.metadata || null
         });
 
         if (error) throw error;
@@ -192,12 +203,10 @@ export const useChatOperations = (): ChatOperationsHook => {
             });
             break;
           default:
-            toast({
-              title: "Failed to Send Message",
-              description: result.error_message || "Could not send message",
-              variant: "destructive",
-            });
+            logger.error('Message send failed:', result);
         }
+      } else {
+        logger.debug('Message sent successfully:', result.data);
       }
 
       return result;
@@ -206,6 +215,56 @@ export const useChatOperations = (): ChatOperationsHook => {
       setLoading(false);
     }
   }, [user, executeWithRetry, toast]);
+
+  const activateSession = useCallback(async (
+    sessionId: string,
+    specialistId: string
+  ): Promise<ChatOperationResult> => {
+    if (!user) {
+      return {
+        success: false,
+        error_code: 'AUTH_REQUIRED',
+        error_message: 'User must be authenticated'
+      };
+    }
+
+    setLoading(true);
+    
+    try {
+      logger.debug('Activating session:', { sessionId, specialistId });
+      
+      const { data, error } = await supabase
+        .from('chat_sessions')
+        .update({ 
+          status: 'active',
+          specialist_id: specialistId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', sessionId)
+        .eq('status', 'waiting') // Only activate waiting sessions
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      logger.info('Session activated successfully:', data);
+      
+      return {
+        success: true,
+        data: data
+      };
+      
+    } catch (err) {
+      logger.error('Failed to activate session:', err);
+      return {
+        success: false,
+        error_code: 'ACTIVATION_FAILED',
+        error_message: err instanceof Error ? err.message : 'Failed to activate session'
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   const endSession = useCallback(async (
     sessionId: string, 
@@ -317,6 +376,7 @@ export const useChatOperations = (): ChatOperationsHook => {
     endSession,
     getSessionWithMessages,
     checkDuplicate,
-    retryOperation
+    retryOperation,
+    activateSession
   };
 };
