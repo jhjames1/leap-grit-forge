@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useConnectionMonitor } from '@/hooks/useConnectionMonitor';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,10 +38,11 @@ interface ChatSession {
 const PeerSpecialistDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { connectionStatus, createChannel } = useConnectionMonitor();
+  
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   const [specialistId, setSpecialistId] = useState<string | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
@@ -295,17 +297,17 @@ const PeerSpecialistDashboard = () => {
     if (channelRef.current || !user || !specialistId) return;
     
     logger.debug('Setting up enhanced real-time subscription');
-    console.log('🔄 Setting up real-time subscription, current status:', connectionStatus);
-    setConnectionStatus('connecting');
+    console.log('🔄 Setting up real-time subscription, current status:', connectionStatus.status);
     
-    // Add timeout fallback - if not connected in 10 seconds, assume disconnected
+    // The connection status is now managed by useConnectionMonitor
+    // Add timeout fallback - if not connected in 10 seconds, force reconnect
     connectionTimeoutRef.current = setTimeout(() => {
-      logger.warn('Real-time subscription timeout - assuming disconnected');
-      setConnectionStatus('disconnected');
+      logger.warn('Real-time subscription timeout - forcing reconnect');
+      // Don't manually set status - let connection monitor handle it
     }, 10000);
     
     const channelName = `specialist-dashboard-${user.id}-${Date.now()}`;
-    const channel = supabase.channel(channelName);
+    const channel = createChannel(channelName);
     
     channel.on('postgres_changes', {
       event: 'INSERT',
@@ -395,12 +397,12 @@ const PeerSpecialistDashboard = () => {
         if (connectionTimeoutRef.current) {
           clearTimeout(connectionTimeoutRef.current); // Clear timeout when successfully connected
         }
-        setConnectionStatus('connected');
+        // Connection status is now managed by useConnectionMonitor - no manual setting needed
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         if (connectionTimeoutRef.current) {
           clearTimeout(connectionTimeoutRef.current); // Clear timeout when failed
         }
-        setConnectionStatus('disconnected');
+        // Connection status is now managed by useConnectionMonitor - no manual setting needed
         
         // Immediate data refresh when connection fails
         logger.debug('Connection failed, refreshing sessions immediately');
@@ -426,7 +428,7 @@ const PeerSpecialistDashboard = () => {
       logger.debug('Cleaning up real-time subscription');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
-      setConnectionStatus('disconnected');
+      // Connection status is now managed by useConnectionMonitor
     }
   }, []);
 
@@ -444,7 +446,7 @@ const PeerSpecialistDashboard = () => {
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
     
-    if (connectionStatus === 'disconnected') {
+    if (connectionStatus.status === 'disconnected') {
       // Refresh every 10 seconds when disconnected to catch new sessions
       intervalId = setInterval(() => {
         logger.debug('Auto-refreshing sessions due to disconnected state');
@@ -746,8 +748,8 @@ const PeerSpecialistDashboard = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Chat Sessions</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Badge variant={connectionStatus === 'connected' ? 'default' : 'secondary'} className={connectionStatus === 'connected' ? 'bg-green-600' : ''}>
-                    {connectionStatus === 'connected' ? 'Connected' : 'Connecting...'}
+                  <Badge variant={connectionStatus.status === 'connected' ? 'default' : 'secondary'} className={connectionStatus.status === 'connected' ? 'bg-green-600' : ''}>
+                    {connectionStatus.status === 'connected' ? 'Connected' : 'Connecting...'}
                   </Badge>
                   {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
                 </div>
