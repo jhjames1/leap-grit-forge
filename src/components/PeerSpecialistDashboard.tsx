@@ -56,6 +56,7 @@ const PeerSpecialistDashboard = () => {
   const currentSessionsRef = useRef<ChatSession[]>([]);
   const selectedSessionRef = useRef<ChatSession | null>(null);
   const channelRef = useRef<any>(null);
+  const connectionTimeoutRef = useRef<NodeJS.Timeout>();
   const isInitializedRef = useRef(false);
 
   // Keep refs synchronized with state
@@ -294,10 +295,11 @@ const PeerSpecialistDashboard = () => {
     if (channelRef.current || !user || !specialistId) return;
     
     logger.debug('Setting up enhanced real-time subscription');
+    console.log('🔄 Setting up real-time subscription, current status:', connectionStatus);
     setConnectionStatus('connecting');
     
     // Add timeout fallback - if not connected in 10 seconds, assume disconnected
-    const connectionTimeout = setTimeout(() => {
+    connectionTimeoutRef.current = setTimeout(() => {
       logger.warn('Real-time subscription timeout - assuming disconnected');
       setConnectionStatus('disconnected');
     }, 10000);
@@ -387,12 +389,17 @@ const PeerSpecialistDashboard = () => {
         }));
       }
     }).subscribe(status => {
+      console.log('🔗 Real-time subscription status received:', status);
       logger.debug('Real-time subscription status:', status);
       if (status === 'SUBSCRIBED') {
-        clearTimeout(connectionTimeout); // Clear timeout when successfully connected
+        if (connectionTimeoutRef.current) {
+          clearTimeout(connectionTimeoutRef.current); // Clear timeout when successfully connected
+        }
         setConnectionStatus('connected');
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        clearTimeout(connectionTimeout); // Clear timeout when failed
+        if (connectionTimeoutRef.current) {
+          clearTimeout(connectionTimeoutRef.current); // Clear timeout when failed
+        }
         setConnectionStatus('disconnected');
         
         // Immediate data refresh when connection fails
