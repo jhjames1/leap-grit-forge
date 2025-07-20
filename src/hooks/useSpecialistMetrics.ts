@@ -243,7 +243,7 @@ export const useSpecialistMetrics = (specialistId: string) => {
       supabase.removeChannel(ratingsChannel);
       clearInterval(intervalId);
     };
-  }, [specialistId, fetchLiveMetrics, lastFetched]);
+  }, [specialistId, fetchLiveMetrics]);
 
   return { 
     metrics, 
