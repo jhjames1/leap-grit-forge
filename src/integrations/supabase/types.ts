@@ -319,6 +319,7 @@ export type Database = {
       chat_sessions: {
         Row: {
           created_at: string
+          end_reason: string | null
           ended_at: string | null
           id: string
           last_activity: string | null
@@ -331,6 +332,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          end_reason?: string | null
           ended_at?: string | null
           id?: string
           last_activity?: string | null
@@ -343,6 +345,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          end_reason?: string | null
           ended_at?: string | null
           id?: string
           last_activity?: string | null
