@@ -18,7 +18,6 @@ import ChatHistory from './ChatHistory';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { format } from 'date-fns';
-
 interface ChatSession {
   id: string;
   user_id: string;
@@ -33,7 +32,6 @@ interface ChatSession {
   created_at: string;
   updated_at: string;
 }
-
 const PeerSpecialistDashboard = () => {
   const {
     user
@@ -141,7 +139,6 @@ const PeerSpecialistDashboard = () => {
       }
     }
   }, [specialistId, toast]);
-
   const loadSessions = async () => {
     if (!user) return;
     setIsLoading(true);
@@ -157,11 +154,11 @@ const PeerSpecialistDashboard = () => {
       });
       if (waitingError) throw waitingError;
 
-      // Get specialist's own ACTIVE sessions only (no ended sessions)
+      // Get specialist's own active/ended sessions
       const {
         data: ownSessions,
         error: ownError
-      } = await supabase.from('chat_sessions').select('*').eq('specialist_id', specialistId).eq('status', 'active').order('started_at', {
+      } = await supabase.from('chat_sessions').select('*').eq('specialist_id', specialistId).in('status', ['active', 'ended']).order('started_at', {
         ascending: false
       }).limit(20);
       if (ownError) throw ownError;
@@ -183,16 +180,10 @@ const PeerSpecialistDashboard = () => {
         } as ChatSession;
       });
 
-      // Sort by most recent activity and filter out any ended sessions that might have slipped through
-      const activeSessions = allSessions.filter(session => session.status !== 'ended');
-      const sortedSessions = activeSessions.sort((a, b) => new Date(b.updated_at || b.started_at).getTime() - new Date(a.updated_at || a.started_at).getTime());
-      
+      // Sort by most recent activity
+      const sortedSessions = allSessions.sort((a, b) => new Date(b.updated_at || b.started_at).getTime() - new Date(a.updated_at || a.started_at).getTime());
       setSessions(sortedSessions);
-      
-      // Clean up any ended sessions from state
-      setSessions(prevSessions => prevSessions.filter(s => s.status !== 'ended'));
-      
-      logger.debug('Loaded active sessions:', sortedSessions.length);
+      logger.debug('Loaded sessions:', sortedSessions.length);
     } catch (err) {
       logger.error('Error loading sessions:', err);
       toast({
@@ -276,19 +267,12 @@ const PeerSpecialistDashboard = () => {
         handleSessionUpdate(sessionWithProfile);
       }
 
-      // Remove sessions that are ended or no longer relevant
-      if (updatedSession.status === 'ended') {
-        setSessions(prev => prev.filter(s => s.id !== updatedSession.id));
-        
-        // Close the chat window if it's the selected session
-        if (selectedSessionRef.current?.id === updatedSession.id) {
-          setSelectedSession(null);
-          setShowEndChatMessage(true);
-          setTimeout(() => setShowEndChatMessage(false), 3000);
-        }
-      } else if (updatedSession.specialist_id && updatedSession.specialist_id !== specialistId) {
-        // Remove if assigned to another specialist
-        setSessions(prev => prev.filter(s => s.id !== updatedSession.id));
+      // Remove sessions that are no longer relevant
+      if (updatedSession.status === 'ended' || updatedSession.specialist_id && updatedSession.specialist_id !== specialistId) {
+        setSessions(prev => prev.filter(s => {
+          // Keep if it's our session or if it's a waiting session
+          return s.specialist_id === specialistId || s.status === 'waiting' && !s.specialist_id;
+        }));
       }
     }).subscribe(status => {
       logger.debug('Real-time subscription status:', status);
@@ -353,7 +337,6 @@ const PeerSpecialistDashboard = () => {
     // Refresh sessions to get latest state
     loadSessions();
   }, [loadSessions]);
-
   const getSessionStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -366,14 +349,12 @@ const PeerSpecialistDashboard = () => {
         return 'bg-gray-400';
     }
   };
-
   const getSessionStatusText = (session: ChatSession) => {
     if (session.status === 'waiting') {
       return 'Available';
     }
     return session.status;
   };
-
   const formatSessionName = (session: ChatSession) => {
     let name = `Session #${session.session_number}`;
     if (session.user_first_name) {
@@ -382,7 +363,6 @@ const PeerSpecialistDashboard = () => {
     }
     return name;
   };
-
   const getSessionAge = (session: ChatSession) => {
     const age = Date.now() - new Date(session.started_at).getTime();
     const minutes = Math.floor(age / (1000 * 60));
@@ -392,9 +372,7 @@ const PeerSpecialistDashboard = () => {
     }
     return minutes < 1 ? 'just now' : `${minutes}m ago`;
   };
-
-  return (
-    <div className="h-screen w-full bg-background flex flex-col">
+  return <div className="h-screen w-full bg-background flex flex-col">
       {/* Header */}
       <div className="border-b bg-card">
         <div className="flex h-16 items-center justify-between px-6">
@@ -492,53 +470,25 @@ const PeerSpecialistDashboard = () => {
               <CardContent className="p-0 h-[calc(100%-5rem)]">
                 <ScrollArea className="h-full">
                   <div className="p-3 space-y-2">
-                    {sessions.length === 0 ? (
-                      <Card className="p-4">
+                    {sessions.length === 0 ? <Card className="p-4">
                         <div className="text-center text-muted-foreground">
                           <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
                           <p className="text-xs">No active sessions</p>
                           <p className="text-xs mt-1">Waiting sessions will appear here</p>
                         </div>
-                      </Card>
-                    ) : (
-                      sessions.map(session => (
-                        <Card
-                          key={session.id}
-                          className={`cursor-pointer transition-all hover:shadow-md ${
-                            selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''
-                          }`}
-                          onClick={() => setSelectedSession(session)}
-                        >
+                      </Card> : sessions.map(session => <Card key={session.id} className={`cursor-pointer transition-all hover:shadow-md ${selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''}`} onClick={() => setSelectedSession(session)}>
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between mb-1">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <Badge
-                                    variant={
-                                      session.status === 'waiting' 
-                                        ? 'secondary' 
-                                        : session.status === 'active' 
-                                        ? 'default' 
-                                        : 'outline'
-                                    }
-                                    className={
-                                      session.status === 'waiting' 
-                                        ? 'bg-yellow-100 text-yellow-800' 
-                                        : session.status === 'active' 
-                                        ? 'bg-green-100 text-green-800' 
-                                        : ''
-                                    }
-                                  >
+                                  <Badge variant={session.status === 'waiting' ? 'secondary' : session.status === 'active' ? 'default' : 'outline'} className={session.status === 'waiting' ? 'bg-yellow-100 text-yellow-800' : session.status === 'active' ? 'bg-green-100 text-green-800' : ''}>
                                     {session.status === 'waiting' ? 'Waiting' : session.status === 'active' ? 'Active' : 'Ended'}
                                   </Badge>
                                   <span className="text-sm font-medium">#{session.session_number}</span>
                                 </div>
                                 
                                 <p className="font-medium text-sm">
-                                  {session.user_first_name && session.user_last_name 
-                                    ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.`
-                                    : 'Anonymous User'
-                                  }
+                                  {session.user_first_name && session.user_last_name ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.` : 'Anonymous User'}
                                 </p>
                                 
                                 <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
@@ -546,32 +496,22 @@ const PeerSpecialistDashboard = () => {
                                     <Clock className="w-3 h-3" />
                                     {format(new Date(session.started_at), 'HH:mm')}
                                   </div>
-                                  {session.status === 'ended' && session.ended_at && (
-                                    <div className="flex items-center gap-1">
+                                  {session.status === 'ended' && session.ended_at && <div className="flex items-center gap-1">
                                       <CheckCircle className="w-3 h-3" />
                                       Ended {format(new Date(session.ended_at), 'HH:mm')}
-                                    </div>
-                                  )}
+                                    </div>}
                                 </div>
                               </div>
                             </div>
                             
-                            {session.status === 'waiting' && (
-                              <Button
-                                size="sm"
-                                className="w-full mt-1 h-7 text-xs"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedSession(session);
-                                }}
-                              >
+                            {session.status === 'waiting' && <Button size="sm" className="w-full mt-1 h-7 text-xs" onClick={e => {
+                        e.stopPropagation();
+                        setSelectedSession(session);
+                      }}>
                                 Join Session
-                              </Button>
-                            )}
+                              </Button>}
                           </CardContent>
-                        </Card>
-                      ))
-                    )}
+                        </Card>)}
                   </div>
                 </ScrollArea>
               </CardContent>
@@ -585,21 +525,13 @@ const PeerSpecialistDashboard = () => {
                 <CardTitle className="text-lg">Active Chat Session</CardTitle>
               </CardHeader>
               <CardContent className="p-0 h-[calc(100%-5rem)]">
-                {selectedSession ? (
-                  <RobustSpecialistChatWindow
-                    session={selectedSession}
-                    onClose={() => setSelectedSession(null)}
-                    onSessionUpdate={handleSessionUpdate}
-                  />
-                ) : (
-                  <div className="flex-1 flex items-center justify-center h-full bg-muted/20">
+                {selectedSession ? <RobustSpecialistChatWindow session={selectedSession} onClose={() => setSelectedSession(null)} onSessionUpdate={handleSessionUpdate} /> : <div className="flex-1 flex items-center justify-center h-full bg-muted/20">
                     <div className="text-center text-muted-foreground">
                       <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <h3 className="text-base font-medium mb-1">No Session Selected</h3>
                       <p className="text-sm">Select a session to start chatting</p>
                     </div>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </div>
@@ -608,9 +540,7 @@ const PeerSpecialistDashboard = () => {
         {/* Bottom Row - Calendar Full Width */}
         <div className="h-1/2">
           <Card className="h-full">
-            <CardHeader className="p-4 border-b">
-              <CardTitle className="text-lg">Calendar & Schedule</CardTitle>
-            </CardHeader>
+            
             <CardContent className="p-0 h-[calc(100%-5rem)] overflow-auto">
               {specialistId && <EnhancedSpecialistCalendar specialistId={specialistId} />}
             </CardContent>
@@ -619,17 +549,10 @@ const PeerSpecialistDashboard = () => {
       </div>
 
       {/* Chat History Modal */}
-      {specialistId && (
-        <ChatHistory
-          isOpen={showChatHistory}
-          onClose={() => setShowChatHistory(false)}
-          specialistId={specialistId}
-        />
-      )}
+      {specialistId && <ChatHistory isOpen={showChatHistory} onClose={() => setShowChatHistory(false)} specialistId={specialistId} />}
 
       {/* End Chat Message Popup */}
-      {showEndChatMessage && (
-        <div className="fixed top-4 right-4 z-50">
+      {showEndChatMessage && <div className="fixed top-4 right-4 z-50">
           <Card className="bg-card border shadow-lg max-w-sm">
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
@@ -639,21 +562,13 @@ const PeerSpecialistDashboard = () => {
                     This chat has ended and has been moved to the chat history.
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 ml-2"
-                  onClick={() => setShowEndChatMessage(false)}
-                >
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-2" onClick={() => setShowEndChatMessage(false)}>
                   ×
                 </Button>
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
-
 export default PeerSpecialistDashboard;
