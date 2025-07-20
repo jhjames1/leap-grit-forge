@@ -126,6 +126,14 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       logger.debug('Loading messages for session:', session.id);
       const sessionData = await chatOperations.getSessionWithMessages(session.id);
       if (sessionData && !sessionData.error) {
+        console.log('Messages loaded:', sessionData.messages?.length, 'messages');
+        console.log('Message types:', sessionData.messages?.map(m => ({
+          id: m.id, 
+          type: m.message_type, 
+          sender: m.sender_type, 
+          hasMetadata: !!m.metadata,
+          actionType: m.metadata?.action_type
+        })));
         setMessages(sessionData.messages || []);
         if (sessionData.session) {
           const updatedSession = sessionData.session as ChatSession;
@@ -234,6 +242,12 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       filter: `session_id=eq.${session.id}`
     }, payload => {
       logger.debug('New message received via realtime:', payload);
+      console.log('Realtime message details:', {
+        messageType: payload.new.message_type,
+        senderType: payload.new.sender_type,
+        hasMetadata: !!payload.new.metadata,
+        actionType: payload.new.metadata?.action_type
+      });
       const newMessage = payload.new as RealMessage;
       setMessages(prev => {
         // Remove matching optimistic message
