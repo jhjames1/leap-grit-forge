@@ -47,6 +47,14 @@ interface AppointmentProposal {
   responded_at?: string;
 }
 
+interface OptimisticMessage {
+  id: string;
+  content: string;
+  sender_type: string;
+  created_at: string;
+  isOptimistic: boolean;
+}
+
 interface SpecialistChatWindowProps {
   session: ChatSession;
   onClose: () => void;
@@ -68,13 +76,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
-
-  // Load messages and session proposal
-  useEffect(() => {
-    loadMessages();
-    loadSessionProposal();
-    setupRealTimeSubscription();
-  }, [session.id]);
+  const [currentSession, setCurrentSession] = useState<ChatSession>(session);
 
   const loadMessages = async () => {
     try {
@@ -133,6 +135,12 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     }
   };
 
+  useEffect(() => {
+    loadMessages();
+    loadSessionProposal();
+    setupRealTimeSubscription();
+  }, [session.id]);
+
   const setupRealTimeSubscription = () => {
     console.log('Setting up real-time subscription for session:', session.id);
     setConnectionStatus('connecting');
@@ -151,14 +159,34 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           console.log('New message received:', payload);
           const newMessage = payload.new;
           setMessages(prev => {
+            // Remove any optimistic message with the same content
+            const withoutOptimistic = prev.filter(msg => 
+              !(msg.isOptimistic && msg.content === newMessage.content && msg.sender_type === newMessage.sender_type)
+            );
+            
             // Avoid duplicates
-            if (prev.find(msg => msg.id === newMessage.id)) {
-              return prev;
+            if (withoutOptimistic.find(msg => msg.id === newMessage.id)) {
+              return withoutOptimistic;
             }
-            return [...prev, newMessage].sort((a, b) => 
+            
+            return [...withoutOptimistic, newMessage].sort((a, b) => 
               new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             );
           });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_sessions',
+          filter: `id=eq.${session.id}`
+        },
+        (payload) => {
+          console.log('Session updated:', payload);
+          const updatedSession = payload.new as ChatSession;
+          setCurrentSession(updatedSession);
         }
       )
       .on(
@@ -199,10 +227,22 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         return;
       }
 
+      // Add optimistic message immediately
+      const optimisticMessage: OptimisticMessage = {
+        id: `optimistic-${Date.now()}`,
+        content: messageData.content,
+        sender_type: messageData.sender_type || 'specialist',
+        created_at: new Date().toISOString(),
+        isOptimistic: true
+      };
+
+      setMessages(prev => [...prev, optimisticMessage]);
+
+      // Send to database
       const { error } = await supabase
         .from('chat_messages')
         .insert({
-          session_id: session.id,
+          session_id: currentSession.id,
           sender_id: user.id,
           sender_type: messageData.sender_type || 'specialist',
           message_type: 'text',
@@ -213,31 +253,41 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
 
       console.log('Message sent successfully');
       
-      // If this is a specialist's first message to a waiting session without assigned specialist, assign them
-      if (session.status === 'waiting' && !session.specialist_id) {
-        const { error: updateError } = await supabase
+      // Update session status if needed
+      const shouldUpdateStatus = 
+        currentSession.status === 'waiting' || 
+        (currentSession.status === 'waiting' && !currentSession.specialist_id);
+
+      if (shouldUpdateStatus) {
+        console.log('Updating session status to active');
+        
+        const updateData: any = { status: 'active' };
+        
+        // If session is unassigned, assign it to this specialist
+        if (!currentSession.specialist_id) {
+          updateData.specialist_id = specialistData.id;
+        }
+
+        const { data: updatedSessionData, error: updateError } = await supabase
           .from('chat_sessions')
-          .update({ 
-            status: 'active',
-            specialist_id: specialistData.id
-          })
-          .eq('id', session.id);
+          .update(updateData)
+          .eq('id', currentSession.id)
+          .select()
+          .single();
 
         if (updateError) {
           console.error('Error updating session:', updateError);
         } else {
-          console.log('Session assigned to specialist and activated');
+          console.log('Session updated successfully');
+          setCurrentSession(updatedSessionData);
         }
-      } else if (session.status === 'waiting') {
-        // Update session to active if it was waiting
-        await supabase
-          .from('chat_sessions')
-          .update({ status: 'active' })
-          .eq('id', session.id);
       }
     } catch (err) {
       console.error('Error sending message:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
+      
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => !msg.isOptimistic || msg.content !== messageData.content));
     }
   };
 
@@ -257,7 +307,6 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     }
   };
 
-  // Auto-scroll to bottom when messages change, but only after initial load
   useEffect(() => {
     if (hasInitiallyLoaded && messages.length > 0 && messagesContainerRef.current) {
       // Use scrollTop instead of scrollIntoView to avoid affecting page scroll
@@ -343,17 +392,17 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
               <User className="text-primary" size={16} />
             </div>
             <div>
-              <h3 className="font-semibold">{formatSessionName(session)}</h3>
+              <h3 className="font-semibold">{formatSessionName(currentSession)}</h3>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <div className={`w-2 h-2 rounded-full ${
-                  session.status === 'active' ? 'bg-green-500' : 
-                  session.status === 'waiting' ? 'bg-yellow-500' : 'bg-gray-500'
+                  currentSession.status === 'active' ? 'bg-green-500' : 
+                  currentSession.status === 'waiting' ? 'bg-yellow-500' : 'bg-gray-500'
                 }`}></div>
                 <span className="capitalize">
-                  {session.status === 'waiting' && !session.specialist_id ? 'Available to claim' : session.status}
+                  {currentSession.status === 'waiting' && !currentSession.specialist_id ? 'Available to claim' : currentSession.status}
                 </span>
                 <span>•</span>
-                <span>Started {format(new Date(session.started_at), 'h:mm a')}</span>
+                <span>Started {format(new Date(currentSession.started_at), 'h:mm a')}</span>
                 {sessionProposal && (
                   <>
                     <span>•</span>
@@ -473,12 +522,12 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                     : msg.message_type === 'system'
                     ? 'bg-muted border border-border text-muted-foreground'
                     : 'bg-card border border-border text-card-foreground'
-                 } rounded-2xl p-4`}>
+                 } rounded-2xl p-4 ${msg.isOptimistic ? 'opacity-70' : ''}`}>
                   <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
                   <p className={`text-xs ${
                     msg.sender_type === 'specialist' ? 'text-primary-foreground/70' : 'text-muted-foreground'
                   }`}>
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                    {msg.isOptimistic ? 'Sending...' : new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
                   </p>
                 </div>
               </div>
@@ -499,7 +548,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         ) : (
           <div className="text-center text-muted-foreground py-8">
             <p>
-              {session.status === 'waiting' && !session.specialist_id 
+              {currentSession.status === 'waiting' && !currentSession.specialist_id 
                 ? 'This session is waiting for a specialist. Send a message to claim it and begin the conversation.'
                 : 'Chat session started. Send a message to begin the conversation.'
               }
@@ -535,9 +584,9 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
       <ChatAppointmentScheduler
         isOpen={showScheduler}
         onClose={() => setShowScheduler(false)}
-        specialistId={session.specialist_id || ''}
-        userId={session.user_id}
-        chatSessionId={session.id}
+        specialistId={currentSession.specialist_id || ''}
+        userId={currentSession.user_id}
+        chatSessionId={currentSession.id}
         onScheduled={handleSchedulerSuccess}
       />
     </div>
