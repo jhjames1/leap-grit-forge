@@ -74,7 +74,7 @@ const SpecialistPerformanceMetrics = ({ specialistId }: SpecialistPerformanceMet
         {displayMetrics.total_sessions} sessions • {displayMetrics.total_checkins} check-ins • {displayMetrics.total_ratings} ratings
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
         <MetricCard
           metricKey="CHAT_COMPLETION_RATE"
           value={displayMetrics.chat_completion_rate}
