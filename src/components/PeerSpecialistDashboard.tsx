@@ -18,6 +18,7 @@ import { logger } from '@/utils/logger';
 import ScheduleManagementModal from './calendar/ScheduleManagementModal';
 import { useProposalNotifications } from '@/hooks/useProposalNotifications';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
+import SessionCard from './SessionCard';
 
 interface ChatSession {
   id: string;
@@ -93,6 +94,12 @@ const PeerSpecialistDashboard = () => {
     hasNewResponses,
     clearNewResponses
   } = useProposalNotifications(currentSpecialistId || '');
+
+  // Add scroll management refs
+  const chatWindowRef = useRef<HTMLDivElement>(null);
+  const sessionListRef = useRef<HTMLDivElement>(null);
+  const currentScrollPosition = useRef(0);
+
   const loadData = useCallback(async () => {
     if (!user) return;
     logger.debug('Loading specialist data for user', {
@@ -147,6 +154,7 @@ const PeerSpecialistDashboard = () => {
       setLoading(false);
     }
   }, [user?.id, toast]);
+
   const loadChatSessions = useCallback(async (specialistId: string) => {
     logger.debug('Loading chat sessions for specialist', {
       specialistId
@@ -207,6 +215,7 @@ const PeerSpecialistDashboard = () => {
       });
     }
   }, [toast]);
+
   const setupRealTimeSubscriptions = useCallback(() => {
     if (!user?.id || !currentSpecialistId) return;
     logger.debug('Setting up real-time subscriptions', {
@@ -291,15 +300,18 @@ const PeerSpecialistDashboard = () => {
       subscriptionChannels.current = [];
     };
   }, [user?.id, currentSpecialistId, loadChatSessions]);
+
   useEffect(() => {
     loadData();
   }, [loadData]);
+
   useEffect(() => {
     if (currentSpecialistId) {
       const cleanup = setupRealTimeSubscriptions();
       return cleanup;
     }
   }, [setupRealTimeSubscriptions, currentSpecialistId]);
+
   const getSortedActiveSessions = () => {
     return chatSessions.filter(session => session.status === 'waiting' || session.status === 'active').sort((a, b) => {
       // First sort by status priority
@@ -320,7 +332,17 @@ const PeerSpecialistDashboard = () => {
   const getSortedEndedSessions = () => {
     return chatSessions.filter(session => session.status === 'ended').sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
   };
+
   const handleChatClick = async (session: ChatSession) => {
+    // Store current scroll position to prevent unwanted scrolling
+    currentScrollPosition.current = window.scrollY;
+    
+    // Prevent default scroll behavior
+    const preventDefault = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
     // Set loading state for the session being claimed
     setChatSessions(prev => 
       prev.map(s => s.id === session.id ? { ...s, isLoading: true } : s)
@@ -380,8 +402,14 @@ const PeerSpecialistDashboard = () => {
           s.id === session.id ? claimedSession : { ...s, isLoading: false }
         ));
 
-        // Update the selected session
-        setSelectedChatSession(claimedSession);
+        // Update the selected session without scrolling
+        requestAnimationFrame(() => {
+          setSelectedChatSession(claimedSession);
+          // Restore scroll position and ensure chat window is visible
+          window.scrollTo({ top: currentScrollPosition.current, behavior: 'instant' });
+          ensureChatWindowVisible();
+        });
+
         toast({
           title: "Session Claimed",
           description: "You are now assigned to this chat session."
@@ -405,9 +433,33 @@ const PeerSpecialistDashboard = () => {
       setChatSessions(prev => 
         prev.map(s => s.id === session.id ? { ...s, isLoading: false } : s)
       );
-      setSelectedChatSession(session);
+      
+      // Update selected session without scrolling
+      requestAnimationFrame(() => {
+        setSelectedChatSession(session);
+        // Restore scroll position and ensure chat window is visible
+        window.scrollTo({ top: currentScrollPosition.current, behavior: 'instant' });
+        ensureChatWindowVisible();
+      });
     }
   };
+
+  // Function to ensure chat window is visible
+  const ensureChatWindowVisible = useCallback(() => {
+    if (chatWindowRef.current) {
+      const chatWindowRect = chatWindowRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // If chat window is not fully visible, scroll to make it visible
+      if (chatWindowRect.top < 0 || chatWindowRect.bottom > viewportHeight) {
+        chatWindowRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    }
+  }, []);
+
   const handleCloseChatWindow = () => {
     setSelectedChatSession(null);
     // Reload chat sessions to get the latest data and sync state
@@ -452,6 +504,7 @@ const PeerSpecialistDashboard = () => {
       }, 2000);
     }
   }, [selectedChatSession]);
+
   const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
     try {
       await updateStatus(newStatus, `Manually set to ${newStatus}`);
@@ -702,8 +755,8 @@ const PeerSpecialistDashboard = () => {
 
         {/* Chat Management */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Unified Chat Sessions List */}
-          <Card className="p-6">
+          {/* Session List with ref */}
+          <Card className="p-6" ref={sessionListRef}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-fjalla font-bold">Chat Sessions</h2>
@@ -717,56 +770,42 @@ const PeerSpecialistDashboard = () => {
             </div>
 
             <div className="space-y-4">
-              {getSortedActiveSessions().length > 0 ? getSortedActiveSessions().map(session => <div key={session.id} className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${selectedChatSession?.id === session.id ? 'border-primary bg-primary/5' : 'border-border'} ${isWaitingTooLong(session) ? 'bg-warning border-warning-foreground/20' : ''} ${session.status === 'waiting' && !session.specialist_id ? 'bg-blue-50/50 border-blue-200' : ''}`} onClick={() => handleChatClick(session)}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <User className="text-primary" size={16} />
-                        </div>
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-fjalla font-bold">{formatSessionName(session)}</span>
-                            <Badge variant={session.status === 'active' ? 'default' : session.status === 'waiting' ? 'secondary' : 'outline'} className={session.status === 'waiting' && !session.specialist_id ? 'bg-blue-100 text-blue-800 border-blue-200' : ''}>
-                              {session.status === 'waiting' && !session.specialist_id ? 'Available' : session.status}
-                            </Badge>
-                            {session.status === 'waiting' && !session.specialist_id && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                Click to claim
-                              </Badge>}
-                            {/* Proposal indicators */}
-                            {session.pending_proposals_count && session.pending_proposals_count > 0 && <Badge variant="outline" className="bg-yellow-50 text-orange-700 border-orange-200">
-                                <Calendar className="w-3 h-3 mr-1" />
-                                {session.pending_proposals_count} pending
-                              </Badge>}
-                            {session.has_new_responses && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                New response
-                              </Badge>}
-                          </div>
-                          <p className="text-sm text-muted-foreground font-source">
-                            Started {format(new Date(session.started_at), 'MMM d, h:mm a')}
-                            {session.status === 'waiting' && !session.specialist_id && <span className="ml-2 text-blue-600">• Unassigned</span>}
-                          </p>
-                        </div>
-                      </div>
-                      <ChevronRight size={16} className="text-muted-foreground" />
-                    </div>
-                  </div>) : <div className="text-center py-8 text-muted-foreground">
+              {getSortedActiveSessions().length > 0 ? getSortedActiveSessions().map(session => (
+                <SessionCard
+                  key={session.id}
+                  session={session}
+                  isSelected={selectedChatSession?.id === session.id}
+                  isWaitingTooLong={isWaitingTooLong(session)}
+                  onClick={() => handleChatClick(session)}
+                  formatSessionName={formatSessionName}
+                />
+              )) : (
+                <div className="text-center py-8 text-muted-foreground">
                   <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
                   <p className="font-source">No active chat sessions</p>
                   <p className="font-source text-sm mt-2">Waiting and active sessions will appear here</p>
-                </div>}
+                </div>
+              )}
             </div>
           </Card>
 
-          {/* Chat Window with Session Update Callback */}
-          <Card className="p-0 overflow-hidden">
-            {selectedChatSession ? <RobustSpecialistChatWindow session={selectedChatSession} onClose={handleCloseChatWindow} onSessionUpdate={handleSessionUpdate} /> : <div className="p-6 text-center">
+          {/* Chat Window with ref and scroll management */}
+          <Card className="p-0 overflow-hidden" ref={chatWindowRef}>
+            {selectedChatSession ? (
+              <RobustSpecialistChatWindow 
+                session={selectedChatSession} 
+                onClose={handleCloseChatWindow} 
+                onSessionUpdate={handleSessionUpdate} 
+              />
+            ) : (
+              <div className="p-6 text-center">
                 <MessageCircle size={64} className="mx-auto mb-4 text-muted-foreground/50" />
                 <h3 className="text-lg font-fjalla font-bold mb-2">Select a Chat Session</h3>
                 <p className="text-muted-foreground font-source">
                   Choose a chat session from the list to start helping users with their recovery journey.
                 </p>
-              </div>}
+              </div>
+            )}
           </Card>
         </div>
 

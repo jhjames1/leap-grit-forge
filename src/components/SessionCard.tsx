@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, CheckCircle, ChevronRight, User } from 'lucide-react';
@@ -33,6 +34,17 @@ const SessionCard: React.FC<SessionCardProps> = ({
   onClick,
   formatSessionName
 }) => {
+  const handleClick = (e: React.MouseEvent) => {
+    // Prevent any default behaviors that might cause scrolling
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only call onClick if session is not loading
+    if (!session.isLoading) {
+      onClick();
+    }
+  };
+
   return (
     <div 
       className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${
@@ -44,7 +56,15 @@ const SessionCard: React.FC<SessionCardProps> = ({
       } ${
         session.isLoading ? 'opacity-60 pointer-events-none' : ''
       }`} 
-      onClick={() => !session.isLoading && onClick()}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleClick(e as any);
+        }
+      }}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
