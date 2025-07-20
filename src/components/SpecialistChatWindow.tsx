@@ -256,7 +256,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
       // Update session status if needed
       const shouldUpdateStatus = 
         currentSession.status === 'waiting' || 
-        (currentSession.status === 'waiting' && !currentSession.specialist_id);
+        (currentSession.status === 'active' && !currentSession.specialist_id);
 
       if (shouldUpdateStatus) {
         console.log('Updating session status to active');
@@ -279,7 +279,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           console.error('Error updating session:', updateError);
         } else {
           console.log('Session updated successfully');
-          setCurrentSession(updatedSessionData);
+          setCurrentSession(updatedSessionData as ChatSession);
         }
       }
     } catch (err) {
