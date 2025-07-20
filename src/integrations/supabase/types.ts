@@ -1599,6 +1599,15 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: Json
       }
+      check_message_duplicate: {
+        Args: {
+          p_session_id: string
+          p_sender_id: string
+          p_content: string
+          p_time_window_seconds?: number
+        }
+        Returns: boolean
+      }
       check_specialist_availability: {
         Args: {
           p_specialist_id: string
@@ -1618,6 +1627,10 @@ export type Database = {
           p_specialist_id: string
         }
         Returns: Json
+      }
+      end_chat_session_atomic: {
+        Args: { p_session_id: string; p_user_id: string; p_end_reason?: string }
+        Returns: Database["public"]["CompositeTypes"]["chat_operation_result"]
       }
       find_user_by_email: {
         Args: { user_email: string }
@@ -1645,6 +1658,10 @@ export type Database = {
           role_created_at: string
         }[]
       }
+      get_session_with_messages: {
+        Args: { p_session_id: string; p_user_id: string }
+        Returns: Json
+      }
       get_users_for_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1671,9 +1688,24 @@ export type Database = {
         Args: { target_email: string }
         Returns: Json
       }
+      send_message_atomic: {
+        Args: {
+          p_session_id: string
+          p_sender_id: string
+          p_sender_type: string
+          p_content: string
+          p_message_type?: string
+          p_metadata?: Json
+        }
+        Returns: Database["public"]["CompositeTypes"]["chat_operation_result"]
+      }
       soft_delete_specialist: {
         Args: { specialist_id: string }
         Returns: Json
+      }
+      start_chat_session_atomic: {
+        Args: { p_user_id: string }
+        Returns: Database["public"]["CompositeTypes"]["chat_operation_result"]
       }
       sync_working_hours_to_schedules: {
         Args: { p_specialist_id: string; p_working_hours: Json }
@@ -1684,7 +1716,12 @@ export type Database = {
       app_role: "admin" | "user"
     }
     CompositeTypes: {
-      [_ in never]: never
+      chat_operation_result: {
+        success: boolean | null
+        error_code: string | null
+        error_message: string | null
+        data: Json | null
+      }
     }
   }
 }

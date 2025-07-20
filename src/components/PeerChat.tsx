@@ -12,13 +12,16 @@ import {
   User,
   Shield,
   RefreshCw,
-  Plus
+  Plus,
+  Clock,
+  AlertTriangle,
+  RotateCcw
 } from 'lucide-react';
 import PeerSelection from './PeerSelection';
 import RecurringAppointmentScheduler from './RecurringAppointmentScheduler';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
 import { PeerSpecialist } from '@/hooks/usePeerSpecialists';
-import { useChatSession } from '@/hooks/useChatSession';
+import { useRobustChatSession } from '@/hooks/useRobustChatSession';
 import { useAuth } from '@/hooks/useAuth';
 
 interface PeerChatProps {
@@ -44,8 +47,10 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     endSession,
     refreshSession,
     startFreshSession,
-    isSessionStale
-  } = useChatSession(selectedPeer?.id);
+    retryFailedMessage,
+    isSessionStale,
+    hasFailedMessages
+  } = useRobustChatSession(selectedPeer?.id);
 
   const handleSelectPeer = async (peer: PeerSpecialist) => {
     console.log('Peer selected:', peer);
@@ -131,7 +136,8 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     const messageText = actionMessages[actionType as keyof typeof actionMessages];
     if (messageText) {
       await sendMessage({ 
-        content: messageText, 
+        content: messageText,
+        sender_type: 'user',
         message_type: 'quick_action',
         metadata: { action_type: actionType }
       });
@@ -326,7 +332,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
           messages.map((msg) => (
             <div 
               key={msg.id}
-              className={`flex flex-col ${msg.sender_type === 'user' ? 'justify-end' : msg.message_type === 'system' ? 'justify-center' : 'justify-start'}`}
+              className={`flex flex-col ${msg.sender_type === 'user' ? 'items-end' : msg.message_type === 'system' ? 'items-center' : 'items-start'}`}
             >
               <div className={`max-w-[80%] ${
                 msg.sender_type === 'user' 
@@ -334,14 +340,58 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                   : msg.message_type === 'system'
                   ? 'bg-construction/20 text-construction border border-construction/30'
                   : 'bg-white/10 backdrop-blur-sm text-muted-foreground'
-               } rounded-2xl p-4`}>
-                <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
-                <p className={`text-xs ${
-                  msg.sender_type === 'user' ? 'text-white/70' : msg.message_type === 'system' ? 'text-construction/70' : 'text-steel-light'
+                } rounded-2xl p-4 ${
+                  msg.isOptimistic && msg.status === 'failed' ? 'border border-red-500/50' : ''
+                } ${
+                  msg.isOptimistic && msg.status === 'timeout' ? 'border border-orange-500/50' : ''
                 }`}>
-                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+                <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
+                <div className="flex items-center justify-between">
+                  <p className={`text-xs ${
+                    msg.sender_type === 'user' ? 'text-white/70' : msg.message_type === 'system' ? 'text-construction/70' : 'text-steel-light'
+                  }`}>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  
+                  {/* Message status indicators */}
+                  {msg.isOptimistic && (
+                    <div className="flex items-center space-x-1 ml-2">
+                      {msg.status === 'sending' && (
+                        <Clock size={12} className="text-white/50 animate-pulse" />
+                      )}
+                      {msg.status === 'failed' && (
+                        <div className="flex items-center space-x-1">
+                          <AlertTriangle size={12} className="text-red-400" />
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-4 px-1 text-xs text-red-400 hover:text-red-300"
+                            onClick={() => retryFailedMessage(msg.id)}
+                          >
+                            <RotateCcw size={10} className="mr-1" />
+                            Retry
+                          </Button>
+                        </div>
+                      )}
+                      {msg.status === 'timeout' && (
+                        <div className="flex items-center space-x-1">
+                          <Clock size={12} className="text-orange-400" />
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-4 px-1 text-xs text-orange-400 hover:text-orange-300"
+                            onClick={() => retryFailedMessage(msg.id)}
+                          >
+                            <RotateCcw size={10} className="mr-1" />
+                            Retry
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
+              
               {/* Display appointment proposal handler if this is a proposal message */}
               {msg.metadata?.action_type === 'recurring_appointment_proposal' && (
                 <AppointmentProposalHandler 
