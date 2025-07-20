@@ -135,9 +135,6 @@ const PeerSpecialistPortal = () => {
         })
         .then(() => {
           logger.debug('Portal error logged successfully');
-        })
-        .catch((logError) => {
-          logger.error('Failed to log portal error', logError);
         });
     }
   }, [user?.id]);
