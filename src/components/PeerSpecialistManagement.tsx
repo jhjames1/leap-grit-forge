@@ -171,6 +171,7 @@ const PeerSpecialistManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Fetched specialists with email data:', data);
       setSpecialists(data || []);
     } catch (error) {
       console.error('Error fetching specialists:', error);
@@ -534,6 +535,14 @@ const PeerSpecialistManagement = () => {
         .eq('id', specialist.id);
 
       if (error) throw error;
+      
+      // Debug: Check what email data we have
+      console.log('Specialist data for force activation:', {
+        id: specialist.id,
+        email: specialist.email,
+        first_name: specialist.first_name,
+        last_name: specialist.last_name
+      });
       
       // Use the stored email from the specialist record
       const specialistEmail = specialist.email || 'Email not available - contact admin';
