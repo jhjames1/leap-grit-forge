@@ -37,34 +37,39 @@ export const useConnectionMonitor = () => {
   }, []);
 
   const scheduleReconnect = useCallback(() => {
-    if (connectionStatus.reconnectAttempts >= maxReconnectAttempts) {
-      logger.error('Max reconnection attempts reached');
-      updateConnectionStatus({
-        status: 'disconnected',
-        error: 'Max reconnection attempts reached'
+    setConnectionStatus(current => {
+      if (current.reconnectAttempts >= maxReconnectAttempts) {
+        logger.error('Max reconnection attempts reached');
+        return {
+          ...current,
+          status: 'disconnected',
+          error: 'Max reconnection attempts reached'
+        };
+      }
+
+      const delay = Math.min(
+        baseReconnectDelay * Math.pow(2, current.reconnectAttempts),
+        30000
+      );
+
+      logger.debug(`Scheduling reconnection in ${delay}ms`, {
+        attempt: current.reconnectAttempts + 1,
+        maxAttempts: maxReconnectAttempts
       });
-      return;
-    }
 
-    const delay = Math.min(
-      baseReconnectDelay * Math.pow(2, connectionStatus.reconnectAttempts),
-      30000
-    );
+      clearReconnectTimeout();
+      reconnectTimeoutRef.current = setTimeout(() => {
+        setConnectionStatus(prev => ({
+          ...prev,
+          status: 'connecting',
+          reconnectAttempts: prev.reconnectAttempts + 1,
+          error: null
+        }));
+      }, delay);
 
-    logger.debug(`Scheduling reconnection in ${delay}ms`, {
-      attempt: connectionStatus.reconnectAttempts + 1,
-      maxAttempts: maxReconnectAttempts
+      return current;
     });
-
-    clearReconnectTimeout();
-    reconnectTimeoutRef.current = setTimeout(() => {
-      updateConnectionStatus({
-        status: 'connecting',
-        reconnectAttempts: connectionStatus.reconnectAttempts + 1,
-        error: null
-      });
-    }, delay);
-  }, [connectionStatus.reconnectAttempts, updateConnectionStatus]);
+  }, []);
 
   const handleConnectionChange = useCallback((status: string) => {
     logger.debug('Connection status changed', { status });
