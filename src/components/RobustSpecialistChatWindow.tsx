@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
 import ChatAppointmentScheduler from './ChatAppointmentScheduler';
 import { format } from 'date-fns';
+
 interface ChatSession {
   id: string;
   user_id: string;
@@ -692,8 +693,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length > 0 ? messages.map(msg => <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'specialist' ? 'items-end' : msg.message_type === 'system' ? 'items-center' : 'items-start'}`}>
-              {/* Check if this is an appointment proposal message */}
-              {msg.message_type === 'system' && msg.metadata?.action_type === 'appointment_proposal' ? (
+              {/* Check if this is an appointment proposal message - Updated condition to include both types */}
+              {msg.message_type === 'system' && (msg.metadata?.action_type === 'appointment_proposal' || msg.metadata?.action_type === 'recurring_appointment_proposal') ? (
                 <div className="w-full max-w-md">
                   <AppointmentProposalHandler 
                     message={msg} 
