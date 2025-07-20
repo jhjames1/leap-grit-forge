@@ -669,34 +669,61 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         </div>}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length > 0 ? messages.map(msg => <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'specialist' ? 'items-end' : msg.message_type === 'system' ? 'items-center' : 'items-start'}`}>
-              <div className={`max-w-[80%] ${msg.sender_type === 'specialist' ? 'bg-primary text-primary-foreground' : msg.message_type === 'system' ? 'bg-muted text-muted-foreground border border-border' : 'bg-muted text-foreground'} rounded-2xl p-3 ${msg.isOptimistic && msg.status === 'failed' ? 'border border-destructive/50' : ''} ${msg.isOptimistic && msg.status === 'timeout' ? 'border border-yellow-500/50' : ''}`}>
-                <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
-                <div className="flex items-center justify-between">
-                  <p className={`text-xs ${msg.sender_type === 'specialist' ? 'text-primary-foreground/70' : msg.message_type === 'system' ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
-                    {format(new Date(msg.created_at), 'HH:mm')}
-                  </p>
-                  
-                  {/* Message status indicators */}
-                  {msg.isOptimistic && <div className="flex items-center space-x-1 ml-2">
-                      {msg.status === 'sending' && <Clock size={10} className="text-muted-foreground animate-pulse" />}
-                      {msg.status === 'failed' && <div className="flex items-center space-x-1">
-                          <AlertTriangle size={10} className="text-destructive" />
-                          <Button size="sm" variant="ghost" className="h-3 px-1 text-xs text-destructive hover:text-destructive/80" onClick={() => retryFailedMessage(msg.id)}>
-                            <RotateCcw size={8} className="mr-1" />
-                            Retry
-                          </Button>
-                        </div>}
-                      {msg.status === 'timeout' && <div className="flex items-center space-x-1">
-                          <Clock size={10} className="text-yellow-600" />
-                          <Button size="sm" variant="ghost" className="h-3 px-1 text-xs text-yellow-600 hover:text-yellow-500" onClick={() => retryFailedMessage(msg.id)}>
-                            <RotateCcw size={8} className="mr-1" />
-                            Retry
-                          </Button>
-                        </div>}
-                    </div>}
-                </div>
+              {/* Message Bubble */}
+              <div className={`max-w-[80%] rounded-2xl p-3 ${
+                msg.sender_type === 'specialist' 
+                  ? 'bg-gray-100 text-gray-900' 
+                  : msg.message_type === 'system' 
+                    ? 'bg-muted text-muted-foreground border border-border' 
+                    : 'bg-green-100 text-gray-900'
+                } ${msg.isOptimistic && msg.status === 'failed' ? 'ring-1 ring-red-300' : ''} ${msg.isOptimistic && msg.status === 'timeout' ? 'ring-1 ring-yellow-300' : ''}`}>
+                <p className="text-sm leading-relaxed">{msg.content}</p>
+              </div>
+              
+              {/* Timestamp and Status Row */}
+              <div className="flex items-center gap-2 mt-1 px-1">
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(msg.created_at), 'h:mm a')}
+                </p>
+                
+                {/* Message status indicators */}
+                {msg.isOptimistic && (
+                  <div className="flex items-center gap-1">
+                    {msg.status === 'sending' && (
+                      <Clock size={10} className="text-muted-foreground animate-pulse" />
+                    )}
+                    {msg.status === 'failed' && (
+                      <div className="flex items-center gap-1">
+                        <AlertTriangle size={10} className="text-destructive" />
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-4 px-1 text-xs text-destructive hover:text-destructive/80" 
+                          onClick={() => retryFailedMessage(msg.id)}
+                        >
+                          <RotateCcw size={8} className="mr-1" />
+                          Retry
+                        </Button>
+                      </div>
+                    )}
+                    {msg.status === 'timeout' && (
+                      <div className="flex items-center gap-1">
+                        <Clock size={10} className="text-yellow-600" />
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-4 px-1 text-xs text-yellow-600 hover:text-yellow-500" 
+                          onClick={() => retryFailedMessage(msg.id)}
+                        >
+                          <RotateCcw size={8} className="mr-1" />
+                          Retry
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>) : <div className="text-center text-muted-foreground py-8">
             <p className="text-sm">No messages yet. Send a message to start the conversation.</p>
