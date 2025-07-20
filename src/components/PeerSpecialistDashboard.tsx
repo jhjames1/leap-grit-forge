@@ -110,7 +110,7 @@ const PeerSpecialistDashboard = () => {
         }
 
         // Filter sessions to only include those without a specialist assigned
-        const filteredSessions = (data || []).filter(session => !session.specialist_id);
+        const filteredSessions = (data || []).filter(session => !session.specialist_id) as ChatSession[];
         setWaitingSessions(filteredSessions);
       } catch (error) {
         console.error("Unexpected error fetching waiting sessions:", error);
@@ -296,7 +296,12 @@ const PeerSpecialistDashboard = () => {
               </div>
             </div>
             {specialistProfile && (
-              <SpecialistSettings specialistId={specialistProfile.id} />
+              <SpecialistSettings 
+                isOpen={false}
+                onClose={() => {}}
+                specialist={specialistProfile}
+                onUpdateSpecialist={() => {}}
+              />
             )}
           </TabsContent>
         </Tabs>

@@ -23,6 +23,7 @@ interface AppointmentProposal {
   responded_at?: string;
   user_first_name?: string;
   user_last_name?: string;
+  chat_session_id?: string;
   chat_sessions?: {
     status: string;
   };
@@ -134,7 +135,7 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
 
       // Send withdrawal message to chat
       const proposal = proposals.find(p => p.id === proposalId);
-      if (proposal?.chat_sessions) {
+      if (proposal?.chat_session_id) {
         await supabase
           .from('chat_messages')
           .insert({
