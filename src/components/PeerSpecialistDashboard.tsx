@@ -5,12 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, CalendarClock, AlertTriangle, History } from 'lucide-react';
+import { MessageCircle, Calendar, Users, Clock, CheckCircle, AlertCircle, ChevronRight, User, LogOut, CalendarClock, AlertTriangle, History, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import SpecialistChatWindow from './SpecialistChatWindow';
 import SpecialistCalendar from './calendar/SpecialistCalendar';
+import SpecialistAnalyticsDashboard from './SpecialistAnalyticsDashboard';
 import { useToast } from '@/hooks/use-toast';
 import { useSpecialistStatus } from '@/hooks/useSpecialistStatus';
 import { logger } from '@/utils/logger';
@@ -60,6 +61,7 @@ const PeerSpecialistDashboard = () => {
   const [selectedChatSession, setSelectedChatSession] = useState<ChatSession | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   // Performance monitoring ref
   const renderCount = useRef(0);
@@ -407,6 +409,12 @@ const PeerSpecialistDashboard = () => {
                 </Button>
               </div>}
 
+            {/* Analytics Button */}
+            <Button variant="outline" size="sm" onClick={() => setShowAnalytics(true)} className="flex items-center gap-2">
+              <BarChart3 size={16} />
+              Analytics
+            </Button>
+
             {/* Chat History Button */}
             <Button variant="outline" size="sm" onClick={() => setShowChatHistory(true)} className="flex items-center gap-2">
               <History size={16} />
@@ -601,6 +609,26 @@ const PeerSpecialistDashboard = () => {
           </Card>
         </div>
       </div>
+
+      {/* Analytics Modal */}
+      {showAnalytics && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-6xl max-h-[90vh] overflow-hidden bg-background rounded-lg">
+            <div className="p-6 border-b border-border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-fjalla font-bold">Performance Analytics</h2>
+                  <p className="text-sm text-muted-foreground">Your performance metrics and insights</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setShowAnalytics(false)}>
+                  ×
+                </Button>
+              </div>
+            </div>
+            <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+              <SpecialistAnalyticsDashboard onNavigateToChat={() => setShowAnalytics(false)} />
+            </div>
+          </div>
+        </div>}
 
       {/* Chat History Modal */}
       {showChatHistory && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ const SpecialistAnalyticsDashboard = ({ onNavigateToChat }: SpecialistAnalyticsD
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="bg-background p-4">
         <div className="flex justify-between items-center mb-6">
           <div>
             <Skeleton className="h-8 w-48 mb-2" />
@@ -51,7 +52,7 @@ const SpecialistAnalyticsDashboard = ({ onNavigateToChat }: SpecialistAnalyticsD
 
   if (error || !analytics) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="bg-background p-4">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-foreground">Analytics Dashboard</h1>
           {onNavigateToChat && (
@@ -59,7 +60,7 @@ const SpecialistAnalyticsDashboard = ({ onNavigateToChat }: SpecialistAnalyticsD
               onClick={onNavigateToChat}
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-source font-bold py-2 px-4 rounded-lg tracking-wide transition-colors duration-300"
             >
-              CHAT
+              BACK TO CHAT
             </Button>
           )}
         </div>
@@ -75,14 +76,14 @@ const SpecialistAnalyticsDashboard = ({ onNavigateToChat }: SpecialistAnalyticsD
   const userName = user?.user_metadata?.first_name || 'Specialist';
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="p-4 pb-24">
+    <div className="bg-background">
+      <div className="p-4 pb-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-              <span className="font-oswald font-extralight tracking-tight">ANALYTICS</span>
-              <span className="font-fjalla font-extrabold italic">DASHBOARD</span>
+            <h1 className="text-4xl font-bold text-foreground mb-1 tracking-wide">
+              <span className="font-oswald font-extralight tracking-tight">YOUR</span>
+              <span className="font-fjalla font-extrabold italic ml-2">ANALYTICS</span>
             </h1>
             <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
               WELCOME, <span className="font-bold italic">{userName.toUpperCase()}</span>
@@ -98,7 +99,7 @@ const SpecialistAnalyticsDashboard = ({ onNavigateToChat }: SpecialistAnalyticsD
               className="flex items-center gap-2"
             >
               <MessageSquare size={16} />
-              Chat
+              Back to Dashboard
             </Button>
           )}
         </div>
