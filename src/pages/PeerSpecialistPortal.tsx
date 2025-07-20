@@ -133,7 +133,10 @@ const PeerSpecialistPortal = () => {
             timestamp: new Date().toISOString()
           })
         })
-        .catch(logError => {
+        .then(() => {
+          logger.debug('Portal error logged successfully');
+        })
+        .catch((logError) => {
           logger.error('Failed to log portal error', logError);
         });
     }

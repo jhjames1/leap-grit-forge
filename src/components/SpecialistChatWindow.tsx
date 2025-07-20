@@ -15,7 +15,8 @@ import {
   X,
   Trash2,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +24,7 @@ import AppointmentProposalHandler from './AppointmentProposalHandler';
 import ChatAppointmentScheduler from './ChatAppointmentScheduler';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 
 interface ChatSession {
   id: string;
@@ -57,6 +59,7 @@ interface OptimisticMessage {
   sender_type: string;
   created_at: string;
   isOptimistic: boolean;
+  status?: 'sending' | 'failed';
 }
 
 interface SpecialistChatWindowProps {
@@ -84,7 +87,9 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   const [currentSession, setCurrentSession] = useState<ChatSession>(session);
   const [isActivatingSession, setIsActivatingSession] = useState(false);
   const [messageQueue, setMessageQueue] = useState<any[]>([]);
-  const [retryCount, setRetryCount] = useState(0);
+
+  // Timeout tracking for stuck messages
+  const messageTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // Connection resilience state
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
@@ -94,7 +99,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   const loadMessages = async () => {
     try {
       setLoading(true);
-      console.log('Loading messages for session:', session.id);
+      logger.debug('Loading messages for session:', session.id);
       
       const { data, error } = await supabase
         .from('chat_messages')
@@ -104,10 +109,32 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
 
       if (error) throw error;
 
-      console.log('Loaded messages:', data?.length || 0);
-      setMessages(data || []);
+      logger.debug('Loaded messages:', data?.length || 0);
+      
+      // Remove optimistic messages that have been replaced by real messages
+      setMessages(prev => {
+        const realMessages = data || [];
+        const optimisticMessages = prev.filter(msg => msg.isOptimistic);
+        
+        // Remove optimistic messages that match real messages
+        const filteredOptimistic = optimisticMessages.filter(optimistic => 
+          !realMessages.some(real => 
+            real.content === optimistic.content && 
+            real.sender_type === optimistic.sender_type &&
+            Math.abs(new Date(real.created_at).getTime() - new Date(optimistic.created_at).getTime()) < 30000 // 30 second window
+          )
+        );
+
+        // Combine real messages with remaining optimistic messages
+        const allMessages = [...realMessages, ...filteredOptimistic];
+        
+        // Sort by created_at
+        return allMessages.sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      });
     } catch (err) {
-      console.error('Error loading messages:', err);
+      logger.error('Error loading messages:', err);
       setError(err instanceof Error ? err.message : 'Failed to load messages');
     } finally {
       setLoading(false);
@@ -125,7 +152,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
       if (error) throw error;
       setSessionProposal(data as AppointmentProposal | null);
     } catch (err) {
-      console.error('Error loading session proposal:', err);
+      logger.error('Error loading session proposal:', err);
     }
   };
 
@@ -141,15 +168,15 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
       if (error) throw error;
       
       setSessionProposal(null);
-      console.log('Expired proposal deleted successfully');
+      logger.debug('Expired proposal deleted successfully');
     } catch (err) {
-      console.error('Error deleting proposal:', err);
+      logger.error('Error deleting proposal:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete proposal');
     }
   };
 
   const setupRealTimeSubscription = () => {
-    console.log('Setting up real-time subscription for session:', session.id);
+    logger.debug('Setting up real-time subscription for session:', session.id);
     setConnectionStatus('connecting');
     
     const channel = supabase
@@ -163,12 +190,15 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           filter: `session_id=eq.${session.id}`
         },
         (payload) => {
-          console.log('New message received:', payload);
+          logger.debug('New message received:', payload);
           const newMessage = payload.new;
+          
           setMessages(prev => {
-            // Remove any optimistic message with the same content
+            // Remove any optimistic message with matching content and sender
             const withoutOptimistic = prev.filter(msg => 
-              !(msg.isOptimistic && msg.content === newMessage.content && msg.sender_type === newMessage.sender_type)
+              !(msg.isOptimistic && 
+                msg.content === newMessage.content && 
+                msg.sender_type === newMessage.sender_type)
             );
             
             // Avoid duplicates
@@ -176,9 +206,16 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
               return withoutOptimistic;
             }
             
-            return [...withoutOptimistic, newMessage].sort((a, b) => 
+            const updatedMessages = [...withoutOptimistic, newMessage];
+            return updatedMessages.sort((a, b) => 
               new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             );
+          });
+
+          // Clear any timeouts for matching optimistic messages
+          messageTimeoutRef.current.forEach((timeout, messageId) => {
+            clearTimeout(timeout);
+            messageTimeoutRef.current.delete(messageId);
           });
         }
       )
@@ -191,7 +228,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           filter: `id=eq.${session.id}`
         },
         (payload) => {
-          console.log('Session updated via real-time:', payload);
+          logger.debug('Session updated via real-time:', payload);
           const updatedSession = payload.new as ChatSession;
           setCurrentSession(updatedSession);
           
@@ -218,7 +255,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         }
       )
       .subscribe((status) => {
-        console.log('Real-time subscription status:', status);
+        logger.debug('Real-time subscription status:', status);
         if (status === 'SUBSCRIBED') {
           setConnectionStatus('connected');
           setReconnectAttempts(0);
@@ -232,18 +269,21 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
+      // Clear all message timeouts
+      messageTimeoutRef.current.forEach(timeout => clearTimeout(timeout));
+      messageTimeoutRef.current.clear();
       supabase.removeChannel(channel);
     };
   };
 
   const handleReconnection = () => {
     if (reconnectAttempts >= maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached');
+      logger.error('Max reconnection attempts reached');
       return;
     }
 
     const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-    console.log(`Attempting reconnection in ${backoffDelay}ms (attempt ${reconnectAttempts + 1})`);
+    logger.debug(`Attempting reconnection in ${backoffDelay}ms (attempt ${reconnectAttempts + 1})`);
     
     reconnectTimeoutRef.current = setTimeout(() => {
       setReconnectAttempts(prev => prev + 1);
@@ -261,7 +301,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
       try {
         await sendMessageToDatabase(messageData);
       } catch (err) {
-        console.error('Failed to send queued message:', err);
+        logger.error('Failed to send queued message:', err);
         // Re-add to queue for retry
         setMessageQueue(prev => [...prev, messageData]);
       }
@@ -305,7 +345,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     setIsActivatingSession(true);
     
     try {
-      console.log('Activating session:', currentSession.id);
+      logger.debug('Activating session:', currentSession.id);
       
       const updateData: any = { status: 'active' };
       
@@ -325,7 +365,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         throw updateError;
       }
 
-      console.log('Session activated successfully:', updatedSessionData);
+      logger.debug('Session activated successfully:', updatedSessionData);
       setCurrentSession(updatedSessionData as ChatSession);
       
       // Log session activation event
@@ -343,10 +383,44 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         });
 
     } catch (err) {
-      console.error('Error activating session:', err);
+      logger.error('Error activating session:', err);
       throw err;
     } finally {
       setIsActivatingSession(false);
+    }
+  };
+
+  const retryFailedMessage = async (messageId: string) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === messageId 
+        ? { ...msg, status: 'sending' }
+        : msg
+    ));
+
+    try {
+      const failedMessage = messages.find(msg => msg.id === messageId);
+      if (failedMessage) {
+        await sendMessageToDatabase({ 
+          content: failedMessage.content,
+          sender_type: failedMessage.sender_type
+        });
+        
+        // Remove the failed message after successful retry
+        setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      }
+    } catch (err) {
+      logger.error('Failed to retry message:', err);
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, status: 'failed' }
+          : msg
+      ));
+      
+      toast({
+        title: "Message Failed",
+        description: "Could not send message. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -360,10 +434,28 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         content: messageData.content,
         sender_type: messageData.sender_type || 'specialist',
         created_at: new Date().toISOString(),
-        isOptimistic: true
+        isOptimistic: true,
+        status: 'sending'
       };
 
       setMessages(prev => [...prev, optimisticMessage]);
+
+      // Set timeout to mark message as failed if not replaced within 10 seconds
+      const timeoutId = setTimeout(() => {
+        setMessages(prev => prev.map(msg => 
+          msg.id === optimisticMessage.id 
+            ? { ...msg, status: 'failed' }
+            : msg
+        ));
+        
+        toast({
+          title: "Message Timeout",
+          description: "Message taking longer than expected. Click retry to send again.",
+          variant: "destructive",
+        });
+      }, 10000);
+
+      messageTimeoutRef.current.set(optimisticMessage.id, timeoutId);
 
       // Try to send immediately, or queue if offline
       if (connectionStatus === 'connected') {
@@ -378,14 +470,18 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         });
       }
 
-      console.log('Message sent/queued successfully');
+      logger.debug('Message sent/queued successfully');
       
     } catch (err) {
-      console.error('Error sending message:', err);
+      logger.error('Error sending message:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
       
-      // Remove optimistic message on error
-      setMessages(prev => prev.filter(msg => !msg.isOptimistic || msg.content !== messageData.content));
+      // Mark optimistic message as failed
+      setMessages(prev => prev.map(msg => 
+        msg.isOptimistic && msg.content === messageData.content 
+          ? { ...msg, status: 'failed' }
+          : msg
+      ));
       
       // Add to queue for retry
       setMessageQueue(prev => [...prev, messageData]);
@@ -429,7 +525,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
       
       onClose();
     } catch (err) {
-      console.error('Error ending session:', err);
+      logger.error('Error ending session:', err);
       toast({
         title: "Error",
         description: "Failed to end session. Please try again.",
@@ -726,11 +822,26 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                     : 'bg-card border border-border text-card-foreground'
                  } rounded-2xl p-4 ${msg.isOptimistic ? 'opacity-70' : ''}`}>
                   <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
-                  <p className={`text-xs ${
-                    msg.sender_type === 'specialist' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                  }`}>
-                    {msg.isOptimistic ? 'Sending...' : new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className={`text-xs ${
+                      msg.sender_type === 'specialist' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    }`}>
+                      {msg.isOptimistic && msg.status === 'sending' && 'Sending...'}
+                      {msg.isOptimistic && msg.status === 'failed' && 'Failed'}
+                      {!msg.isOptimistic && new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                    </p>
+                    {msg.isOptimistic && msg.status === 'failed' && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => retryFailedMessage(msg.id)}
+                        className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10"
+                        title="Retry message"
+                      >
+                        <RefreshCw size={12} />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -740,7 +851,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
                   message={msg} 
                   isUser={msg.sender_type === 'user'} 
                   onResponse={() => {
-                    console.log('Appointment proposal response handled');
+                    logger.debug('Appointment proposal response handled');
                     loadSessionProposal();
                   }}
                 />
