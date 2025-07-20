@@ -519,14 +519,54 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     setIsEndingSession(true);
     
     try {
-      logger.debug('Ending session:', currentSession.id);
+      logger.debug('Ending session:', { sessionId: currentSession.id, status: currentSession.status, specialistId: currentSession.specialist_id });
       
-      // Use SessionStateManager for proper state management
-      await sessionStateManager.endSession(
-        currentSession.id,
-        user.id,
-        'Session ended by specialist'
-      );
+      // If session was never claimed by a specialist, claim it first then end it
+      if (!currentSession.specialist_id) {
+        logger.debug('Session has no specialist assigned, claiming it first');
+        
+        // Get current specialist ID
+        const { data: specialistData, error: specialistError } = await supabase
+          .from('peer_specialists')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (specialistError || !specialistData) {
+          throw new Error('No specialist found for user');
+        }
+        
+        // First, claim the session by setting the specialist_id
+        const { error: claimError } = await supabase
+          .from('chat_sessions')
+          .update({
+            specialist_id: specialistData.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentSession.id);
+          
+        if (claimError) {
+          throw claimError;
+        }
+        
+        // Update local session state to reflect the claim
+        const updatedSession = { ...currentSession, specialist_id: specialistData.id };
+        setCurrentSession(updatedSession);
+        
+        // Now use SessionStateManager to end the session
+        await sessionStateManager.endSession(
+          currentSession.id,
+          user.id,
+          'Session ended by specialist'
+        );
+      } else {
+        // Use SessionStateManager for sessions with assigned specialists
+        await sessionStateManager.endSession(
+          currentSession.id,
+          user.id,
+          'Session ended by specialist'
+        );
+      }
 
       // Cancel/expire any pending appointment proposals
       const { error: proposalError } = await supabase
