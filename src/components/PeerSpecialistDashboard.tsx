@@ -50,7 +50,6 @@ const PeerSpecialistDashboard = () => {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
       return;
     }
 
