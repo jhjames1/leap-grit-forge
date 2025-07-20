@@ -35,7 +35,9 @@ import {
   Send,
   Trash2,
   Star,
-  RefreshCw
+  RefreshCw,
+  Key,
+  Copy
 } from 'lucide-react';
 
 interface PeerSpecialist {
@@ -105,6 +107,17 @@ const PeerSpecialistManagement = () => {
   });
   const [newSpecialty, setNewSpecialty] = useState('');
   const [deletingSpecialistId, setDeletingSpecialistId] = useState<string | null>(null);
+  const [credentialsDialog, setCredentialsDialog] = useState<{
+    isOpen: boolean;
+    email: string;
+    password: string;
+    specialistName: string;
+  }>({
+    isOpen: false,
+    email: '',
+    password: '',
+    specialistName: ''
+  });
 
   useEffect(() => {
     fetchSpecialists();
@@ -498,12 +511,20 @@ const PeerSpecialistManagement = () => {
     }
 
     try {
+      // Generate a temporary password
+      const tempPassword = generateTempPassword();
+      
+      // Hash the password (simple approach for demo - in production use proper bcrypt)
+      const tempPasswordHash = await hashPassword(tempPassword);
+      
       const updateData = {
         is_verified: true,
         is_active: true,
         activated_at: new Date().toISOString(),
         activation_method: 'manual',
-        manually_activated_by: user.id
+        manually_activated_by: user.id,
+        temporary_password_hash: tempPasswordHash,
+        must_change_password: true
       };
 
       const { error } = await supabase
@@ -513,16 +534,77 @@ const PeerSpecialistManagement = () => {
 
       if (error) throw error;
       
+      // Get specialist's email using the edge function
+      let specialistEmail = 'Email not available';
+      try {
+        const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-email', {
+          body: { userId: specialist.user_id }
+        });
+        
+        if (!emailError && emailData?.email) {
+          specialistEmail = emailData.email;
+        } else {
+          console.error('Error getting user email:', emailError);
+          specialistEmail = `Contact admin for email (User ID: ${specialist.user_id})`;
+        }
+      } catch (e) {
+        console.error('Could not retrieve email:', e);
+        specialistEmail = `Contact admin for email (User ID: ${specialist.user_id})`;
+      }
+      
+      // Show credentials dialog
+      setCredentialsDialog({
+        isOpen: true,
+        email: specialistEmail,
+        password: tempPassword,
+        specialistName: `${specialist.first_name} ${specialist.last_name}`
+      });
+      
       fetchSpecialists();
       toast({
         title: "Success",
-        description: "Specialist manually activated and verified successfully"
+        description: "Specialist manually activated. Temporary credentials generated."
       });
     } catch (error) {
       console.error('Error force activating specialist:', error);
       toast({
         title: "Error",
         description: "Failed to activate specialist",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Helper function to generate temporary password
+  const generateTempPassword = (): string => {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
+  // Simple password hashing (in production, use bcrypt)
+  const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied!",
+        description: "Copied to clipboard"
+      });
+    } catch (error) {
+      toast({
+        title: "Copy failed",
+        description: "Please copy manually",
         variant: "destructive"
       });
     }
@@ -1229,6 +1311,95 @@ const PeerSpecialistManagement = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Credentials Dialog */}
+      <Dialog open={credentialsDialog.isOpen} onOpenChange={(open) => 
+        setCredentialsDialog(prev => ({ ...prev, isOpen: open }))
+      }>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5 text-primary" />
+              Specialist Login Credentials
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-warning mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-warning">Important</p>
+                  <p className="text-warning/80">
+                    Share these credentials securely with {credentialsDialog.specialistName}. 
+                    They must change the password on first login.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <Label className="text-sm font-medium">Email (Username)</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input 
+                    value={credentialsDialog.email} 
+                    readOnly 
+                    className="bg-muted"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(credentialsDialog.email)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Temporary Password</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input 
+                    value={credentialsDialog.password} 
+                    readOnly 
+                    className="bg-muted font-mono"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(credentialsDialog.password)}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-info/10 border border-info/20 rounded-lg p-4">
+              <div className="text-sm">
+                <p className="font-medium text-info mb-2">Instructions for Specialist:</p>
+                <ol className="list-decimal list-inside space-y-1 text-info/80">
+                  <li>Go to the Peer Support Portal login page</li>
+                  <li>Use the email and temporary password above</li>
+                  <li>You'll be prompted to change your password</li>
+                  <li>Create a strong, secure password</li>
+                  <li>Complete your profile setup</li>
+                </ol>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setCredentialsDialog(prev => ({ ...prev, isOpen: false }))}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
