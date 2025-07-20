@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatOperations, MessageData, ChatOperationResult } from '@/hooks/useChatOperations';
+import { useConnectionMonitor } from '@/hooks/useConnectionMonitor';
 import { logger } from '@/utils/logger';
 
 export interface OptimisticMessage {
@@ -65,21 +66,22 @@ export interface UseRobustChatSessionResult {
 
 const STALE_SESSION_THRESHOLD = 10 * 60 * 1000; // 10 minutes
 const MESSAGE_TIMEOUT = 15000; // 15 seconds
-const RECONNECT_INTERVAL = 5000; // 5 seconds
+const REFRESH_INTERVAL = 30000; // 30 seconds for auto-refresh when disconnected
 
 export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobustChatSessionResult => {
   const [session, setSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   const [error, setError] = useState<string | null>(null);
   
   const { user } = useAuth();
   const chatOperations = useChatOperations();
+  const { connectionStatus, createChannel, forceReconnect } = useConnectionMonitor();
   
   const channelRef = useRef<any>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const messageTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const refreshTimeoutRef = useRef<NodeJS.Timeout>();
   const isInitializedRef = useRef(false);
+  const lastRefreshRef = useRef<Date | null>(null);
 
   // Computed states
   const isSessionStale = session?.status === 'waiting' && 
@@ -90,11 +92,21 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     msg.isOptimistic && (msg.status === 'failed' || msg.status === 'timeout')
   );
 
-  // Load session and messages from database
-  const loadSessionData = useCallback(async () => {
+  // Enhanced load session data with better error handling
+  const loadSessionData = useCallback(async (forceRefresh = false) => {
     if (!user) return;
 
+    // Prevent excessive refresh calls
+    if (!forceRefresh && lastRefreshRef.current && 
+        Date.now() - lastRefreshRef.current.getTime() < 5000) {
+      return;
+    }
+
+    lastRefreshRef.current = new Date();
+
     try {
+      logger.debug('Loading session data', { forceRefresh });
+
       // Get user's most recent session
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
@@ -112,25 +124,51 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
         // Load messages for this session
         const sessionMessages = await chatOperations.getSessionWithMessages(sessionData.id);
         if (sessionMessages && !sessionMessages.error) {
+          logger.debug('Loaded messages', { count: sessionMessages.messages?.length || 0 });
           setMessages(sessionMessages.messages || []);
         }
       }
 
+      setError(null);
     } catch (err) {
       logger.error('Failed to load session data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load session');
     }
   }, [user, chatOperations]);
 
-  // Setup real-time subscription
+  // Auto-refresh when disconnected
+  useEffect(() => {
+    if (connectionStatus.status === 'disconnected' && session && !refreshTimeoutRef.current) {
+      refreshTimeoutRef.current = setTimeout(() => {
+        logger.debug('Auto-refreshing due to disconnection');
+        loadSessionData(true);
+        refreshTimeoutRef.current = undefined;
+      }, REFRESH_INTERVAL);
+    }
+
+    if (connectionStatus.status === 'connected' && refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = undefined;
+    }
+
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = undefined;
+      }
+    };
+  }, [connectionStatus.status, session, loadSessionData]);
+
+  // Enhanced real-time subscription setup
   const setupRealtimeSubscription = useCallback(() => {
     if (!session || channelRef.current) return;
 
-    logger.debug('Setting up realtime subscription for session:', session.id);
-    setConnectionStatus('connecting');
+    logger.debug('Setting up enhanced realtime subscription for session:', session.id);
 
-    const channel = supabase
-      .channel(`robust-chat-${session.id}`)
+    const channelName = `robust-chat-${session.id}-${Date.now()}`;
+    const channel = createChannel(channelName);
+
+    channel
       .on(
         'postgres_changes',
         {
@@ -185,34 +223,10 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
           const updatedSession = payload.new as ChatSession;
           setSession(updatedSession);
         }
-      )
-      .subscribe((status) => {
-        logger.debug('Realtime subscription status:', status);
-        
-        if (status === 'SUBSCRIBED') {
-          setConnectionStatus('connected');
-          setError(null);
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          setConnectionStatus('disconnected');
-          scheduleReconnection();
-        }
-      });
+      );
 
     channelRef.current = channel;
-  }, [session]);
-
-  // Schedule reconnection with backoff
-  const scheduleReconnection = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      logger.debug('Attempting to reconnect realtime...');
-      cleanupRealtimeSubscription();
-      setupRealtimeSubscription();
-    }, RECONNECT_INTERVAL);
-  }, [setupRealtimeSubscription]);
+  }, [session, createChannel]);
 
   // Cleanup realtime subscription
   const cleanupRealtimeSubscription = useCallback(() => {
@@ -221,14 +235,15 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
       channelRef.current = null;
     }
     
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = undefined;
-    }
-    
     // Clear all message timeouts
     messageTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
     messageTimeoutsRef.current.clear();
+
+    // Clear refresh timeout
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+      refreshTimeoutRef.current = undefined;
+    }
   }, []);
 
   // Start a new session
@@ -341,10 +356,19 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     }, 500);
   }, [session, endSession, startSession]);
 
-  // Refresh session data
+  // Enhanced refresh session with connection retry
   const refreshSession = useCallback(async () => {
-    await loadSessionData();
-  }, [loadSessionData]);
+    logger.debug('Manual session refresh requested');
+    
+    // Test connection first
+    const isConnected = await useConnectionMonitor().testConnection();
+    if (!isConnected) {
+      logger.debug('Connection test failed, forcing reconnect');
+      forceReconnect();
+    }
+    
+    await loadSessionData(true);
+  }, [loadSessionData, forceReconnect]);
 
   // Retry a failed message
   const retryFailedMessage = useCallback(async (messageId: string) => {
@@ -389,16 +413,16 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     }
   }, [user, loadSessionData]);
 
-  // Setup realtime when session is available
+  // Setup realtime when session is available and connected
   useEffect(() => {
-    if (session && session.status !== 'ended') {
+    if (session && session.status !== 'ended' && connectionStatus.status === 'connected') {
       setupRealtimeSubscription();
-    } else {
+    } else if (connectionStatus.status === 'disconnected') {
       cleanupRealtimeSubscription();
     }
 
     return cleanupRealtimeSubscription;
-  }, [session, setupRealtimeSubscription, cleanupRealtimeSubscription]);
+  }, [session, connectionStatus.status, setupRealtimeSubscription, cleanupRealtimeSubscription]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -412,7 +436,7 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     messages,
     loading: chatOperations.loading,
     error: error || chatOperations.error,
-    connectionStatus,
+    connectionStatus: connectionStatus.status,
     startSession,
     sendMessage,
     endSession,
