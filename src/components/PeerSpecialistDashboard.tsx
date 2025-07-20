@@ -386,6 +386,11 @@ const PeerSpecialistDashboard = () => {
         setConnectionStatus('connected');
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         setConnectionStatus('disconnected');
+        
+        // Immediate data refresh when connection fails
+        logger.debug('Connection failed, refreshing sessions immediately');
+        loadSessions();
+        
         // Attempt to reconnect after a delay
         setTimeout(() => {
           if (channelRef.current) {
@@ -418,7 +423,26 @@ const PeerSpecialistDashboard = () => {
       setupRealtimeSubscription();
     }
     return cleanupRealtimeSubscription;
-  }, [user, specialistId, setupRealtimeSubscription, cleanupRealtimeSubscription]);
+  }, [user, specialistId, setupRealtimeSubscription, cleanupRealtimeSubscription, loadSessions]);
+
+  // Auto-refresh when disconnected for too long
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    
+    if (connectionStatus === 'disconnected') {
+      // Refresh every 10 seconds when disconnected to catch new sessions
+      intervalId = setInterval(() => {
+        logger.debug('Auto-refreshing sessions due to disconnected state');
+        loadSessions();
+      }, 10000);
+    }
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [connectionStatus, loadSessions]);
 
   // Enhanced refresh handler
   const handleRefresh = useCallback(async () => {

@@ -75,7 +75,7 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
   
   const { user } = useAuth();
   const chatOperations = useChatOperations();
-  const { connectionStatus, createChannel, forceReconnect } = useConnectionMonitor();
+  const { connectionStatus, createChannel, forceReconnect, testConnection } = useConnectionMonitor();
   
   const channelRef = useRef<any>(null);
   const messageTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
@@ -361,14 +361,14 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     logger.debug('Manual session refresh requested');
     
     // Test connection first
-    const isConnected = await useConnectionMonitor().testConnection();
+    const isConnected = await testConnection();
     if (!isConnected) {
       logger.debug('Connection test failed, forcing reconnect');
       forceReconnect();
     }
     
     await loadSessionData(true);
-  }, [loadSessionData, forceReconnect]);
+  }, [testConnection, forceReconnect, loadSessionData]);
 
   // Retry a failed message
   const retryFailedMessage = useCallback(async (messageId: string) => {
