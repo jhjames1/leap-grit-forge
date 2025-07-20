@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { RefreshCw, MessageSquare, BarChart3, Settings, Activity, Clock, CheckCircle, User } from 'lucide-react';
+import { RefreshCw, MessageSquare, BarChart3, Settings, Activity, Clock, CheckCircle, User, History } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import RobustSpecialistChatWindow from './RobustSpecialistChatWindow';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
@@ -14,6 +14,7 @@ import SpecialistSettings from './SpecialistSettings';
 import PeerPerformanceDashboard from './PeerPerformanceDashboard';
 import SpecialistActivityLog from './SpecialistActivityLog';
 import SpecialistStatusIndicator from './SpecialistStatusIndicator';
+import ChatHistory from './ChatHistory';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { format } from 'date-fns';
@@ -45,6 +46,7 @@ const PeerSpecialistDashboard = () => {
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showChatHistory, setShowChatHistory] = useState(false);
 
   // Use refs to track component state and prevent stale closures
   const currentSessionsRef = useRef<ChatSession[]>([]);
@@ -427,6 +429,17 @@ const PeerSpecialistDashboard = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            {/* Chat History Button */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setShowChatHistory(true)}
+            >
+              <History className="w-4 h-4" />
+              Chat History
+            </Button>
+
             {/* Performance Modal */}
             <Dialog open={showPerformanceModal} onOpenChange={setShowPerformanceModal}>
               <DialogTrigger asChild>
@@ -498,36 +511,38 @@ const PeerSpecialistDashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex h-[calc(100vh-4rem)]">
-        {/* Left Panel - Chat Sessions */}
-        <div className="w-96 border-r bg-card flex flex-col">
-          <div className="p-6 border-b">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Active Chat Sessions</h2>
-              <div className="flex items-center gap-2">
-                <Badge 
-                  variant={connectionStatus === 'connected' ? 'default' : 'secondary'}
-                  className={connectionStatus === 'connected' ? 'bg-green-600' : ''}
-                >
-                  {connectionStatus === 'connected' ? 'Connected' : 'Connecting...'}
-                </Badge>
-                {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
+      <div className="flex flex-col h-[calc(100vh-4rem)]">
+        {/* Top Row - Chat Sessions and Active Chat */}
+        <div className="flex h-1/2 border-b">
+          {/* Left Panel - Chat Sessions List */}
+          <div className="w-1/2 border-r bg-card flex flex-col">
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-semibold">Chat Sessions</h2>
+                <div className="flex items-center gap-2">
+                  <Badge 
+                    variant={connectionStatus === 'connected' ? 'default' : 'secondary'}
+                    className={connectionStatus === 'connected' ? 'bg-green-600' : ''}
+                  >
+                    {connectionStatus === 'connected' ? 'Connected' : 'Connecting...'}
+                  </Badge>
+                  {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
+                </div>
               </div>
             </div>
-          </div>
 
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-3">
-              {sessions.length === 0 ? (
-                <Card className="p-6">
-                  <div className="text-center text-muted-foreground">
-                    <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No active sessions</p>
-                    <p className="text-xs mt-1">Waiting sessions will appear here automatically</p>
-                  </div>
-                </Card>
-              ) : (
-                sessions.map((session) => (
+            <ScrollArea className="flex-1">
+              <div className="p-3 space-y-2">
+                {sessions.length === 0 ? (
+                  <Card className="p-4">
+                    <div className="text-center text-muted-foreground">
+                      <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                      <p className="text-xs">No active sessions</p>
+                      <p className="text-xs mt-1">Waiting sessions will appear here</p>
+                    </div>
+                  </Card>
+                ) : (
+                  sessions.map((session) => (
                   <Card 
                     key={session.id}
                     className={`cursor-pointer transition-all hover:shadow-md ${
@@ -535,8 +550,8 @@ const PeerSpecialistDashboard = () => {
                     }`}
                     onClick={() => setSelectedSession(session)}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between mb-1">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <Badge 
@@ -558,7 +573,7 @@ const PeerSpecialistDashboard = () => {
                             }
                           </p>
                           
-                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
                               {format(new Date(session.started_at), 'HH:mm')}
@@ -576,7 +591,7 @@ const PeerSpecialistDashboard = () => {
                       {session.status === 'waiting' && (
                         <Button 
                           size="sm" 
-                          className="w-full mt-2"
+                          className="w-full mt-1 h-7 text-xs"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedSession(session);
@@ -587,43 +602,59 @@ const PeerSpecialistDashboard = () => {
                       )}
                     </CardContent>
                   </Card>
-                ))
-              )}
-            </div>
+                  ))
+                )}
+              </div>
           </ScrollArea>
         </div>
 
-        {/* Center Panel - Chat Window */}
-        <div className="flex-1 flex flex-col">
-          {selectedSession ? (
-            <RobustSpecialistChatWindow
-              session={selectedSession}
-              onClose={handleSessionClose}
-              onSessionUpdate={handleSessionUpdate}
-            />
-          ) : (
-            <div className="flex-1 flex items-center justify-center bg-muted/20">
-              <div className="text-center text-muted-foreground">
-                <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">No Session Selected</h3>
-                <p className="text-sm">Select a session from the left panel to start chatting</p>
-              </div>
-            </div>
-          )}
+          {/* Right Panel - Active Chat Sessions */}
+          <div className="w-1/2 bg-card">
+            <Card className="h-full border-0 rounded-none">
+              <CardHeader className="p-4 border-b">
+                <CardTitle className="text-lg">Active Chat Session</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 h-[calc(100%-5rem)]">
+                {selectedSession ? (
+                  <RobustSpecialistChatWindow
+                    session={selectedSession}
+                    onSessionUpdate={handleSessionUpdate}
+                  />
+                ) : (
+                  <div className="flex-1 flex items-center justify-center h-full bg-muted/20">
+                    <div className="text-center text-muted-foreground">
+                      <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <h3 className="text-base font-medium mb-1">No Session Selected</h3>
+                      <p className="text-sm">Select a session to start chatting</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Right Panel - Calendar */}
-        <div className="w-96 border-l bg-card overflow-y-auto">
-          <Card className="m-4">
-            <CardHeader>
-              <CardTitle>Calendar</CardTitle>
+        {/* Bottom Row - Calendar */}
+        <div className="h-1/2 bg-card">
+          <Card className="h-full border-0 rounded-none">
+            <CardHeader className="p-4 border-b">
+              <CardTitle className="text-lg">Calendar & Schedule</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 h-[calc(100%-5rem)] overflow-y-auto">
               {specialistId && <EnhancedSpecialistCalendar specialistId={specialistId} />}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Chat History Modal */}
+      {specialistId && (
+        <ChatHistory 
+          isOpen={showChatHistory}
+          onClose={() => setShowChatHistory(false)}
+          specialistId={specialistId}
+        />
+      )}
     </div>
   );
 };
