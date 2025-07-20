@@ -494,6 +494,14 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     setMessage('');
   };
 
+  // Handle key press for Enter to send
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   // Handle ending session with correct parameters
   const handleEndSession = async () => {
     if (!user || !specialistId) return;
@@ -700,8 +708,62 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       }} isUser={false} onResponse={() => loadSessionProposal()} />
         </div>}
 
-      {/* Input Section */}
-      
+      {/* Input Section - Make sure this is always visible when session is active */}
+      {!isSessionEnded && (
+        <div className="bg-card border-t border-border p-4">
+          <div className="flex space-x-3">
+            <Input
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Type your message..."
+              className="flex-1"
+              onKeyPress={handleKeyPress}
+              disabled={chatOperations.loading}
+            />
+            <Button 
+              onClick={handleSendMessage}
+              className="px-6"
+              disabled={chatOperations.loading || !message.trim()}
+            >
+              <Send size={16} />
+            </Button>
+          </div>
+          
+          {/* Action buttons */}
+          <div className="flex justify-between items-center mt-3">
+            <div className="flex space-x-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowScheduler(true)}
+                className="text-primary border-primary/20 hover:bg-primary/10"
+              >
+                <Calendar size={16} className="mr-1" />
+                Schedule
+              </Button>
+            </div>
+            
+            <div className="flex space-x-2">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
+                disabled={session.status !== 'active'}
+              >
+                <Phone size={16} />
+              </Button>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
+                disabled={session.status !== 'active'}
+              >
+                <Video size={16} />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Scheduler Modal */}
       {showScheduler && <ChatAppointmentScheduler isOpen={showScheduler} onClose={() => setShowScheduler(false)} specialistId={specialistId || ''} userId={session.user_id} chatSessionId={session.id} onScheduled={() => {
@@ -710,4 +772,5 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }} />}
     </Card>;
 };
+
 export default RobustSpecialistChatWindow;
