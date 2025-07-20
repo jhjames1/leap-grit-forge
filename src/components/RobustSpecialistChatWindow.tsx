@@ -73,6 +73,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   onSessionUpdate
 }) => {
   const [message, setMessage] = useState('');
+  const [messageInput, setMessageInput] = useState('');
   const [showScheduler, setShowScheduler] = useState(false);
   const [sessionProposal, setSessionProposal] = useState<AppointmentProposal | null>(null);
   const [session, setSession] = useState<ChatSession>(initialSession);
@@ -80,6 +81,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   const [specialistId, setSpecialistId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const channelRef = useRef<any>(null);
   const messageTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
@@ -486,12 +488,20 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
 
   // Handle sending a message
   const handleSendMessage = async () => {
-    if (!message.trim()) return;
+    if (!messageInput.trim()) return;
     await sendMessage({
-      content: message,
+      content: messageInput,
       sender_type: 'specialist'
     });
-    setMessage('');
+    setMessageInput('');
+  };
+
+  // Handle key press for Enter to send
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   // Handle ending session with correct parameters
@@ -701,7 +711,72 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         </div>}
 
       {/* Input Section */}
-      
+      {session?.status !== 'ended' && (
+        <div className="border-t border-border">
+          {/* Action Buttons */}
+          <div className="flex gap-2 p-3 border-b border-border">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowScheduler(true)}
+              className="gap-2"
+              disabled={!session || session.status !== 'active'}
+            >
+              <Calendar className="w-4 h-4" />
+              Schedule Meeting
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {/* Handle phone call */}}
+              className="gap-2"
+              disabled={!session || session.status !== 'active'}
+            >
+              <Phone className="w-4 h-4" />
+              Phone Call
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {/* Handle video call */}}
+              className="gap-2"
+              disabled={!session || session.status !== 'active'}
+            >
+              <Video className="w-4 h-4" />
+              Video Call
+            </Button>
+          </div>
+
+          {/* Message Input */}
+          <div className="flex gap-2 p-3">
+            <Input
+              ref={inputRef}
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={
+                session?.status === 'waiting' 
+                  ? "Waiting for connection..." 
+                  : "Type your message..."
+              }
+              disabled={!session || session.status !== 'active' || connectionStatus !== 'connected'}
+              className="flex-1"
+            />
+            <Button
+              onClick={handleSendMessage}
+              disabled={
+                !messageInput.trim() || 
+                !session || 
+                session.status !== 'active' || 
+                connectionStatus !== 'connected'
+              }
+              size="sm"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Scheduler Modal */}
       {showScheduler && <ChatAppointmentScheduler isOpen={showScheduler} onClose={() => setShowScheduler(false)} specialistId={specialistId || ''} userId={session.user_id} chatSessionId={session.id} onScheduled={() => {
