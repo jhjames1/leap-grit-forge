@@ -50,6 +50,7 @@ const PeerSpecialistDashboard = () => {
   const [showEndChatMessage, setShowEndChatMessage] = useState(false);
   const [completedToday, setCompletedToday] = useState(0);
   const [avgResponseTime, setAvgResponseTime] = useState<number | null>(null);
+  const [specialistProfile, setSpecialistProfile] = useState<any>(null);
 
   // Use refs to track component state and prevent stale closures
   const currentSessionsRef = useRef<ChatSession[]>([]);
@@ -140,23 +141,24 @@ const PeerSpecialistDashboard = () => {
     }
   }, [specialistId]);
 
-  // Get specialist ID on mount
+  // Get specialist ID and profile on mount
   useEffect(() => {
-    const getSpecialistId = async () => {
+    const getSpecialistProfile = async () => {
       if (!user) return;
       try {
         const { data, error } = await supabase
           .from('peer_specialists')
-          .select('id')
+          .select('id, first_name, last_name, specialties, years_experience')
           .eq('user_id', user.id)
           .single();
         if (error) throw error;
         setSpecialistId(data.id);
+        setSpecialistProfile(data);
       } catch (err) {
-        logger.error('Failed to get specialist ID:', err);
+        logger.error('Failed to get specialist profile:', err);
       }
     };
-    getSpecialistId();
+    getSpecialistProfile();
   }, [user]);
 
   // Enhanced session update handler with better state synchronization
@@ -490,6 +492,56 @@ const PeerSpecialistDashboard = () => {
     return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
   };
 
+  // Calculate wait time for a session in seconds
+  const getWaitTimeSeconds = (session: ChatSession) => {
+    return Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000);
+  };
+
+  // Get the longest waiting session
+  const getLongestWaitingSession = () => {
+    const waitingSessions = sessions.filter(s => s.status === 'waiting' && !s.specialist_id);
+    if (waitingSessions.length === 0) return null;
+    
+    return waitingSessions.reduce((longest, current) => {
+      const currentWait = getWaitTimeSeconds(current);
+      const longestWait = getWaitTimeSeconds(longest);
+      return currentWait > longestWait ? current : longest;
+    });
+  };
+
+  // Check if any waiting session has been waiting longer than 45 seconds
+  const hasUrgentWaitingSessions = () => {
+    return sessions.some(s => s.status === 'waiting' && !s.specialist_id && getWaitTimeSeconds(s) > 45);
+  };
+
+  // Get appropriate card background class based on chat states
+  const getActiveChatsCardClass = () => {
+    return activeSessions > 0 ? 'bg-chat-active' : '';
+  };
+
+  const getWaitingChatsCardClass = () => {
+    if (waitingSessions === 0) return '';
+    if (hasUrgentWaitingSessions()) return 'bg-chat-urgent';
+    return 'bg-chat-waiting';
+  };
+
+  // Generate motivational message based on specialist's experience and specialties
+  const getMotivationalMessage = () => {
+    if (!specialistProfile) return "Welcome to the Peer Support Specialist Dashboard";
+    
+    const messages = [
+      "Your compassion transforms lives. Every conversation matters.",
+      "Through your shared experience, you bring hope to those who need it most.",
+      "Your journey empowers others to find their own path to recovery.",
+      "You are making a difference, one conversation at a time.",
+      "Your expertise and empathy create safe spaces for healing.",
+      "Thank you for being a beacon of hope in someone's recovery journey."
+    ];
+    
+    const randomIndex = Math.floor(Math.random() * messages.length);
+    return messages[randomIndex];
+  };
+
   return (
     <div className="min-h-screen w-full bg-background flex flex-col">
       {/* Header */}
@@ -568,30 +620,54 @@ const PeerSpecialistDashboard = () => {
 
       {/* Main Content - Flexible scrollable layout */}
       <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+        {/* Welcome Message */}
+        {specialistProfile && (
+          <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <User className="h-8 w-8 text-primary" />
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Welcome, {specialistProfile.first_name} {specialistProfile.last_name}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {getMotivationalMessage()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Metric Cards Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Active Chats Card */}
-          <Card>
+          <Card className={getActiveChatsCardClass()}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Active Chats</p>
-                  <p className="text-2xl font-bold text-green-600">{activeSessions}</p>
+                  <p className="text-2xl font-bold text-chat-active-foreground">{activeSessions}</p>
                 </div>
-                <MessageSquare className="h-8 w-8 text-green-600" />
+                <MessageSquare className="h-8 w-8 text-chat-active-foreground" />
               </div>
             </CardContent>
           </Card>
 
           {/* Waiting Chats Card */}
-          <Card>
+          <Card className={getWaitingChatsCardClass()}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Waiting Chats</p>
-                  <p className="text-2xl font-bold text-yellow-600">{waitingSessions}</p>
+                  <p className="text-2xl font-bold text-chat-waiting-foreground">{waitingSessions}</p>
+                  {hasUrgentWaitingSessions() && (
+                    <p className="text-xs text-chat-urgent-foreground font-medium mt-1">
+                      Longest wait: {Math.floor(getWaitTimeSeconds(getLongestWaitingSession()!) / 60)}m {getWaitTimeSeconds(getLongestWaitingSession()!) % 60}s
+                    </p>
+                  )}
                 </div>
-                <Clock className="h-8 w-8 text-yellow-600" />
+                <Clock className={`h-8 w-8 ${hasUrgentWaitingSessions() ? 'text-chat-urgent-foreground' : 'text-chat-waiting-foreground'}`} />
               </div>
             </CardContent>
           </Card>

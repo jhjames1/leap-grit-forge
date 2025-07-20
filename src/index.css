@@ -37,6 +37,14 @@
     --input: 0 0% 85%; /* Input border */
     --ring: 51 100% 50%; /* Yellow #FFCE00 */
 
+    /* Chat status colors */
+    --chat-active: 120 100% 95%; /* Light green #F0FFF4 */
+    --chat-active-foreground: 120 100% 25%; /* Dark green #006400 */
+    --chat-waiting: 60 100% 95%; /* Light yellow #FFFEF0 */
+    --chat-waiting-foreground: 60 100% 25%; /* Dark yellow #B8860B */
+    --chat-urgent: 0 100% 95%; /* Light red #FFF5F5 */
+    --chat-urgent-foreground: 0 68% 42%; /* Dark red #DC2626 */
+
     --radius: 0.75rem;
   }
 

@@ -61,6 +61,18 @@ export default {
 					DEFAULT: 'hsl(var(--warning))',
 					foreground: 'hsl(var(--warning-foreground))'
 				},
+				'chat-active': {
+					DEFAULT: 'hsl(var(--chat-active))',
+					foreground: 'hsl(var(--chat-active-foreground))'
+				},
+				'chat-waiting': {
+					DEFAULT: 'hsl(var(--chat-waiting))',
+					foreground: 'hsl(var(--chat-waiting-foreground))'
+				},
+				'chat-urgent': {
+					DEFAULT: 'hsl(var(--chat-urgent))',
+					foreground: 'hsl(var(--chat-urgent-foreground))'
+				},
 				// LEAP Brand Colors
 				midnight: {
 					DEFAULT: '#0B1426',
