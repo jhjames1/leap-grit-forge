@@ -456,15 +456,15 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const isSessionEnded = session.status === 'ended';
 
   return (
-    <Card className="h-[600px] flex flex-col bg-background border border-steel-dark">
+    <Card className="h-[600px] flex flex-col">
       {/* Header */}
-      <div className="bg-midnight/90 backdrop-blur-sm border-b border-steel-dark p-4 flex items-center justify-between">
+      <div className="bg-card border-b p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-steel rounded-full flex items-center justify-center">
-            <User className="text-white" size={14} />
+          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+            <User className="text-primary" size={16} />
           </div>
           <div>
-            <h3 className="font-oswald font-semibold text-white text-sm">
+            <h3 className="font-fjalla font-bold text-foreground">
               {session.user_first_name || 'Anonymous'} {session.user_last_name || 'User'}
             </h3>
             <div className="flex items-center space-x-2">
@@ -473,7 +473,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
                 session.status === 'waiting' ? 'bg-yellow-500' :
                 'bg-gray-500'
               }`}></div>
-              <p className="text-steel-light text-xs">
+              <p className="text-muted-foreground text-sm font-source">
                 Session #{session.session_number} • {getSessionAge()}
               </p>
             </div>
@@ -493,7 +493,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               size="sm"
               variant="destructive"
               onClick={handleEndSession}
-              className="h-8 px-3 text-xs"
               disabled={chatOperations.loading}
             >
               <X size={12} className="mr-1" />
@@ -505,7 +504,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
             size="sm"
             variant="ghost"
             onClick={onClose}
-            className="h-8 px-3 text-xs text-steel-light hover:text-white"
           >
             <X size={12} />
           </Button>
@@ -514,24 +512,24 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
 
       {/* Status Messages */}
       {isSessionEnded && (
-        <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-3">
-          <p className="text-yellow-600 text-sm text-center">
+        <div className="bg-yellow-50 border-b border-yellow-200 p-3">
+          <p className="text-yellow-700 text-sm text-center font-source">
             This chat session has ended. {session.end_reason && `Reason: ${session.end_reason}`}
           </p>
         </div>
       )}
 
       {session.status === 'waiting' && (
-        <div className="bg-blue-500/10 border-b border-blue-500/20 p-3">
-          <p className="text-blue-600 text-sm text-center">
+        <div className="bg-blue-50 border-b border-blue-200 p-3">
+          <p className="text-blue-700 text-sm text-center font-source">
             Waiting for specialist to join this session...
           </p>
         </div>
       )}
 
       {connectionStatus === 'disconnected' && !isSessionEnded && (
-        <div className="bg-orange-500/10 border-b border-orange-500/20 p-3">
-          <p className="text-orange-600 text-sm text-center">
+        <div className="bg-orange-50 border-b border-orange-200 p-3">
+          <p className="text-orange-700 text-sm text-center font-source">
             ⚠ Connection issue - Messages may be delayed
           </p>
         </div>
@@ -609,8 +607,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
             </div>
           ))
         ) : (
-          <div className="text-center text-steel-light py-8">
-            <p className="text-sm">No messages yet. Send a message to start the conversation.</p>
+          <div className="text-center text-muted-foreground py-8">
+            <p className="text-sm font-source">No messages yet. Send a message to start the conversation.</p>
           </div>
         )}
         
@@ -619,8 +617,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
 
       {/* Proposal Section */}
       {sessionProposal && sessionProposal.status === 'pending' && (
-        <div className="border-t border-steel-dark p-3">
-          <AppointmentProposalHandler 
+        <div className="border-t p-3">
+          <AppointmentProposalHandler
             message={{ 
               id: sessionProposal.id, 
               content: '',
@@ -645,7 +643,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       )}
 
       {/* Input Section */}
-      <div className="bg-midnight/90 backdrop-blur-sm border-t border-steel-dark p-4">
+      <div className="bg-card border-t p-4">
         {!isSessionEnded ? (
           <div className="space-y-3">
             <div className="flex space-x-2">
@@ -653,7 +651,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Type your message..."
-                className="flex-1 bg-white/10 border-steel-dark text-white placeholder:text-steel-light text-sm"
+                className="flex-1"
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -664,7 +662,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               />
               <Button 
                 onClick={handleSendMessage}
-                className="bg-steel hover:bg-steel-light text-white px-4"
                 disabled={!message.trim() || chatOperations.loading}
                 size="sm"
               >
@@ -677,7 +674,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
                 size="sm"
                 variant="outline"
                 onClick={() => setShowScheduler(true)}
-                className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
               >
                 <Calendar size={14} className="mr-1" />
                 Schedule Appointment
@@ -685,8 +681,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
             </div>
           </div>
         ) : (
-          <div className="text-center text-steel-light py-2">
-            <p className="text-sm">This chat session has ended.</p>
+          <div className="text-center text-muted-foreground py-2">
+            <p className="text-sm font-source">This chat session has ended.</p>
           </div>
         )}
       </div>
