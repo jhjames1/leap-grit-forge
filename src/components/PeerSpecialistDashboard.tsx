@@ -157,11 +157,11 @@ const PeerSpecialistDashboard = () => {
       });
       if (waitingError) throw waitingError;
 
-      // Get specialist's own active/ended sessions
+      // Get specialist's own ACTIVE sessions only (no ended sessions)
       const {
         data: ownSessions,
         error: ownError
-      } = await supabase.from('chat_sessions').select('*').eq('specialist_id', specialistId).in('status', ['active', 'ended']).order('started_at', {
+      } = await supabase.from('chat_sessions').select('*').eq('specialist_id', specialistId).eq('status', 'active').order('started_at', {
         ascending: false
       }).limit(20);
       if (ownError) throw ownError;
@@ -183,10 +183,16 @@ const PeerSpecialistDashboard = () => {
         } as ChatSession;
       });
 
-      // Sort by most recent activity
-      const sortedSessions = allSessions.sort((a, b) => new Date(b.updated_at || b.started_at).getTime() - new Date(a.updated_at || a.started_at).getTime());
+      // Sort by most recent activity and filter out any ended sessions that might have slipped through
+      const activeSessions = allSessions.filter(session => session.status !== 'ended');
+      const sortedSessions = activeSessions.sort((a, b) => new Date(b.updated_at || b.started_at).getTime() - new Date(a.updated_at || a.started_at).getTime());
+      
       setSessions(sortedSessions);
-      logger.debug('Loaded sessions:', sortedSessions.length);
+      
+      // Clean up any ended sessions from state
+      setSessions(prevSessions => prevSessions.filter(s => s.status !== 'ended'));
+      
+      logger.debug('Loaded active sessions:', sortedSessions.length);
     } catch (err) {
       logger.error('Error loading sessions:', err);
       toast({
@@ -270,12 +276,19 @@ const PeerSpecialistDashboard = () => {
         handleSessionUpdate(sessionWithProfile);
       }
 
-      // Remove sessions that are no longer relevant
-      if (updatedSession.status === 'ended' || updatedSession.specialist_id && updatedSession.specialist_id !== specialistId) {
-        setSessions(prev => prev.filter(s => {
-          // Keep if it's our session or if it's a waiting session
-          return s.specialist_id === specialistId || s.status === 'waiting' && !s.specialist_id;
-        }));
+      // Remove sessions that are ended or no longer relevant
+      if (updatedSession.status === 'ended') {
+        setSessions(prev => prev.filter(s => s.id !== updatedSession.id));
+        
+        // Close the chat window if it's the selected session
+        if (selectedSessionRef.current?.id === updatedSession.id) {
+          setSelectedSession(null);
+          setShowEndChatMessage(true);
+          setTimeout(() => setShowEndChatMessage(false), 3000);
+        }
+      } else if (updatedSession.specialist_id && updatedSession.specialist_id !== specialistId) {
+        // Remove if assigned to another specialist
+        setSessions(prev => prev.filter(s => s.id !== updatedSession.id));
       }
     }).subscribe(status => {
       logger.debug('Real-time subscription status:', status);
