@@ -613,17 +613,7 @@ const PeerSpecialistDashboard = () => {
       {/* Analytics Modal */}
       {showAnalytics && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-6xl max-h-[90vh] overflow-hidden bg-background rounded-lg">
-            <div className="p-6 border-b border-border">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-fjalla font-bold">Performance Analytics</h2>
-                  <p className="text-sm text-muted-foreground">Your performance metrics and insights</p>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setShowAnalytics(false)}>
-                  ×
-                </Button>
-              </div>
-            </div>
+            
             <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
               <SpecialistAnalyticsDashboard onNavigateToChat={() => setShowAnalytics(false)} />
             </div>
