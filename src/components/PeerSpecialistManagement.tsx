@@ -319,8 +319,24 @@ const PeerSpecialistManagement = () => {
     
     if (!editingSpecialist) return;
 
+    // Debug: Check current user and admin status
+    console.log('Current user:', user?.id);
+    console.log('Editing specialist:', editingSpecialist.id);
+    console.log('Form data:', formData);
+
+    // Test admin access
+    const { data: adminTest, error: adminError } = await supabase.rpc('is_admin', { _user_id: user?.id });
+    console.log('Admin check:', { adminTest, adminError });
+
+    console.log('Updating specialist with data:', {
+      id: editingSpecialist.id,
+      email: formData.email,
+      first_name: formData.first_name,
+      last_name: formData.last_name
+    });
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('peer_specialists')
         .update({
           email: formData.email,
@@ -331,23 +347,29 @@ const PeerSpecialistManagement = () => {
           years_experience: formData.years_experience,
           avatar_url: formData.avatar_url || null
         })
-        .eq('id', editingSpecialist.id);
+        .eq('id', editingSpecialist.id)
+        .select(); // Add select to see what was updated
 
-      if (error) throw error;
+      console.log('Update result:', { data, error });
+
+      if (error) {
+        console.error('Update error details:', error);
+        throw error;
+      }
 
       toast({
         title: "Success",
         description: "Specialist updated successfully"
       });
 
-      fetchSpecialists();
+      await fetchSpecialists(); // Refresh the list
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
       console.error('Error updating specialist:', error);
       toast({
         title: "Error",
-        description: "Failed to update specialist",
+        description: `Failed to update specialist: ${error.message}`,
         variant: "destructive"
       });
     }
