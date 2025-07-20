@@ -517,9 +517,7 @@ const PeerSpecialistDashboard = () => {
 
           {/* Calendar Card - Full Height */}
           <Card className="h-1/2">
-            <CardHeader className="p-4 border-b">
-              <CardTitle className="text-lg">Calendar</CardTitle>
-            </CardHeader>
+            
             <CardContent className="p-0 h-[calc(100%-5rem)]">
               {specialistId && <EnhancedSpecialistCalendar specialistId={specialistId} />}
             </CardContent>
