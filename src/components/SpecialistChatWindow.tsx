@@ -24,6 +24,7 @@ import ChatAppointmentScheduler from './ChatAppointmentScheduler';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
+import { sessionStateManager } from '@/utils/sessionStateManager';
 
 interface ChatSession {
   id: string;
@@ -520,20 +521,14 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     try {
       logger.debug('Ending session:', currentSession.id);
       
-      // 1. Update session status to ended
-      const { data: updatedSession, error: sessionError } = await supabase
-        .from('chat_sessions')
-        .update({ 
-          status: 'ended',
-          ended_at: new Date().toISOString()
-        })
-        .eq('id', currentSession.id)
-        .select()
-        .single();
+      // Use SessionStateManager for proper state management
+      await sessionStateManager.endSession(
+        currentSession.id,
+        user.id,
+        'Session ended by specialist'
+      );
 
-      if (sessionError) throw sessionError;
-
-      // 2. Cancel/expire any pending appointment proposals
+      // Cancel/expire any pending appointment proposals
       const { error: proposalError } = await supabase
         .from('appointment_proposals')
         .update({ 
@@ -547,7 +542,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         logger.error('Error cancelling proposals:', proposalError);
       }
 
-      // 3. Send final system message to user
+      // Send final system message to user
       await supabase
         .from('chat_messages')
         .insert({
@@ -558,21 +553,14 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           content: 'This chat session has been ended by the specialist. Thank you for using our service.'
         });
 
-      // 4. Update local state
+      // Get updated session state
+      const updatedSession = await sessionStateManager.getSessionState(currentSession.id);
       setCurrentSession(updatedSession as ChatSession);
       
-      // 5. Log session end event
-      await supabase
-        .from('user_activity_logs')
-        .insert({
-          user_id: user.id,
-          action: 'session_ended',
-          type: 'chat_session',
-          details: JSON.stringify({
-            session_id: currentSession.id,
-            duration_minutes: Math.round((Date.now() - new Date(currentSession.started_at).getTime()) / (1000 * 60))
-          })
-        });
+      // Notify parent component of session update
+      if (onSessionUpdate) {
+        onSessionUpdate(updatedSession);
+      }
       
       toast({
         title: "Session Ended",
