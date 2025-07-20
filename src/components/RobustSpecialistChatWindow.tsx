@@ -78,7 +78,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const [sessionProposal, setSessionProposal] = useState<AppointmentProposal | null>(null);
   const [session, setSession] = useState<ChatSession>(initialSession);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('connected'); // Default to connected for testing
   const [specialistId, setSpecialistId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -489,6 +489,9 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   // Handle sending a message
   const handleSendMessage = async () => {
     if (!messageInput.trim()) return;
+    
+    console.log('Sending message:', messageInput, 'Session status:', session.status);
+    
     await sendMessage({
       content: messageInput,
       sender_type: 'specialist'
@@ -590,7 +593,20 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     const minutes = Math.floor(age / (1000 * 60));
     return minutes < 1 ? 'just now' : `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
   };
+  
   const isSessionEnded = session.status === 'ended';
+  
+  // Check if input should be enabled - simplified logic
+  const isInputEnabled = session && !isSessionEnded && (session.status === 'active' || session.status === 'waiting');
+  
+  console.log('Input enabled check:', {
+    session: !!session,
+    isSessionEnded,
+    sessionStatus: session?.status,
+    connectionStatus,
+    isInputEnabled
+  });
+
   return <Card className="h-[600px] flex flex-col bg-card border border-border shadow-sm">
       {/* Enhanced Header with better session info display */}
       <div className="bg-card border-b border-border p-4 flex items-center justify-between">
@@ -710,8 +726,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       }} isUser={false} onResponse={() => loadSessionProposal()} />
         </div>}
 
-      {/* Input Section */}
-      {session?.status !== 'ended' && (
+      {/* Input Section - Simplified conditions */}
+      {!isSessionEnded && (
         <div className="border-t border-border">
           {/* Action Buttons */}
           <div className="flex gap-2 p-3 border-b border-border">
@@ -720,7 +736,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               size="sm"
               onClick={() => setShowScheduler(true)}
               className="gap-2"
-              disabled={!session || session.status !== 'active'}
+              disabled={!isInputEnabled}
             >
               <Calendar className="w-4 h-4" />
               Schedule Meeting
@@ -730,7 +746,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               size="sm"
               onClick={() => {/* Handle phone call */}}
               className="gap-2"
-              disabled={!session || session.status !== 'active'}
+              disabled={!isInputEnabled}
             >
               <Phone className="w-4 h-4" />
               Phone Call
@@ -740,7 +756,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               size="sm"
               onClick={() => {/* Handle video call */}}
               className="gap-2"
-              disabled={!session || session.status !== 'active'}
+              disabled={!isInputEnabled}
             >
               <Video className="w-4 h-4" />
               Video Call
@@ -753,23 +769,18 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               ref={inputRef}
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder={
                 session?.status === 'waiting' 
-                  ? "Waiting for connection..." 
+                  ? "Type your message to start the conversation..." 
                   : "Type your message..."
               }
-              disabled={!session || session.status !== 'active' || connectionStatus !== 'connected'}
+              disabled={!isInputEnabled}
               className="flex-1"
             />
             <Button
               onClick={handleSendMessage}
-              disabled={
-                !messageInput.trim() || 
-                !session || 
-                session.status !== 'active' || 
-                connectionStatus !== 'connected'
-              }
+              disabled={!messageInput.trim() || !isInputEnabled}
               size="sm"
             >
               <Send className="w-4 h-4" />
@@ -785,4 +796,5 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }} />}
     </Card>;
 };
+
 export default RobustSpecialistChatWindow;
