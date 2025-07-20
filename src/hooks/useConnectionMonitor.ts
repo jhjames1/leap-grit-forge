@@ -87,7 +87,7 @@ export const useConnectionMonitor = () => {
           status: 'disconnected',
           error: `Connection failed: ${status}`
         });
-        scheduleReconnection();
+        scheduleReconnect();
         break;
 
       case 'CONNECTING':
