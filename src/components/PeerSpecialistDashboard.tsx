@@ -528,7 +528,7 @@ const PeerSpecialistDashboard = () => {
                   <span className="text-sm">Disconnected</span>
                 </div>}
               {lastSync && <span className="text-xs text-muted-foreground">
-                  Last sync: {format(lastSync, 'HH:mm:ss')}
+                  Last sync: {format(lastSync, 'h:mm:ss a')}
                 </span>}
             </div>
 
