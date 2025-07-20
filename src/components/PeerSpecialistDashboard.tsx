@@ -96,7 +96,10 @@ const PeerSpecialistDashboard = () => {
           .order('started_at', { ascending: false });
 
         if (sessionError) throw sessionError;
-        setSessions(sessionData || []);
+        setSessions((sessionData || []).map(session => ({
+          ...session,
+          status: session.status as 'waiting' | 'active' | 'ended'
+        })));
       } catch (err: any) {
         logger.error('Error fetching chat sessions:', err);
         setError(err.message || 'Failed to load chat sessions');
@@ -115,20 +118,31 @@ const PeerSpecialistDashboard = () => {
         try {
           const { data: sessionData, error: sessionError } = await supabase
             .from('chat_sessions')
-            .select(`*, profiles (first_name, last_name)`)
+            .select('*')
             .or(`specialist_id.eq.${specialist?.id},user_id.eq.${user.id}`)
             .order('started_at', { ascending: false });
     
           if (sessionError) throw sessionError;
     
-          // Augment session data with user's first name and last name
-          const augmentedSessions = sessionData?.map(session => ({
-            ...session,
-            user_first_name: session.profiles?.first_name || null,
-            user_last_name: session.profiles?.last_name || null,
-          })) || [];
+          // Get user profiles separately
+          const sessionDataWithProfiles = await Promise.all(
+            (sessionData || []).map(async (session) => {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('first_name, last_name')
+                .eq('user_id', session.user_id)
+                .single();
+              
+              return {
+                ...session,
+                status: session.status as 'waiting' | 'active' | 'ended',
+                user_first_name: profile?.first_name || null,
+                user_last_name: profile?.last_name || null,
+              };
+            })
+          );
     
-          setSessions(augmentedSessions);
+          setSessions(sessionDataWithProfiles);
         } catch (err: any) {
           logger.error('Error fetching chat sessions:', err);
           setError(err.message || 'Failed to load chat sessions');
@@ -246,7 +260,7 @@ const PeerSpecialistDashboard = () => {
                       </div>
                       <div className="flex items-center space-x-2">
                         {session.status === 'waiting' && (
-                          <Button size="xs" variant="outline">
+                          <Button size="sm" variant="outline">
                             Accept
                           </Button>
                         )}
