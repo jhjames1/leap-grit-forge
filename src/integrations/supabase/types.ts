@@ -610,6 +610,7 @@ export type Database = {
       peer_specialists: {
         Row: {
           activated_at: string | null
+          activation_method: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -623,6 +624,7 @@ export type Database = {
           is_invitation_accepted: boolean | null
           is_verified: boolean | null
           last_name: string
+          manually_activated_by: string | null
           must_change_password: boolean | null
           specialties: string[] | null
           temporary_password_hash: string | null
@@ -632,6 +634,7 @@ export type Database = {
         }
         Insert: {
           activated_at?: string | null
+          activation_method?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -645,6 +648,7 @@ export type Database = {
           is_invitation_accepted?: boolean | null
           is_verified?: boolean | null
           last_name: string
+          manually_activated_by?: string | null
           must_change_password?: boolean | null
           specialties?: string[] | null
           temporary_password_hash?: string | null
@@ -654,6 +658,7 @@ export type Database = {
         }
         Update: {
           activated_at?: string | null
+          activation_method?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -667,6 +672,7 @@ export type Database = {
           is_invitation_accepted?: boolean | null
           is_verified?: boolean | null
           last_name?: string
+          manually_activated_by?: string | null
           must_change_password?: boolean | null
           specialties?: string[] | null
           temporary_password_hash?: string | null

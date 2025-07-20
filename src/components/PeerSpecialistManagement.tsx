@@ -57,6 +57,8 @@ interface PeerSpecialist {
   is_invitation_accepted: boolean | null;
   must_change_password: boolean | null;
   activated_at: string | null;
+  activation_method: string | null;
+  manually_activated_by: string | null;
 }
 
 interface SpecialistFormData {
@@ -449,6 +451,11 @@ const PeerSpecialistManagement = () => {
           return;
         }
         updateData.is_active = !specialist.is_active;
+        
+        // Set activated_at when activating
+        if (!specialist.is_active) {
+          updateData.activated_at = new Date().toISOString();
+        }
       } else if (field === 'is_verified') {
         updateData.is_verified = !specialist.is_verified;
         
@@ -475,6 +482,47 @@ const PeerSpecialistManagement = () => {
       toast({
         title: "Error",
         description: "Failed to update specialist",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleForceActivate = async (specialist: PeerSpecialist) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "Admin user not found",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const updateData = {
+        is_verified: true,
+        is_active: true,
+        activated_at: new Date().toISOString(),
+        activation_method: 'manual',
+        manually_activated_by: user.id
+      };
+
+      const { error } = await supabase
+        .from('peer_specialists')
+        .update(updateData)
+        .eq('id', specialist.id);
+
+      if (error) throw error;
+      
+      fetchSpecialists();
+      toast({
+        title: "Success",
+        description: "Specialist manually activated and verified successfully"
+      });
+    } catch (error) {
+      console.error('Error force activating specialist:', error);
+      toast({
+        title: "Error",
+        description: "Failed to activate specialist",
         variant: "destructive"
       });
     }
@@ -525,7 +573,13 @@ const PeerSpecialistManagement = () => {
 
   const getInvitationStatus = (specialist: PeerSpecialist) => {
     if (specialist.activated_at) {
-      return { status: 'activated', color: 'bg-green-500/20 text-green-400', text: 'Activated' };
+      const activationMethod = specialist.activation_method || 'email';
+      const isManual = activationMethod === 'manual';
+      return { 
+        status: 'activated', 
+        color: isManual ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400', 
+        text: isManual ? 'Manual Activated' : 'Email Activated' 
+      };
     }
     if (specialist.invitation_sent_at && !specialist.is_invitation_accepted) {
       const expiresAt = new Date(specialist.invitation_expires_at || '');
@@ -533,7 +587,7 @@ const PeerSpecialistManagement = () => {
       if (now > expiresAt) {
         return { status: 'expired', color: 'bg-red-500/20 text-red-400', text: 'Expired' };
       }
-      return { status: 'pending', color: 'bg-yellow-500/20 text-yellow-400', text: 'Pending' };
+      return { status: 'pending', color: 'bg-yellow-500/20 text-yellow-400', text: 'Pending Email' };
     }
     return { status: 'not_sent', color: 'bg-gray-500/20 text-gray-400', text: 'Not Sent' };
   };
@@ -1039,15 +1093,28 @@ const PeerSpecialistManagement = () => {
                           </Button>
                           
                           {!specialist.activated_at && (
-                            <Button
-                              onClick={() => handleResendInvitation(specialist)}
-                              variant="outline"
-                              size="sm"
-                              className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
-                              disabled={isInviting}
-                            >
-                              <Send size={16} />
-                            </Button>
+                            <>
+                              <Button
+                                onClick={() => handleResendInvitation(specialist)}
+                                variant="outline"
+                                size="sm"
+                                className="border-blue-500 text-blue-500 hover:bg-blue-500/10"
+                                disabled={isInviting}
+                                title="Resend invitation email"
+                              >
+                                <Send size={16} />
+                              </Button>
+                              
+                              <Button
+                                onClick={() => handleForceActivate(specialist)}
+                                variant="outline"
+                                size="sm"
+                                className="border-orange-500 text-orange-500 hover:bg-orange-500/10"
+                                title="Force activate without email verification"
+                              >
+                                <Check size={16} />
+                              </Button>
+                            </>
                           )}
                           
                           <Button
