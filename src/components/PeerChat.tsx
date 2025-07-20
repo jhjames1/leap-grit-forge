@@ -18,7 +18,6 @@ import {
   RotateCcw
 } from 'lucide-react';
 import PeerSelection from './PeerSelection';
-import RecurringAppointmentScheduler from './RecurringAppointmentScheduler';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
 import { PeerSpecialist } from '@/hooks/usePeerSpecialists';
 import { useRobustChatSession } from '@/hooks/useRobustChatSession';
@@ -470,27 +469,6 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         </div>
       )}
 
-      {/* Scheduled Check-in Banner */}
-      {selectedPeer?.status.status === 'online' && session && user && !isSessionEnded && (
-        <div className="bg-steel/90 backdrop-blur-sm border-t border-steel-dark p-3">
-          <div className="flex items-center space-x-3">
-            <Calendar className="text-white" size={16} />
-            <div className="flex-1">
-              <p className="text-white font-oswald font-medium text-sm">
-                Weekly Check-in Available
-              </p>
-              <p className="text-white/70 text-xs">
-                Schedule with {selectedPeer.first_name} {selectedPeer.last_name}
-              </p>
-            </div>
-            <RecurringAppointmentScheduler 
-              specialistId={selectedPeer.id}
-              userId={user.id}
-              chatSessionId={session.id}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Message Input */}
       <div className="bg-midnight/90 backdrop-blur-sm border-t border-steel-dark p-4">
