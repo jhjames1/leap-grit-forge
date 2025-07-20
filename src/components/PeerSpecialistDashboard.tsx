@@ -387,18 +387,31 @@ const PeerSpecialistDashboard = () => {
   };
 
   // New function to handle session updates from the chat window
-  const handleSessionUpdate = (updatedSession: ChatSession) => {
+  const handleSessionUpdate = useCallback((updatedSession: ChatSession) => {
     logger.debug('Handling session update from chat window', updatedSession);
 
-    // Update the sessions list
-    setChatSessions(prev => prev.map(session => session.id === updatedSession.id ? {
-      ...session,
-      ...updatedSession
-    } : session));
+    // Only update if the session actually changed
+    setChatSessions(prev => {
+      const existing = prev.find(session => session.id === updatedSession.id);
+      if (!existing || 
+          existing.status !== updatedSession.status || 
+          existing.specialist_id !== updatedSession.specialist_id ||
+          existing.ended_at !== updatedSession.ended_at) {
+        return prev.map(session => session.id === updatedSession.id ? {
+          ...session,
+          ...updatedSession
+        } : session);
+      }
+      return prev; // No change needed
+    });
 
-    // Update selected session if it matches
+    // Update selected session if it matches and actually changed
     if (selectedChatSession?.id === updatedSession.id) {
-      setSelectedChatSession(updatedSession);
+      if (selectedChatSession.status !== updatedSession.status ||
+          selectedChatSession.specialist_id !== updatedSession.specialist_id ||
+          selectedChatSession.ended_at !== updatedSession.ended_at) {
+        setSelectedChatSession(updatedSession);
+      }
     }
 
     // If session was ended, close chat window after brief delay
@@ -407,7 +420,7 @@ const PeerSpecialistDashboard = () => {
         setSelectedChatSession(null);
       }, 2000);
     }
-  };
+  }, [selectedChatSession]);
   const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
     try {
       await updateStatus(newStatus, `Manually set to ${newStatus}`);

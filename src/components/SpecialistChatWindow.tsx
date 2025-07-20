@@ -99,12 +99,17 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   const maxReconnectAttempts = 5;
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Update parent whenever currentSession changes
+  // Update parent only when session status actually changes
   useEffect(() => {
     if (onSessionUpdate && currentSession.id === session.id) {
-      onSessionUpdate(currentSession);
+      // Only call if there's a meaningful change
+      if (currentSession.status !== session.status ||
+          currentSession.specialist_id !== session.specialist_id ||
+          currentSession.ended_at !== session.ended_at) {
+        onSessionUpdate(currentSession);
+      }
     }
-  }, [currentSession, onSessionUpdate, session.id]);
+  }, [currentSession.status, currentSession.specialist_id, currentSession.ended_at, onSessionUpdate, session.id, session.status, session.specialist_id, session.ended_at]);
 
   const loadMessages = async () => {
     try {
