@@ -876,16 +876,16 @@ const PeerSpecialistManagement = () => {
                   return (
                     <div
                       key={specialist.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
+                      className="flex items-start justify-between p-4 border rounded-lg"
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-start gap-4 flex-1">
                         <div className="relative">
                           <div className="bg-primary/10 p-2 rounded-full">
                             <Mail className="h-4 w-4 text-primary" />
                           </div>
                           <div className={`absolute -bottom-1 -right-1 w-3 h-3 ${onlineStatus.color} rounded-full border-2 border-background`}></div>
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <div className="font-medium flex items-center gap-2">
                             {specialist.first_name} {specialist.last_name}
                             <Badge className={invitationStatus.color}>
@@ -895,7 +895,7 @@ const PeerSpecialistManagement = () => {
                               <Badge variant="secondary">Verified</Badge>
                             )}
                           </div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-4">
+                          <div className="text-sm text-muted-foreground flex items-center gap-4 mb-2">
                             <span>{specialist.email || 'No email'}</span>
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
@@ -907,7 +907,7 @@ const PeerSpecialistManagement = () => {
                             </span>
                           </div>
                           {specialist.specialties && specialist.specialties.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-1">
+                            <div className="flex flex-wrap gap-1 mb-3">
                               {specialist.specialties.map((specialty, index) => (
                                 <Badge key={index} variant="outline" className="text-xs">
                                   {specialty}
@@ -915,12 +915,12 @@ const PeerSpecialistManagement = () => {
                               ))}
                             </div>
                            )}
+                           
+                           {/* Individual Performance Metrics - Integrated */}
+                           <div className="mt-3">
+                             <SpecialistPerformanceMetrics specialistId={specialist.id} />
+                           </div>
                          </div>
-                       </div>
-                       
-                       {/* Individual Performance Metrics */}
-                       <div className="mt-4 pt-4 border-t">
-                         <SpecialistPerformanceMetrics specialistId={specialist.id} />
                        </div>
                        
                        <div className="flex items-center gap-2">
