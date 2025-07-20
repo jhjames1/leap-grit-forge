@@ -408,18 +408,20 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
 
       if (error) throw error;
 
-      if (data?.success) {
+      const response = data as { success: boolean; session?: any; error?: string };
+
+      if (response?.success) {
         toast({
           title: "Session Ended",
           description: "The chat session has been ended successfully."
         });
         
         // Update the session in parent component
-        if (onSessionUpdate && data.session) {
-          onSessionUpdate(data.session);
+        if (onSessionUpdate && response.session) {
+          onSessionUpdate(response.session);
         }
       } else {
-        throw new Error(data?.error || 'Failed to end session');
+        throw new Error(response?.error || 'Failed to end session');
       }
     } catch (err) {
       logger.error('Failed to end session:', err);
