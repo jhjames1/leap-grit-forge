@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { RefreshCw, MessageSquare, BarChart3, Settings, Activity, Clock, CheckCircle, User, History, TrendingUp } from 'lucide-react';
+import { RefreshCw, MessageSquare, BarChart3, UserCircle, Activity, Clock, CheckCircle, User, History, TrendingUp } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import RobustSpecialistChatWindow from './RobustSpecialistChatWindow';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
@@ -594,17 +594,17 @@ const PeerSpecialistDashboard = () => {
               </DialogContent>
             </Dialog>
 
-            {/* Settings Modal */}
+            {/* Profile Modal */}
             <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
-                  <Settings className="w-4 h-4" />
-                  Settings
+                  <UserCircle className="w-4 h-4" />
+                  Profile
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Specialist Settings</DialogTitle>
+                  <DialogTitle>Specialist Profile</DialogTitle>
                 </DialogHeader>
                 {specialistId && <SpecialistSettings isOpen={true} onClose={() => setShowSettingsModal(false)} specialist={{ id: specialistId } as any} onUpdateSpecialist={() => {}} />}
               </DialogContent>
