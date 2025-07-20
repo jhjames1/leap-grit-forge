@@ -1611,6 +1611,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      end_chat_session: {
+        Args: {
+          p_session_id: string
+          p_user_id: string
+          p_specialist_id: string
+        }
+        Returns: Json
+      }
       find_user_by_email: {
         Args: { user_email: string }
         Returns: {

@@ -530,29 +530,32 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         throw new Error('No specialist found for user');
       }
 
-      // SIMPLIFIED: Direct database update - no complex state management
-      const { data: updatedSession, error: updateError } = await supabase
-        .from('chat_sessions')
-        .update({
-          specialist_id: specialistData.id,
-          status: 'ended',
-          ended_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentSession.id)
-        .select()
-        .single();
+      // Use the new database function that bypasses RLS restrictions
+      const { data: result, error: functionError } = await supabase
+        .rpc('end_chat_session', {
+          p_session_id: currentSession.id,
+          p_user_id: user.id,
+          p_specialist_id: specialistData.id
+        });
 
-      if (updateError) {
-        throw updateError;
+      if (functionError) {
+        throw functionError;
       }
 
-      logger.debug('Session ended:', updatedSession);
-      setCurrentSession(updatedSession as ChatSession);
+      // Type the result properly
+      const functionResult = result as { success: boolean; error?: string; session?: any };
+
+      if (!functionResult.success) {
+        throw new Error(functionResult.error || 'Failed to end session');
+      }
+
+      logger.debug('Session ended via function:', functionResult);
+      const updatedSession = functionResult.session as ChatSession;
+      setCurrentSession(updatedSession);
       
       // Notify parent component
       if (onSessionUpdate) {
-        onSessionUpdate(updatedSession as ChatSession);
+        onSessionUpdate(updatedSession);
       }
       
       toast({
