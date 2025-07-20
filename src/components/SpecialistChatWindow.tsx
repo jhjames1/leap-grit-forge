@@ -519,13 +519,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     setIsEndingSession(true);
     
     try {
-      logger.debug('Ending session:', { 
-        sessionId: currentSession.id, 
-        status: currentSession.status, 
-        specialistId: currentSession.specialist_id 
-      });
-      
-      // Get current specialist ID first
+      // Get current specialist ID
       const { data: specialistData, error: specialistError } = await supabase
         .from('peer_specialists')
         .select('id')
@@ -536,88 +530,29 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         throw new Error('No specialist found for user');
       }
 
-      // If session was never claimed by a specialist, we need to handle it specially
-      if (!currentSession.specialist_id) {
-        logger.debug('Session has no specialist assigned, transitioning unclaimed session to ended');
-        
-        // For unclaimed sessions, we need to assign the specialist and transition to ended in one operation
-        // This ensures the session gets properly archived
-        const { data: updatedSessionData, error: updateError } = await supabase
-          .from('chat_sessions')
-          .update({
-            specialist_id: specialistData.id,
-            status: 'ended',
-            ended_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', currentSession.id)
-          .select()
-          .single();
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        logger.debug('Unclaimed session transitioned to ended:', updatedSessionData);
-        setCurrentSession(updatedSessionData as ChatSession);
-      } else {
-        // Use SessionStateManager for sessions with assigned specialists
-        logger.debug('Using SessionStateManager for claimed session');
-        await sessionStateManager.endSession(
-          currentSession.id,
-          user.id,
-          'Session ended by specialist'
-        );
-
-        // Get updated session state
-        const updatedSession = await sessionStateManager.getSessionState(currentSession.id);
-        setCurrentSession(updatedSession as ChatSession);
-      }
-
-      // Cancel/expire any pending appointment proposals
-      const { error: proposalError } = await supabase
-        .from('appointment_proposals')
-        .update({ 
-          status: 'expired',
-          responded_at: new Date().toISOString()
+      // SIMPLIFIED: Direct database update - no complex state management
+      const { data: updatedSession, error: updateError } = await supabase
+        .from('chat_sessions')
+        .update({
+          specialist_id: specialistData.id,
+          status: 'ended',
+          ended_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
-        .eq('chat_session_id', currentSession.id)
-        .eq('status', 'pending');
+        .eq('id', currentSession.id)
+        .select()
+        .single();
 
-      if (proposalError) {
-        logger.error('Error cancelling proposals:', proposalError);
+      if (updateError) {
+        throw updateError;
       }
 
-      // Send final system message to user
-      await supabase
-        .from('chat_messages')
-        .insert({
-          session_id: currentSession.id,
-          sender_id: user.id,
-          sender_type: 'specialist',
-          message_type: 'text',
-          content: 'This chat session has been ended by the specialist. Thank you for using our service.'
-        });
-
-      // Log the session end event
-      await supabase
-        .from('user_activity_logs')
-        .insert({
-          user_id: user.id,
-          action: 'session_ended',
-          type: 'chat_session',
-          details: JSON.stringify({
-            session_id: currentSession.id,
-            specialist_id: specialistData.id,
-            ended_by: 'specialist',
-            session_duration: currentSession.started_at ? 
-              Math.round((new Date().getTime() - new Date(currentSession.started_at).getTime()) / 1000) : 0
-          })
-        });
+      logger.debug('Session ended:', updatedSession);
+      setCurrentSession(updatedSession as ChatSession);
       
-      // Notify parent component of session update
+      // Notify parent component
       if (onSessionUpdate) {
-        onSessionUpdate(currentSession.status === 'ended' ? currentSession : { ...currentSession, status: 'ended' });
+        onSessionUpdate(updatedSession as ChatSession);
       }
       
       toast({
@@ -625,10 +560,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         description: "The chat session has been ended successfully.",
       });
       
-      // Close the chat window after a brief delay
-      setTimeout(() => {
-        onClose();
-      }, 1000);
+      onClose();
       
     } catch (err) {
       logger.error('Error ending session:', err);
