@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -93,7 +92,6 @@ const PeerSpecialistDashboard = () => {
     clearNewResponses
   } = useProposalNotifications(currentSpecialistId || '');
 
-  // Load specialist data with enhanced error handling
   const loadData = useCallback(async () => {
     if (!user) return;
     
@@ -225,7 +223,6 @@ const PeerSpecialistDashboard = () => {
     }
   }, [toast]);
 
-  // Enhanced real-time subscriptions with connection monitoring
   const setupRealTimeSubscriptions = useCallback(() => {
     if (!user?.id || !currentSpecialistId) return;
 
@@ -350,12 +347,10 @@ const PeerSpecialistDashboard = () => {
     };
   }, [user?.id, currentSpecialistId, loadChatSessions]);
 
-  // Load data when component mounts or user changes
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Set up real-time subscriptions
   useEffect(() => {
     if (currentSpecialistId) {
       const cleanup = setupRealTimeSubscriptions();
@@ -363,7 +358,6 @@ const PeerSpecialistDashboard = () => {
     }
   }, [setupRealTimeSubscriptions, currentSpecialistId]);
 
-  // Sort sessions by priority: waiting first, then active
   const getSortedActiveSessions = () => {
     return chatSessions
       .filter(session => session.status === 'waiting' || session.status === 'active')
@@ -382,7 +376,6 @@ const PeerSpecialistDashboard = () => {
       });
   };
 
-  // Sort ended sessions by most recent first
   const getSortedEndedSessions = () => {
     return chatSessions
       .filter(session => session.status === 'ended')
@@ -463,6 +456,32 @@ const PeerSpecialistDashboard = () => {
     }
   };
 
+  // New function to handle session updates from the chat window
+  const handleSessionUpdate = (updatedSession: ChatSession) => {
+    logger.debug('Handling session update from chat window', updatedSession);
+    
+    // Update the sessions list
+    setChatSessions(prev => 
+      prev.map(session => 
+        session.id === updatedSession.id 
+          ? { ...session, ...updatedSession }
+          : session
+      )
+    );
+
+    // Update selected session if it matches
+    if (selectedChatSession?.id === updatedSession.id) {
+      setSelectedChatSession(updatedSession);
+    }
+
+    // If session was ended, close chat window after brief delay
+    if (updatedSession.status === 'ended' && selectedChatSession?.id === updatedSession.id) {
+      setTimeout(() => {
+        setSelectedChatSession(null);
+      }, 2000);
+    }
+  };
+
   const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
     try {
       await updateStatus(newStatus, `Manually set to ${newStatus}`);
@@ -534,7 +553,6 @@ const PeerSpecialistDashboard = () => {
     setPeerSpecialist(updatedSpecialist);
   };
 
-  // Helper function to check if waiting session has been waiting more than 45 seconds
   const isWaitingTooLong = (session: ChatSession) => {
     if (session.status !== 'waiting') return false;
     const now = new Date();
@@ -575,7 +593,6 @@ const PeerSpecialistDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="bg-card border-b border-border p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -704,7 +721,6 @@ const PeerSpecialistDashboard = () => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
         {peerSpecialist && (
           <div className="mb-6">
@@ -845,12 +861,13 @@ const PeerSpecialistDashboard = () => {
             </div>
           </Card>
 
-          {/* Chat Window or Welcome */}
+          {/* Chat Window with Session Update Callback */}
           <Card className="p-0 overflow-hidden">
             {selectedChatSession ? (
               <SpecialistChatWindow 
                 session={selectedChatSession} 
-                onClose={handleCloseChatWindow} 
+                onClose={handleCloseChatWindow}
+                onSessionUpdate={handleSessionUpdate}
               />
             ) : (
               <div className="p-6 text-center">
@@ -864,7 +881,6 @@ const PeerSpecialistDashboard = () => {
           </Card>
         </div>
 
-        {/* Enhanced Calendar Section */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-fjalla font-bold">Your Schedule</h2>
@@ -874,7 +890,6 @@ const PeerSpecialistDashboard = () => {
           )}
         </div>
 
-        {/* Recent Activity */}
         <div className="mt-6">
           <h2 className="text-xl font-fjalla font-bold mb-4">Recent Activity</h2>
           <Card className="p-6">

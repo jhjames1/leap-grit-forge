@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,11 +64,13 @@ interface OptimisticMessage {
 interface SpecialistChatWindowProps {
   session: ChatSession;
   onClose: () => void;
+  onSessionUpdate?: (updatedSession: ChatSession) => void;
 }
 
 const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   session,
-  onClose
+  onClose,
+  onSessionUpdate
 }) => {
   const [message, setMessage] = useState('');
   const [showScheduler, setShowScheduler] = useState(false);
@@ -86,6 +87,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   const [currentSession, setCurrentSession] = useState<ChatSession>(session);
   const [isActivatingSession, setIsActivatingSession] = useState(false);
+  const [isEndingSession, setIsEndingSession] = useState(false);
   const [messageQueue, setMessageQueue] = useState<any[]>([]);
 
   // Timeout tracking for stuck messages
@@ -95,6 +97,13 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const maxReconnectAttempts = 5;
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Update parent whenever currentSession changes
+  useEffect(() => {
+    if (onSessionUpdate && currentSession.id === session.id) {
+      onSessionUpdate(currentSession);
+    }
+  }, [currentSession, onSessionUpdate, session.id]);
 
   const loadMessages = async () => {
     try {
@@ -237,6 +246,15 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
             toast({
               title: "Session Activated",
               description: "You are now connected to the user.",
+              duration: 3000,
+            });
+          }
+          
+          // Handle session ended
+          if (updatedSession.status === 'ended' && currentSession.status !== 'ended') {
+            toast({
+              title: "Session Ended",
+              description: "This chat session has been ended.",
               duration: 3000,
             });
           }
@@ -496,16 +514,54 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   };
 
   const endSession = async () => {
+    if (isEndingSession) return;
+    setIsEndingSession(true);
+    
     try {
-      await supabase
+      logger.debug('Ending session:', currentSession.id);
+      
+      // 1. Update session status to ended
+      const { data: updatedSession, error: sessionError } = await supabase
         .from('chat_sessions')
         .update({ 
           status: 'ended',
           ended_at: new Date().toISOString()
         })
-        .eq('id', session.id);
+        .eq('id', currentSession.id)
+        .select()
+        .single();
+
+      if (sessionError) throw sessionError;
+
+      // 2. Cancel/expire any pending appointment proposals
+      const { error: proposalError } = await supabase
+        .from('appointment_proposals')
+        .update({ 
+          status: 'expired',
+          responded_at: new Date().toISOString()
+        })
+        .eq('chat_session_id', currentSession.id)
+        .eq('status', 'pending');
+
+      if (proposalError) {
+        logger.error('Error cancelling proposals:', proposalError);
+      }
+
+      // 3. Send final system message to user
+      await supabase
+        .from('chat_messages')
+        .insert({
+          session_id: currentSession.id,
+          sender_id: user.id,
+          sender_type: 'system',
+          message_type: 'text',
+          content: 'This chat session has been ended by the specialist. Thank you for using our service.'
+        });
+
+      // 4. Update local state
+      setCurrentSession(updatedSession as ChatSession);
       
-      // Log session end event
+      // 5. Log session end event
       await supabase
         .from('user_activity_logs')
         .insert({
@@ -513,8 +569,8 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           action: 'session_ended',
           type: 'chat_session',
           details: JSON.stringify({
-            session_id: session.id,
-            duration_minutes: Math.round((Date.now() - new Date(session.started_at).getTime()) / (1000 * 60))
+            session_id: currentSession.id,
+            duration_minutes: Math.round((Date.now() - new Date(currentSession.started_at).getTime()) / (1000 * 60))
           })
         });
       
@@ -523,7 +579,11 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         description: "The chat session has been ended successfully.",
       });
       
-      onClose();
+      // Close the chat window after a brief delay
+      setTimeout(() => {
+        onClose();
+      }, 1000);
+      
     } catch (err) {
       logger.error('Error ending session:', err);
       toast({
@@ -531,10 +591,11 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         description: "Failed to end session. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsEndingSession(false);
     }
   };
 
-  // Initialize component
   useEffect(() => {
     loadMessages();
     loadSessionProposal();
@@ -543,14 +604,12 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     return cleanup;
   }, [session.id]);
 
-  // Process queued messages when connection is restored
   useEffect(() => {
     if (connectionStatus === 'connected' && messageQueue.length > 0) {
       processMessageQueue();
     }
   }, [connectionStatus, messageQueue.length]);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     if (hasInitiallyLoaded && messages.length > 0 && messagesContainerRef.current) {
       const container = messagesContainerRef.current;
@@ -558,7 +617,6 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     }
   }, [messages, hasInitiallyLoaded]);
 
-  // Set initial load flag after messages are loaded
   useEffect(() => {
     if (messages.length > 0 && !hasInitiallyLoaded) {
       setTimeout(() => {
@@ -593,7 +651,6 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     loadSessionProposal();
   };
 
-  // Helper function to format session display name
   const formatSessionName = (session: ChatSession) => {
     let sessionName = `Session #${session.session_number}`;
     
@@ -640,6 +697,9 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     if (session.status === 'waiting' && isActivatingSession) {
       return 'Activating...';
     }
+    if (session.status === 'ended') {
+      return 'Session ended';
+    }
     return session.status;
   };
 
@@ -683,6 +743,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
               variant="outline"
               onClick={() => setShowScheduler(true)}
               className="text-primary border-primary/20 hover:bg-primary/10"
+              disabled={currentSession.status === 'ended'}
             >
               <Calendar size={16} className="mr-1" />
               Schedule
@@ -691,15 +752,22 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
               size="sm" 
               variant="outline" 
               onClick={handleEndSession}
+              disabled={isEndingSession || currentSession.status === 'ended'}
               className="text-destructive border-destructive/20 hover:bg-destructive/10"
             >
-              End Chat
+              {isEndingSession ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-destructive border-t-transparent rounded-full animate-spin"></div>
+                  <span>Ending...</span>
+                </div>
+              ) : (
+                'End Chat'
+              )}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Security Notice */}
       <div className="bg-muted/50 border-b border-border p-3">
         <div className="flex items-center space-x-2 text-muted-foreground">
           <Shield size={16} />
@@ -707,7 +775,6 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         </div>
       </div>
 
-      {/* Session Proposal Section */}
       {sessionProposal && (
         <div className="bg-blue-50/50 border-b border-blue-200/50 p-3">
           <div className="bg-white rounded-lg p-3 border border-blue-200">
@@ -747,7 +814,6 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         </div>
       )}
 
-      {/* Connection Status */}
       {connectionStatus === 'connected' && (
         <div className="bg-green-500/10 border-b border-green-500/20 p-3">
           <p className="text-green-600 text-sm text-center flex items-center justify-center space-x-2">
@@ -778,7 +844,6 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         </div>
       )}
 
-      {/* Message Queue Status */}
       {messageQueue.length > 0 && (
         <div className="bg-blue-500/10 border-b border-blue-500/20 p-3">
           <p className="text-blue-600 text-sm text-center">
@@ -863,6 +928,8 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
             <p>
               {currentSession.status === 'waiting' && !currentSession.specialist_id 
                 ? 'This session is waiting for a specialist. Send a message to claim it and begin the conversation.'
+                : currentSession.status === 'ended'
+                ? 'This chat session has ended.'
                 : 'Chat session started. Send a message to begin the conversation.'
               }
             </p>
@@ -878,14 +945,14 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your message..."
+            placeholder={currentSession.status === 'ended' ? 'Session has ended' : 'Type your message...'}
             className="flex-1"
             onKeyPress={handleKeyPress}
-            disabled={loading || isActivatingSession}
+            disabled={loading || isActivatingSession || currentSession.status === 'ended'}
           />
           <Button 
             onClick={handleSendMessage}
-            disabled={loading || !message.trim() || isActivatingSession}
+            disabled={loading || !message.trim() || isActivatingSession || currentSession.status === 'ended'}
             className="px-6"
           >
             {isActivatingSession ? (
