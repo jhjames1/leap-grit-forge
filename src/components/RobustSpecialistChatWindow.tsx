@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -108,6 +107,9 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const messageTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const isInitializedRef = useRef(false);
+  
+  // Add ref to track session updates
+  const sessionUpdateTimeoutRef = useRef<NodeJS.Timeout>();
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -184,6 +186,43 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, [session.id]);
 
+  // Enhanced session update handler
+  const handleSessionUpdate = useCallback((updatedSession: ChatSession) => {
+    logger.debug('RobustSpecialistChatWindow: Session update received', {
+      sessionId: updatedSession.id,
+      oldStatus: session.status,
+      newStatus: updatedSession.status,
+      oldSpecialistId: session.specialist_id,
+      newSpecialistId: updatedSession.specialist_id
+    });
+
+    // Update local session state immediately
+    setSession(prevSession => {
+      const mergedSession = { 
+        ...prevSession, 
+        ...updatedSession,
+        // Ensure we keep user display names if they exist
+        user_first_name: updatedSession.user_first_name || prevSession.user_first_name,
+        user_last_name: updatedSession.user_last_name || prevSession.user_last_name
+      };
+      
+      logger.debug('RobustSpecialistChatWindow: Updated local session state', mergedSession);
+      return mergedSession;
+    });
+
+    // Debounce parent callback to prevent rapid updates
+    if (sessionUpdateTimeoutRef.current) {
+      clearTimeout(sessionUpdateTimeoutRef.current);
+    }
+    
+    sessionUpdateTimeoutRef.current = setTimeout(() => {
+      if (onSessionUpdate) {
+        logger.debug('RobustSpecialistChatWindow: Calling parent onSessionUpdate');
+        onSessionUpdate(updatedSession);
+      }
+    }, 100);
+  }, [session.status, session.specialist_id, onSessionUpdate]);
+
   // Cleanup function for real-time subscription
   const cleanupRealtimeSubscription = useCallback(() => {
     if (channelRef.current) {
@@ -204,7 +243,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     setConnectionStatus('disconnected');
   }, []);
 
-  // Setup real-time subscription with improved error handling
+  // Enhanced real-time subscription with better session update handling
   const setupRealtimeSubscription = useCallback(() => {
     if (channelRef.current || !session?.id) return;
 
@@ -265,14 +304,30 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
           table: 'chat_sessions',
           filter: `id=eq.${session.id}`
         },
-        (payload) => {
+        async (payload) => {
           logger.debug('Session updated via realtime:', payload);
           const updatedSession = payload.new as ChatSession;
-          setSession(updatedSession);
           
-          if (onSessionUpdate) {
-            onSessionUpdate(updatedSession);
+          // Fetch user details if not present
+          if (!updatedSession.user_first_name && updatedSession.user_id) {
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('first_name, last_name')
+                .eq('user_id', updatedSession.user_id)
+                .single();
+
+              if (profile) {
+                updatedSession.user_first_name = profile.first_name;
+                updatedSession.user_last_name = profile.last_name;
+              }
+            } catch (err) {
+              logger.debug('Could not fetch user profile:', err);
+            }
           }
+
+          // Handle the session update
+          handleSessionUpdate(updatedSession);
 
           // Show appropriate toasts for status changes
           if (updatedSession.status === 'active' && session.status === 'waiting') {
@@ -313,7 +368,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       });
 
     channelRef.current = channel;
-  }, [session.id, onSessionUpdate, loadSessionProposal, toast]);
+  }, [session.id, handleSessionUpdate, loadSessionProposal, toast]);
 
   // Schedule reconnection with exponential backoff
   const scheduleReconnection = useCallback(() => {
@@ -338,13 +393,28 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }, delay);
   }, [cleanupRealtimeSubscription, setupRealtimeSubscription]);
 
-  // Claim session (activate waiting session)
+  // Enhanced claim session with immediate state update
   const claimSession = useCallback(async () => {
     if (!user || !specialistId || session.status !== 'waiting') return;
 
     try {
       logger.debug('Claiming session:', session.id);
       
+      // Optimistically update UI immediately
+      const optimisticSession = {
+        ...session,
+        status: 'active' as const,
+        specialist_id: specialistId,
+        updated_at: new Date().toISOString()
+      };
+      
+      setSession(optimisticSession);
+      
+      // Immediately notify parent of the optimistic update
+      if (onSessionUpdate) {
+        onSessionUpdate(optimisticSession);
+      }
+
       // Use the secure claim_chat_session function
       const { data, error } = await supabase.rpc('claim_chat_session', {
         p_session_id: session.id,
@@ -356,14 +426,21 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       const result = data as unknown as { success: boolean; error?: string; session?: ChatSession };
 
       if (!result?.success) {
+        // Revert optimistic update on failure
+        setSession(session);
+        if (onSessionUpdate) {
+          onSessionUpdate(session);
+        }
         throw new Error(result?.error || 'Failed to claim session');
       }
 
-      const updatedSession = result.session!
-      setSession(updatedSession);
+      const confirmedSession = result.session!;
+      logger.debug('Session claim confirmed:', confirmedSession);
       
+      // Update with confirmed data
+      setSession(confirmedSession);
       if (onSessionUpdate) {
-        onSessionUpdate(updatedSession);
+        onSessionUpdate(confirmedSession);
       }
 
       toast({
@@ -373,13 +450,20 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
 
     } catch (err) {
       logger.error('Failed to claim session:', err);
+      
+      // Revert optimistic update
+      setSession(session);
+      if (onSessionUpdate) {
+        onSessionUpdate(session);
+      }
+      
       toast({
         title: "Error",
         description: "Failed to claim session. Please try again.",
         variant: "destructive"
       });
     }
-  }, [user, specialistId, session.id, session.status, onSessionUpdate, toast]);
+  }, [user, specialistId, session, onSessionUpdate, toast]);
 
   // Send message with proper session activation
   const sendMessage = useCallback(async (messageData: MessageData) => {
@@ -538,6 +622,22 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   };
 
+  // Update session state when prop changes
+  useEffect(() => {
+    logger.debug('RobustSpecialistChatWindow: Session prop changed', {
+      oldId: session.id,
+      newId: initialSession.id,
+      oldStatus: session.status,
+      newStatus: initialSession.status
+    });
+    
+    if (initialSession.id !== session.id || 
+        initialSession.status !== session.status ||
+        initialSession.specialist_id !== session.specialist_id) {
+      setSession(initialSession);
+    }
+  }, [initialSession, session.id, session.status, session.specialist_id]);
+
   // Initialize on mount
   useEffect(() => {
     if (!isInitializedRef.current && user) {
@@ -572,7 +672,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
 
   return (
     <Card className="h-[600px] flex flex-col bg-card border border-border shadow-sm">
-      {/* Header */}
+      {/* Enhanced Header with better session info display */}
       <div className="bg-card border-b border-border p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
@@ -590,13 +690,19 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               }`}></div>
               <p className="text-muted-foreground text-sm">
                 Session #{session.session_number} • {getSessionAge()}
+                {session.specialist_id && session.status === 'active' && (
+                  <span className="ml-1 text-green-600">• Active</span>
+                )}
+                {session.status === 'waiting' && (
+                  <span className="ml-1 text-yellow-600">• Waiting</span>
+                )}
               </p>
             </div>
           </div>
         </div>
         
         <div className="flex items-center space-x-2">
-          {/* Connection status */}
+          {/* Connection status indicator */}
           <div className={`w-2 h-2 rounded-full ${
             connectionStatus === 'connected' ? 'bg-green-500' :
             connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
@@ -625,7 +731,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         </div>
       </div>
 
-      {/* Status Messages */}
+      {/* Enhanced Status Messages */}
       {isSessionEnded && (
         <div className="bg-muted/50 border-b border-border p-3">
           <p className="text-muted-foreground text-sm text-center">
@@ -635,10 +741,20 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       )}
 
       {session.status === 'waiting' && (
-        <div className="bg-muted/50 border-b border-border p-3">
-          <p className="text-muted-foreground text-sm text-center">
-            Connecting to this session...
-          </p>
+        <div className="bg-yellow-50 border-b border-yellow-200 p-3">
+          <div className="text-center">
+            <p className="text-yellow-800 text-sm font-medium mb-2">
+              This session is waiting to be claimed
+            </p>
+            <Button
+              size="sm"
+              onClick={claimSession}
+              disabled={!specialistId}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white"
+            >
+              Claim Session
+            </Button>
+          </div>
         </div>
       )}
 
