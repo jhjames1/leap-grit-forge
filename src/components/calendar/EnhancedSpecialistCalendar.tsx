@@ -37,12 +37,16 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Set business hours (8 AM to 5 PM)
+  // Set default view hours (7 AM to 6 PM) but allow full 24-hour scrolling
   const minTime = new Date();
-  minTime.setHours(8, 0, 0);
+  minTime.setHours(0, 0, 0); // Allow scrolling up to 12 AM
   
   const maxTime = new Date();
-  maxTime.setHours(17, 0, 0);
+  maxTime.setHours(23, 59, 59); // Allow scrolling down to 11:59 PM
+
+  // Default scroll position to 7 AM
+  const scrollToTime = new Date();
+  scrollToTime.setHours(7, 0, 0);
 
   const loadCalendarData = async () => {
     setLoading(true);
@@ -259,6 +263,7 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
               formats={formats}
               min={minTime}
               max={maxTime}
+              scrollToTime={scrollToTime}
               step={15}
               timeslots={4}
               defaultView="week"
@@ -296,7 +301,7 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
                     </h2>
                     
                     <div className="text-sm text-muted-foreground">
-                      Business Hours: 8:00 AM - 5:00 PM
+                      Default View: 7:00 AM - 6:00 PM • Scroll for full 24h access
                     </div>
                   </div>
                 )
