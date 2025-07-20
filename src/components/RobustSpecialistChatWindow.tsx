@@ -319,16 +319,10 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       filter: `chat_session_id=eq.${session.id}`
     }, () => {
       loadSessionProposal();
-    }).subscribe(status => {
-      logger.debug('Realtime subscription status:', status);
-      if (status === 'SUBSCRIBED') {
-        // Connection status is now managed by useConnectionMonitor
-        reconnectAttemptsRef.current = 0;
-      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        // Connection status is now managed by useConnectionMonitor
-        scheduleReconnection();
-      }
     });
+    
+    // Note: Do NOT call .subscribe() here - the connection monitor handles this
+    // The createChannel() function already sets up the subscription with status monitoring
     channelRef.current = channel;
   }, [session.id, handleSessionUpdate, loadSessionProposal, toast]);
 
