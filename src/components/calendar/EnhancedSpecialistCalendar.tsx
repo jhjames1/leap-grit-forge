@@ -11,10 +11,16 @@ import { useToast } from '@/hooks/use-toast';
 import ScheduleManagementModal from './ScheduleManagementModal';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import './calendar.css';
-
-const locales = { 'en-US': enUS };
-const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
-
+const locales = {
+  'en-US': enUS
+};
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales
+});
 interface CalendarEvent {
   id: string;
   title: string;
@@ -31,13 +37,15 @@ interface CalendarEvent {
     proposalId?: string;
   };
 }
-
 interface EnhancedSpecialistCalendarProps {
   specialistId: string;
 }
-
-export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpecialistCalendarProps) {
-  const { toast } = useToast();
+export default function EnhancedSpecialistCalendar({
+  specialistId
+}: EnhancedSpecialistCalendarProps) {
+  const {
+    toast
+  } = useToast();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedView, setSelectedView] = useState<View>(Views.WEEK);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -46,17 +54,13 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [pendingProposalsCount, setPendingProposalsCount] = useState(0);
   const [appointmentTypes, setAppointmentTypes] = useState<any[]>([]);
-
   const fetchSpecialistInfo = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('peer_specialists')
-        .select('first_name, last_name')
-        .eq('id', specialistId)
-        .maybeSingle();
-
+      const {
+        data,
+        error
+      } = await supabase.from('peer_specialists').select('first_name, last_name').eq('id', specialistId).maybeSingle();
       if (error) throw error;
-      
       if (data) {
         const fullName = `${data.first_name} ${data.last_name}`.trim();
         setSpecialistName(fullName);
@@ -66,15 +70,12 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
       setSpecialistName('Specialist'); // Fallback name
     }
   }, [specialistId]);
-
   const fetchAppointmentTypes = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('appointment_types')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
+      const {
+        data,
+        error
+      } = await supabase.from('appointment_types').select('*').eq('is_active', true).order('name');
       if (error) throw error;
       if (data) setAppointmentTypes(data);
     } catch (error) {
@@ -86,44 +87,35 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
       });
     }
   }, [toast]);
-
   const fetchEvents = useCallback(async () => {
     if (!specialistId) return;
-
     try {
       setLoading(true);
       const events: CalendarEvent[] = [];
       const today = new Date();
       const endDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-      const { data: schedules, error: schedulesError } = await supabase
-        .from('specialist_schedules')
-        .select(`
+      const {
+        data: schedules,
+        error: schedulesError
+      } = await supabase.from('specialist_schedules').select(`
           *,
           appointment_types (
             name,
             color,
             default_duration
           )
-        `)
-        .eq('specialist_id', specialistId)
-        .eq('is_active', true);
-
+        `).eq('specialist_id', specialistId).eq('is_active', true);
       if (schedulesError) throw schedulesError;
-
       if (schedules) {
         schedules.forEach(schedule => {
           const startTime = new Date(`2000-01-01T${schedule.start_time}`);
           const endTime = new Date(`2000-01-01T${schedule.end_time}`);
-          
           for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
             if (d.getDay() === schedule.day_of_week) {
               const eventStart = new Date(d);
               eventStart.setHours(startTime.getHours(), startTime.getMinutes());
-              
               const eventEnd = new Date(d);
               eventEnd.setHours(endTime.getHours(), endTime.getMinutes());
-
               events.push({
                 id: `schedule-${schedule.id}-${d.toISOString().split('T')[0]}`,
                 title: `Available - ${schedule.appointment_types?.name || 'General'}`,
@@ -138,22 +130,17 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
           }
         });
       }
-
-      const { data: appointments, error: appointmentsError } = await supabase
-        .from('specialist_appointments')
-        .select(`
+      const {
+        data: appointments,
+        error: appointmentsError
+      } = await supabase.from('specialist_appointments').select(`
           *,
           appointment_types (
             name,
             color
           )
-        `)
-        .eq('specialist_id', specialistId)
-        .gte('scheduled_start', new Date().toISOString())
-        .lte('scheduled_start', endDate.toISOString());
-
+        `).eq('specialist_id', specialistId).gte('scheduled_start', new Date().toISOString()).lte('scheduled_start', endDate.toISOString());
       if (appointmentsError) throw appointmentsError;
-
       if (appointments) {
         appointments.forEach(appointment => {
           events.push({
@@ -170,25 +157,14 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
           });
         });
       }
-
-      const { data: exceptions, error: exceptionsError } = await supabase
-        .from('specialist_availability_exceptions')
-        .select('*')
-        .eq('specialist_id', specialistId)
-        .eq('is_recurring', false)
-        .gte('start_time', new Date().toISOString())
-        .lte('start_time', endDate.toISOString());
-
+      const {
+        data: exceptions,
+        error: exceptionsError
+      } = await supabase.from('specialist_availability_exceptions').select('*').eq('specialist_id', specialistId).eq('is_recurring', false).gte('start_time', new Date().toISOString()).lte('start_time', endDate.toISOString());
       if (exceptionsError) throw exceptionsError;
-
       if (exceptions) {
         exceptions.forEach(exception => {
-          const hasUser = exception.reason && 
-            (exception.reason.toLowerCase().includes('user') || 
-             exception.reason.toLowerCase().includes('client') || 
-             exception.reason.toLowerCase().includes('patient') ||
-             exception.reason.toLowerCase().includes('meeting'));
-          
+          const hasUser = exception.reason && (exception.reason.toLowerCase().includes('user') || exception.reason.toLowerCase().includes('client') || exception.reason.toLowerCase().includes('patient') || exception.reason.toLowerCase().includes('meeting'));
           events.push({
             id: `exception-${exception.id}`,
             title: `${exception.exception_type === 'unavailable' ? 'Unavailable' : 'Blocked'} - ${exception.reason || 'No reason'}`,
@@ -202,39 +178,27 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
           });
         });
       }
-
-      const { data: proposals, error: proposalsError } = await supabase
-        .from('appointment_proposals')
-        .select(`
+      const {
+        data: proposals,
+        error: proposalsError
+      } = await supabase.from('appointment_proposals').select(`
           *,
           chat_sessions!inner(status)
-        `)
-        .eq('specialist_id', specialistId)
-        .eq('status', 'pending')
-        .in('chat_sessions.status', ['waiting', 'active'])
-        .gt('expires_at', new Date().toISOString());
-
+        `).eq('specialist_id', specialistId).eq('status', 'pending').in('chat_sessions.status', ['waiting', 'active']).gt('expires_at', new Date().toISOString());
       if (proposalsError) throw proposalsError;
-
       if (proposals) {
         setPendingProposalsCount(proposals.length);
-        
+
         // Fetch user profiles for proposals
         const userIds = proposals.map(p => p.user_id);
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, first_name, last_name')
-          .in('user_id', userIds);
-        
+        const {
+          data: profiles
+        } = await supabase.from('profiles').select('user_id, first_name, last_name').in('user_id', userIds);
         proposals.forEach(proposal => {
           const startDateTime = new Date(`${proposal.start_date}T${proposal.start_time}`);
           const endDateTime = new Date(startDateTime.getTime() + proposal.duration * 60000);
-          
           const userProfile = profiles?.find(p => p.user_id === proposal.user_id);
-          const userName = userProfile?.first_name 
-            ? `${userProfile.first_name} ${userProfile.last_name?.charAt(0) || ''}.`
-            : 'User';
-
+          const userName = userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name?.charAt(0) || ''}.` : 'User';
           events.push({
             id: `proposal-${proposal.id}`,
             title: `⏳ PENDING: ${proposal.title} - ${userName}`,
@@ -248,7 +212,6 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
           });
         });
       }
-
       console.log('Enhanced calendar events processed:', events);
       setEvents(events);
     } catch (error) {
@@ -262,80 +225,52 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
       setLoading(false);
     }
   }, [specialistId, toast]);
-
   useEffect(() => {
     fetchSpecialistInfo();
     fetchAppointmentTypes();
     fetchEvents();
   }, [fetchSpecialistInfo, fetchAppointmentTypes, fetchEvents]);
-
   useEffect(() => {
     if (!specialistId) return;
-
     console.log('🔄 SpecialistCalendar - Setting up real-time subscriptions');
-
-    const channel = supabase
-      .channel('calendar-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'specialist_appointments',
-          filter: `specialist_id=eq.${specialistId}`
-        },
-        (payload) => {
-          console.log('🔄 SpecialistCalendar - Appointment changed:', payload);
-          fetchEvents();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'specialist_schedules',
-          filter: `specialist_id=eq.${specialistId}`
-        },
-        (payload) => {
-          console.log('🔄 SpecialistCalendar - Schedule changed:', payload);
-          fetchEvents();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'specialist_availability_exceptions',
-          filter: `specialist_id=eq.${specialistId}`
-        },
-        (payload) => {
-          console.log('🔄 SpecialistCalendar - Availability exception changed:', payload);
-          fetchEvents();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'scheduled_appointments',
-          filter: `specialist_id=eq.${specialistId}`
-        },
-        (payload) => {
-          console.log('🔄 SpecialistCalendar - Scheduled appointment changed:', payload);
-          fetchEvents();
-        }
-      )
-      .subscribe();
-
+    const channel = supabase.channel('calendar-updates').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'specialist_appointments',
+      filter: `specialist_id=eq.${specialistId}`
+    }, payload => {
+      console.log('🔄 SpecialistCalendar - Appointment changed:', payload);
+      fetchEvents();
+    }).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'specialist_schedules',
+      filter: `specialist_id=eq.${specialistId}`
+    }, payload => {
+      console.log('🔄 SpecialistCalendar - Schedule changed:', payload);
+      fetchEvents();
+    }).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'specialist_availability_exceptions',
+      filter: `specialist_id=eq.${specialistId}`
+    }, payload => {
+      console.log('🔄 SpecialistCalendar - Availability exception changed:', payload);
+      fetchEvents();
+    }).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'scheduled_appointments',
+      filter: `specialist_id=eq.${specialistId}`
+    }, payload => {
+      console.log('🔄 SpecialistCalendar - Scheduled appointment changed:', payload);
+      fetchEvents();
+    }).subscribe();
     return () => {
       console.log('🔄 SpecialistCalendar - Cleaning up real-time subscriptions');
       supabase.removeChannel(channel);
     };
   }, [specialistId, fetchEvents]);
-
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const baseStyle = {
       borderRadius: '4px',
@@ -346,7 +281,6 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
       fontSize: '12px',
       fontWeight: '500'
     };
-
     switch (event.resource.type) {
       case 'tentative':
         return {
@@ -368,9 +302,7 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
           }
         };
       case 'appointment':
-        const appointmentColor = event.resource.status === 'confirmed' ? '#3b82f6' : 
-                                event.resource.status === 'in_progress' ? '#8b5cf6' : 
-                                '#6b7280';
+        const appointmentColor = event.resource.status === 'confirmed' ? '#3b82f6' : event.resource.status === 'in_progress' ? '#8b5cf6' : '#6b7280';
         return {
           style: {
             ...baseStyle,
@@ -400,7 +332,7 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
           }
         };
       default:
-        return { 
+        return {
           style: {
             ...baseStyle,
             backgroundColor: '#6b7280'
@@ -408,10 +340,8 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
         };
     }
   }, []);
-
   if (loading) {
-    return (
-      <div className="p-4">
+    return <div className="p-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -425,39 +355,22 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
             </div>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="p-4">
+  return <div className="p-4">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
             {specialistName ? `${specialistName}'s Calendar` : 'Specialist Calendar'}
-            {pendingProposalsCount > 0 && (
-              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 ml-2">
-                <AlertCircle className="w-3 h-3 mr-1" />
-                {pendingProposalsCount} Pending Meeting Proposals
-              </Badge>
-            )}
+            {pendingProposalsCount > 0}
           </CardTitle>
           <div className="flex flex-wrap gap-2 pt-4">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={fetchEvents}
-            >
+            <Button size="sm" variant="outline" onClick={fetchEvents}>
               <Clock className="w-4 h-4 mr-2" />
               Refresh
             </Button>
-            <Button 
-              size="sm" 
-              variant="default"
-              onClick={() => setShowScheduleModal(true)}
-              className="bg-primary hover:bg-primary/90"
-            >
+            <Button size="sm" variant="default" onClick={() => setShowScheduleModal(true)} className="bg-primary hover:bg-primary/90">
               <Settings className="w-4 h-4 mr-2" />
               Manage Schedule
             </Button>
@@ -496,24 +409,13 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
               </Badge>
             </div>
             
-            <div className="calendar-container" style={{ height: '600px' }}>
-              <Calendar
-                localizer={localizer}
-                events={events}
-                startAccessor="start"
-                endAccessor="end"
-                style={{ height: '100%' }}
-                view={selectedView}
-                onView={setSelectedView}
-                date={selectedDate}
-                onNavigate={setSelectedDate}
-                eventPropGetter={eventStyleGetter}
-                views={[Views.MONTH, Views.WEEK, Views.DAY]}
-                step={30}
-                showMultiDayTimes
-                components={{
-                  toolbar: (props) => (
-                    <div className="flex items-center justify-between mb-4 p-2 bg-muted rounded">
+            <div className="calendar-container" style={{
+            height: '600px'
+          }}>
+              <Calendar localizer={localizer} events={events} startAccessor="start" endAccessor="end" style={{
+              height: '100%'
+            }} view={selectedView} onView={setSelectedView} date={selectedDate} onNavigate={setSelectedDate} eventPropGetter={eventStyleGetter} views={[Views.MONTH, Views.WEEK, Views.DAY]} step={30} showMultiDayTimes components={{
+              toolbar: props => <div className="flex items-center justify-between mb-4 p-2 bg-muted rounded">
                       <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={() => props.onNavigate('PREV')}>
                           Previous
@@ -529,42 +431,23 @@ export default function EnhancedSpecialistCalendar({ specialistId }: EnhancedSpe
                       <div className="font-semibold text-lg">{props.label}</div>
                       
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant={selectedView === Views.MONTH ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedView(Views.MONTH)}
-                        >
+                        <Button variant={selectedView === Views.MONTH ? "default" : "outline"} size="sm" onClick={() => setSelectedView(Views.MONTH)}>
                           Month
                         </Button>
-                        <Button
-                          variant={selectedView === Views.WEEK ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedView(Views.WEEK)}
-                        >
+                        <Button variant={selectedView === Views.WEEK ? "default" : "outline"} size="sm" onClick={() => setSelectedView(Views.WEEK)}>
                           Week
                         </Button>
-                        <Button
-                          variant={selectedView === Views.DAY ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => setSelectedView(Views.DAY)}
-                        >
+                        <Button variant={selectedView === Views.DAY ? "default" : "outline"} size="sm" onClick={() => setSelectedView(Views.DAY)}>
                           Day
                         </Button>
                       </div>
                     </div>
-                  )
-                }}
-              />
+            }} />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <ScheduleManagementModal
-        isOpen={showScheduleModal}
-        onClose={() => setShowScheduleModal(false)}
-        specialistId={specialistId}
-      />
-    </div>
-  );
+      <ScheduleManagementModal isOpen={showScheduleModal} onClose={() => setShowScheduleModal(false)} specialistId={specialistId} />
+    </div>;
 }
