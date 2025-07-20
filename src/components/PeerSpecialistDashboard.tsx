@@ -18,7 +18,6 @@ import { logger } from '@/utils/logger';
 import ScheduleManagementModal from './calendar/ScheduleManagementModal';
 import { useProposalNotifications } from '@/hooks/useProposalNotifications';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
-
 interface ChatSession {
   id: string;
   user_id: string;
@@ -32,7 +31,6 @@ interface ChatSession {
   pending_proposals_count?: number;
   has_new_responses?: boolean;
 }
-
 interface PeerSpecialist {
   id: string;
   user_id: string;
@@ -50,10 +48,13 @@ interface PeerSpecialist {
     last_active: string | null;
   };
 }
-
 const PeerSpecialistDashboard = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [peerSpecialist, setPeerSpecialist] = useState<PeerSpecialist | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +76,6 @@ const PeerSpecialistDashboard = () => {
     renderCount: renderCount.current,
     mountedTime: Date.now() - mountTime.current
   });
-
   const currentSpecialistId = peerSpecialist?.id;
   const {
     status: effectiveStatus,
@@ -91,26 +91,22 @@ const PeerSpecialistDashboard = () => {
     hasNewResponses,
     clearNewResponses
   } = useProposalNotifications(currentSpecialistId || '');
-
   const loadData = useCallback(async () => {
     if (!user) return;
-    
-    logger.debug('Loading specialist data for user', { userId: user.id });
+    logger.debug('Loading specialist data for user', {
+      userId: user.id
+    });
     setLoading(true);
-    
     try {
       // Fetch peer specialist data
-      const { data: specialistData, error: specialistError } = await supabase
-        .from('peer_specialists')
-        .select('*, status:specialist_status(status, last_seen)')
-        .eq('user_id', user.id)
-        .single();
-
+      const {
+        data: specialistData,
+        error: specialistError
+      } = await supabase.from('peer_specialists').select('*, status:specialist_status(status, last_seen)').eq('user_id', user.id).single();
       if (specialistError) {
         logger.error('Error fetching peer specialist data', specialistError);
         throw specialistError;
       }
-
       if (specialistData) {
         // Add missing email and phone_number from auth user
         const specialistWithUserData = {
@@ -126,43 +122,41 @@ const PeerSpecialistDashboard = () => {
 
         // Load chat sessions for this specialist
         await loadChatSessions(specialistWithUserData.id);
-        
+
         // Log successful data load
-        await supabase
-          .from('user_activity_logs')
-          .insert({
-            user_id: user.id,
-            action: 'dashboard_loaded',
-            type: 'specialist_portal',
-            details: JSON.stringify({
-              specialist_id: specialistWithUserData.id,
-              load_time: Date.now() - mountTime.current
-            })
-          });
+        await supabase.from('user_activity_logs').insert({
+          user_id: user.id,
+          action: 'dashboard_loaded',
+          type: 'specialist_portal',
+          details: JSON.stringify({
+            specialist_id: specialistWithUserData.id,
+            load_time: Date.now() - mountTime.current
+          })
+        });
       }
     } catch (error) {
       logger.error('Error loading specialist data', error);
       toast({
         title: "Error Loading Data",
         description: "Failed to load your specialist profile. Please refresh the page.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   }, [user?.id, toast]);
-
   const loadChatSessions = useCallback(async (specialistId: string) => {
-    logger.debug('Loading chat sessions for specialist', { specialistId });
-
+    logger.debug('Loading chat sessions for specialist', {
+      specialistId
+    });
     try {
       // Load both assigned sessions and unassigned waiting sessions
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('chat_sessions')
-        .select('*')
-        .or(`specialist_id.eq.${specialistId},and(specialist_id.is.null,status.eq.waiting)`)
-        .order('started_at', { ascending: false });
-
+      const {
+        data: sessionsData,
+        error: sessionsError
+      } = await supabase.from('chat_sessions').select('*').or(`specialist_id.eq.${specialistId},and(specialist_id.is.null,status.eq.waiting)`).order('started_at', {
+        ascending: false
+      });
       if (sessionsError) {
         logger.error('Error loading chat sessions', sessionsError);
         throw sessionsError;
@@ -170,29 +164,21 @@ const PeerSpecialistDashboard = () => {
 
       // Get the profile data for each session
       const sessionIds = (sessionsData || []).map(session => session.user_id);
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('user_id, first_name, last_name')
-        .in('user_id', sessionIds);
+      const {
+        data: profilesData
+      } = await supabase.from('profiles').select('user_id, first_name, last_name').in('user_id', sessionIds);
 
       // Get proposal counts for each session
-      const { data: proposalData } = await supabase
-        .from('appointment_proposals')
-        .select('chat_session_id, status, responded_at')
-        .eq('specialist_id', specialistId)
-        .in('chat_session_id', (sessionsData || []).map(s => s.id).filter(Boolean));
+      const {
+        data: proposalData
+      } = await supabase.from('appointment_proposals').select('chat_session_id, status, responded_at').eq('specialist_id', specialistId).in('chat_session_id', (sessionsData || []).map(s => s.id).filter(Boolean));
 
       // Combine the data
       const typedSessions = (sessionsData || []).map(session => {
         const profile = profilesData?.find(p => p.user_id === session.user_id);
         const sessionProposals = proposalData?.filter(p => p.chat_session_id === session.id) || [];
         const pendingProposals = sessionProposals.filter(p => p.status === 'pending');
-        const hasNewResponses = sessionProposals.some(p => 
-          p.status !== 'pending' && 
-          p.responded_at && 
-          new Date(p.responded_at) > new Date(session.started_at)
-        );
-
+        const hasNewResponses = sessionProposals.some(p => p.status !== 'pending' && p.responded_at && new Date(p.responded_at) > new Date(session.started_at));
         return {
           ...session,
           status: session.status as 'waiting' | 'active' | 'ended',
@@ -202,35 +188,29 @@ const PeerSpecialistDashboard = () => {
           has_new_responses: hasNewResponses
         };
       });
-
       setChatSessions(typedSessions);
       setLastSync(new Date());
-      
       logger.debug('Loaded chat sessions with profiles and proposals', {
         count: typedSessions.length,
         waiting: typedSessions.filter(s => s.status === 'waiting').length,
         active: typedSessions.filter(s => s.status === 'active').length,
         ended: typedSessions.filter(s => s.status === 'ended').length
       });
-
     } catch (error) {
       logger.error('Error loading chat sessions', error);
       toast({
         title: "Error Loading Sessions",
         description: "Failed to load chat sessions. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   }, [toast]);
-
   const setupRealTimeSubscriptions = useCallback(() => {
     if (!user?.id || !currentSpecialistId) return;
-
     logger.debug('Setting up real-time subscriptions', {
       userId: user.id,
       specialistId: currentSpecialistId
     });
-
     setConnectionStatus('connecting');
 
     // Clean up existing subscriptions
@@ -240,104 +220,67 @@ const PeerSpecialistDashboard = () => {
     subscriptionChannels.current = [];
 
     // Chat sessions subscription
-    const chatSessionsChannel = supabase
-      .channel(`chat-sessions-dashboard-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_sessions'
-        },
-        (payload) => {
-          logger.debug('Real-time chat session change', payload);
-          
-          // Optimistically update the local state
-          if (payload.eventType === 'UPDATE') {
-            const updatedSession = payload.new as ChatSession;
-            setChatSessions(prev => 
-              prev.map(session => 
-                session.id === updatedSession.id 
-                  ? { ...session, ...updatedSession }
-                  : session
-              )
-            );
-          }
-          
-          // Reload full data to ensure consistency
-          loadChatSessions(currentSpecialistId);
-        }
-      )
-      .subscribe((status) => {
-        logger.debug('Chat sessions subscription status', status);
-        if (status === 'SUBSCRIBED') {
-          setConnectionStatus('connected');
-        } else if (status === 'CHANNEL_ERROR') {
-          setConnectionStatus('disconnected');
-        }
-      });
+    const chatSessionsChannel = supabase.channel(`chat-sessions-dashboard-${user.id}`).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'chat_sessions'
+    }, payload => {
+      logger.debug('Real-time chat session change', payload);
+
+      // Optimistically update the local state
+      if (payload.eventType === 'UPDATE') {
+        const updatedSession = payload.new as ChatSession;
+        setChatSessions(prev => prev.map(session => session.id === updatedSession.id ? {
+          ...session,
+          ...updatedSession
+        } : session));
+      }
+
+      // Reload full data to ensure consistency
+      loadChatSessions(currentSpecialistId);
+    }).subscribe(status => {
+      logger.debug('Chat sessions subscription status', status);
+      if (status === 'SUBSCRIBED') {
+        setConnectionStatus('connected');
+      } else if (status === 'CHANNEL_ERROR') {
+        setConnectionStatus('disconnected');
+      }
+    });
 
     // Appointment proposals subscription
-    const appointmentProposalsChannel = supabase
-      .channel(`appointment-proposals-dashboard-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'appointment_proposals'
-        },
-        (payload) => {
-          logger.debug('Real-time appointment proposal change', payload);
-          loadChatSessions(currentSpecialistId);
-        }
-      )
-      .subscribe();
+    const appointmentProposalsChannel = supabase.channel(`appointment-proposals-dashboard-${user.id}`).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'appointment_proposals'
+    }, payload => {
+      logger.debug('Real-time appointment proposal change', payload);
+      loadChatSessions(currentSpecialistId);
+    }).subscribe();
 
     // Chat messages subscription for message count updates
-    const chatMessagesChannel = supabase
-      .channel(`chat-messages-dashboard-${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages'
-        },
-        (payload) => {
-          logger.debug('Real-time chat message change', payload);
-          // Update last sync time
-          setLastSync(new Date());
-        }
-      )
-      .subscribe();
+    const chatMessagesChannel = supabase.channel(`chat-messages-dashboard-${user.id}`).on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'chat_messages'
+    }, payload => {
+      logger.debug('Real-time chat message change', payload);
+      // Update last sync time
+      setLastSync(new Date());
+    }).subscribe();
 
     // Specialist status subscription
-    const statusChannel = supabase
-      .channel(`specialist-status-dashboard-${currentSpecialistId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'specialist_status',
-          filter: `specialist_id=eq.${currentSpecialistId}`
-        },
-        (payload) => {
-          logger.debug('Real-time status change', payload);
-          // Status updates are handled by the useSpecialistStatus hook
-        }
-      )
-      .subscribe();
+    const statusChannel = supabase.channel(`specialist-status-dashboard-${currentSpecialistId}`).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'specialist_status',
+      filter: `specialist_id=eq.${currentSpecialistId}`
+    }, payload => {
+      logger.debug('Real-time status change', payload);
+      // Status updates are handled by the useSpecialistStatus hook
+    }).subscribe();
 
     // Store channels for cleanup
-    subscriptionChannels.current = [
-      chatSessionsChannel,
-      appointmentProposalsChannel,
-      chatMessagesChannel,
-      statusChannel
-    ];
-
+    subscriptionChannels.current = [chatSessionsChannel, appointmentProposalsChannel, chatMessagesChannel, statusChannel];
     return () => {
       logger.debug('Cleaning up real-time subscriptions');
       subscriptionChannels.current.forEach(channel => {
@@ -346,53 +289,48 @@ const PeerSpecialistDashboard = () => {
       subscriptionChannels.current = [];
     };
   }, [user?.id, currentSpecialistId, loadChatSessions]);
-
   useEffect(() => {
     loadData();
   }, [loadData]);
-
   useEffect(() => {
     if (currentSpecialistId) {
       const cleanup = setupRealTimeSubscriptions();
       return cleanup;
     }
   }, [setupRealTimeSubscriptions, currentSpecialistId]);
-
   const getSortedActiveSessions = () => {
-    return chatSessions
-      .filter(session => session.status === 'waiting' || session.status === 'active')
-      .sort((a, b) => {
-        // First sort by status priority
-        const statusPriority = { waiting: 0, active: 1 };
-        const aPriority = statusPriority[a.status];
-        const bPriority = statusPriority[b.status];
-        
-        if (aPriority !== bPriority) {
-          return aPriority - bPriority;
-        }
+    return chatSessions.filter(session => session.status === 'waiting' || session.status === 'active').sort((a, b) => {
+      // First sort by status priority
+      const statusPriority = {
+        waiting: 0,
+        active: 1
+      };
+      const aPriority = statusPriority[a.status];
+      const bPriority = statusPriority[b.status];
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
 
-        // Within same status, sort by most recent first
-        return new Date(b.started_at).getTime() - new Date(a.started_at).getTime();
-      });
+      // Within same status, sort by most recent first
+      return new Date(b.started_at).getTime() - new Date(a.started_at).getTime();
+    });
   };
-
   const getSortedEndedSessions = () => {
-    return chatSessions
-      .filter(session => session.status === 'ended')
-      .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+    return chatSessions.filter(session => session.status === 'ended').sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
   };
-
   const handleChatClick = async (session: ChatSession) => {
     // If this is an unassigned waiting session, assign it to this specialist
     if (session.status === 'waiting' && !session.specialist_id && peerSpecialist) {
       try {
-        logger.debug('Claiming session', { sessionId: session.id, specialistId: peerSpecialist.id });
-        
-        const { error } = await supabase
-          .from('chat_sessions')
-          .update({ specialist_id: peerSpecialist.id })
-          .eq('id', session.id);
-
+        logger.debug('Claiming session', {
+          sessionId: session.id,
+          specialistId: peerSpecialist.id
+        });
+        const {
+          error
+        } = await supabase.from('chat_sessions').update({
+          specialist_id: peerSpecialist.id
+        }).eq('id', session.id);
         if (error) {
           logger.error('Error claiming session', error);
           toast({
@@ -404,38 +342,31 @@ const PeerSpecialistDashboard = () => {
         }
 
         // Log session claim
-        await supabase
-          .from('user_activity_logs')
-          .insert({
-            user_id: user.id,
-            action: 'session_claimed',
-            type: 'chat_session',
-            details: JSON.stringify({
-              session_id: session.id,
-              specialist_id: peerSpecialist.id
-            })
-          });
+        await supabase.from('user_activity_logs').insert({
+          user_id: user.id,
+          action: 'session_claimed',
+          type: 'chat_session',
+          details: JSON.stringify({
+            session_id: session.id,
+            specialist_id: peerSpecialist.id
+          })
+        });
 
         // Update local state optimistically
-        setChatSessions(prev => 
-          prev.map(s => 
-            s.id === session.id 
-              ? { ...s, specialist_id: peerSpecialist.id }
-              : s
-          )
-        );
+        setChatSessions(prev => prev.map(s => s.id === session.id ? {
+          ...s,
+          specialist_id: peerSpecialist.id
+        } : s));
 
         // Update the selected session
         setSelectedChatSession({
           ...session,
           specialist_id: peerSpecialist.id
         });
-
         toast({
           title: "Session Claimed",
           description: "You are now assigned to this chat session."
         });
-
       } catch (error) {
         logger.error('Error claiming session', error);
         toast({
@@ -448,7 +379,6 @@ const PeerSpecialistDashboard = () => {
       setSelectedChatSession(session);
     }
   };
-
   const handleCloseChatWindow = () => {
     setSelectedChatSession(null);
     if (peerSpecialist) {
@@ -459,15 +389,12 @@ const PeerSpecialistDashboard = () => {
   // New function to handle session updates from the chat window
   const handleSessionUpdate = (updatedSession: ChatSession) => {
     logger.debug('Handling session update from chat window', updatedSession);
-    
+
     // Update the sessions list
-    setChatSessions(prev => 
-      prev.map(session => 
-        session.id === updatedSession.id 
-          ? { ...session, ...updatedSession }
-          : session
-      )
-    );
+    setChatSessions(prev => prev.map(session => session.id === updatedSession.id ? {
+      ...session,
+      ...updatedSession
+    } : session));
 
     // Update selected session if it matches
     if (selectedChatSession?.id === updatedSession.id) {
@@ -481,7 +408,6 @@ const PeerSpecialistDashboard = () => {
       }, 2000);
     }
   };
-
   const handleStatusChange = async (newStatus: 'online' | 'away' | 'offline') => {
     try {
       await updateStatus(newStatus, `Manually set to ${newStatus}`);
@@ -497,11 +423,7 @@ const PeerSpecialistDashboard = () => {
       });
     }
   };
-
-  const hasActiveSessions = chatSessions.some(session => 
-    session.status === 'active' || session.status === 'waiting'
-  );
-
+  const hasActiveSessions = chatSessions.some(session => session.status === 'active' || session.status === 'waiting');
   const handleLogout = async () => {
     if (hasActiveSessions) {
       toast({
@@ -511,7 +433,6 @@ const PeerSpecialistDashboard = () => {
       });
       return;
     }
-
     try {
       // Set status to offline before logging out
       if (currentSpecialistId) {
@@ -519,26 +440,23 @@ const PeerSpecialistDashboard = () => {
       }
 
       // Log logout action
-      await supabase
-        .from('user_activity_logs')
-        .insert({
-          user_id: user.id,
-          action: 'logout',
-          type: 'specialist_portal',
-          details: JSON.stringify({
-            specialist_id: currentSpecialistId,
-            session_duration: Date.now() - mountTime.current
-          })
-        });
-
-      const { error } = await supabase.auth.signOut();
+      await supabase.from('user_activity_logs').insert({
+        user_id: user.id,
+        action: 'logout',
+        type: 'specialist_portal',
+        details: JSON.stringify({
+          specialist_id: currentSpecialistId,
+          session_duration: Date.now() - mountTime.current
+        })
+      });
+      const {
+        error
+      } = await supabase.auth.signOut();
       if (error) throw error;
-
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out."
       });
-
     } catch (error) {
       logger.error('Error logging out', error);
       toast({
@@ -548,11 +466,9 @@ const PeerSpecialistDashboard = () => {
       });
     }
   };
-
   const handleUpdateSpecialist = (updatedSpecialist: any) => {
     setPeerSpecialist(updatedSpecialist);
   };
-
   const isWaitingTooLong = (session: ChatSession) => {
     if (session.status !== 'waiting') return false;
     const now = new Date();
@@ -569,16 +485,13 @@ const PeerSpecialistDashboard = () => {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+    return <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const currentStatus = effectiveStatus;
 
   // Helper function to format session display name
@@ -590,9 +503,7 @@ const PeerSpecialistDashboard = () => {
     }
     return sessionName;
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <div className="bg-card border-b border-border p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -604,48 +515,33 @@ const PeerSpecialistDashboard = () => {
           <div className="flex items-center space-x-4">
             {/* Connection Status Indicator */}
             <div className="flex items-center space-x-2">
-              {connectionStatus === 'connected' && (
-                <div className="flex items-center space-x-1 text-green-600">
+              {connectionStatus === 'connected' && <div className="flex items-center space-x-1 text-green-600">
                   <Wifi size={16} />
                   <span className="text-sm">Connected</span>
-                </div>
-              )}
-              {connectionStatus === 'connecting' && (
-                <div className="flex items-center space-x-1 text-yellow-600">
+                </div>}
+              {connectionStatus === 'connecting' && <div className="flex items-center space-x-1 text-yellow-600">
                   <div className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-sm">Connecting...</span>
-                </div>
-              )}
-              {connectionStatus === 'disconnected' && (
-                <div className="flex items-center space-x-1 text-red-600">
+                </div>}
+              {connectionStatus === 'disconnected' && <div className="flex items-center space-x-1 text-red-600">
                   <WifiOff size={16} />
                   <span className="text-sm">Disconnected</span>
-                </div>
-              )}
-              {lastSync && (
-                <span className="text-xs text-muted-foreground">
+                </div>}
+              {lastSync && <span className="text-xs text-muted-foreground">
                   Last sync: {format(lastSync, 'HH:mm:ss')}
-                </span>
-              )}
+                </span>}
             </div>
 
             {/* Proposal notifications indicator */}
-            {pendingCount > 0 && (
-              <div className="flex items-center gap-2 text-sm bg-yellow-100 text-yellow-800 px-3 py-2 rounded-lg">
-                <Calendar className="h-4 w-4" />
-                <span>{pendingCount} pending proposal{pendingCount > 1 ? 's' : ''}</span>
-              </div>
-            )}
+            {pendingCount > 0}
 
-            {hasNewResponses && (
-              <div className="flex items-center gap-2 text-sm bg-green-100 text-green-800 px-3 py-2 rounded-lg">
+            {hasNewResponses && <div className="flex items-center gap-2 text-sm bg-green-100 text-green-800 px-3 py-2 rounded-lg">
                 <CheckCircle className="h-4 w-4" />
                 <span>New responses!</span>
                 <Button variant="ghost" size="sm" onClick={clearNewResponses}>
                   ×
                 </Button>
-              </div>
-            )}
+              </div>}
 
             {/* Analytics Button */}
             <Button variant="outline" size="sm" onClick={() => setShowAnalytics(true)} className="flex items-center gap-2">
@@ -660,15 +556,13 @@ const PeerSpecialistDashboard = () => {
             </Button>
 
             {/* Status Error Display */}
-            {statusError && (
-              <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+            {statusError && <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
                 <AlertTriangle className="h-4 w-4" />
                 <span>{statusError}</span>
                 <Button variant="ghost" size="sm" onClick={clearError}>
                   ×
                 </Button>
-              </div>
-            )}
+              </div>}
 
             {/* Status Selector with Error Handling */}
             <div className="flex items-center space-x-3">
@@ -699,17 +593,13 @@ const PeerSpecialistDashboard = () => {
                   </SelectContent>
                 </Select>
                 
-                {statusLoading && (
-                  <span className="text-xs text-primary mt-1">
+                {statusLoading && <span className="text-xs text-primary mt-1">
                     Updating...
-                  </span>
-                )}
+                  </span>}
                 
-                {!currentSpecialistId && (
-                  <span className="text-xs text-muted-foreground mt-1">
+                {!currentSpecialistId && <span className="text-xs text-muted-foreground mt-1">
                     Loading specialist...
-                  </span>
-                )}
+                  </span>}
               </div>
             </div>
 
@@ -722,14 +612,12 @@ const PeerSpecialistDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
-        {peerSpecialist && (
-          <div className="mb-6">
+        {peerSpecialist && <div className="mb-6">
             <h2 className="text-xl font-fjalla font-bold text-foreground">
               {peerSpecialist.first_name} {peerSpecialist.last_name}
             </h2>
             <p className="text-muted-foreground font-source">Peer Support Specialist</p>
-          </div>
-        )}
+          </div>}
 
         {/* Status Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -754,11 +642,9 @@ const PeerSpecialistDashboard = () => {
               <h3 className="text-lg font-fjalla font-bold">Meeting Proposals</h3>
               <p className="text-muted-foreground font-source">Awaiting user responses</p>
             </div>
-            {pendingCount > 0 && (
-              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+            {pendingCount > 0 && <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
                 {pendingCount}
-              </Badge>
-            )}
+              </Badge>}
           </Card>
           
           <Card className="flex items-center justify-between p-6">
@@ -787,19 +673,7 @@ const PeerSpecialistDashboard = () => {
             </div>
 
             <div className="space-y-4">
-              {getSortedActiveSessions().length > 0 ? (
-                getSortedActiveSessions().map(session => (
-                  <div
-                    key={session.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${
-                      selectedChatSession?.id === session.id ? 'border-primary bg-primary/5' : 'border-border'
-                    } ${
-                      isWaitingTooLong(session) ? 'bg-warning border-warning-foreground/20' : ''
-                    } ${
-                      session.status === 'waiting' && !session.specialist_id ? 'bg-blue-50/50 border-blue-200' : ''
-                    }`}
-                    onClick={() => handleChatClick(session)}
-                  >
+              {getSortedActiveSessions().length > 0 ? getSortedActiveSessions().map(session => <div key={session.id} className={`p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 ${selectedChatSession?.id === session.id ? 'border-primary bg-primary/5' : 'border-border'} ${isWaitingTooLong(session) ? 'bg-warning border-warning-foreground/20' : ''} ${session.status === 'waiting' && !session.specialist_id ? 'bg-blue-50/50 border-blue-200' : ''}`} onClick={() => handleChatClick(session)}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -808,76 +682,47 @@ const PeerSpecialistDashboard = () => {
                         <div>
                           <div className="flex items-center space-x-2">
                             <span className="font-fjalla font-bold">{formatSessionName(session)}</span>
-                            <Badge
-                              variant={
-                                session.status === 'active' ? 'default' : 
-                                session.status === 'waiting' ? 'secondary' : 'outline'
-                              }
-                              className={
-                                session.status === 'waiting' && !session.specialist_id ? 
-                                'bg-blue-100 text-blue-800 border-blue-200' : ''
-                              }
-                            >
+                            <Badge variant={session.status === 'active' ? 'default' : session.status === 'waiting' ? 'secondary' : 'outline'} className={session.status === 'waiting' && !session.specialist_id ? 'bg-blue-100 text-blue-800 border-blue-200' : ''}>
                               {session.status === 'waiting' && !session.specialist_id ? 'Available' : session.status}
                             </Badge>
-                            {session.status === 'waiting' && !session.specialist_id && (
-                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            {session.status === 'waiting' && !session.specialist_id && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                 Click to claim
-                              </Badge>
-                            )}
+                              </Badge>}
                             {/* Proposal indicators */}
-                            {session.pending_proposals_count && session.pending_proposals_count > 0 && (
-                              <Badge variant="outline" className="bg-yellow-50 text-orange-700 border-orange-200">
+                            {session.pending_proposals_count && session.pending_proposals_count > 0 && <Badge variant="outline" className="bg-yellow-50 text-orange-700 border-orange-200">
                                 <Calendar className="w-3 h-3 mr-1" />
                                 {session.pending_proposals_count} pending
-                              </Badge>
-                            )}
-                            {session.has_new_responses && (
-                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              </Badge>}
+                            {session.has_new_responses && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                 <CheckCircle className="w-3 h-3 mr-1" />
                                 New response
-                              </Badge>
-                            )}
+                              </Badge>}
                           </div>
                           <p className="text-sm text-muted-foreground font-source">
                             Started {format(new Date(session.started_at), 'MMM d, h:mm a')}
-                            {session.status === 'waiting' && !session.specialist_id && (
-                              <span className="ml-2 text-blue-600">• Unassigned</span>
-                            )}
+                            {session.status === 'waiting' && !session.specialist_id && <span className="ml-2 text-blue-600">• Unassigned</span>}
                           </p>
                         </div>
                       </div>
                       <ChevronRight size={16} className="text-muted-foreground" />
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                  </div>) : <div className="text-center py-8 text-muted-foreground">
                   <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
                   <p className="font-source">No active chat sessions</p>
                   <p className="font-source text-sm mt-2">Waiting and active sessions will appear here</p>
-                </div>
-              )}
+                </div>}
             </div>
           </Card>
 
           {/* Chat Window with Session Update Callback */}
           <Card className="p-0 overflow-hidden">
-            {selectedChatSession ? (
-              <SpecialistChatWindow 
-                session={selectedChatSession} 
-                onClose={handleCloseChatWindow}
-                onSessionUpdate={handleSessionUpdate}
-              />
-            ) : (
-              <div className="p-6 text-center">
+            {selectedChatSession ? <SpecialistChatWindow session={selectedChatSession} onClose={handleCloseChatWindow} onSessionUpdate={handleSessionUpdate} /> : <div className="p-6 text-center">
                 <MessageCircle size={64} className="mx-auto mb-4 text-muted-foreground/50" />
                 <h3 className="text-lg font-fjalla font-bold mb-2">Select a Chat Session</h3>
                 <p className="text-muted-foreground font-source">
                   Choose a chat session from the list to start helping users with their recovery journey.
                 </p>
-              </div>
-            )}
+              </div>}
           </Card>
         </div>
 
@@ -885,9 +730,7 @@ const PeerSpecialistDashboard = () => {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-fjalla font-bold">Your Schedule</h2>
           </div>
-          {peerSpecialist && (
-            <EnhancedSpecialistCalendar specialistId={peerSpecialist.id} />
-          )}
+          {peerSpecialist && <EnhancedSpecialistCalendar specialistId={peerSpecialist.id} />}
         </div>
 
         <div className="mt-6">
@@ -903,19 +746,16 @@ const PeerSpecialistDashboard = () => {
       </div>
 
       {/* Analytics Modal */}
-      {showAnalytics && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      {showAnalytics && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-6xl max-h-[90vh] overflow-hidden bg-background rounded-lg">
             <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
               <SpecialistAnalyticsDashboard onNavigateToChat={() => setShowAnalytics(false)} />
             </div>
           </div>
-        </div>
-      )}
+        </div>}
 
       {/* Chat History Modal */}
-      {showChatHistory && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      {showChatHistory && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-4xl max-h-[80vh] overflow-hidden">
             <div className="p-6 border-b border-border">
               <div className="flex items-center justify-between">
@@ -930,16 +770,10 @@ const PeerSpecialistDashboard = () => {
             </div>
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               <div className="space-y-4">
-                {getSortedEndedSessions().length > 0 ? (
-                  getSortedEndedSessions().map(session => (
-                    <div
-                      key={session.id}
-                      className="p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 border-border"
-                      onClick={() => {
-                        setSelectedChatSession(session);
-                        setShowChatHistory(false);
-                      }}
-                    >
+                {getSortedEndedSessions().length > 0 ? getSortedEndedSessions().map(session => <div key={session.id} className="p-4 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50 border-border" onClick={() => {
+              setSelectedChatSession(session);
+              setShowChatHistory(false);
+            }}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
@@ -952,29 +786,20 @@ const PeerSpecialistDashboard = () => {
                             </div>
                             <p className="text-sm text-muted-foreground font-source">
                               Started {format(new Date(session.started_at), 'MMM d, h:mm a')}
-                              {session.ended_at && (
-                                <span> • Ended {format(new Date(session.ended_at), 'MMM d, h:mm a')}</span>
-                              )}
+                              {session.ended_at && <span> • Ended {format(new Date(session.ended_at), 'MMM d, h:mm a')}</span>}
                             </p>
                           </div>
                         </div>
                         <ChevronRight size={16} className="text-muted-foreground" />
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
+                    </div>) : <div className="text-center py-8 text-muted-foreground">
                     <History size={48} className="mx-auto mb-4 opacity-50" />
                     <p className="font-source">No completed sessions yet</p>
-                  </div>
-                )}
+                  </div>}
               </div>
             </div>
           </Card>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
-
 export default PeerSpecialistDashboard;
