@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -40,13 +41,18 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
   const [expired, setExpired] = useState(false);
   const { toast } = useToast();
 
-  // Only show proposal actions for user messages and if it's an appointment proposal
-  if (isUser || message.metadata?.action_type !== 'recurring_appointment_proposal' || !message.metadata?.proposal_id) {
+  // Only show proposal actions for user messages and if it's an appointment proposal (both types)
+  const isAppointmentProposal = message.metadata?.action_type === 'appointment_proposal' || 
+                                message.metadata?.action_type === 'recurring_appointment_proposal';
+                                
+  if (isUser || !isAppointmentProposal || !message.metadata?.proposal_id) {
     return null;
   }
 
   const proposalData = message.metadata.proposal_data;
   if (!proposalData) return null;
+
+  const isRecurringProposal = message.metadata?.action_type === 'recurring_appointment_proposal';
 
   // Check if proposal has expired
   useEffect(() => {
@@ -81,20 +87,28 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
       }
 
       if (response === 'accepted') {
-        // Call edge function to create recurring appointments
-        const { error: functionError } = await supabase.functions.invoke('create-recurring-appointments', {
-          body: { proposalId: proposalData.id }
-        });
+        if (isRecurringProposal) {
+          // Call edge function to create recurring appointments
+          const { error: functionError } = await supabase.functions.invoke('create-recurring-appointments', {
+            body: { proposalId: proposalData.id }
+          });
 
-        if (functionError) {
-          console.error('Error creating appointments:', functionError);
-          throw functionError;
+          if (functionError) {
+            console.error('Error creating recurring appointments:', functionError);
+            throw functionError;
+          }
+
+          toast({
+            title: "Proposal Accepted",
+            description: "Recurring appointments have been scheduled successfully!"
+          });
+        } else {
+          // Handle single appointment scheduling
+          toast({
+            title: "Proposal Accepted",
+            description: "Appointment has been scheduled successfully!"
+          });
         }
-
-        toast({
-          title: "Proposal Accepted",
-          description: "Recurring appointments have been scheduled successfully!"
-        });
       } else {
         toast({
           title: "Proposal Rejected",
@@ -142,7 +156,9 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-primary" />
-          <span className="font-medium text-sm">Appointment Proposal Response</span>
+          <span className="font-medium text-sm">
+            {isRecurringProposal ? 'Recurring Appointment Proposal' : 'Appointment Proposal'} Response
+          </span>
           <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
             Expires in 7 days
           </Badge>
@@ -159,14 +175,20 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
           )}
           <div className="flex items-center gap-2">
             <Clock className="w-3 h-3" />
-            <strong>Schedule:</strong> {proposalData.frequency} starting {proposalData.start_date} at {proposalData.start_time}
+            <strong>Schedule:</strong> 
+            {isRecurringProposal 
+              ? `${proposalData.frequency} starting ${proposalData.start_date} at ${proposalData.start_time}`
+              : `${proposalData.start_date} at ${proposalData.start_time}`
+            }
           </div>
           <div className="flex items-center gap-2">
             <strong>Duration:</strong> {proposalData.duration} minutes per session
           </div>
-          <div className="flex items-center gap-2">
-            <strong>Total Sessions:</strong> {proposalData.occurrences}
-          </div>
+          {isRecurringProposal && (
+            <div className="flex items-center gap-2">
+              <strong>Total Sessions:</strong> {proposalData.occurrences}
+            </div>
+          )}
         </div>
 
         <div className="bg-blue-50 p-3 rounded-lg">
@@ -174,9 +196,19 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
             💡 <strong>What happens next:</strong>
           </p>
           <ul className="text-xs text-blue-700 mt-1 ml-4 space-y-1">
-            <li>• If you accept, recurring appointments will be automatically scheduled</li>
-            <li>• You'll receive reminders before each session</li>
-            <li>• You can reschedule individual sessions if needed</li>
+            {isRecurringProposal ? (
+              <>
+                <li>• If you accept, recurring appointments will be automatically scheduled</li>
+                <li>• You'll receive reminders before each session</li>
+                <li>• You can reschedule individual sessions if needed</li>
+              </>
+            ) : (
+              <>
+                <li>• If you accept, the appointment will be scheduled</li>
+                <li>• You'll receive a reminder before the session</li>
+                <li>• You can reschedule if needed</li>
+              </>
+            )}
             <li>• This proposal expires in 7 days</li>
           </ul>
         </div>
