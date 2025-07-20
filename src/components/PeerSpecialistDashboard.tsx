@@ -31,6 +31,7 @@ interface ChatSession {
   user_last_name?: string;
   pending_proposals_count?: number;
   has_new_responses?: boolean;
+  isLoading?: boolean;
 }
 interface PeerSpecialist {
   id: string;
@@ -320,6 +321,11 @@ const PeerSpecialistDashboard = () => {
     return chatSessions.filter(session => session.status === 'ended').sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
   };
   const handleChatClick = async (session: ChatSession) => {
+    // Set loading state for the session being claimed
+    setChatSessions(prev => 
+      prev.map(s => s.id === session.id ? { ...s, isLoading: true } : s)
+    );
+
     // If this is an unassigned waiting session, assign it to this specialist
     if (session.status === 'waiting' && !session.specialist_id && peerSpecialist) {
       try {
@@ -327,6 +333,7 @@ const PeerSpecialistDashboard = () => {
           sessionId: session.id,
           specialistId: peerSpecialist.id
         });
+        
         // Use the secure claim_chat_session function
         const { data, error } = await supabase.rpc('claim_chat_session', {
           p_session_id: session.id,
@@ -335,6 +342,12 @@ const PeerSpecialistDashboard = () => {
 
         if (error) {
           logger.error('Error claiming session', error);
+          
+          // Remove loading state
+          setChatSessions(prev => 
+            prev.map(s => s.id === session.id ? { ...s, isLoading: false } : s)
+          );
+          
           toast({
             title: "Error",
             description: "Failed to claim this session. Please try again.",
@@ -347,6 +360,12 @@ const PeerSpecialistDashboard = () => {
 
         if (!result?.success) {
           logger.error('Session claim failed:', result?.error);
+          
+          // Remove loading state
+          setChatSessions(prev => 
+            prev.map(s => s.id === session.id ? { ...s, isLoading: false } : s)
+          );
+          
           toast({
             title: "Cannot Claim Session",
             description: result?.error || "Session is no longer available for claiming.",
@@ -356,9 +375,9 @@ const PeerSpecialistDashboard = () => {
         }
 
         // Update local state with the claimed session data
-        const claimedSession = result.session!
+        const claimedSession = { ...result.session!, isLoading: false };
         setChatSessions(prev => prev.map(s => 
-          s.id === session.id ? claimedSession : s
+          s.id === session.id ? claimedSession : { ...s, isLoading: false }
         ));
 
         // Update the selected session
@@ -369,6 +388,12 @@ const PeerSpecialistDashboard = () => {
         });
       } catch (error) {
         logger.error('Error claiming session', error);
+        
+        // Remove loading state
+        setChatSessions(prev => 
+          prev.map(s => s.id === session.id ? { ...s, isLoading: false } : s)
+        );
+        
         toast({
           title: "Error",
           description: "Failed to claim this session. Please try again.",
@@ -376,11 +401,16 @@ const PeerSpecialistDashboard = () => {
         });
       }
     } else {
+      // Remove loading state for sessions that don't need claiming
+      setChatSessions(prev => 
+        prev.map(s => s.id === session.id ? { ...s, isLoading: false } : s)
+      );
       setSelectedChatSession(session);
     }
   };
   const handleCloseChatWindow = () => {
     setSelectedChatSession(null);
+    // Reload chat sessions to get the latest data and sync state
     if (peerSpecialist) {
       loadChatSessions(peerSpecialist.id);
     }
@@ -399,7 +429,8 @@ const PeerSpecialistDashboard = () => {
           existing.ended_at !== updatedSession.ended_at) {
         return prev.map(session => session.id === updatedSession.id ? {
           ...session,
-          ...updatedSession
+          ...updatedSession,
+          isLoading: false // Clear loading state on update
         } : session);
       }
       return prev; // No change needed
@@ -410,7 +441,7 @@ const PeerSpecialistDashboard = () => {
       if (selectedChatSession.status !== updatedSession.status ||
           selectedChatSession.specialist_id !== updatedSession.specialist_id ||
           selectedChatSession.ended_at !== updatedSession.ended_at) {
-        setSelectedChatSession(updatedSession);
+        setSelectedChatSession({ ...updatedSession, isLoading: false });
       }
     }
 
