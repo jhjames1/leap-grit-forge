@@ -12,6 +12,7 @@ import AdminPortal from "./pages/AdminPortal";
 import PeerSpecialistPortal from "./pages/PeerSpecialistPortal";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { AuthForm } from "./components/AuthForm";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +40,7 @@ function App() {
                 <BrowserRouter>
                   <Routes>
                     <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<AuthForm onAuthSuccess={() => window.location.href = '/'} />} />
                     <Route path="/admin" element={<AdminPortal />} />
                     <Route 
                       path="/specialist" 
