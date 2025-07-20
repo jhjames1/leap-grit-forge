@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Calendar as CalendarIcon, Clock, Users, X, Plus } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Users, X, Plus, Repeat } from 'lucide-react';
 import { format, addDays, startOfDay, addMinutes, isBefore, isAfter, isSameDay } from 'date-fns';
 import { useSpecialistCalendar } from '@/hooks/useSpecialistCalendar';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +40,9 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [appointmentTypes, setAppointmentTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [frequency, setFrequency] = useState<string>('weekly');
+  const [occurrences, setOccurrences] = useState<number>(4);
   
   const { toast } = useToast();
   const { checkAvailability, settings } = useSpecialistCalendar({ specialistId });
@@ -158,8 +161,8 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
         start_date: format(selectedDate, 'yyyy-MM-dd'),
         start_time: selectedTime,
         duration,
-        frequency: 'once',
-        occurrences: 1,
+          frequency: isRecurring ? frequency : 'once',
+          occurrences: isRecurring ? occurrences : 1,
         status: 'pending'
       });
       
@@ -175,8 +178,8 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
           start_date: format(selectedDate, 'yyyy-MM-dd'),
           start_time: selectedTime,
           duration,
-          frequency: 'once',
-          occurrences: 1,
+          frequency: isRecurring ? frequency : 'once',
+          occurrences: isRecurring ? occurrences : 1,
           status: 'pending'
         })
         .select()
@@ -198,6 +201,10 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
         throw new Error('User not authenticated');
       }
       
+      const recurringText = isRecurring 
+        ? ` This will be a ${frequency} recurring appointment for ${occurrences} sessions.`
+        : '';
+      
       const messageResult = await supabase
         .from('chat_messages')
         .insert({
@@ -205,7 +212,7 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
           sender_id: currentUser.id,
           sender_type: 'specialist',
           message_type: 'system',
-          content: `I'd like to schedule a ${title} appointment with you on ${format(selectedDate, 'MMMM d, yyyy')} at ${selectedTime}. Please let me know if this works for you!`,
+          content: `I'd like to schedule a ${title} appointment with you on ${format(selectedDate, 'MMMM d, yyyy')} at ${selectedTime}.${recurringText} Please let me know if this works for you!`,
           metadata: {
             action_type: 'appointment_proposal',
             proposal_id: data.id,
@@ -217,7 +224,8 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
               start_time: data.start_time,
               duration: data.duration.toString(),
               frequency: data.frequency,
-              occurrences: data.occurrences.toString()
+              occurrences: data.occurrences.toString(),
+              is_recurring: isRecurring
             }
           }
         });
@@ -276,6 +284,9 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
     setTitle('');
     setDescription('');
     setAvailableSlots([]);
+    setIsRecurring(false);
+    setFrequency('weekly');
+    setOccurrences(4);
   };
 
   if (!isOpen) return null;
@@ -324,6 +335,56 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
               placeholder="Add any additional details..."
               rows={3}
             />
+          </div>
+
+          <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="recurring"
+                checked={isRecurring}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+                className="rounded"
+              />
+              <Label htmlFor="recurring" className="flex items-center gap-2">
+                <Repeat size={16} />
+                Recurring Appointment
+              </Label>
+            </div>
+            
+            {isRecurring && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Frequency</Label>
+                  <Select value={frequency} onValueChange={setFrequency}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="biweekly">Bi-weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Number of Sessions</Label>
+                  <Select value={occurrences.toString()} onValueChange={(value) => setOccurrences(parseInt(value))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[2, 3, 4, 5, 6, 8, 10, 12].map((num) => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num} sessions
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
