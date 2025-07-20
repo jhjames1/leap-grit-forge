@@ -18,6 +18,8 @@ import { useSpecialistPresence } from '@/hooks/useSpecialistPresence';
 import SpecialistPerformanceMetrics from './SpecialistPerformanceMetrics';
 import CoachingTips from './CoachingTips';
 import RealTimeSpecialistMetrics from './RealTimeSpecialistMetrics';
+import PeerPerformanceDashboard from './PeerPerformanceDashboard';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   UserPlus, 
   Edit, 
@@ -98,6 +100,7 @@ const PeerSpecialistManagement = () => {
   const [specialists, setSpecialists] = useState<PeerSpecialist[]>([]);
   const [removedSpecialists, setRemovedSpecialists] = useState<PeerSpecialist[]>([]);
   const [activeTab, setActiveTab] = useState<'active' | 'removed'>('active');
+  const [groupMetricsTimePeriod, setGroupMetricsTimePeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSpecialist, setEditingSpecialist] = useState<PeerSpecialist | null>(null);
@@ -682,6 +685,32 @@ const PeerSpecialistManagement = () => {
         </TabsList>
 
         <TabsContent value="active" className="space-y-6 mt-6">
+          {/* Group Performance Metrics */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Group Performance Metrics
+                </CardTitle>
+                <Select value={groupMetricsTimePeriod} onValueChange={(value: 'week' | 'month' | 'quarter' | 'year') => setGroupMetricsTimePeriod(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="week">Week</SelectItem>
+                    <SelectItem value="month">Month</SelectItem>
+                    <SelectItem value="quarter">Quarter</SelectItem>
+                    <SelectItem value="year">Year</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <PeerPerformanceDashboard onRefresh={refreshData} />
+            </CardContent>
+          </Card>
+
           {/* Add New Specialist */}
           <Card>
             <CardHeader>
@@ -885,11 +914,16 @@ const PeerSpecialistManagement = () => {
                                 </Badge>
                               ))}
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
+                           )}
+                         </div>
+                       </div>
+                       
+                       {/* Individual Performance Metrics */}
+                       <div className="mt-4 pt-4 border-t">
+                         <SpecialistPerformanceMetrics specialistId={specialist.id} />
+                       </div>
+                       
+                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -1059,28 +1093,6 @@ const PeerSpecialistManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Performance Metrics and Coaching Tips */}
-      {specialists.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Metrics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SpecialistPerformanceMetrics specialistId="" />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Real-time Analytics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <RealTimeSpecialistMetrics specialistId="" />
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 };
