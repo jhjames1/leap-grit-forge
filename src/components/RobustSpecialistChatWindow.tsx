@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Send, Calendar, Phone, Video, User, Shield, Clock, X, Trash2, AlertCircle, CheckCircle, RefreshCw, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useChatOperations, MessageData } from '@/hooks/useChatOperations';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { useConnectionMonitor } from '@/hooks/useConnectionMonitor';
@@ -27,6 +27,7 @@ interface ChatSession {
   last_activity?: string;
   end_reason?: string;
 }
+
 interface AppointmentProposal {
   id: string;
   title: string;
@@ -41,17 +42,7 @@ interface AppointmentProposal {
   proposed_at: string;
   responded_at?: string;
 }
-interface OptimisticMessage {
-  id: string;
-  content: string;
-  sender_type: string;
-  sender_id: string;
-  message_type: string;
-  metadata?: any;
-  created_at: string;
-  isOptimistic: true;
-  status: 'sending' | 'failed' | 'timeout';
-}
+
 interface RealMessage {
   id: string;
   content: string;
@@ -61,26 +52,27 @@ interface RealMessage {
   metadata?: any;
   created_at: string;
   is_read?: boolean;
-  isOptimistic?: false;
 }
-type ChatMessage = OptimisticMessage | RealMessage;
+
 interface RobustSpecialistChatWindowProps {
   session: ChatSession;
   onClose: () => void;
   onSessionUpdate?: (updatedSession: ChatSession) => void;
 }
+
 const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   session: initialSession,
   onClose,
   onSessionUpdate
 }) => {
-  const [message, setMessage] = useState('');
   const [messageInput, setMessageInput] = useState('');
   const [showScheduler, setShowScheduler] = useState(false);
   const [sessionProposal, setSessionProposal] = useState<AppointmentProposal | null>(null);
   const [session, setSession] = useState<ChatSession>(initialSession);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<RealMessage[]>([]);
   const [specialistId, setSpecialistId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // Use connection monitor for proper connection tracking
   const { connectionStatus, createChannel, forceReconnect } = useConnectionMonitor();
@@ -88,33 +80,21 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const channelRef = useRef<any>(null);
-  const messageTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const isInitializedRef = useRef(false);
 
-  // Add ref to track session updates
-  const sessionUpdateTimeoutRef = useRef<NodeJS.Timeout>();
-  const {
-    user
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
-  const chatOperations = useChatOperations();
-  const MESSAGE_TIMEOUT = 15000;
-  const RECONNECT_INTERVAL = 5000;
-  const MAX_RECONNECT_ATTEMPTS = 5;
-  const reconnectAttemptsRef = useRef(0);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   // Get specialist ID on mount
   useEffect(() => {
     const getSpecialistId = async () => {
       if (!user) return;
       try {
-        const {
-          data,
-          error
-        } = await supabase.from('peer_specialists').select('id').eq('user_id', user.id).single();
+        const { data, error } = await supabase
+          .from('peer_specialists')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
         if (error) throw error;
         setSpecialistId(data.id);
       } catch (err) {
@@ -128,43 +108,46 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const loadMessages = useCallback(async () => {
     if (!user) return;
     try {
+      setLoading(true);
       logger.debug('Loading messages for session:', session.id);
-      const sessionData = await chatOperations.getSessionWithMessages(session.id);
-      if (sessionData && !sessionData.error) {
-        console.log('Messages loaded:', sessionData.messages?.length, 'messages');
-        console.log('Message types:', sessionData.messages?.map(m => ({
-          id: m.id, 
-          type: m.message_type, 
-          sender: m.sender_type, 
-          hasMetadata: !!m.metadata,
-          actionType: m.metadata?.action_type
-        })));
-        setMessages(sessionData.messages || []);
-        if (sessionData.session) {
-          const updatedSession = sessionData.session as ChatSession;
-          setSession(updatedSession);
-          if (onSessionUpdate) {
-            onSessionUpdate(updatedSession);
-          }
-        }
+      
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('session_id', session.id)
+        .order('created_at');
+
+      if (error) throw error;
+      
+      console.log('Messages loaded:', data?.length, 'messages');
+      setMessages(data || []);
+      
+      // Also load session data
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .eq('id', session.id)
+        .single();
+        
+      if (sessionError) throw sessionError;
+      
+      const updatedSession = sessionData as ChatSession;
+      setSession(updatedSession);
+      if (onSessionUpdate) {
+        onSessionUpdate(updatedSession);
       }
     } catch (err) {
       logger.error('Failed to load messages:', err);
-      toast({
-        title: "Error Loading Messages",
-        description: "Could not load chat history. Please refresh.",
-        variant: "destructive"
-      });
+      setError(err instanceof Error ? err.message : 'Failed to load messages');
+    } finally {
+      setLoading(false);
     }
-  }, [session.id, chatOperations, user, onSessionUpdate, toast]);
+  }, [session.id, user, onSessionUpdate]);
 
   // Load session proposal
   const loadSessionProposal = useCallback(async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase
+      const { data, error } = await supabase
         .from('appointment_proposals')
         .select('*')
         .eq('chat_session_id', session.id)
@@ -189,29 +172,19 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       newSpecialistId: updatedSession.specialist_id
     });
 
-    // Update local session state immediately
     setSession(prevSession => {
       const mergedSession = {
         ...prevSession,
         ...updatedSession,
-        // Ensure we keep user display names if they exist
         user_first_name: updatedSession.user_first_name || prevSession.user_first_name,
         user_last_name: updatedSession.user_last_name || prevSession.user_last_name
       };
-      logger.debug('RobustSpecialistChatWindow: Updated local session state', mergedSession);
       return mergedSession;
     });
 
-    // Debounce parent callback to prevent rapid updates
-    if (sessionUpdateTimeoutRef.current) {
-      clearTimeout(sessionUpdateTimeoutRef.current);
+    if (onSessionUpdate) {
+      onSessionUpdate(updatedSession);
     }
-    sessionUpdateTimeoutRef.current = setTimeout(() => {
-      if (onSessionUpdate) {
-        logger.debug('RobustSpecialistChatWindow: Calling parent onSessionUpdate');
-        onSessionUpdate(updatedSession);
-      }
-    }, 100);
   }, [session.status, session.specialist_id, onSessionUpdate]);
 
   // Cleanup function for real-time subscription
@@ -221,24 +194,16 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = undefined;
-    }
-
-    // Clear all message timeouts
-    messageTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
-    messageTimeoutsRef.current.clear();
-    // Connection status is now managed by useConnectionMonitor
   }, []);
 
-  // Enhanced real-time subscription with better session update handling
+  // CRITICAL FIX: Use the same channel naming pattern as peer client
   const setupRealtimeSubscription = useCallback(() => {
     if (channelRef.current || !session?.id) return;
     
     logger.debug('Setting up realtime subscription for session:', session.id);
     
-    const channelName = `specialist-robust-chat-${session.id}-${Date.now()}`;
+    // Use the SAME channel name as peer client: chat-session-${sessionId}
+    const channelName = `chat-session-${session.id}`;
     const channel = createChannel(channelName);
     
     channel.on('postgres_changes', {
@@ -250,30 +215,16 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       logger.debug('New message received via realtime:', payload);
       const newMessage = payload.new as RealMessage;
       setMessages(prev => {
-        // Remove matching optimistic message
-        const withoutOptimistic = prev.filter(msg => 
-          !(msg.isOptimistic && 
-            msg.content === newMessage.content && 
-            msg.sender_type === newMessage.sender_type && 
-            Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 30000)
-        );
-
         // Avoid duplicates
-        if (withoutOptimistic.find(msg => msg.id === newMessage.id)) {
-          return withoutOptimistic;
+        if (prev.find(msg => msg.id === newMessage.id)) {
+          return prev;
         }
-
+        
         // Add new message and sort
-        const updated = [...withoutOptimistic, newMessage].sort((a, b) => 
+        const updated = [...prev, newMessage].sort((a, b) => 
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
         return updated;
-      });
-
-      // Clear timeouts for successful messages
-      messageTimeoutsRef.current.forEach((timeout, messageId) => {
-        clearTimeout(timeout);
-        messageTimeoutsRef.current.delete(messageId);
       });
     }).on('postgres_changes', {
       event: 'UPDATE',
@@ -301,7 +252,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         }
       }
 
-      // Handle the session update
       handleSessionUpdate(updatedSession);
 
       // Show appropriate toasts for status changes
@@ -333,69 +283,43 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     channelRef.current = channel;
   }, [session.id, createChannel, handleSessionUpdate, loadSessionProposal, toast]);
 
-
   // Enhanced claim session with immediate state update
   const claimSession = useCallback(async () => {
     if (!user || !specialistId || session.status !== 'waiting') return;
     try {
       logger.debug('Claiming session:', session.id);
 
-      // Optimistically update UI immediately
-      const optimisticSession = {
-        ...session,
-        status: 'active' as const,
-        specialist_id: specialistId,
-        updated_at: new Date().toISOString()
-      };
-      setSession(optimisticSession);
-
-      // Immediately notify parent of the optimistic update
-      if (onSessionUpdate) {
-        onSessionUpdate(optimisticSession);
-      }
-
       // Use the secure claim_chat_session function
-      const {
-        data,
-        error
-      } = await supabase.rpc('claim_chat_session', {
+      const { data, error } = await supabase.rpc('claim_chat_session', {
         p_session_id: session.id,
         p_specialist_user_id: user.id
       });
       if (error) throw error;
+      
       const result = data as unknown as {
         success: boolean;
         error?: string;
         session?: ChatSession;
       };
+      
       if (!result?.success) {
-        // Revert optimistic update on failure
-        setSession(session);
-        if (onSessionUpdate) {
-          onSessionUpdate(session);
-        }
         throw new Error(result?.error || 'Failed to claim session');
       }
+      
       const confirmedSession = result.session!;
       logger.debug('Session claim confirmed:', confirmedSession);
 
-      // Update with confirmed data
       setSession(confirmedSession);
       if (onSessionUpdate) {
         onSessionUpdate(confirmedSession);
       }
+      
       toast({
         title: "Session Claimed",
         description: "You are now connected to this user."
       });
     } catch (err) {
       logger.error('Failed to claim session:', err);
-
-      // Revert optimistic update
-      setSession(session);
-      if (onSessionUpdate) {
-        onSessionUpdate(session);
-      }
       toast({
         title: "Error",
         description: "Failed to claim session. Please try again.",
@@ -404,8 +328,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, [user, specialistId, session, onSessionUpdate, toast]);
 
-  // Send message with proper session activation
-  const sendMessage = useCallback(async (messageData: MessageData) => {
+  // CRITICAL FIX: Use the same atomic function as peer client
+  const sendMessage = useCallback(async (content: string) => {
     if (!user || !specialistId) return;
 
     // Auto-claim waiting sessions
@@ -413,87 +337,39 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       await claimSession();
     }
 
-    // Check for duplicates
-    const isDuplicate = await chatOperations.checkDuplicate(session.id, messageData.content);
-    if (isDuplicate) {
-      logger.warn('Duplicate message detected, skipping');
-      return;
-    }
-
-    // Create optimistic message
-    const optimisticMessage: OptimisticMessage = {
-      id: `optimistic-${Date.now()}-${Math.random()}`,
-      content: messageData.content,
-      sender_type: messageData.sender_type || 'specialist',
-      sender_id: user.id,
-      message_type: messageData.message_type || 'text',
-      metadata: messageData.metadata,
-      created_at: new Date().toISOString(),
-      isOptimistic: true,
-      status: 'sending'
-    };
-
-    // Add optimistic message immediately
-    setMessages(prev => [...prev, optimisticMessage]);
-
-    // Set timeout for message
-    const timeoutId = setTimeout(() => {
-      setMessages(prev => prev.map(msg => msg.id === optimisticMessage.id && msg.isOptimistic ? {
-        ...msg,
-        status: 'timeout' as const
-      } : msg));
-    }, MESSAGE_TIMEOUT);
-    messageTimeoutsRef.current.set(optimisticMessage.id, timeoutId);
     try {
-      const result = await chatOperations.sendMessage(session.id, {
-        ...messageData,
-        sender_type: 'specialist'
+      // Use the SAME atomic function as peer client
+      const { data, error } = await supabase.rpc('send_message_atomic', {
+        p_session_id: session.id,
+        p_sender_id: user.id,
+        p_sender_type: 'specialist',
+        p_content: content,
+        p_message_type: 'text',
+        p_metadata: null
       });
+
+      if (error) throw error;
+      
+      const result = data as {
+        success: boolean;
+        error_code?: string;
+        error_message?: string;
+      };
+
       if (!result.success) {
-        // Mark message as failed
-        setMessages(prev => prev.map(msg => msg.id === optimisticMessage.id && msg.isOptimistic ? {
-          ...msg,
-          status: 'failed' as const
-        } : msg));
+        throw new Error(result.error_message || 'Failed to send message');
       }
+
+      logger.debug('Message sent successfully via atomic function');
     } catch (err) {
       logger.error('Failed to send message:', err);
-      setMessages(prev => prev.map(msg => msg.id === optimisticMessage.id && msg.isOptimistic ? {
-        ...msg,
-        status: 'failed' as const
-      } : msg));
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive"
+      });
     }
-  }, [user, specialistId, session.id, session.status, chatOperations, claimSession]);
-
-  // Retry failed message
-  const retryFailedMessage = useCallback(async (messageId: string) => {
-    const failedMessage = messages.find(msg => msg.id === messageId && msg.isOptimistic);
-    if (!failedMessage) return;
-
-    // Update status to sending
-    setMessages(prev => prev.map(msg => msg.id === messageId && msg.isOptimistic ? {
-      ...msg,
-      status: 'sending' as const
-    } : msg));
-    try {
-      const messageData: MessageData = {
-        content: failedMessage.content,
-        sender_type: failedMessage.sender_type as any,
-        message_type: failedMessage.message_type,
-        metadata: failedMessage.metadata
-      };
-      await sendMessage(messageData);
-
-      // Remove the failed message since sendMessage will create a new optimistic one
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-    } catch (err) {
-      logger.error('Failed to retry message:', err);
-      setMessages(prev => prev.map(msg => msg.id === messageId && msg.isOptimistic ? {
-        ...msg,
-        status: 'failed' as const
-      } : msg));
-    }
-  }, [messages, sendMessage]);
+  }, [user, specialistId, session.id, session.status, claimSession, toast]);
 
   // Handle sending a message
   const handleSendMessage = async () => {
@@ -501,10 +377,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     
     console.log('Sending message:', messageInput, 'Session status:', session.status);
     
-    await sendMessage({
-      content: messageInput,
-      sender_type: 'specialist'
-    });
+    await sendMessage(messageInput);
     setMessageInput('');
   };
 
@@ -525,20 +398,21 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         userId: user.id,
         specialistId: specialistId
       });
-      const {
-        data,
-        error
-      } = await supabase.rpc('end_chat_session', {
+      
+      const { data, error } = await supabase.rpc('end_chat_session', {
         p_session_id: session.id,
         p_user_id: user.id,
         p_specialist_id: specialistId
       });
+      
       if (error) throw error;
+      
       const response = data as {
         success: boolean;
         session?: any;
         error?: string;
       };
+      
       if (response?.success) {
         toast({
           title: "Session Ended",
@@ -598,6 +472,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       claimSession();
     }
   }, [session.status, specialistId, claimSession]);
+
   const getSessionAge = () => {
     const age = Date.now() - new Date(session.started_at).getTime();
     const minutes = Math.floor(age / (1000 * 60));
@@ -605,11 +480,9 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   };
   
   const isSessionEnded = session.status === 'ended';
-  
-  // Check if input should be enabled - simplified logic
   const isInputEnabled = session && !isSessionEnded && (session.status === 'active' || session.status === 'waiting');
   
-  console.log('Input enabled check:', {
+  console.log('Specialist input enabled check:', {
     session: !!session,
     isSessionEnded,
     sessionStatus: session?.status,
@@ -617,7 +490,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     isInputEnabled
   });
 
-  return <Card className="h-[600px] flex flex-col bg-card border border-border shadow-sm">
+  return (
+    <Card className="h-[600px] flex flex-col bg-card border border-border shadow-sm">
       {/* Enhanced Header with better session info display */}
       <div className="bg-card border-b border-border p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -643,10 +517,12 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
           {/* Connection status indicator */}
           <div className={`w-2 h-2 rounded-full ${connectionStatus.status === 'connected' ? 'bg-green-500' : connectionStatus.status === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} title={`Connection: ${connectionStatus.status}`} />
           
-          {!isSessionEnded && <Button size="sm" variant="destructive" onClick={handleEndSession} disabled={chatOperations.loading}>
+          {!isSessionEnded && (
+            <Button size="sm" variant="destructive" onClick={handleEndSession} disabled={loading}>
               <X size={12} className="mr-1" />
               End Chat
-            </Button>}
+            </Button>
+          )}
           
           <Button size="sm" variant="ghost" onClick={onClose}>
             <X size={12} />
@@ -655,13 +531,16 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       </div>
 
       {/* Enhanced Status Messages */}
-      {isSessionEnded && <div className="bg-muted/50 border-b border-border p-3">
+      {isSessionEnded && (
+        <div className="bg-muted/50 border-b border-border p-3">
           <p className="text-muted-foreground text-sm text-center">
             This chat session has ended. {session.end_reason && `Reason: ${session.end_reason}`}
           </p>
-        </div>}
+        </div>
+      )}
 
-      {session.status === 'waiting' && <div className="bg-yellow-50 border-b border-yellow-200 p-3">
+      {session.status === 'waiting' && (
+        <div className="bg-yellow-50 border-b border-yellow-200 p-3">
           <div className="text-center">
             <p className="text-yellow-800 text-sm font-medium mb-2">
               This session is waiting to be claimed
@@ -670,18 +549,29 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               Claim Session
             </Button>
           </div>
-        </div>}
+        </div>
+      )}
 
-      {connectionStatus.status === 'disconnected' && !isSessionEnded && <div className="bg-destructive/10 border-b border-destructive/20 p-3">
+      {connectionStatus.status === 'disconnected' && !isSessionEnded && (
+        <div className="bg-destructive/10 border-b border-destructive/20 p-3">
           <p className="text-destructive text-sm text-center">
             ⚠ Connection issue - Messages may be delayed
           </p>
-        </div>}
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-500/10 border-b border-red-500/20 p-3">
+          <p className="text-red-600 text-sm text-center">Error: {error}</p>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length > 0 ? messages.map(msg => <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'specialist' ? 'items-end' : msg.message_type === 'system' ? 'items-center' : 'items-start'}`}>
-              {/* Check if this is an appointment proposal message - Updated condition to include both types */}
+        {messages.length > 0 ? (
+          messages.map(msg => (
+            <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'specialist' ? 'items-end' : msg.message_type === 'system' ? 'items-center' : 'items-start'}`}>
+              {/* Check if this is an appointment proposal message */}
               {msg.message_type === 'system' && (msg.metadata?.action_type === 'appointment_proposal' || msg.metadata?.action_type === 'recurring_appointment_proposal') ? (
                 <div className="w-full max-w-md">
                   <AppointmentProposalHandler 
@@ -699,84 +589,57 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
                       : msg.message_type === 'system' 
                         ? 'bg-muted text-muted-foreground border border-border' 
                         : 'bg-green-100 text-gray-900'
-                    } ${msg.isOptimistic && msg.status === 'failed' ? 'ring-1 ring-red-300' : ''} ${msg.isOptimistic && msg.status === 'timeout' ? 'ring-1 ring-yellow-300' : ''}`}>
+                  }`}>
                     <p className="text-sm leading-relaxed">{msg.content}</p>
                   </div>
                 </>
               )}
               
-              {/* Timestamp and Status Row */}
+              {/* Timestamp */}
               <div className="flex items-center gap-2 mt-1 px-1">
                 <p className="text-xs text-muted-foreground">
                   {format(new Date(msg.created_at), 'h:mm a')}
                 </p>
-                
-                {/* Message status indicators */}
-                {msg.isOptimistic && (
-                  <div className="flex items-center gap-1">
-                    {msg.status === 'sending' && (
-                      <Clock size={10} className="text-muted-foreground animate-pulse" />
-                    )}
-                    {msg.status === 'failed' && (
-                      <div className="flex items-center gap-1">
-                        <AlertTriangle size={10} className="text-destructive" />
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-4 px-1 text-xs text-destructive hover:text-destructive/80" 
-                          onClick={() => retryFailedMessage(msg.id)}
-                        >
-                          <RotateCcw size={8} className="mr-1" />
-                          Retry
-                        </Button>
-                      </div>
-                    )}
-                    {msg.status === 'timeout' && (
-                      <div className="flex items-center gap-1">
-                        <Clock size={10} className="text-yellow-600" />
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-4 px-1 text-xs text-yellow-600 hover:text-yellow-500" 
-                          onClick={() => retryFailedMessage(msg.id)}
-                        >
-                          <RotateCcw size={8} className="mr-1" />
-                          Retry
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
-            </div>) : <div className="text-center text-muted-foreground py-8">
+            </div>
+          ))
+        ) : (
+          <div className="text-center text-muted-foreground py-8">
             <p className="text-sm">No messages yet. Send a message to start the conversation.</p>
-          </div>}
+          </div>
+        )}
         
         <div ref={messagesEndRef} />
       </div>
 
       {/* Proposal Section */}
-      {sessionProposal && sessionProposal.status === 'pending' && <div className="border-t border-border p-3">
-          <AppointmentProposalHandler message={{
-        id: sessionProposal.id,
-        content: '',
-        metadata: {
-          action_type: 'recurring_appointment_proposal',
-          proposal_data: {
-            id: sessionProposal.id,
-            title: sessionProposal.title,
-            description: sessionProposal.description || '',
-            start_date: sessionProposal.start_date,
-            start_time: sessionProposal.start_time,
-            duration: sessionProposal.duration.toString(),
-            frequency: sessionProposal.frequency,
-            occurrences: sessionProposal.occurrences.toString()
-          }
-        }
-      }} isUser={false} onResponse={() => loadSessionProposal()} />
-        </div>}
+      {sessionProposal && sessionProposal.status === 'pending' && (
+        <div className="border-t border-border p-3">
+          <AppointmentProposalHandler 
+            message={{
+              id: sessionProposal.id,
+              content: '',
+              metadata: {
+                action_type: 'recurring_appointment_proposal',
+                proposal_data: {
+                  id: sessionProposal.id,
+                  title: sessionProposal.title,
+                  description: sessionProposal.description || '',
+                  start_date: sessionProposal.start_date,
+                  start_time: sessionProposal.start_time,
+                  duration: sessionProposal.duration.toString(),
+                  frequency: sessionProposal.frequency,
+                  occurrences: sessionProposal.occurrences.toString()
+                }
+              }
+            }} 
+            isUser={false} 
+            onResponse={() => loadSessionProposal()} 
+          />
+        </div>
+      )}
 
-      {/* Input Section - Simplified conditions */}
+      {/* Input Section */}
       {!isSessionEnded && (
         <div className="border-t border-border">
           {/* Action Buttons */}
@@ -840,11 +703,21 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       )}
 
       {/* Scheduler Modal */}
-      {showScheduler && <ChatAppointmentScheduler isOpen={showScheduler} onClose={() => setShowScheduler(false)} specialistId={specialistId || ''} userId={session.user_id} chatSessionId={session.id} onScheduled={() => {
-      setShowScheduler(false);
-      loadSessionProposal();
-    }} />}
-    </Card>;
+      {showScheduler && (
+        <ChatAppointmentScheduler 
+          isOpen={showScheduler} 
+          onClose={() => setShowScheduler(false)} 
+          specialistId={specialistId || ''} 
+          userId={session.user_id} 
+          chatSessionId={session.id} 
+          onScheduled={() => {
+            setShowScheduler(false);
+            loadSessionProposal();
+          }} 
+        />
+      )}
+    </Card>
+  );
 };
 
 export default RobustSpecialistChatWindow;
