@@ -279,6 +279,12 @@ const UserManagement = () => {
         ) : (
           filteredUsers.map((user) => (
             <Card key={user.id} className="bg-card p-6 rounded-lg border-0 shadow-none">
+              {/* User ID Header */}
+              <div className="mb-4 pb-3 border-b border-border">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  User ID: <span className="font-mono text-foreground">{user.id}</span>
+                </h3>
+              </div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Basic Info */}
                 <div className="space-y-3">
@@ -299,10 +305,6 @@ const UserManagement = () => {
                       <Calendar className="h-3 w-3 text-muted-foreground" />
                       <span className="text-muted-foreground">Joined: </span>
                       <span className="text-foreground">{formatDate(user.created_at)}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">User ID: </span>
-                      <span className="text-foreground text-xs font-mono">{user.id.substring(0, 8)}...</span>
                     </div>
                   </div>
                 </div>
@@ -364,10 +366,6 @@ const UserManagement = () => {
                 </div>
               </div>
 
-              {/* User ID at bottom */}
-              <div className="mt-4 pt-4 border-t border-border">
-                <span className="text-xs text-muted-foreground font-mono">ID: {user.id}</span>
-              </div>
             </Card>
           ))
         )}
