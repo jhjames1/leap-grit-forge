@@ -673,17 +673,22 @@ const PeerSpecialistManagement = () => {
               <TrendingUp className="h-5 w-5" />
               Group Performance Metrics
             </CardTitle>
-            <Select value={groupMetricsTimePeriod} onValueChange={(value: 'week' | 'month' | 'quarter' | 'year') => setGroupMetricsTimePeriod(value)}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="week">Week</SelectItem>
-                <SelectItem value="month">Month</SelectItem>
-                <SelectItem value="quarter">Quarter</SelectItem>
-                <SelectItem value="year">Year</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select value={groupMetricsTimePeriod} onValueChange={(value: 'week' | 'month' | 'quarter' | 'year') => setGroupMetricsTimePeriod(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">Week</SelectItem>
+                  <SelectItem value="month">Month</SelectItem>
+                  <SelectItem value="quarter">Quarter</SelectItem>
+                  <SelectItem value="year">Year</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={refreshData} variant="outline" size="sm" disabled={presenceLoading}>
+                <RefreshCw className={`h-4 w-4 ${presenceLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
