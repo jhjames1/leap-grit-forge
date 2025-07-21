@@ -23,7 +23,7 @@ import {
 import PeerSelection from './PeerSelection';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
 import { PeerSpecialist } from '@/hooks/usePeerSpecialists';
-import { useRobustChatSession } from '@/hooks/useRobustChatSession';
+import { useChatSession } from '@/hooks/useChatSession';
 import { useAuth } from '@/hooks/useAuth';
 
 interface PeerChatProps {
@@ -44,16 +44,13 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     loading,
     error,
     connectionStatus,
-    realtimeConnected,
     startSession,
     sendMessage,
     endSession,
     refreshSession,
     startFreshSession,
-    retryFailedMessage,
-    isSessionStale,
-    hasFailedMessages
-  } = useRobustChatSession(selectedPeer?.id);
+    isSessionStale
+  } = useChatSession(selectedPeer?.id);
 
   const handleSelectPeer = async (peer: PeerSpecialist) => {
     console.log('🎯 Peer selected:', peer);
@@ -170,6 +167,8 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
 
   const isSessionEnded = session && session.status === 'ended';
   const isWaitingAndStale = session && session.status === 'waiting' && isSessionStale;
+  const realtimeConnected = connectionStatus === 'connected';
+  const hasFailedMessages = false; // Simplified - no complex optimistic handling
 
   return (
     <div className="flex flex-col h-screen bg-background pb-24">
@@ -374,13 +373,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                   : msg.message_type === 'system'
                   ? 'bg-construction/20 text-construction border border-construction/30'
                   : 'bg-white/10 backdrop-blur-sm text-muted-foreground'
-                } rounded-2xl p-4 ${
-                  msg.isOptimistic && msg.status === 'failed' ? 'border-2 border-red-500/50 bg-red-50/10' : ''
-                } ${
-                  msg.isOptimistic && msg.status === 'timeout' ? 'border-2 border-orange-500/50 bg-orange-50/10' : ''
-                } ${
-                  msg.isOptimistic && msg.status === 'sending' ? 'opacity-70' : ''
-                }`}>
+                } rounded-2xl p-4`}>
                 <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
                 <div className="flex items-center justify-between">
                   <p className={`text-xs ${
@@ -388,43 +381,6 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                   }`}>
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
-                  
-                  {/* Message status indicators */}
-                  {msg.isOptimistic && (
-                    <div className="flex items-center space-x-1 ml-2">
-                      {msg.status === 'sending' && (
-                        <Clock size={12} className="text-white/50 animate-pulse" />
-                      )}
-                      {msg.status === 'failed' && (
-                        <div className="flex items-center space-x-1">
-                          <AlertTriangle size={12} className="text-red-400" />
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-4 px-1 text-xs text-red-400 hover:text-red-300"
-                            onClick={() => retryFailedMessage(msg.id)}
-                          >
-                            <RotateCcw size={10} className="mr-1" />
-                            Retry
-                          </Button>
-                        </div>
-                      )}
-                      {msg.status === 'timeout' && (
-                        <div className="flex items-center space-x-1">
-                          <Clock size={12} className="text-orange-400" />
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-4 px-1 text-xs text-orange-400 hover:text-orange-300"
-                            onClick={() => retryFailedMessage(msg.id)}
-                          >
-                            <RotateCcw size={10} className="mr-1" />
-                            Retry
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
               
