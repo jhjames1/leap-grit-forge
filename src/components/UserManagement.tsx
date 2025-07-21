@@ -96,18 +96,16 @@ const UserManagement = () => {
         return;
       }
 
-      const regularUserIds = regularUsers.map(user => user.id);
-
-      // Then get their profiles and preferences
+      // Then get their profiles and preferences using regularUsers directly
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_id', regularUserIds);
+        .in('user_id', regularUsers.map(user => user.id));
 
       const { data: preferences, error: preferencesError } = await supabase
         .from('user_preferences')
         .select('*')
-        .in('user_id', regularUserIds);
+        .in('user_id', regularUsers.map(user => user.id));
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
