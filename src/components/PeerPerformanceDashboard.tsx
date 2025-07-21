@@ -137,7 +137,7 @@ const PeerPerformanceDashboard = ({
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold">Live Performance Metrics</h2>
+          
           <Button onClick={fetchLiveMetrics} disabled={isLoading} size="sm" variant="outline">
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? 'Refreshing...' : 'Refresh'}
