@@ -165,7 +165,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
             </TabsTrigger>
             <TabsTrigger value="users" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">
               <Users className="mr-2 h-4 w-4" />
-              Users
+              Peer Clients
             </TabsTrigger>
             <TabsTrigger value="admins" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">
               <Users className="mr-2 h-4 w-4" />
