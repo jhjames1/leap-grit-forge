@@ -213,7 +213,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       }
     });
      
-    console.log('🔧 SPECIALIST: Subscribing to postgres_changes with filter:', `session_id=eq.${session.id}`);
+    console.log('🔧 SPECIALIST: Subscribing to postgres_changes without filter - listening to ALL messages');
     
     // Try without filter first to see if we get any events
     channel.on('postgres_changes', {
