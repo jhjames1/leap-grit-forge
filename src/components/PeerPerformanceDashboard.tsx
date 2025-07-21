@@ -1,4 +1,4 @@
-import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -139,17 +139,17 @@ const PeerPerformanceDashboard = ({
     fetchLiveMetrics();
     onRefresh?.();
   };
+
+  // Expose the refresh function to parent components
+  useEffect(() => {
+    if (onRefresh) {
+      // Replace the onRefresh function with our internal refresh
+      onRefresh.current = fetchLiveMetrics;
+    }
+  }, [onRefresh]);
   return <div className="space-y-6">
       {/* Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          
-          <Button onClick={fetchLiveMetrics} disabled={isLoading} size="sm" variant="outline">
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            {isLoading ? 'Refreshing...' : 'Refresh'}
-          </Button>
-        </div>
-      </div>
+      
 
       {/* Consolidated Metrics Card */}
       <Card>
