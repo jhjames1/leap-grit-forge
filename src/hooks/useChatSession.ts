@@ -12,6 +12,7 @@ export interface ChatMessage {
   metadata?: any;
   is_read: boolean;
   created_at: string;
+  session_id: string;
 }
 
 export interface ChatSession {
@@ -74,80 +75,76 @@ export function useChatSession(specialistId?: string) {
     
     setConnectionStatus('connecting');
     
-    // CRITICAL FIX: Use the same channel name as specialist
-    const channelName = `chat-session-${session.id}`;
-    const messagesChannel = supabase
-      .channel(channelName, {
-        config: {
-          broadcast: { self: false },
-          presence: { key: user?.id }
-        }
-      })
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `session_id=eq.${session.id}`
-        },
-        (payload) => {
-          console.log('📨 New message received via realtime:', payload);
-          const newMessage = payload.new as ChatMessage;
-          setMessages(prev => {
-            // CRITICAL FIX: Handle optimistic message replacement
-            const existingIndex = prev.findIndex(msg => 
-              msg.id === newMessage.id || 
-              (msg.id.startsWith('temp-') && msg.content === newMessage.content && msg.sender_id === newMessage.sender_id)
-            );
-            
-            if (existingIndex !== -1) {
-              // Replace optimistic message with real one
-              const updated = [...prev];
-              updated[existingIndex] = newMessage;
-              console.log('🔄 Peer client: Replaced optimistic message with real one');
-              return updated;
-            }
-            
-            // Add new message if it doesn't exist
-            if (!prev.find(msg => msg.id === newMessage.id)) {
-              const updated = [...prev, newMessage].sort((a, b) => 
-                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-              );
-              console.log('✅ Peer client: New message added instantly');
-              return updated;
-            }
-            
-            return prev;
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'chat_sessions',
-          filter: `id=eq.${session.id}`
-        },
-        (payload) => {
-          console.log('📡 Session updated via realtime:', payload);
-          const updatedSession = payload.new as ChatSession;
-          setSession(updatedSession);
-        }
-      )
-      .subscribe((status) => {
-        console.log('📡 Real-time subscription status:', status);
-        console.log('🔌 Peer client subscription status:', status);
+    // FIXED: Simple subscription to prevent infinite recursion (same fix as specialist)
+    const channelName = `peer-simple-${session.id}`;
+    const messagesChannel = supabase.channel(channelName);
+    
+    messagesChannel.on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'chat_messages'
+    }, (payload) => {
+      console.log('📨 Peer client: Message received via realtime:', payload);
+      const newMessage = payload.new as ChatMessage;
+      
+      // Manual filter for this session
+      if (newMessage.session_id !== session.id) {
+        console.log('🚫 Peer client: Message filtered out, wrong session ID');
+        return;
+      }
+      
+      console.log('✅ Peer client: Message matches our session!', newMessage.content);
+      setMessages(prev => {
+        // CRITICAL FIX: Handle optimistic message replacement
+        const existingIndex = prev.findIndex(msg => 
+          msg.id === newMessage.id || 
+          (msg.id.startsWith('temp-') && msg.content === newMessage.content && msg.sender_id === newMessage.sender_id)
+        );
         
-        if (status === 'SUBSCRIBED') {
-          setConnectionStatus('connected');
-          console.log('✅ Peer client: Real-time subscription active');
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          setConnectionStatus('disconnected');
-          console.log('❌ Peer client: Subscription failed, status:', status);
+        if (existingIndex !== -1) {
+          // Replace optimistic message with real one
+          const updated = [...prev];
+          updated[existingIndex] = newMessage;
+          console.log('🔄 Peer client: Replaced optimistic message with real one');
+          return updated;
         }
+        
+        // Add new message if it doesn't exist
+        if (!prev.find(msg => msg.id === newMessage.id)) {
+          const updated = [...prev, newMessage].sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+          console.log('✅ Peer client: New message added instantly');
+          return updated;
+        }
+        
+        return prev;
       });
+    });
+    
+    messagesChannel.on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'chat_sessions'
+    }, (payload) => {
+      console.log('📡 Session updated via realtime:', payload);
+      const updatedSession = payload.new as ChatSession;
+      if (updatedSession.id === session.id) {
+        setSession(updatedSession);
+      }
+    });
+    
+    messagesChannel.subscribe((status) => {
+      console.log('📡 Peer client subscription status:', status);
+      
+      if (status === 'SUBSCRIBED') {
+        setConnectionStatus('connected');
+        console.log('✅ Peer client: Real-time subscription active');
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        setConnectionStatus('disconnected');
+        console.log('❌ Peer client: Subscription failed, status:', status);
+      }
+    });
 
     return () => {
       console.log('🔌 Cleaning up real-time subscription');
@@ -364,7 +361,8 @@ export function useChatSession(specialistId?: string) {
       content,
       metadata,
       is_read: false,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      session_id: targetSessionId
     };
 
     // Add optimistic message immediately
