@@ -157,28 +157,23 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
       }
 
       if (response === 'accepted') {
-        if (isRecurringProposal) {
-          // Call edge function to create recurring appointments
-          const { error: functionError } = await supabase.functions.invoke('create-recurring-appointments', {
-            body: { proposalId: proposalData.id }
-          });
-
-          if (functionError) {
-            console.error('Error creating recurring appointments:', functionError);
-            throw functionError;
+        // Call unified appointment creation function
+        const { error: functionError } = await supabase.functions.invoke('create-appointments', {
+          body: { 
+            proposalId: proposalData.id,
+            isRecurring: isRecurringProposal
           }
+        });
 
-          toast({
-            title: "Proposal Accepted",
-            description: "Recurring appointments have been scheduled successfully!"
-          });
-        } else {
-          // Handle single appointment scheduling
-          toast({
-            title: "Proposal Accepted",
-            description: "Appointment has been scheduled successfully!"
-          });
+        if (functionError) {
+          console.error('Error creating appointments:', functionError);
+          throw functionError;
         }
+
+        toast({
+          title: "Proposal Accepted",
+          description: `${isRecurringProposal ? 'Recurring appointments' : 'Appointment'} have been scheduled successfully and added to both calendars!`
+        });
       } else {
         toast({
           title: "Proposal Rejected",
@@ -315,6 +310,7 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
                   </>
                 )}
                 <li>• This proposal expires in 7 days</li>
+                <li>• Appointments will appear in both your calendar and the specialist's calendar</li>
               </ul>
             </div>
 
