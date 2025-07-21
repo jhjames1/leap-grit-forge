@@ -356,12 +356,6 @@ const UserManagement = () => {
                         {user.preferences?.timezone || 'Not set'}
                       </span>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Theme: </span>
-                      <Badge variant="outline" className="text-xs">
-                        {user.preferences?.theme || 'system'}
-                      </Badge>
-                    </div>
                   </div>
                 </div>
               </div>
