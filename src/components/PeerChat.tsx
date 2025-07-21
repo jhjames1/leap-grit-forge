@@ -197,9 +197,9 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                 </p>
                 {/* Realtime connection indicator */}
                 {realtimeConnected ? (
-                  <Wifi size={12} className="text-green-500" title="Real-time connected" />
+                  <Wifi size={12} className="text-green-500" />
                 ) : (
-                  <WifiOff size={12} className="text-red-500" title="Real-time disconnected" />
+                  <WifiOff size={12} className="text-red-500" />
                 )}
               </div>
             </div>
