@@ -1,337 +1,118 @@
 
-import { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/hooks/useAuth';
-import SecurityAuditPanel from './SecurityAuditPanel';
-import { adminAnalytics, type UserAnalytics } from '@/services/adminAnalyticsService';
+import { Badge } from '@/components/ui/badge';
 import { 
   Users, 
-  TrendingUp, 
-  AlertTriangle, 
+  MessageSquare, 
+  Calendar, 
+  Settings, 
   BarChart3,
-  Calendar,
-  MessageSquare,
-  Target,
-  Activity,
   Shield,
-  UserCheck,
-  LogOut,
-  Bot
+  Database
 } from 'lucide-react';
 import PeerSpecialistManagement from './PeerSpecialistManagement';
-import MotivationalContentManagement from './MotivationalContentManagement';
-import ForemanContentManagement from './ForemanContentManagement';
 import AdminManagement from './AdminManagement';
+import DatabaseUsersReview from './DatabaseUsersReview';
 
-interface AdminDashboardProps {
-  onBack: () => void;
-}
-
-const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
-  const { t } = useLanguage();
-  const { signOut, user } = useAuth();
-  const [selectedTimeframe, setSelectedTimeframe] = useState('week');
-  const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Get admin user's first name for welcome message
-  const adminFirstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin';
-
-  useEffect(() => {
-    loadAnalytics();
-  }, []);
-
-  const loadAnalytics = async () => {
-    setIsLoading(true);
-    try {
-      const data = await adminAnalytics.calculateUserAnalytics();
-      setAnalytics(data);
-    } catch (error) {
-      console.error('Error loading analytics:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const refreshData = () => {
-    loadAnalytics();
-    // Also refresh specialist presence data if on specialists tab
-    if (window.location.hash.includes('specialists')) {
-      // This will be handled by the specialist component's refresh
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
-  // Format engagement trends for display
-  const engagementTrends = analytics ? [
-    { domain: t('admin.domains.peerSupport'), avg: analytics.domainEngagement.peerSupport, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
-    { domain: t('admin.domains.selfCare'), avg: analytics.domainEngagement.selfCare, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
-    { domain: t('admin.domains.structure'), avg: analytics.domainEngagement.structure, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
-    { domain: t('admin.domains.mood'), avg: analytics.domainEngagement.mood, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
-    { domain: t('admin.domains.cravingControl'), avg: analytics.domainEngagement.cravingControl, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' }
-  ] : [];
-
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-yellow-500';
-      default: return 'bg-green-500';
-    }
-  };
-
-  const getRiskBadge = (risk: string) => {
-    switch (risk) {
-      case 'high': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      default: return 'bg-green-500/20 text-green-400 border-green-500/30';
-    }
-  };
+export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('overview');
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="p-4 pb-24">
-        {/* Header - Matching home page style */}
-        <div className="mb-6">
-          <div className="flex justify-between items-start mb-6">
-            {/* Left column: Title and welcome text */}
-            <div className="flex-1">
-              <h1 className="text-5xl text-foreground mb-1 tracking-wide">
-                <span className="font-oswald font-extralight tracking-tight">ADMIN</span><span className="font-fjalla font-extrabold italic">PORTAL</span>
-              </h1>
-              <div className="mt-8"></div>
-              <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
-                WELCOME, <span className="font-bold italic">{adminFirstName.toUpperCase()}</span>
-              </p>
-              <p className="text-muted-foreground text-sm">Monitor and manage your LEAP community</p>
-            </div>
-            
-            {/* Right column: Action buttons */}
-            <div className="flex flex-col items-end">
-              <div className="flex items-center space-x-2">
-                <Button 
-                  onClick={refreshData}
-                  variant="outline"
-                  size="sm"
-                  className="border-primary text-primary hover:bg-primary/10"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Loading...' : 'Refresh'}
-                </Button>
-                <Button 
-                  onClick={handleSignOut}
-                  variant="outline"
-                  size="sm"
-                  className="border-destructive text-destructive hover:bg-destructive/10"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </Button>
-                <Button 
-                  onClick={onBack}
-                  variant="outline"
-                  size="sm"
-                  className="border-muted-foreground text-muted-foreground hover:bg-muted/10"
-                >
-                  Back
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+          <Shield className="h-4 w-4 mr-1" />
+          Administrator
+        </Badge>
+      </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="bg-transparent border-0 gap-2">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">Overview</TabsTrigger>
-            <TabsTrigger value="specialists" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">
-              <UserCheck className="mr-2 h-4 w-4" />
-              Peer Support Specialists
-            </TabsTrigger>
-            <TabsTrigger value="content" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Peer Support Inspiration
-            </TabsTrigger>
-            <TabsTrigger value="foreman-content" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">
-              <Bot className="mr-2 h-4 w-4" />
-              Chat Resources
-            </TabsTrigger>
-            <TabsTrigger value="admins" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">
-              <Users className="mr-2 h-4 w-4" />
-              Administrators
-            </TabsTrigger>
-            <TabsTrigger value="security" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">
-              <Shield className="mr-2 h-4 w-4" />
-              System Security
-            </TabsTrigger>
-          </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="specialists" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Specialists
+          </TabsTrigger>
+          <TabsTrigger value="admins" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Admins
+          </TabsTrigger>
+          <TabsTrigger value="users-review" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Users Review
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Settings
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="overview">
-
-          {/* Time Filter */}
-          <div className="flex space-x-2 mb-6">
-            {['week', 'month', 'quarter'].map((period) => (
-              <Button
-                key={period}
-                onClick={() => setSelectedTimeframe(period)}
-                variant={selectedTimeframe === period ? 'default' : 'outline'}
-                className={selectedTimeframe === period ? 
-                  'bg-primary text-primary-foreground' : 
-                  'border-border text-muted-foreground hover:bg-muted/10'
-                }
-              >
-                {period.charAt(0).toUpperCase() + period.slice(1)}
-              </Button>
-            ))}
-          </div>
-
-          {/* Key Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-              <div className="flex items-center space-x-3">
-                <div className="bg-primary p-3 rounded-sm">
-                  <Users className="text-primary-foreground" size={20} />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-card-foreground">{analytics?.totalUsers || 0}</div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Users</div>
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">1,234</div>
+                <p className="text-xs text-muted-foreground">+10% from last month</p>
+              </CardContent>
             </Card>
 
-            <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-              <div className="flex items-center space-x-3">
-                <div className="bg-primary p-3 rounded-sm">
-                  <Activity className="text-primary-foreground" size={20} />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-card-foreground">{analytics?.activeUsers || 0}</div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Active Users</div>
-                </div>
-              </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Specialists</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">23</div>
+                <p className="text-xs text-muted-foreground">+2 this week</p>
+              </CardContent>
             </Card>
 
-            <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-              <div className="flex items-center space-x-3">
-                <div className="bg-primary p-3 rounded-sm">
-                  <TrendingUp className="text-primary-foreground" size={20} />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-card-foreground">{analytics?.averageRecoveryStrength || 0}%</div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Avg Strength</div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300">
-              <div className="flex items-center space-x-3">
-                <div className="bg-destructive/20 p-3 rounded-sm">
-                  <AlertTriangle className="text-destructive" size={20} />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-card-foreground">{analytics?.atRiskUsers || 0}</div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">At Risk</div>
-                </div>
-              </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Chat Sessions</CardTitle>
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">456</div>
+                <p className="text-xs text-muted-foreground">+15% from last week</p>
+              </CardContent>
             </Card>
           </div>
+        </TabsContent>
 
-          {/* Domain Engagement Trends */}
-          <Card className="bg-black/[7.5%] p-6 rounded-lg mb-6 border-0 shadow-none transition-colors duration-300">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-primary p-3 rounded-sm">
-                <BarChart3 className="text-primary-foreground" size={20} />
-              </div>
-              <h3 className="font-fjalla font-bold text-card-foreground tracking-wide">DOMAIN ENGAGEMENT</h3>
-            </div>
-            
-            <div className="space-y-3">
-              {engagementTrends.map((domain, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-card rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                    <span className="text-card-foreground font-medium font-source">{domain.domain}</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-muted-foreground font-source">{domain.avg}%</span>
-                    <Badge className={`${domain.trend.startsWith('+') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                      {domain.trend}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-              {analytics && analytics.totalEngagementActions === 0 && (
-                <p className="text-muted-foreground text-center py-4 font-source italic">No user engagement data available yet.</p>
-              )}
-            </div>
+        <TabsContent value="specialists">
+          <PeerSpecialistManagement />
+        </TabsContent>
+
+        <TabsContent value="admins">
+          <AdminManagement />
+        </TabsContent>
+
+        <TabsContent value="users-review">
+          <DatabaseUsersReview />
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">System configuration options will be available here.</p>
+            </CardContent>
           </Card>
-
-          {/* User Risk Heatmap */}
-          <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-primary p-3 rounded-sm">
-                <Target className="text-primary-foreground" size={20} />
-              </div>
-              <h3 className="font-fjalla font-bold text-card-foreground tracking-wide">USER RISK ASSESSMENT</h3>
-            </div>
-            
-            <div className="space-y-3">
-              {analytics?.userRiskData.map((user, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-black/[7.5%] rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-4 h-4 ${getRiskColor(user.risk)} rounded-full`}></div>
-                    <div>
-                      <span className="text-card-foreground font-medium font-source">{user.userId}</span>
-                      <p className="text-muted-foreground text-sm font-source">{user.lastActivity}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-card-foreground">{user.recoveryStrength}%</div>
-                      <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Strength</div>
-                    </div>
-                    <Badge className={getRiskBadge(user.risk)}>
-                      {user.risk.charAt(0).toUpperCase() + user.risk.slice(1)}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-              {analytics && analytics.userRiskData.length === 0 && (
-                <p className="text-muted-foreground text-center py-4 font-source italic">No user data available yet.</p>
-              )}
-            </div>
-          </Card>
-          </TabsContent>
-
-          <TabsContent value="specialists">
-            <PeerSpecialistManagement />
-          </TabsContent>
-
-          <TabsContent value="content">
-            <MotivationalContentManagement />
-          </TabsContent>
-
-          <TabsContent value="foreman-content">
-            <ForemanContentManagement />
-          </TabsContent>
-
-          <TabsContent value="admins">
-            <AdminManagement />
-          </TabsContent>
-
-          <TabsContent value="security">
-            <SecurityAuditPanel />
-          </TabsContent>
-        </Tabs>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
-};
-
-export default AdminDashboard;
+}
