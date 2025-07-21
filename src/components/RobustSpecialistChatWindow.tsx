@@ -204,7 +204,12 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     setSubscriptionStatus('connecting');
     
     const channelName = `chat-session-${session.id}`;
-    const channel = supabase.channel(channelName);
+    const channel = supabase.channel(channelName, {
+      config: {
+        broadcast: { self: false },
+        presence: { key: 'specialist' }
+      }
+    });
     
     channel.on('postgres_changes', {
       event: 'INSERT',
@@ -285,20 +290,27 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         setSubscriptionStatus('connected');
         subscriptionRetryCount.current = 0;
         console.log('✅ Specialist: Real-time subscription active');
-      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         setSubscriptionStatus('disconnected');
         console.log('❌ Specialist: Subscription failed, status:', status);
         
-        // Retry logic
+        // Clean up current channel first
+        if (channelRef.current) {
+          try {
+            supabase.removeChannel(channelRef.current);
+          } catch (e) {
+            logger.debug('Error removing channel:', e);
+          }
+          channelRef.current = null;
+        }
+        
+        // Retry logic with exponential backoff
         if (subscriptionRetryCount.current < maxRetries) {
           subscriptionRetryCount.current++;
+          const delay = Math.min(1000 * Math.pow(2, subscriptionRetryCount.current - 1), 10000);
           setTimeout(() => {
-            if (channelRef.current) {
-              supabase.removeChannel(channelRef.current);
-              channelRef.current = null;
-            }
             setupRealtimeSubscription();
-          }, 1000 * subscriptionRetryCount.current);
+          }, delay);
         }
       }
     });
