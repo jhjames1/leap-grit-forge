@@ -723,18 +723,28 @@ const PeerSpecialistManagement = () => {
         </TabsList>
 
         <TabsContent value="active" className="space-y-6 mt-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Current Specialists</h3>
-            
-            {/* Add New Specialist */}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Invite Specialist
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Specialists will receive an email invitation with login credentials. They can also be manually activated if needed.
+            </AlertDescription>
+          </Alert>
+
+          {/* Current Specialists Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Current Specialists</CardTitle>
+                
+                {/* Add New Specialist */}
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Invite Specialist
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>
                     {editingSpecialist ? 'Edit Specialist' : 'Invite New Specialist'}
@@ -857,21 +867,12 @@ const PeerSpecialistManagement = () => {
                       )}
                     </Button>
                   </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-          
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Specialists will receive an email invitation with login credentials. They can also be manually activated if needed.
-            </AlertDescription>
-          </Alert>
-
-          {/* Current Specialists List */}
-          <Card>
-            <CardContent className="pt-6">
+                  </form>
+                </DialogContent>
+              </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
                 {specialists.map((specialist) => {
                   const invitationStatus = getInvitationStatus(specialist);
