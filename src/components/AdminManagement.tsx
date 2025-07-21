@@ -60,10 +60,15 @@ const AdminManagement = () => {
 
       if (authError) throw authError;
 
-      // Filter to only admin users
+      // Filter to only admin users and map the data structure
       const adminUsers = (authUsers || []).filter((user: any) => 
-        adminIds.includes(user.id)
-      );
+        adminIds.includes(user.user_id)
+      ).map((user: any) => ({
+        id: user.user_id,
+        email: user.email,
+        created_at: user.created_at,
+        role_created_at: user.role_created_at
+      }));
 
       setAdmins(adminUsers);
     } catch (error) {
