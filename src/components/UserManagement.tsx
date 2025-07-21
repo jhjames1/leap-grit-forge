@@ -58,18 +58,56 @@ const UserManagement = () => {
         return;
       }
 
-      // Then get their profiles and preferences
       const userIds = authUsers.map(user => user.id);
-      
+
+      // Get admin users to exclude
+      const { data: adminRoles, error: adminError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin')
+        .in('user_id', userIds);
+
+      // Get peer specialist users to exclude
+      const { data: specialists, error: specialistError } = await supabase
+        .from('peer_specialists')
+        .select('user_id')
+        .in('user_id', userIds);
+
+      if (adminError) {
+        console.error('Error fetching admin roles:', adminError);
+      }
+
+      if (specialistError) {
+        console.error('Error fetching specialists:', specialistError);
+      }
+
+      // Create sets of user IDs to exclude
+      const adminUserIds = new Set(adminRoles?.map(role => role.user_id) || []);
+      const specialistUserIds = new Set(specialists?.map(spec => spec.user_id) || []);
+
+      // Filter out admins and specialists
+      const regularUsers = authUsers.filter(user => 
+        !adminUserIds.has(user.id) && !specialistUserIds.has(user.id)
+      );
+
+      if (regularUsers.length === 0) {
+        setUsers([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const regularUserIds = regularUsers.map(user => user.id);
+
+      // Then get their profiles and preferences
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_id', userIds);
+        .in('user_id', regularUserIds);
 
       const { data: preferences, error: preferencesError } = await supabase
         .from('user_preferences')
         .select('*')
-        .in('user_id', userIds);
+        .in('user_id', regularUserIds);
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
@@ -80,7 +118,7 @@ const UserManagement = () => {
       }
 
       // Combine the data
-      const combinedUsers = authUsers.map(user => ({
+      const combinedUsers = regularUsers.map(user => ({
         id: user.id,
         email: user.email,
         created_at: user.created_at,
@@ -164,7 +202,7 @@ const UserManagement = () => {
           </div>
           <div>
             <h2 className="font-fjalla font-bold text-2xl text-foreground tracking-wide">USER MANAGEMENT</h2>
-            <p className="text-muted-foreground text-sm">Manage users and view their demographic data</p>
+            <p className="text-muted-foreground text-sm">Manage regular users (excludes administrators and specialists)</p>
           </div>
         </div>
         <Button 
