@@ -665,6 +665,32 @@ const PeerSpecialistManagement = () => {
         </Card>
       </div>
 
+      {/* Group Performance Metrics */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Group Performance Metrics
+            </CardTitle>
+            <Select value={groupMetricsTimePeriod} onValueChange={(value: 'week' | 'month' | 'quarter' | 'year') => setGroupMetricsTimePeriod(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="week">Week</SelectItem>
+                <SelectItem value="month">Month</SelectItem>
+                <SelectItem value="quarter">Quarter</SelectItem>
+                <SelectItem value="year">Year</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <PeerPerformanceDashboard onRefresh={refreshData} />
+        </CardContent>
+      </Card>
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'active' | 'removed')}>
         <TabsList className="bg-transparent border-0 gap-2">
@@ -685,31 +711,6 @@ const PeerSpecialistManagement = () => {
         </TabsList>
 
         <TabsContent value="active" className="space-y-6 mt-6">
-          {/* Group Performance Metrics */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Group Performance Metrics
-                </CardTitle>
-                <Select value={groupMetricsTimePeriod} onValueChange={(value: 'week' | 'month' | 'quarter' | 'year') => setGroupMetricsTimePeriod(value)}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="week">Week</SelectItem>
-                    <SelectItem value="month">Month</SelectItem>
-                    <SelectItem value="quarter">Quarter</SelectItem>
-                    <SelectItem value="year">Year</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <PeerPerformanceDashboard onRefresh={refreshData} />
-            </CardContent>
-          </Card>
 
           {/* Add New Specialist */}
           <Card>
