@@ -492,6 +492,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   // Initialize on mount and setup real-time subscription
   useEffect(() => {
     console.log('🚀 SPECIALIST: useEffect triggered with user:', !!user, 'initialized:', isInitializedRef.current);
+    console.log('🚀 SPECIALIST: User object:', user);
+    console.log('🚀 SPECIALIST: Session ID:', session?.id);
     if (!isInitializedRef.current && user) {
       isInitializedRef.current = true;
       console.log('🚀 SPECIALIST: Starting initialization...');
