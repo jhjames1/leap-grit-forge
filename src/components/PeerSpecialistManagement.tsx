@@ -102,6 +102,7 @@ const PeerSpecialistManagement = () => {
   const [activeTab, setActiveTab] = useState<'active' | 'removed'>('active');
   const [groupMetricsTimePeriod, setGroupMetricsTimePeriod] = useState<'week' | 'month' | 'quarter' | 'year'>('month');
   const [loading, setLoading] = useState(true);
+  const [dashboardRefreshTrigger, setDashboardRefreshTrigger] = useState(0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSpecialist, setEditingSpecialist] = useState<PeerSpecialist | null>(null);
   const [isInviting, setIsInviting] = useState(false);
@@ -585,6 +586,12 @@ const PeerSpecialistManagement = () => {
     );
   }
 
+  // Function to trigger dashboard refresh
+  const handleDashboardRefresh = () => {
+    setDashboardRefreshTrigger(prev => prev + 1);
+    refreshData(); // Also refresh specialist presence data
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -685,14 +692,14 @@ const PeerSpecialistManagement = () => {
                   <SelectItem value="year">Year</SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={refreshData} variant="outline" size="sm" disabled={presenceLoading}>
+              <Button onClick={handleDashboardRefresh} variant="outline" size="sm" disabled={presenceLoading}>
                 <RefreshCw className={`h-4 w-4 ${presenceLoading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <PeerPerformanceDashboard onRefresh={refreshData} />
+          <PeerPerformanceDashboard key={dashboardRefreshTrigger} onRefresh={refreshData} />
         </CardContent>
       </Card>
 

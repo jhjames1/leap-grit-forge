@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -133,6 +133,12 @@ const PeerPerformanceDashboard = ({
   useEffect(() => {
     fetchLiveMetrics();
   }, []);
+
+  // Call onRefresh when fetchLiveMetrics is called
+  const handleRefresh = () => {
+    fetchLiveMetrics();
+    onRefresh?.();
+  };
   return <div className="space-y-6">
       {/* Controls */}
       <div className="flex items-center justify-between">
