@@ -17,6 +17,7 @@ interface UserData {
     phone_number?: string;
     recovery_start_date?: string;
     avatar_url?: string;
+    user_type?: 'admin' | 'specialist' | 'peer_client';
   };
   preferences?: {
     gender?: string;
@@ -43,84 +44,50 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      // First, get users from auth
-      const { data: authUsers, error: authError } = await supabase.rpc('get_users_for_admin');
-      
-      if (authError) {
-        console.error('Error fetching auth users:', authError);
-        toast.error('Failed to fetch users');
-        return;
-      }
-
-      if (!authUsers || authUsers.length === 0) {
-        setUsers([]);
-        setIsLoading(false);
-        return;
-      }
-
-      const userIds = authUsers.map(user => user.id);
-
-      // Get admin users to exclude
-      const { data: adminRoles, error: adminError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'admin')
-        .in('user_id', userIds);
-
-      // Get peer specialist users to exclude
-      const { data: specialists, error: specialistError } = await supabase
-        .from('peer_specialists')
-        .select('user_id')
-        .in('user_id', userIds);
-
-      if (adminError) {
-        console.error('Error fetching admin roles:', adminError);
-      }
-
-      if (specialistError) {
-        console.error('Error fetching specialists:', specialistError);
-      }
-
-      // Create sets of user IDs to exclude
-      const adminUserIds = new Set(adminRoles?.map(role => role.user_id) || []);
-      const specialistUserIds = new Set(specialists?.map(spec => spec.user_id) || []);
-
-      // Filter out admins and specialists
-      const regularUsers = authUsers.filter(user => 
-        !adminUserIds.has(user.id) && !specialistUserIds.has(user.id)
-      );
-
-      if (regularUsers.length === 0) {
-        setUsers([]);
-        setIsLoading(false);
-        return;
-      }
-
-      // Then get their profiles and preferences using regularUsers directly
+      // Get peer_client users directly using the new user_type field
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_id', regularUsers.map(user => user.id));
+        .eq('user_type', 'peer_client');
 
+      if (profilesError) {
+        console.error('Error fetching peer client profiles:', profilesError);
+        toast.error('Failed to fetch user profiles');
+        return;
+      }
+
+      if (!profiles || profiles.length === 0) {
+        setUsers([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const userIds = profiles.map(profile => profile.user_id);
+
+      // Get auth users and preferences for these peer clients
+      const { data: authUsers, error: authError } = await supabase.rpc('get_users_for_admin');
       const { data: preferences, error: preferencesError } = await supabase
         .from('user_preferences')
         .select('*')
-        .in('user_id', regularUsers.map(user => user.id));
+        .in('user_id', userIds);
 
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
+      if (authError) {
+        console.error('Error fetching auth users:', authError);
       }
 
       if (preferencesError) {
         console.error('Error fetching preferences:', preferencesError);
       }
 
+      // Filter auth users to only include our peer clients
+      const peerClientAuthUsers = authUsers?.filter(user => userIds.includes(user.id)) || [];
+
       // Combine the data
-      const combinedUsers = regularUsers.map(user => ({
+      const combinedUsers = peerClientAuthUsers.map(user => ({
         id: user.id,
         email: user.email,
         created_at: user.created_at,
-        profile: profiles?.find(p => p.user_id === user.id),
+        profile: profiles.find(p => p.user_id === user.id),
         preferences: preferences?.find(p => p.user_id === user.id)
       }));
 
@@ -199,8 +166,8 @@ const UserManagement = () => {
             <Users className="text-primary-foreground" size={20} />
           </div>
           <div>
-            <h2 className="font-fjalla font-bold text-2xl text-foreground tracking-wide">USER MANAGEMENT</h2>
-            <p className="text-muted-foreground text-sm">Manage regular users (excludes administrators and specialists)</p>
+            <h2 className="font-fjalla font-bold text-2xl text-foreground tracking-wide">PEER CLIENT MANAGEMENT</h2>
+            <p className="text-muted-foreground text-sm">Manage peer clients - app users receiving support services</p>
           </div>
         </div>
         <Button 

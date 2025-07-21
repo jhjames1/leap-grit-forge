@@ -696,6 +696,7 @@ export type Database = {
           recovery_start_date: string | null
           updated_at: string
           user_id: string
+          user_type: Database["public"]["Enums"]["user_type"] | null
         }
         Insert: {
           avatar_url?: string | null
@@ -707,6 +708,7 @@ export type Database = {
           recovery_start_date?: string | null
           updated_at?: string
           user_id: string
+          user_type?: Database["public"]["Enums"]["user_type"] | null
         }
         Update: {
           avatar_url?: string | null
@@ -718,6 +720,7 @@ export type Database = {
           recovery_start_date?: string | null
           updated_at?: string
           user_id?: string
+          user_type?: Database["public"]["Enums"]["user_type"] | null
         }
         Relationships: []
       }
@@ -1718,6 +1721,10 @@ export type Database = {
         }
         Returns: Database["public"]["CompositeTypes"]["chat_operation_result"]
       }
+      set_user_type: {
+        Args: { target_user_id: string }
+        Returns: Database["public"]["Enums"]["user_type"]
+      }
       soft_delete_specialist: {
         Args: { specialist_id: string }
         Returns: Json
@@ -1733,6 +1740,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      user_type: "admin" | "specialist" | "peer_client"
     }
     CompositeTypes: {
       chat_operation_result: {
@@ -1866,6 +1874,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      user_type: ["admin", "specialist", "peer_client"],
     },
   },
 } as const
