@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -22,30 +21,6 @@ export function usePeerSpecialists() {
   const [specialists, setSpecialists] = useState<PeerSpecialist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Function to ensure specialist has a status record
-  const ensureSpecialistStatus = async (specialistId: string) => {
-    try {
-      const { data: existingStatus } = await supabase
-        .from('specialist_status')
-        .select('id')
-        .eq('specialist_id', specialistId)
-        .single();
-
-      if (!existingStatus) {
-        console.log(`Creating missing status record for specialist: ${specialistId}`);
-        await supabase
-          .from('specialist_status')
-          .insert({
-            specialist_id: specialistId,
-            status: 'offline',
-            last_seen: new Date().toISOString()
-          });
-      }
-    } catch (error) {
-      console.error('Error ensuring specialist status:', error);
-    }
-  };
 
   useEffect(() => {
     fetchSpecialists();
@@ -83,12 +58,11 @@ export function usePeerSpecialists() {
       setLoading(true);
       setError(null);
 
-      // Use LEFT JOIN to get specialists even without status records
       const { data, error: fetchError } = await supabase
         .from('peer_specialists')
         .select(`
           *,
-          specialist_status (
+          specialist_status!inner (
             status,
             status_message,
             last_seen
@@ -99,32 +73,21 @@ export function usePeerSpecialists() {
 
       if (fetchError) throw fetchError;
 
-      const formattedSpecialists: PeerSpecialist[] = [];
-
-      for (const specialist of data || []) {
-        // If no status record exists, create one
-        if (!specialist.specialist_status) {
-          await ensureSpecialistStatus(specialist.id);
+      const formattedSpecialists: PeerSpecialist[] = (data || []).map(specialist => ({
+        id: specialist.id,
+        first_name: specialist.first_name,
+        last_name: specialist.last_name,
+        bio: specialist.bio,
+        specialties: specialist.specialties || [],
+        years_experience: specialist.years_experience || 0,
+        avatar_url: specialist.avatar_url,
+        is_verified: specialist.is_verified,
+        status: {
+          status: (specialist.specialist_status?.status as 'online' | 'away' | 'offline' | 'busy') || 'offline',
+          status_message: specialist.specialist_status?.status_message || null,
+          last_seen: specialist.specialist_status?.last_seen || new Date().toISOString()
         }
-
-        const specialistData: PeerSpecialist = {
-          id: specialist.id,
-          first_name: specialist.first_name,
-          last_name: specialist.last_name,
-          bio: specialist.bio,
-          specialties: specialist.specialties || [],
-          years_experience: specialist.years_experience || 0,
-          avatar_url: specialist.avatar_url,
-          is_verified: specialist.is_verified,
-          status: {
-            status: (specialist.specialist_status?.status as 'online' | 'away' | 'offline' | 'busy') || 'offline',
-            status_message: specialist.specialist_status?.status_message || null,
-            last_seen: specialist.specialist_status?.last_seen || new Date().toISOString()
-          }
-        };
-
-        formattedSpecialists.push(specialistData);
-      }
+      }));
 
       setSpecialists(formattedSpecialists);
     } catch (err) {

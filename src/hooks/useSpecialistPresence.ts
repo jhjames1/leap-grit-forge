@@ -98,8 +98,8 @@ export const useSpecialistPresence = () => {
     }
   };
 
-  // Fetch all specialist statuses with retry logic
-  const fetchStatuses = async (retryCount = 0) => {
+  // Fetch all specialist statuses
+  const fetchStatuses = async () => {
     try {
       const { data, error } = await supabase
         .from('specialist_status')
@@ -114,48 +114,20 @@ export const useSpecialistPresence = () => {
 
       if (error) throw error;
       
-      // Type assertion for status field with fallback to offline for unknown states
-      const typedData = (data || []).map(item => {
-        let status = item.status as 'online' | 'away' | 'busy' | 'offline';
-        
-        // Handle unknown or invalid status values
-        if (!['online', 'away', 'busy', 'offline'].includes(status)) {
-          status = 'offline';
-        }
-        
-        // Check if status is stale (no activity in last 5 minutes)
-        const lastSeen = item.last_seen ? new Date(item.last_seen) : null;
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-        
-        if (lastSeen && lastSeen < fiveMinutesAgo && status === 'online') {
-          status = 'away';
-        }
-        
-        return {
-          ...item,
-          status
-        };
-      });
+      // Type assertion for status field
+      const typedData = (data || []).map(item => ({
+        ...item,
+        status: item.status as 'online' | 'away' | 'busy' | 'offline'
+      }));
       
       setSpecialistStatuses(typedData);
     } catch (error) {
       console.error('Error fetching specialist statuses:', error);
-      
-      // Retry up to 3 times with exponential backoff for network errors
-      if (retryCount < 3 && (error?.message?.includes('Failed to fetch') || error?.message?.includes('network'))) {
-        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-        console.log(`Retrying specialist status fetch in ${delay}ms (attempt ${retryCount + 1}/3)`);
-        setTimeout(() => fetchStatuses(retryCount + 1), delay);
-        return;
-      }
-      
-      // Set empty array on persistent error to prevent "unknown" displays
-      setSpecialistStatuses([]);
     }
   };
 
-  // Fetch analytics data with retry logic
-  const fetchAnalytics = async (retryCount = 0) => {
+  // Fetch analytics data
+  const fetchAnalytics = async () => {
     try {
       // Get chat session analytics
       const { data: sessions } = await supabase
@@ -208,16 +180,6 @@ export const useSpecialistPresence = () => {
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
-      
-      // Retry for network errors
-      if (retryCount < 3 && (error?.message?.includes('Failed to fetch') || error?.message?.includes('network'))) {
-        const delay = Math.pow(2, retryCount) * 1000;
-        setTimeout(() => fetchAnalytics(retryCount + 1), delay);
-        return;
-      }
-      
-      // Set empty array on persistent error
-      setAnalytics([]);
     }
   };
 
