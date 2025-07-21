@@ -21,6 +21,7 @@ import RealTimeSpecialistMetrics from './RealTimeSpecialistMetrics';
 import PeerPerformanceDashboard from './PeerPerformanceDashboard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, Edit, Check, X, Users, AlertCircle, Search, Activity, Clock, MessageSquare, TrendingUp, TrendingDown, Wifi, WifiOff, Mail, Send, Trash2, Star, RefreshCw, Key, Copy, Calendar, Loader2, AlertTriangle } from 'lucide-react';
+
 interface PeerSpecialist {
   id: string;
   user_id: string;
@@ -44,6 +45,7 @@ interface PeerSpecialist {
   activation_method: string | null;
   manually_activated_by: string | null;
 }
+
 interface SpecialistFormData {
   email: string;
   first_name: string;
@@ -53,6 +55,7 @@ interface SpecialistFormData {
   years_experience: number;
   avatar_url: string;
 }
+
 interface SpecialistMetrics {
   chat_completion_rate: number;
   checkin_completion_rate: number;
@@ -63,6 +66,7 @@ interface SpecialistMetrics {
   total_checkins: number;
   total_ratings: number;
 }
+
 const PeerSpecialistManagement = () => {
   const {
     t
@@ -110,10 +114,12 @@ const PeerSpecialistManagement = () => {
     password: '',
     specialistName: ''
   });
+
   useEffect(() => {
     fetchSpecialists();
     fetchRemovedSpecialists();
   }, []);
+
   const fetchCoachingTips = async (specialistId: string): Promise<string[]> => {
     try {
       const {
@@ -144,6 +150,7 @@ const PeerSpecialistManagement = () => {
       return ["Focus on maintaining consistent communication with your assigned users"];
     }
   };
+
   const fetchSpecialists = async () => {
     try {
       setLoading(true);
@@ -167,6 +174,7 @@ const PeerSpecialistManagement = () => {
       setLoading(false);
     }
   };
+
   const fetchRemovedSpecialists = async () => {
     try {
       console.log('Fetching removed specialists...');
@@ -187,6 +195,7 @@ const PeerSpecialistManagement = () => {
       console.error('Error fetching removed specialists:', error);
     }
   };
+
   const resetForm = () => {
     setFormData({
       email: '',
@@ -200,6 +209,7 @@ const PeerSpecialistManagement = () => {
     setEditingSpecialist(null);
     setNewSpecialty('');
   };
+
   const handleInviteSpecialist = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email || !formData.first_name || !formData.last_name) {
@@ -273,6 +283,7 @@ const PeerSpecialistManagement = () => {
       setIsInviting(false);
     }
   };
+
   const handleEditSpecialist = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSpecialist) return;
@@ -317,7 +328,7 @@ const PeerSpecialistManagement = () => {
         specialties: formData.specialties,
         years_experience: formData.years_experience,
         avatar_url: formData.avatar_url || null
-      }).eq('id', editingSpecialist.id).select(); // Add select to see what was updated
+      }).eq('id', editingSpecialist.id).select();
 
       console.log('Update result:', {
         data,
@@ -331,7 +342,7 @@ const PeerSpecialistManagement = () => {
         title: "Success",
         description: "Specialist updated successfully"
       });
-      await fetchSpecialists(); // Refresh the list
+      await fetchSpecialists();
       setIsDialogOpen(false);
       resetForm();
     } catch (error: any) {
@@ -343,6 +354,7 @@ const PeerSpecialistManagement = () => {
       });
     }
   };
+
   const handleEdit = (specialist: PeerSpecialist) => {
     setEditingSpecialist(specialist);
     setFormData({
@@ -356,6 +368,7 @@ const PeerSpecialistManagement = () => {
     });
     setIsDialogOpen(true);
   };
+
   const handleForceActivate = async (specialist: PeerSpecialist) => {
     if (!user?.id) {
       toast({
@@ -366,10 +379,7 @@ const PeerSpecialistManagement = () => {
       return;
     }
     try {
-      // Generate a temporary password
       const tempPassword = generateTempPassword();
-
-      // Hash the password (simple approach for demo - in production use proper bcrypt)
       const tempPasswordHash = await hashPassword(tempPassword);
       const updateData = {
         is_verified: true,
@@ -385,10 +395,8 @@ const PeerSpecialistManagement = () => {
       } = await supabase.from('peer_specialists').update(updateData).eq('id', specialist.id);
       if (error) throw error;
 
-      // Use the stored email from the specialist record
       const specialistEmail = specialist.email || 'Email not available - contact admin';
 
-      // Show credentials dialog
       setCredentialsDialog({
         isOpen: true,
         email: specialistEmail,
@@ -410,7 +418,6 @@ const PeerSpecialistManagement = () => {
     }
   };
 
-  // Helper function to generate temporary password
   const generateTempPassword = (): string => {
     const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     let password = '';
@@ -420,7 +427,6 @@ const PeerSpecialistManagement = () => {
     return password;
   };
 
-  // Simple password hashing (in production, use bcrypt)
   const hashPassword = async (password: string): Promise<string> => {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -428,6 +434,7 @@ const PeerSpecialistManagement = () => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -443,6 +450,7 @@ const PeerSpecialistManagement = () => {
       });
     }
   };
+
   const getInvitationStatus = (specialist: PeerSpecialist) => {
     if (specialist.activated_at) {
       const activationMethod = specialist.activation_method || 'email';
@@ -475,6 +483,7 @@ const PeerSpecialistManagement = () => {
       text: 'Not Sent'
     };
   };
+
   const handleDeactivateSpecialist = async (specialistId: string) => {
     setDeletingSpecialistId(specialistId);
     try {
@@ -492,7 +501,7 @@ const PeerSpecialistManagement = () => {
           description: "Specialist has been deactivated"
         });
         await fetchSpecialists();
-        await fetchRemovedSpecialists(); // Refresh removed list
+        await fetchRemovedSpecialists();
       } else {
         throw new Error(result.error);
       }
@@ -507,6 +516,7 @@ const PeerSpecialistManagement = () => {
       setDeletingSpecialistId(null);
     }
   };
+
   const addSpecialty = () => {
     if (newSpecialty.trim() && !formData.specialties.includes(newSpecialty.trim())) {
       setFormData({
@@ -516,12 +526,14 @@ const PeerSpecialistManagement = () => {
       setNewSpecialty('');
     }
   };
+
   const removeSpecialty = (specialty: string) => {
     setFormData({
       ...formData,
       specialties: formData.specialties.filter(s => s !== specialty)
     });
   };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -529,6 +541,7 @@ const PeerSpecialistManagement = () => {
       day: 'numeric'
     });
   };
+
   const getOnlineStatus = (specialistId: string) => {
     const status = specialistStatuses[specialistId];
     if (!status) return {
@@ -558,17 +571,18 @@ const PeerSpecialistManagement = () => {
         };
     }
   };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>;
   }
 
-  // Function to trigger dashboard refresh
   const handleDashboardRefresh = () => {
     setDashboardRefreshTrigger(prev => prev + 1);
-    refreshData(); // Also refresh specialist presence data
+    refreshData();
   };
+
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Peer Support Specialist Management</h2>
@@ -583,7 +597,6 @@ const PeerSpecialistManagement = () => {
         </div>
       </div>
 
-      {/* Quick stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6">
@@ -648,7 +661,6 @@ const PeerSpecialistManagement = () => {
         </Card>
       </div>
 
-      {/* Group Performance Metrics */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -679,7 +691,6 @@ const PeerSpecialistManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={value => setActiveTab(value as 'active' | 'removed')}>
         <TabsList className="bg-transparent border-0 gap-2">
           <TabsTrigger value="active" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-yellow-50 data-[state=active]:scale-125 transition-transform duration-200 px-6 py-2 border border-gray-300 data-[state=active]:border-yellow-400">
@@ -693,15 +704,10 @@ const PeerSpecialistManagement = () => {
         </TabsList>
 
         <TabsContent value="active" className="space-y-6 mt-6">
-          
-
-          {/* Current Specialists Card */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Active Specialists</CardTitle>
-                
-                {/* Add New Specialist */}
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
@@ -710,98 +716,98 @@ const PeerSpecialistManagement = () => {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingSpecialist ? 'Edit Specialist' : 'Invite New Specialist'}
-                  </DialogTitle>
-                </DialogHeader>
-                <form onSubmit={editingSpecialist ? handleEditSpecialist : handleInviteSpecialist} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="email">Email *</Label>
-                      <Input id="email" type="email" value={formData.email} onChange={e => setFormData({
-                          ...formData,
-                          email: e.target.value
-                        })} required />
-                    </div>
-                    <div>
-                      <Label htmlFor="years_experience">Years of Experience</Label>
-                      <Input id="years_experience" type="number" min="0" value={formData.years_experience} onChange={e => setFormData({
-                          ...formData,
-                          years_experience: parseInt(e.target.value) || 0
-                        })} />
-                    </div>
-                  </div>
+                    <DialogHeader>
+                      <DialogTitle>
+                        {editingSpecialist ? 'Edit Specialist' : 'Invite New Specialist'}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={editingSpecialist ? handleEditSpecialist : handleInviteSpecialist} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="email">Email *</Label>
+                          <Input id="email" type="email" value={formData.email} onChange={e => setFormData({
+                              ...formData,
+                              email: e.target.value
+                            })} required />
+                        </div>
+                        <div>
+                          <Label htmlFor="years_experience">Years of Experience</Label>
+                          <Input id="years_experience" type="number" min="0" value={formData.years_experience} onChange={e => setFormData({
+                              ...formData,
+                              years_experience: parseInt(e.target.value) || 0
+                            })} />
+                        </div>
+                      </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="first_name">First Name *</Label>
-                      <Input id="first_name" value={formData.first_name} onChange={e => setFormData({
-                          ...formData,
-                          first_name: e.target.value
-                        })} required />
-                    </div>
-                    <div>
-                      <Label htmlFor="last_name">Last Name *</Label>
-                      <Input id="last_name" value={formData.last_name} onChange={e => setFormData({
-                          ...formData,
-                          last_name: e.target.value
-                        })} required />
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="first_name">First Name *</Label>
+                          <Input id="first_name" value={formData.first_name} onChange={e => setFormData({
+                              ...formData,
+                              first_name: e.target.value
+                            })} required />
+                        </div>
+                        <div>
+                          <Label htmlFor="last_name">Last Name *</Label>
+                          <Input id="last_name" value={formData.last_name} onChange={e => setFormData({
+                              ...formData,
+                              last_name: e.target.value
+                            })} required />
+                        </div>
+                      </div>
 
-                  <div>
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea id="bio" value={formData.bio} onChange={e => setFormData({
-                        ...formData,
-                        bio: e.target.value
-                      })} rows={3} />
-                  </div>
+                      <div>
+                        <Label htmlFor="bio">Bio</Label>
+                        <Textarea id="bio" value={formData.bio} onChange={e => setFormData({
+                            ...formData,
+                            bio: e.target.value
+                          })} rows={3} />
+                      </div>
 
-                  <div>
-                    <Label htmlFor="avatar_url">Avatar URL</Label>
-                    <Input id="avatar_url" type="url" value={formData.avatar_url} onChange={e => setFormData({
-                        ...formData,
-                        avatar_url: e.target.value
-                      })} placeholder="https://example.com/avatar.jpg" />
-                  </div>
+                      <div>
+                        <Label htmlFor="avatar_url">Avatar URL</Label>
+                        <Input id="avatar_url" type="url" value={formData.avatar_url} onChange={e => setFormData({
+                            ...formData,
+                            avatar_url: e.target.value
+                          })} placeholder="https://example.com/avatar.jpg" />
+                      </div>
 
-                  <div>
-                    <Label>Specialties</Label>
-                    <div className="flex gap-2 mb-2">
-                      <Input value={newSpecialty} onChange={e => setNewSpecialty(e.target.value)} placeholder="Add specialty" onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addSpecialty())} />
-                      <Button type="button" onClick={addSpecialty} variant="outline">
-                        Add
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.specialties.map((specialty, index) => <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                          {specialty}
-                          <X className="h-3 w-3 cursor-pointer" onClick={() => removeSpecialty(specialty)} />
-                        </Badge>)}
-                    </div>
-                  </div>
+                      <div>
+                        <Label>Specialties</Label>
+                        <div className="flex gap-2 mb-2">
+                          <Input value={newSpecialty} onChange={e => setNewSpecialty(e.target.value)} placeholder="Add specialty" onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addSpecialty())} />
+                          <Button type="button" onClick={addSpecialty} variant="outline">
+                            Add
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.specialties.map((specialty, index) => <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                              {specialty}
+                              <X className="h-3 w-3 cursor-pointer" onClick={() => removeSpecialty(specialty)} />
+                            </Badge>)}
+                        </div>
+                      </div>
 
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button type="button" variant="outline" onClick={() => {
-                        setIsDialogOpen(false);
-                        resetForm();
-                      }}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={isInviting}>
-                      {isInviting ? <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {editingSpecialist ? 'Updating...' : 'Inviting...'}
-                        </> : <>
-                          {editingSpecialist ? <Edit className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
-                          {editingSpecialist ? 'Update Specialist' : 'Send Invitation'}
-                        </>}
-                    </Button>
-                  </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+                      <div className="flex justify-end gap-2 pt-4">
+                        <Button type="button" variant="outline" onClick={() => {
+                            setIsDialogOpen(false);
+                            resetForm();
+                          }}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" disabled={isInviting}>
+                          {isInviting ? <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              {editingSpecialist ? 'Updating...' : 'Inviting...'}
+                            </> : <>
+                              {editingSpecialist ? <Edit className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
+                              {editingSpecialist ? 'Update Specialist' : 'Send Invitation'}
+                            </>}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -809,8 +815,8 @@ const PeerSpecialistManagement = () => {
                 {specialists.map(specialist => {
                 const invitationStatus = getInvitationStatus(specialist);
                 const onlineStatus = getOnlineStatus(specialist.id);
-                return <div key={specialist.id} className="flex items-start justify-between p-4 border rounded-lg">
-                      <div className="flex items-start gap-4 flex-1">
+                return <div key={specialist.id} className="border rounded-lg p-4">
+                      <div className="flex items-start gap-4 mb-4">
                         <div className="relative">
                           <div className="bg-primary/10 p-2 rounded-full">
                             <Mail className="h-4 w-4 text-primary" />
@@ -818,7 +824,7 @@ const PeerSpecialistManagement = () => {
                           <div className={`absolute -bottom-1 -right-1 w-3 h-3 ${onlineStatus.color} rounded-full border-2 border-background`}></div>
                         </div>
                         <div className="flex-1">
-                          <div className="font-medium flex items-center gap-2">
+                          <div className="font-medium flex items-center gap-2 mb-1">
                             {specialist.first_name} {specialist.last_name}
                             <Badge className={invitationStatus.color}>
                               {invitationStatus.text}
@@ -836,34 +842,39 @@ const PeerSpecialistManagement = () => {
                               {onlineStatus.text}
                             </span>
                           </div>
-                          {specialist.specialties && specialist.specialties.length > 0 && <div className="flex flex-wrap gap-1 mb-3">
-                              {specialist.specialties.map((specialty, index) => <Badge key={index} variant="outline" className="text-xs">
+                          {specialist.specialties && specialist.specialties.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {specialist.specialties.map((specialty, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
                                   {specialty}
-                                </Badge>)}
-                            </div>}
-                           
-                           {/* Individual Performance Metrics - Integrated */}
-                           <div className="mt-3">
-                             <SpecialistPerformanceMetrics specialistId={specialist.id} />
-                           </div>
-                         </div>
-                       </div>
-                       
-                       <div className="flex items-center gap-2">
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <SpecialistPerformanceMetrics specialistId={specialist.id} />
+                      </div>
+                      <div className="flex items-center justify-end gap-2 pt-3 border-t">
                         <Button variant="outline" size="sm" onClick={() => handleEdit(specialist)}>
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
-                        
-                        {!specialist.is_verified && <Button variant="outline" size="sm" onClick={() => handleForceActivate(specialist)} className="text-green-600 border-green-600 hover:bg-green-50">
+                        {!specialist.is_verified && (
+                          <Button variant="outline" size="sm" onClick={() => handleForceActivate(specialist)} className="text-green-600 border-green-600 hover:bg-green-50">
                             <Key className="h-4 w-4 mr-1" />
                             Force Activate
-                          </Button>}
-                        
+                          </Button>
+                        )}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="sm" disabled={deletingSpecialistId === specialist.id}>
-                              {deletingSpecialistId === specialist.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
+                              {deletingSpecialistId === specialist.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4 mr-1" />
+                              )}
                               Deactivate
                             </Button>
                           </AlertDialogTrigger>
@@ -886,14 +897,12 @@ const PeerSpecialistManagement = () => {
                       </div>
                     </div>;
               })}
-
                 {specialists.length === 0 && <div className="text-center py-8">
                     <p className="text-muted-foreground">No specialists found. Start by inviting your first specialist!</p>
                   </div>}
               </div>
             </CardContent>
           </Card>
-
         </TabsContent>
 
         <TabsContent value="removed" className="space-y-6 mt-6">
@@ -920,7 +929,6 @@ const PeerSpecialistManagement = () => {
                       </div>
                     </div>
                   </div>)}
-
                 {removedSpecialists.length === 0 && <div className="text-center py-8">
                     <p className="text-muted-foreground">No removed specialists.</p>
                   </div>}
@@ -930,7 +938,6 @@ const PeerSpecialistManagement = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Credentials Dialog */}
       <Dialog open={credentialsDialog.isOpen} onOpenChange={open => setCredentialsDialog(prev => ({
       ...prev,
       isOpen: open
@@ -982,4 +989,5 @@ const PeerSpecialistManagement = () => {
 
     </div>;
 };
+
 export default PeerSpecialistManagement;
