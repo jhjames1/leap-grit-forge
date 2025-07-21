@@ -23,6 +23,7 @@ export interface ChatSession {
   status: 'waiting' | 'active' | 'ended';
   started_at: string;
   ended_at?: string;
+  last_activity?: string;
 }
 
 export function useChatSession(specialistId?: string) {
