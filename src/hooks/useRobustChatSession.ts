@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -82,6 +83,7 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
   const refreshTimeoutRef = useRef<NodeJS.Timeout>();
   const isInitializedRef = useRef(false);
   const lastRefreshRef = useRef<Date | null>(null);
+  const pendingMessagesRef = useRef<Map<string, { content: string; sender_type: string; timestamp: number }>>(new Map());
 
   // Computed states
   const isSessionStale = session?.status === 'waiting' && 
@@ -182,31 +184,70 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
           const newMessage = payload.new as RealMessage;
           
           setMessages(prev => {
-            // Remove matching optimistic message
-            const withoutOptimistic = prev.filter(msg => 
-              !(msg.isOptimistic && 
-                msg.content === newMessage.content && 
-                msg.sender_type === newMessage.sender_type &&
-                Math.abs(new Date(msg.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 30000)
-            );
+            logger.debug('Processing new message, current messages:', prev.length);
             
-            // Avoid duplicates
+            // Find matching optimistic message using improved logic
+            const matchingOptimisticIndex = prev.findIndex(msg => {
+              if (!msg.isOptimistic) return false;
+              
+              // Check if this message was tracked as pending
+              const pendingKey = `${msg.content}-${msg.sender_type}`;
+              const pendingInfo = pendingMessagesRef.current.get(pendingKey);
+              
+              if (pendingInfo) {
+                // Match by content, sender_type, and ensure it's within reasonable time window
+                const isMatch = msg.content === newMessage.content && 
+                             msg.sender_type === newMessage.sender_type &&
+                             Math.abs(Date.now() - pendingInfo.timestamp) < 30000;
+                
+                if (isMatch) {
+                  logger.debug('Found matching optimistic message:', {
+                    optimisticId: msg.id,
+                    realId: newMessage.id,
+                    content: msg.content.substring(0, 50)
+                  });
+                  
+                  // Clear the pending message tracking
+                  pendingMessagesRef.current.delete(pendingKey);
+                  
+                  // Clear the timeout for this message
+                  const timeout = messageTimeoutsRef.current.get(msg.id);
+                  if (timeout) {
+                    clearTimeout(timeout);
+                    messageTimeoutsRef.current.delete(msg.id);
+                    logger.debug('Cleared timeout for successful message:', msg.id);
+                  }
+                  
+                  return true;
+                }
+              }
+              
+              return false;
+            });
+            
+            // Remove the matching optimistic message
+            const withoutOptimistic = matchingOptimisticIndex >= 0 
+              ? prev.filter((_, index) => index !== matchingOptimisticIndex)
+              : prev;
+            
+            // Check if real message already exists (avoid duplicates)
             if (withoutOptimistic.find(msg => msg.id === newMessage.id)) {
+              logger.debug('Real message already exists, skipping duplicate');
               return withoutOptimistic;
             }
             
-            // Add new message and sort
+            // Add new message and sort by timestamp
             const updated = [...withoutOptimistic, newMessage].sort((a, b) => 
               new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             );
             
+            logger.debug('Updated messages after processing:', {
+              before: prev.length,
+              after: updated.length,
+              removedOptimistic: matchingOptimisticIndex >= 0
+            });
+            
             return updated;
-          });
-
-          // Clear timeout for successful message
-          messageTimeoutsRef.current.forEach((timeout, messageId) => {
-            clearTimeout(timeout);
-            messageTimeoutsRef.current.delete(messageId);
           });
         }
       )
@@ -239,6 +280,9 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     messageTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
     messageTimeoutsRef.current.clear();
 
+    // Clear pending messages tracking
+    pendingMessagesRef.current.clear();
+
     // Clear refresh timeout
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current);
@@ -267,19 +311,37 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     }
   }, [user, chatOperations]);
 
-  // Send a message with optimistic updates
+  // Enhanced send message with better duplicate detection
   const sendMessage = useCallback(async (messageData: MessageData) => {
     if (!session || !user) {
       setError('No active session or user not authenticated');
       return;
     }
 
-    // Check for duplicates
-    const isDuplicate = await chatOperations.checkDuplicate(session.id, messageData.content);
-    if (isDuplicate) {
-      logger.warn('Duplicate message detected, skipping');
+    // Enhanced duplicate detection using pending messages
+    const pendingKey = `${messageData.content}-${messageData.sender_type || 'user'}`;
+    const now = Date.now();
+    const pendingInfo = pendingMessagesRef.current.get(pendingKey);
+    
+    // Check if same message was sent recently (within 5 seconds)
+    if (pendingInfo && (now - pendingInfo.timestamp) < 5000) {
+      logger.warn('Duplicate message detected via pending tracking, skipping');
       return;
     }
+
+    // Check database for recent duplicates
+    const isDuplicate = await chatOperations.checkDuplicate(session.id, messageData.content);
+    if (isDuplicate) {
+      logger.warn('Duplicate message detected in database, skipping');
+      return;
+    }
+
+    // Track this message as pending
+    pendingMessagesRef.current.set(pendingKey, {
+      content: messageData.content,
+      sender_type: messageData.sender_type || 'user',
+      timestamp: now
+    });
 
     // Create optimistic message
     const optimisticMessage: OptimisticMessage = {
@@ -296,14 +358,23 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
 
     // Add optimistic message immediately
     setMessages(prev => [...prev, optimisticMessage]);
+    logger.debug('Added optimistic message:', {
+      id: optimisticMessage.id,
+      content: optimisticMessage.content.substring(0, 50),
+      pendingKey
+    });
 
-    // Set timeout for message
+    // Set timeout for message with enhanced cleanup
     const timeoutId = setTimeout(() => {
+      logger.debug('Message timeout triggered for:', optimisticMessage.id);
       setMessages(prev => prev.map(msg => 
         msg.id === optimisticMessage.id && msg.isOptimistic
           ? { ...msg, status: 'timeout' as const }
           : msg
       ));
+      
+      // Clean up pending tracking on timeout
+      pendingMessagesRef.current.delete(pendingKey);
     }, MESSAGE_TIMEOUT);
 
     messageTimeoutsRef.current.set(optimisticMessage.id, timeoutId);
@@ -312,12 +383,16 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
       const result = await chatOperations.sendMessage(session.id, messageData);
       
       if (!result.success) {
-        // Mark message as failed
+        logger.error('Message send failed:', result.error);
+        // Mark message as failed and clean up pending tracking
         setMessages(prev => prev.map(msg => 
           msg.id === optimisticMessage.id && msg.isOptimistic
             ? { ...msg, status: 'failed' as const }
             : msg
         ));
+        pendingMessagesRef.current.delete(pendingKey);
+      } else {
+        logger.debug('Message sent successfully, waiting for realtime confirmation');
       }
     } catch (err) {
       logger.error('Failed to send message:', err);
@@ -326,6 +401,7 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
           ? { ...msg, status: 'failed' as const }
           : msg
       ));
+      pendingMessagesRef.current.delete(pendingKey);
     }
   }, [session, user, chatOperations]);
 
@@ -370,10 +446,15 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     await loadSessionData(true);
   }, [testConnection, forceReconnect, loadSessionData]);
 
-  // Retry a failed message
+  // Enhanced retry with better cleanup
   const retryFailedMessage = useCallback(async (messageId: string) => {
     const failedMessage = messages.find(msg => msg.id === messageId && msg.isOptimistic);
     if (!failedMessage) return;
+
+    logger.debug('Retrying failed message:', {
+      id: messageId,
+      content: failedMessage.content.substring(0, 50)
+    });
 
     // Update status to sending
     setMessages(prev => prev.map(msg => 
@@ -390,10 +471,10 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
         metadata: failedMessage.metadata
       };
 
-      await sendMessage(messageData);
-      
-      // Remove the failed message since sendMessage will create a new optimistic one
+      // Remove the failed message before sending (sendMessage will create new optimistic)
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      
+      await sendMessage(messageData);
       
     } catch (err) {
       logger.error('Failed to retry message:', err);
