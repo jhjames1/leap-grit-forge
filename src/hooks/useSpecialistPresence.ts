@@ -98,8 +98,8 @@ export const useSpecialistPresence = () => {
     }
   };
 
-  // Fetch all specialist statuses with better error handling
-  const fetchStatuses = async () => {
+  // Fetch all specialist statuses with retry logic
+  const fetchStatuses = async (retryCount = 0) => {
     try {
       const { data, error } = await supabase
         .from('specialist_status')
@@ -140,13 +140,22 @@ export const useSpecialistPresence = () => {
       setSpecialistStatuses(typedData);
     } catch (error) {
       console.error('Error fetching specialist statuses:', error);
-      // Set empty array on error to prevent "unknown" displays
+      
+      // Retry up to 3 times with exponential backoff for network errors
+      if (retryCount < 3 && (error?.message?.includes('Failed to fetch') || error?.message?.includes('network'))) {
+        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        console.log(`Retrying specialist status fetch in ${delay}ms (attempt ${retryCount + 1}/3)`);
+        setTimeout(() => fetchStatuses(retryCount + 1), delay);
+        return;
+      }
+      
+      // Set empty array on persistent error to prevent "unknown" displays
       setSpecialistStatuses([]);
     }
   };
 
-  // Fetch analytics data
-  const fetchAnalytics = async () => {
+  // Fetch analytics data with retry logic
+  const fetchAnalytics = async (retryCount = 0) => {
     try {
       // Get chat session analytics
       const { data: sessions } = await supabase
@@ -199,6 +208,16 @@ export const useSpecialistPresence = () => {
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
+      
+      // Retry for network errors
+      if (retryCount < 3 && (error?.message?.includes('Failed to fetch') || error?.message?.includes('network'))) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        setTimeout(() => fetchAnalytics(retryCount + 1), delay);
+        return;
+      }
+      
+      // Set empty array on persistent error
+      setAnalytics([]);
     }
   };
 
