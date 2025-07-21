@@ -723,164 +723,155 @@ const PeerSpecialistManagement = () => {
         </TabsList>
 
         <TabsContent value="active" className="space-y-6 mt-6">
-
-          {/* Add New Specialist */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5" />
-                Invite New Specialist
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="w-full">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Invite Specialist
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingSpecialist ? 'Edit Specialist' : 'Invite New Specialist'}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={editingSpecialist ? handleEditSpecialist : handleInviteSpecialist} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="years_experience">Years of Experience</Label>
-                        <Input
-                          id="years_experience"
-                          type="number"
-                          min="0"
-                          value={formData.years_experience}
-                          onChange={(e) => setFormData({ ...formData, years_experience: parseInt(e.target.value) || 0 })}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="first_name">First Name *</Label>
-                        <Input
-                          id="first_name"
-                          value={formData.first_name}
-                          onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="last_name">Last Name *</Label>
-                        <Input
-                          id="last_name"
-                          value={formData.last_name}
-                          onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                          required
-                        />
-                      </div>
-                    </div>
-
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Current Specialists</h3>
+            
+            {/* Add New Specialist */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Invite Specialist
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingSpecialist ? 'Edit Specialist' : 'Invite New Specialist'}
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={editingSpecialist ? handleEditSpecialist : handleInviteSpecialist} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="bio">Bio</Label>
-                      <Textarea
-                        id="bio"
-                        value={formData.bio}
-                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                        rows={3}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="avatar_url">Avatar URL</Label>
+                      <Label htmlFor="email">Email *</Label>
                       <Input
-                        id="avatar_url"
-                        type="url"
-                        value={formData.avatar_url}
-                        onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
-                        placeholder="https://example.com/avatar.jpg"
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        required
                       />
                     </div>
-
                     <div>
-                      <Label>Specialties</Label>
-                      <div className="flex gap-2 mb-2">
-                        <Input
-                          value={newSpecialty}
-                          onChange={(e) => setNewSpecialty(e.target.value)}
-                          placeholder="Add specialty"
-                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
-                        />
-                        <Button type="button" onClick={addSpecialty} variant="outline">
-                          Add
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {formData.specialties.map((specialty, index) => (
-                          <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                            {specialty}
-                            <X 
-                              className="h-3 w-3 cursor-pointer" 
-                              onClick={() => removeSpecialty(specialty)}
-                            />
-                          </Badge>
-                        ))}
-                      </div>
+                      <Label htmlFor="years_experience">Years of Experience</Label>
+                      <Input
+                        id="years_experience"
+                        type="number"
+                        min="0"
+                        value={formData.years_experience}
+                        onChange={(e) => setFormData({ ...formData, years_experience: parseInt(e.target.value) || 0 })}
+                      />
                     </div>
+                  </div>
 
-                    <div className="flex justify-end gap-2 pt-4">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => {
-                          setIsDialogOpen(false);
-                          resetForm();
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="submit" disabled={isInviting}>
-                        {isInviting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {editingSpecialist ? 'Updating...' : 'Inviting...'}
-                          </>
-                        ) : (
-                          <>
-                            {editingSpecialist ? <Edit className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
-                            {editingSpecialist ? 'Update Specialist' : 'Send Invitation'}
-                          </>
-                        )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="first_name">First Name *</Label>
+                      <Input
+                        id="first_name"
+                        value={formData.first_name}
+                        onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="last_name">Last Name *</Label>
+                      <Input
+                        id="last_name"
+                        value={formData.last_name}
+                        onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      value={formData.bio}
+                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="avatar_url">Avatar URL</Label>
+                    <Input
+                      id="avatar_url"
+                      type="url"
+                      value={formData.avatar_url}
+                      onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
+                      placeholder="https://example.com/avatar.jpg"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Specialties</Label>
+                    <div className="flex gap-2 mb-2">
+                      <Input
+                        value={newSpecialty}
+                        onChange={(e) => setNewSpecialty(e.target.value)}
+                        placeholder="Add specialty"
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
+                      />
+                      <Button type="button" onClick={addSpecialty} variant="outline">
+                        Add
                       </Button>
                     </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-              <Alert className="mt-4">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Specialists will receive an email invitation with login credentials. They can also be manually activated if needed.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.specialties.map((specialty, index) => (
+                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                          {specialty}
+                          <X 
+                            className="h-3 w-3 cursor-pointer" 
+                            onClick={() => removeSpecialty(specialty)}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
 
-          {/* Current Specialists */}
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => {
+                        setIsDialogOpen(false);
+                        resetForm();
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isInviting}>
+                      {isInviting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {editingSpecialist ? 'Updating...' : 'Inviting...'}
+                        </>
+                      ) : (
+                        <>
+                          {editingSpecialist ? <Edit className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
+                          {editingSpecialist ? 'Update Specialist' : 'Send Invitation'}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+          
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Specialists will receive an email invitation with login credentials. They can also be manually activated if needed.
+            </AlertDescription>
+          </Alert>
+
+          {/* Current Specialists List */}
           <Card>
-            <CardHeader>
-              <CardTitle>Current Specialists</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="space-y-4">
                 {specialists.map((specialist) => {
                   const invitationStatus = getInvitationStatus(specialist);
@@ -1005,6 +996,7 @@ const PeerSpecialistManagement = () => {
               </div>
             </CardContent>
           </Card>
+
         </TabsContent>
 
         <TabsContent value="removed" className="space-y-6 mt-6">

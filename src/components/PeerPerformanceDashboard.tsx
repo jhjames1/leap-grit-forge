@@ -142,9 +142,9 @@ const PeerPerformanceDashboard = ({
 
   // Expose the refresh function to parent components
   useEffect(() => {
-    if (onRefresh) {
-      // Replace the onRefresh function with our internal refresh
-      onRefresh.current = fetchLiveMetrics;
+    if (onRefresh && typeof onRefresh === 'function') {
+      // Call the parent's refresh function when our data changes
+      onRefresh();
     }
   }, [onRefresh]);
   return <div className="space-y-6">
