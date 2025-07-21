@@ -244,33 +244,37 @@ export function useChatSession(specialistId?: string) {
         }
       }
       
-      // Create new chat session without a specific specialist - any available specialist can pick it up
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('chat_sessions')
-        .insert({
-          user_id: user.id,
-          specialist_id: null,
-          status: 'waiting'
-        })
-        .select()
-        .single();
+      // Create new chat session using the atomic function for consistency
+      const { data: sessionResult, error: sessionError } = await supabase.rpc('start_chat_session_atomic', {
+        p_user_id: user.id
+      });
 
       if (sessionError) {
         console.error('Session creation error:', sessionError);
         throw sessionError;
       }
 
+      const result = sessionResult as any;
+      
+      if (!result.success) {
+        if (result.error_code === 'SESSION_EXISTS') {
+          // Session already exists, use it
+          const existingSession = result.data as ChatSession;
+          console.log('🔄 Using existing session:', existingSession);
+          setSession(existingSession);
+          await loadMessages(existingSession.id);
+          return existingSession;
+        } else {
+          throw new Error(result.error_message || 'Failed to create session');
+        }
+      }
+
+      const sessionData = result.data as ChatSession;
       console.log('🆕 Session created:', sessionData);
-      setSession(sessionData as ChatSession);
+      setSession(sessionData);
 
       // Load existing messages immediately after setting session
       await loadMessages(sessionData.id);
-
-      // Send initial system message
-      await sendMessage({
-        content: 'Chat session started. You are now in the queue to be connected with a Peer Support Specialist.',
-        message_type: 'system'
-      }, sessionData.id);
 
       return sessionData;
     } catch (err) {
@@ -349,18 +353,15 @@ export function useChatSession(specialistId?: string) {
     try {
       console.log('Sending message:', { content, message_type, sender_type, sessionId: targetSessionId });
       
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .insert({
-          session_id: targetSessionId,
-          sender_id: user.id,
-          sender_type,
-          message_type,
-          content,
-          metadata
-        })
-        .select()
-        .single();
+      // Use the atomic message sending function for consistency
+      const { data, error } = await supabase.rpc('send_message_atomic', {
+        p_session_id: targetSessionId,
+        p_sender_id: user.id,
+        p_sender_type: sender_type,
+        p_content: content,
+        p_message_type: message_type,
+        p_metadata: metadata
+      });
 
       if (error) {
         console.error('Message send error:', error);
@@ -371,50 +372,30 @@ export function useChatSession(specialistId?: string) {
         throw error;
       }
 
+      const result = data as any;
+      
+      if (!result.success) {
+        console.error('Message send failed:', result.error_message);
+        // Remove optimistic message on error
+        if (sender_type === 'user') {
+          setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+        }
+        throw new Error(result.error_message || 'Failed to send message');
+      }
+
       // Replace optimistic message with real one
-      if (sender_type === 'user' && data) {
+      if (sender_type === 'user' && result.data?.message) {
         setMessages(prev => prev.map(msg => 
-          msg.id === optimisticMessage.id ? data as ChatMessage : msg
+          msg.id === optimisticMessage.id ? result.data.message : msg
         ));
       }
 
-      console.log('Message sent successfully');
-
-      // If this is a specialist's first message to a waiting session, assign them to it
-      if (sender_type === 'specialist' && currentSession && currentSession.status === 'waiting' && !currentSession.specialist_id) {
-        // Find the specialist ID for this user
-        const { data: specialistData } = await supabase
-          .from('peer_specialists')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (specialistData) {
-          const { error: updateError } = await supabase
-            .from('chat_sessions')
-            .update({ 
-              status: 'active',
-              specialist_id: specialistData.id
-            })
-            .eq('id', currentSession.id);
-
-          if (!updateError) {
-            setSession(prev => prev ? { ...prev, status: 'active', specialist_id: specialistData.id } : null);
-          }
-        }
-      } else if (currentSession && currentSession.status === 'waiting') {
-        // Update session to active if it was waiting (for regular user messages)
-        const { error: updateError } = await supabase
-          .from('chat_sessions')
-          .update({ status: 'active' })
-          .eq('id', currentSession.id);
-
-        if (updateError) {
-          console.error('Error updating session status:', updateError);
-        } else {
-          setSession(prev => prev ? { ...prev, status: 'active' } : null);
-        }
+      // Update session if it was modified
+      if (result.data?.session) {
+        setSession(result.data.session as ChatSession);
       }
+
+      console.log('Message sent successfully');
     } catch (err) {
       console.error('Error sending message:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
@@ -422,20 +403,31 @@ export function useChatSession(specialistId?: string) {
   };
 
   const endSession = async (reason: string = 'manual') => {
-    if (!session) return;
+    if (!session || !user) return;
 
     try {
       console.log('Ending session:', session.id, 'with reason:', reason);
-      await supabase
-        .from('chat_sessions')
-        .update({ 
-          status: 'ended',
-          ended_at: new Date().toISOString()
-        })
-        .eq('id', session.id);
+      
+      // Use the atomic function for ending sessions
+      const { data, error } = await supabase.rpc('end_chat_session_atomic', {
+        p_session_id: session.id,
+        p_user_id: user.id,
+        p_end_reason: reason
+      });
 
-      setSession(null);
-      setMessages([]);
+      if (error) {
+        console.error('Error ending session:', error);
+        throw error;
+      }
+
+      const result = data as any;
+      
+      if (result.success) {
+        setSession(null);
+        setMessages([]);
+      } else {
+        throw new Error(result.error_message || 'Failed to end session');
+      }
     } catch (err) {
       console.error('Error ending session:', err);
     }
