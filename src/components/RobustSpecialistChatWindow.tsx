@@ -126,8 +126,11 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       
       // Load proposal statuses for any proposal messages
       const proposalMessages = (data || []).filter(msg => 
-        msg.metadata?.action_type === 'appointment_proposal' || 
-        msg.metadata?.action_type === 'recurring_appointment_proposal'
+        typeof msg.metadata === 'object' && 
+        msg.metadata !== null &&
+        'action_type' in msg.metadata &&
+        (msg.metadata.action_type === 'appointment_proposal' || 
+         msg.metadata.action_type === 'recurring_appointment_proposal')
       );
       
       if (proposalMessages.length > 0) {
