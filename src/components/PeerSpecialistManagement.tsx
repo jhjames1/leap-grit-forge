@@ -699,7 +699,7 @@ const PeerSpecialistManagement = () => {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Current Specialists</CardTitle>
+                <CardTitle>Active Specialists</CardTitle>
                 
                 {/* Add New Specialist */}
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
