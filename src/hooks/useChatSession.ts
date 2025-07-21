@@ -138,19 +138,25 @@ export function useChatSession(specialistId?: string) {
     });
     
     messagesChannel.subscribe((status) => {
-      console.log('📡 Peer client subscription status:', status);
+      console.log('🔴 PEER CLIENT: Subscription status changed to:', status);
+      console.log('🔴 PEER CLIENT: Channel state:', messagesChannel.state);
       
       if (status === 'SUBSCRIBED') {
         setConnectionStatus('connected');
-        console.log('✅ Peer client: Real-time subscription active');
+        console.log('✅ PEER CLIENT: Real-time subscription ACTIVE - ready to receive messages');
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         setConnectionStatus('disconnected');
-        console.log('❌ Peer client: Subscription failed, status:', status);
+        console.log('❌ PEER CLIENT: Subscription FAILED, status:', status);
+        console.log('❌ PEER CLIENT: Channel error details:', messagesChannel);
+      } else {
+        console.log('🔄 PEER CLIENT: Status in progress:', status);
       }
     });
 
+    console.log('🔴 PEER CLIENT: Subscription setup complete, waiting for connection...');
+
     return () => {
-      console.log('🔌 Cleaning up real-time subscription');
+      console.log('🔌 PEER CLIENT: Cleaning up real-time subscription');
       setConnectionStatus('disconnected');
       supabase.removeChannel(messagesChannel);
     };
