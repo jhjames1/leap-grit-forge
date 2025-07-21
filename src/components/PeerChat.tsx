@@ -245,6 +245,56 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         </div>
       </div>
 
+      {/* Connection Status Indicators */}
+      {loading && (
+        <div className="bg-blue-500/10 border-b border-blue-500/20 p-3">
+          <p className="text-blue-600 text-sm text-center">Connecting to chat...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-500/10 border-b border-red-500/20 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-red-600 text-sm">Error: {error}</p>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={refreshSession}
+              className="border-red-500 text-red-600 hover:bg-red-50"
+            >
+              <RefreshCw size={14} className="mr-1" />
+              Retry
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Real-time Connection Status */}
+      {session && !isSessionEnded && (
+        <div className={`border-b p-3 ${realtimeConnected ? 'bg-green-500/10 border-green-500/20' : 'bg-orange-500/10 border-orange-500/20'}`}>
+          <div className="flex items-center justify-between">
+            <p className={`text-sm ${realtimeConnected ? 'text-green-600' : 'text-orange-600'}`}>
+              {realtimeConnected ? (
+                <>✅ Real-time connected - Messages appear instantly</>
+              ) : (
+                <>⚠️ Real-time disconnected - Messages may be delayed</>
+              )}
+            </p>
+            {!realtimeConnected && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={refreshSession}
+                className="border-orange-500 text-orange-600 hover:bg-orange-50"
+              >
+                <RefreshCw size={14} className="mr-1" />
+                Reconnect
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Session Status Messages */}
       {isSessionEnded && (
         <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-3">
@@ -298,69 +348,17 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         </div>
       )}
 
-      {/* Connection Status */}
-      {loading && (
-        <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-3">
-          <p className="text-yellow-600 text-sm text-center">Connecting to chat...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-500/10 border-b border-red-500/20 p-3">
-          <div className="flex items-center justify-between">
-            <p className="text-red-600 text-sm">Error: {error}</p>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={refreshSession}
-              className="border-red-500 text-red-600 hover:bg-red-50"
-            >
-              <RefreshCw size={14} className="mr-1" />
-              Retry
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {realtimeConnected && session && !isSessionEnded && (
-        <div className="bg-green-500/10 border-b border-green-500/20 p-3">
-          <p className="text-green-600 text-sm text-center">
-            ✅ Real-time chat connected - Messages will appear instantly
-          </p>
-        </div>
-      )}
-
-      {!realtimeConnected && session && !isSessionEnded && (
-        <div className="bg-orange-500/10 border-b border-orange-500/20 p-3">
-          <div className="flex items-center justify-between">
-            <p className="text-orange-600 text-sm">
-              ⚠️ Real-time disconnected - Messages may be delayed
-            </p>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={refreshSession}
-              className="border-orange-500 text-orange-600 hover:bg-orange-50"
-            >
-              <RefreshCw size={14} className="mr-1" />
-              Reconnect
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Enhanced debug info */}
+        {/* Debug info in development */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="fixed top-0 left-0 bg-black text-white p-2 text-xs z-50 max-w-sm opacity-80">
+          <div className="fixed top-20 right-4 bg-black/80 text-white p-2 text-xs z-50 max-w-xs rounded opacity-90">
             <div>Messages: {messages?.length || 0}</div>
             <div>Session: {session?.id ? session.id.slice(0,8) : 'None'}</div>
             <div>Status: {session?.status || 'None'}</div>
-            <div>Loading: {loading ? 'Yes' : 'No'}</div>
-            <div>Error: {error ? 'Yes' : 'No'}</div>
-            <div>RT Connected: {realtimeConnected ? 'Yes' : 'No'}</div>
-            <div>Connection: {connectionStatus}</div>
+            <div>RT: {realtimeConnected ? 'ON' : 'OFF'}</div>
+            <div>Conn: {connectionStatus}</div>
+            <div>Failed: {hasFailedMessages ? 'YES' : 'NO'}</div>
           </div>
         )}
         
@@ -377,9 +375,11 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                   ? 'bg-construction/20 text-construction border border-construction/30'
                   : 'bg-white/10 backdrop-blur-sm text-muted-foreground'
                 } rounded-2xl p-4 ${
-                  msg.isOptimistic && msg.status === 'failed' ? 'border border-red-500/50' : ''
+                  msg.isOptimistic && msg.status === 'failed' ? 'border-2 border-red-500/50 bg-red-50/10' : ''
                 } ${
-                  msg.isOptimistic && msg.status === 'timeout' ? 'border border-orange-500/50' : ''
+                  msg.isOptimistic && msg.status === 'timeout' ? 'border-2 border-orange-500/50 bg-orange-50/10' : ''
+                } ${
+                  msg.isOptimistic && msg.status === 'sending' ? 'opacity-70' : ''
                 }`}>
                 <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
                 <div className="flex items-center justify-between">
@@ -439,31 +439,17 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
             </div>
           ))
         ) : (
-          <>
-            {session && !loading && !isSessionEnded && (
-              <div className="text-center text-steel-light py-8">
-                <p>Chat session started. Send a message to begin the conversation.</p>
-              </div>
-            )}
-            
-            {!session && !loading && (
-              <div className="text-center text-steel-light py-8">
-                <p>No chat session active. Initializing...</p>
-              </div>
-            )}
-            
-            {loading && (
-              <div className="text-center text-steel-light py-8">
-                <p>Loading chat...</p>
-              </div>
-            )}
-
-            {isSessionEnded && (
-              <div className="text-center text-steel-light py-8">
-                <p>This chat session has ended. Click "Start New Chat" to begin a new conversation.</p>
-              </div>
-            )}
-          </>
+          <div className="text-center text-steel-light py-8">
+            {session && !loading && !isSessionEnded ? (
+              <p>Chat session started. Send a message to begin the conversation.</p>
+            ) : !session && !loading ? (
+              <p>No chat session active. Initializing...</p>
+            ) : loading ? (
+              <p>Loading chat...</p>
+            ) : isSessionEnded ? (
+              <p>This chat session has ended. Click "Start New Chat" to begin a new conversation.</p>
+            ) : null}
+          </div>
         )}
         
         <div ref={messagesEndRef} />

@@ -64,7 +64,7 @@ export interface UseRobustChatSessionResult {
 }
 
 const STALE_SESSION_THRESHOLD = 10 * 60 * 1000; // 10 minutes
-const MESSAGE_TIMEOUT = 15000; // 15 seconds
+const MESSAGE_TIMEOUT = 10000; // 10 seconds
 const REFRESH_INTERVAL = 30000; // 30 seconds
 
 export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobustChatSessionResult => {
@@ -82,7 +82,6 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
   const refreshTimeoutRef = useRef<NodeJS.Timeout>();
   const isInitializedRef = useRef(false);
   const lastRefreshRef = useRef<Date | null>(null);
-  const pendingMessagesRef = useRef<Map<string, any>>(new Map());
 
   // Computed states
   const isSessionStale = session?.status === 'waiting' && 
@@ -136,16 +135,17 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     }
   }, [user, chatOperations]);
 
-  // Setup realtime subscription - simplified and immediate
-  const setupRealtimeSubscription = useCallback(() => {
-    if (!session || channelRef.current) return;
+  // Setup realtime subscription - immediate setup when session exists
+  const setupRealtimeSubscription = useCallback((sessionId: string) => {
+    if (channelRef.current) {
+      logger.debug('🧹 Cleaning up existing subscription');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
-    logger.debug('📡 Setting up realtime subscription for session:', session.id);
+    logger.debug('📡 Setting up realtime subscription for session:', sessionId);
 
-    const channelName = `chat-session-${session.id}`;
-    const channel = createChannel(channelName);
-
-    // Track subscription status
+    const channel = supabase.channel(`session:${sessionId}`);
     setRealtimeConnected(false);
 
     channel
@@ -159,21 +159,21 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
           event: 'INSERT',
           schema: 'public',
           table: 'chat_messages',
-          filter: `session_id=eq.${session.id}`
+          filter: `session_id=eq.${sessionId}`
         },
         (payload) => {
           logger.debug('📨 New message via realtime:', payload.new);
           const newMessage = payload.new as RealMessage;
           
           setMessages(prev => {
-            // Remove matching optimistic message
+            // Remove any matching optimistic message
             const withoutOptimistic = prev.filter(msg => {
               if (!msg.isOptimistic) return true;
               
-              // Simple matching: same content and sender within 30 seconds
+              // Simple matching based on content and timing
               const isMatch = msg.content === newMessage.content && 
                             msg.sender_type === newMessage.sender_type &&
-                            Math.abs(new Date(newMessage.created_at).getTime() - new Date(msg.created_at).getTime()) < 30000;
+                            Math.abs(new Date(newMessage.created_at).getTime() - new Date(msg.created_at).getTime()) < 5000;
               
               if (isMatch) {
                 logger.debug('✅ Matched optimistic message:', { optimisticId: msg.id, realId: newMessage.id });
@@ -191,15 +191,19 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
             // Check if real message already exists
             if (withoutOptimistic.find(msg => msg.id === newMessage.id)) {
               logger.debug('⚠️ Duplicate real message, skipping');
-              return withoutOptimistic;
+              return prev;
             }
             
-            // Add new message and sort
+            // Add new message and sort by timestamp
             const updated = [...withoutOptimistic, newMessage].sort((a, b) => 
               new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
             );
             
-            logger.debug('📨 Messages updated:', { before: prev.length, after: updated.length });
+            logger.debug('📨 Messages updated via realtime:', { 
+              before: prev.length, 
+              after: updated.length,
+              newMessageId: newMessage.id
+            });
             return updated;
           });
         }
@@ -210,7 +214,7 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
           event: 'UPDATE',
           schema: 'public',
           table: 'chat_sessions',
-          filter: `id=eq.${session.id}`
+          filter: `id=eq.${sessionId}`
         },
         (payload) => {
           logger.debug('📋 Session updated via realtime:', payload.new);
@@ -224,7 +228,7 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
       });
 
     channelRef.current = channel;
-  }, [session, createChannel]);
+  }, []);
 
   // Cleanup subscription
   const cleanupRealtimeSubscription = useCallback(() => {
@@ -237,7 +241,6 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     
     messageTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
     messageTimeoutsRef.current.clear();
-    pendingMessagesRef.current.clear();
 
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current);
@@ -262,15 +265,17 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
         const newSession = result.data as ChatSession;
         setSession(newSession);
         setMessages([]);
-        logger.debug('✅ Session started:', newSession.id);
+        // Set up real-time subscription immediately
+        setupRealtimeSubscription(newSession.id);
+        logger.debug('✅ Session started and subscription set up:', newSession.id);
       }
     } catch (err) {
       logger.error('❌ Failed to start session:', err);
       setError(err instanceof Error ? err.message : 'Failed to start session');
     }
-  }, [user, chatOperations]);
+  }, [user, chatOperations, setupRealtimeSubscription]);
 
-  // Send message - simplified
+  // Send message - simplified and more reliable
   const sendMessage = useCallback(async (messageData: MessageData) => {
     if (!session || !user) {
       setError('No active session or user not authenticated');
@@ -286,7 +291,7 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
 
     // Create optimistic message
     const optimisticMessage: OptimisticMessage = {
-      id: `optimistic-${Date.now()}-${Math.random()}`,
+      id: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       content: messageData.content,
       sender_type: messageData.sender_type || 'user',
       sender_id: user.id,
@@ -297,11 +302,14 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
       status: 'sending'
     };
 
-    // Add optimistic message
+    // Add optimistic message immediately
     setMessages(prev => [...prev, optimisticMessage]);
-    logger.debug('📤 Sending message:', { id: optimisticMessage.id, content: optimisticMessage.content.substring(0, 50) });
+    logger.debug('📤 Sending message with optimistic update:', { 
+      id: optimisticMessage.id, 
+      content: optimisticMessage.content.substring(0, 50) 
+    });
 
-    // Set timeout
+    // Set timeout for message
     const timeoutId = setTimeout(() => {
       logger.debug('⏰ Message timeout:', optimisticMessage.id);
       setMessages(prev => prev.map(msg => 
@@ -324,7 +332,8 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
             : msg
         ));
       } else {
-        logger.debug('✅ Message sent successfully, waiting for realtime confirmation');
+        logger.debug('✅ Message sent successfully, real-time will handle confirmation');
+        // Real-time subscription will handle replacing optimistic message
       }
     } catch (err) {
       logger.error('❌ Failed to send message:', err);
@@ -413,6 +422,18 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     }
   }, [messages, sendMessage]);
 
+  // Setup realtime subscription when session changes
+  useEffect(() => {
+    if (session && session.status !== 'ended') {
+      logger.debug('📡 Session available, setting up realtime subscription');
+      setupRealtimeSubscription(session.id);
+    } else {
+      cleanupRealtimeSubscription();
+    }
+
+    return cleanupRealtimeSubscription;
+  }, [session?.id, session?.status, setupRealtimeSubscription, cleanupRealtimeSubscription]);
+
   // Auto-refresh when disconnected
   useEffect(() => {
     if (connectionStatus.status === 'disconnected' && session && !refreshTimeoutRef.current) {
@@ -444,18 +465,6 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
       loadSessionData();
     }
   }, [user, loadSessionData]);
-
-  // Setup realtime when session is available - IMMEDIATE setup
-  useEffect(() => {
-    if (session && session.status !== 'ended') {
-      logger.debug('📡 Session available, setting up realtime immediately');
-      setupRealtimeSubscription();
-    } else {
-      cleanupRealtimeSubscription();
-    }
-
-    return cleanupRealtimeSubscription;
-  }, [session, setupRealtimeSubscription, cleanupRealtimeSubscription]);
 
   // Cleanup on unmount
   useEffect(() => {
