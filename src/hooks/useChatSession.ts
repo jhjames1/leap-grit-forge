@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -74,9 +73,10 @@ export function useChatSession(specialistId?: string) {
     
     setConnectionStatus('connecting');
     
-    // Set up real-time subscription for messages with optimized channel
+    // CRITICAL FIX: Use the same channel name as specialist
+    const channelName = `chat-session-${session.id}`;
     const messagesChannel = supabase
-      .channel(`chat-messages-${session.id}`, {
+      .channel(channelName, {
         config: {
           broadcast: { self: false },
           presence: { key: user?.id }
