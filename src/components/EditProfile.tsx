@@ -19,34 +19,56 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
   const { userData, updateUserData } = useUserData();
   const { user: authUser } = useAuth();
   const [formData, setFormData] = useState({
-    firstName: userData?.firstName || '',
+    firstName: '',
     phoneNumber: '',
-    email: authUser?.email || '',
+    email: '',
     password: '',
     confirmPassword: ''
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load phone number from user preferences
+  // Load all user data and populate form
   useEffect(() => {
-    const loadPhoneNumber = async () => {
-      if (authUser) {
-        const { data } = await supabase
+    const loadUserData = async () => {
+      if (!authUser) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Get profile data
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('first_name, phone_number')
+          .eq('user_id', authUser.id)
+          .maybeSingle();
+
+        // Get user preferences 
+        const { data: preferencesData } = await supabase
           .from('user_preferences')
           .select('phone_number')
           .eq('user_id', authUser.id)
-          .single();
-        
-        setFormData(prev => ({
-          ...prev,
-          phoneNumber: data?.phone_number || localStorage.getItem('phoneNumber') || ''
-        }));
+          .maybeSingle();
+
+        // Populate form with existing data
+        setFormData({
+          firstName: profileData?.first_name || userData?.firstName || '',
+          phoneNumber: profileData?.phone_number || preferencesData?.phone_number || localStorage.getItem('phoneNumber') || '',
+          email: authUser.email || '',
+          password: '',
+          confirmPassword: ''
+        });
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    loadPhoneNumber();
-  }, [authUser]);
+    loadUserData();
+  }, [authUser, userData]);
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -173,7 +195,12 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
         </div>
 
         <Card className="bg-card p-6 rounded-lg border-0 shadow-none transition-colors duration-300 max-w-md mx-auto">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="text-muted-foreground">Loading profile data...</div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
             {/* First Name */}
             <div className="space-y-2">
               <Label className="text-card-foreground font-fjalla flex items-center space-x-2">
@@ -270,6 +297,7 @@ const EditProfile = ({ onBack }: EditProfileProps) => {
               {isSubmitting ? t('editProfile.updating') : t('editProfile.updateProfile')}
             </Button>
           </form>
+          )}
         </Card>
       </div>
     </div>
