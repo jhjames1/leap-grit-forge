@@ -1,29 +1,75 @@
-
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Calendar, Flame, X, ChevronLeft, ChevronRight, Target, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Calendar, Flame, X, ChevronLeft, ChevronRight, Target, ArrowLeft, CheckCircle2, Clock, Users } from 'lucide-react';
 import { useUserData } from '@/hooks/useUserData';
+import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { trackingManager } from '@/utils/trackingManager';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay } from 'date-fns';
 
 interface RecoveryCalendarProps {
   onNavigate?: (page: string) => void;
 }
 
+interface ScheduledAppointment {
+  id: string;
+  scheduled_start: string;
+  scheduled_end: string;
+  status: string;
+  appointment_type_id: string;
+  meeting_type: string;
+  notes?: string;
+}
+
 const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedCompletedDay, setSelectedCompletedDay] = useState<number | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<ScheduledAppointment | null>(null);
   const [showDayDetails, setShowDayDetails] = useState(false);
+  const [showAppointmentDetails, setShowAppointmentDetails] = useState(false);
+  const [appointments, setAppointments] = useState<ScheduledAppointment[]>([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
   const { userData } = useUserData();
+  const { user } = useAuth();
   const { t } = useLanguage();
+
+  // Load user appointments
+  useEffect(() => {
+    const loadAppointments = async () => {
+      if (!user) return;
+      
+      setAppointmentsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('scheduled_appointments')
+          .select('*')
+          .eq('user_id', user.id)
+          .in('status', ['scheduled', 'confirmed'])
+          .gte('scheduled_start', startOfMonth(currentDate).toISOString())
+          .lte('scheduled_end', endOfMonth(currentDate).toISOString())
+          .order('scheduled_start');
+
+        if (error) {
+          console.error('Error loading appointments:', error);
+        } else {
+          setAppointments(data || []);
+        }
+      } catch (error) {
+        console.error('Error loading appointments:', error);
+      } finally {
+        setAppointmentsLoading(false);
+      }
+    };
+
+    loadAppointments();
+  }, [user, currentDate]);
 
   // Force refresh when journey progress changes
   useEffect(() => {
     if (userData?.journeyProgress?.completedDays) {
-      // Component will re-render when completedDays changes
       console.log('Calendar refreshing due to completed days change:', userData.journeyProgress.completedDays);
     }
   }, [userData?.journeyProgress?.completedDays]);
@@ -42,33 +88,41 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
     setCurrentDate(newDate);
   };
 
+  // Get appointments for a specific date
+  const getAppointmentsForDate = (date: Date): ScheduledAppointment[] => {
+    return appointments.filter(appointment => 
+      isSameDay(new Date(appointment.scheduled_start), date)
+    );
+  };
+
   // Get journey day from calendar date
   const getJourneyDayFromDate = (date: Date): number | null => {
-    // Get user's recovery start date from preferences or default to today minus max completed day
     const completedDays = userData?.journeyProgress?.completedDays || [];
     const maxCompletedDay = completedDays.length > 0 ? Math.max(...completedDays) : 0;
     const today = new Date();
     
-    // Calculate journey start date based on completed days
-    // If user has completed day 1, then today should be day 1 + days since completion
     let journeyStartDate = new Date(today);
     if (maxCompletedDay > 0) {
       journeyStartDate.setDate(today.getDate() - maxCompletedDay + 1);
     }
     
-    // Calculate journey day from start date
     const daysDiff = Math.floor((date.getTime() - journeyStartDate.getTime()) / (24 * 60 * 60 * 1000));
     const journeyDay = daysDiff + 1;
     
     return journeyDay >= 1 && journeyDay <= 90 ? journeyDay : null;
   };
 
-  const getDayStatus = (date: Date): 'completed' | 'missed' | 'today' | 'future' => {
+  const getDayStatus = (date: Date): 'completed' | 'missed' | 'today' | 'future' | 'appointment' => {
+    const dateAppointments = getAppointmentsForDate(date);
     const completedDays = userData?.journeyProgress?.completedDays || [];
     const journeyDay = getJourneyDayFromDate(date);
     
+    // Check for appointments first
+    if (dateAppointments.length > 0) {
+      return 'appointment';
+    }
+    
     if (isToday(date)) {
-      // Check if today is completed
       return journeyDay && completedDays.includes(journeyDay) ? 'completed' : 'today';
     }
     
@@ -82,9 +136,15 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
   const handleDayClick = (date: Date) => {
     const journeyDay = getJourneyDayFromDate(date);
     const completedDays = userData?.journeyProgress?.completedDays || [];
+    const dateAppointments = getAppointmentsForDate(date);
     
-    // Only show details for completed days
-    if (journeyDay && completedDays.includes(journeyDay)) {
+    // Show appointment details if there are appointments
+    if (dateAppointments.length > 0) {
+      setSelectedAppointment(dateAppointments[0]); // Show first appointment
+      setShowAppointmentDetails(true);
+    }
+    // Show completed day details
+    else if (journeyDay && completedDays.includes(journeyDay)) {
       setSelectedCompletedDay(journeyDay);
       setShowDayDetails(true);
     }
@@ -96,6 +156,12 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
         return (
           <div className="bg-emerald-500 p-1 rounded-sm">
             <Flame className="text-white" size={10} />
+          </div>
+        );
+      case 'appointment':
+        return (
+          <div className="bg-blue-500 p-1 rounded-sm">
+            <Users className="text-white" size={8} />
           </div>
         );
       case 'missed':
@@ -121,6 +187,8 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
     switch (status) {
       case 'completed':
         return `${baseClasses} bg-emerald-100 border border-emerald-200 text-emerald-700 cursor-pointer hover:scale-105`;
+      case 'appointment':
+        return `${baseClasses} bg-blue-100 border border-blue-200 text-blue-700 cursor-pointer hover:scale-105`;
       case 'missed':
         return `${baseClasses} bg-red-50 border border-red-100 text-red-600`;
       case 'today':
@@ -134,18 +202,15 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
 
   // Helper functions to parse user data for specific days
   const getActivitiesForDay = (day: number): Array<{title: string, activity: string, tool: string, completionDate: string}> => {
-    // Get the activity details from journey data
     const journeyData = require('../data/journeyData.json');
-    const coreJourney = journeyData.coreJourneys[0]; // Using "Craving Control" journey
+    const coreJourney = journeyData.coreJourneys[0];
     const dayData = coreJourney.days.find((d: any) => d.day === day);
     
     if (!dayData) return [];
     
-    // Check if this day was actually completed
     const completedDays = userData?.journeyProgress?.completedDays || [];
     if (!completedDays.includes(day)) return [];
     
-    // Return activity with completion date
     const completionDate = userData?.journeyProgress?.completionDates?.[day];
     return [{
       title: dayData.title,
@@ -226,8 +291,9 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
   // Calculate stats from journey progress
   const completedJourneyDays = userData?.journeyProgress?.completedDays || [];
   const completedDaysCount = completedJourneyDays.length;
-  const totalJourneyDays = 90; // Total journey days
+  const totalJourneyDays = 90;
   const completionRate = Math.round((completedDaysCount / totalJourneyDays) * 100);
+  const upcomingAppointments = appointments.filter(apt => new Date(apt.scheduled_start) >= new Date()).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -253,7 +319,7 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-4 mb-6">
           <Card className="bg-card p-4 rounded-lg border-0 shadow-sm">
             <div className="flex items-center space-x-3">
               <div className="bg-emerald-500 p-2 rounded-sm">
@@ -277,6 +343,20 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
                 <div className="text-2xl font-bold text-foreground">{completionRate}%</div>
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">
                   {t('calendar.completionRate')}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-card p-4 rounded-lg border-0 shadow-sm">
+            <div className="flex items-center space-x-3">
+              <div className="bg-blue-500 p-2 rounded-sm">
+                <Clock className="text-white" size={16} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-foreground">{upcomingAppointments}</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Upcoming
                 </div>
               </div>
             </div>
@@ -360,6 +440,14 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
               </span>
             </div>
             <div className="flex items-center space-x-2">
+              <div className="bg-blue-500 p-1 rounded-sm">
+                <Users className="text-white" size={10} />
+              </div>
+              <span className="text-sm text-muted-foreground">
+                Appointment
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
               <div className="bg-red-500 p-1 rounded-sm">
                 <X className="text-white" size={10} />
               </div>
@@ -373,14 +461,6 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
               </div>
               <span className="text-sm text-muted-foreground">
                 {t('calendar.today')}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="bg-muted p-1 rounded-sm">
-                <div className="w-2 h-2 bg-muted-foreground rounded-full" />
-              </div>
-              <span className="text-sm text-muted-foreground">
-                {t('calendar.futureDay')}
               </span>
             </div>
           </div>
@@ -483,6 +563,73 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Appointment Details Dialog */}
+      <Dialog open={showAppointmentDetails} onOpenChange={setShowAppointmentDetails}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-blue-500" />
+              Appointment Details
+            </DialogTitle>
+            <DialogDescription>
+              Your scheduled appointment information
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAppointment && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-4 w-4 text-blue-600" />
+                  <span className="font-semibold text-blue-800">Scheduled Appointment</span>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-medium text-blue-800">Date: </span>
+                    <span className="text-blue-700">
+                      {format(new Date(selectedAppointment.scheduled_start), 'MMMM dd, yyyy')}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-800">Time: </span>
+                    <span className="text-blue-700">
+                      {format(new Date(selectedAppointment.scheduled_start), 'h:mm a')} - {format(new Date(selectedAppointment.scheduled_end), 'h:mm a')}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-800">Type: </span>
+                    <span className="text-blue-700 capitalize">
+                      {selectedAppointment.meeting_type}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-800">Status: </span>
+                    <span className="text-blue-700 capitalize">
+                      {selectedAppointment.status}
+                    </span>
+                  </div>
+                  {selectedAppointment.notes && (
+                    <div>
+                      <span className="font-medium text-blue-800">Notes: </span>
+                      <span className="text-blue-700">{selectedAppointment.notes}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-center">
+                <Button 
+                  onClick={() => setShowAppointmentDetails(false)} 
+                  className="w-full"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

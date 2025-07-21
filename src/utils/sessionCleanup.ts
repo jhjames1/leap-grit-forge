@@ -79,6 +79,65 @@ export class SessionCleanupManager {
   }
 
   /**
+   * Clean up inactive active sessions (older than 5 minutes)
+   */
+  async cleanupInactiveSessions(userId?: string): Promise<SessionCleanupResult> {
+    if (this.isRunning) {
+      return { success: false, cleanedSessions: 0, error: 'Cleanup already running' };
+    }
+
+    this.isRunning = true;
+    
+    try {
+      logger.debug('Starting inactive session cleanup', { userId });
+      
+      const inactiveThreshold = new Date(Date.now() - 5 * 60 * 1000).toISOString(); // 5 minutes ago
+      
+      let query = supabase
+        .from('chat_sessions')
+        .update({ 
+          status: 'ended',
+          ended_at: new Date().toISOString(),
+          end_reason: 'inactivity_timeout'
+        })
+        .eq('status', 'active')
+        .lt('last_activity', inactiveThreshold);
+      
+      // If userId provided, only clean that user's sessions
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+      
+      const { data, error, count } = await query.select();
+      
+      if (error) {
+        throw error;
+      }
+      
+      const cleanedCount = count || 0;
+      
+      if (cleanedCount > 0) {
+        logger.info(`Cleaned up ${cleanedCount} inactive sessions`);
+      }
+      
+      return {
+        success: true,
+        cleanedSessions: cleanedCount
+      };
+      
+    } catch (error) {
+      logger.error('Inactive session cleanup failed:', error);
+      return {
+        success: false,
+        cleanedSessions: 0,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    } finally {
+      this.isRunning = false;
+    }
+  }
+
+  /**
    * Check if a session is stale
    */
   isSessionStale(session: { started_at: string; status: string }): boolean {
@@ -91,10 +150,42 @@ export class SessionCleanupManager {
   }
 
   /**
+   * Check if a session is inactive (for active sessions)
+   */
+  isSessionInactive(session: { last_activity?: string; status: string }): boolean {
+    if (session.status !== 'active' || !session.last_activity) return false;
+    
+    const inactiveTime = Date.now() - new Date(session.last_activity).getTime();
+    const fiveMinutes = 5 * 60 * 1000;
+    
+    return inactiveTime > fiveMinutes;
+  }
+
+  /**
+   * Get time until session becomes inactive (in seconds)
+   */
+  getTimeUntilInactive(session: { last_activity?: string; status: string }): number {
+    if (session.status !== 'active' || !session.last_activity) return 0;
+    
+    const inactiveTime = Date.now() - new Date(session.last_activity).getTime();
+    const fiveMinutes = 5 * 60 * 1000;
+    const remaining = fiveMinutes - inactiveTime;
+    
+    return Math.max(0, Math.floor(remaining / 1000));
+  }
+
+  /**
    * Clean up sessions for a specific user before starting new one
    */
   async cleanupUserSessions(userId: string): Promise<SessionCleanupResult> {
-    return this.cleanupStaleSessions(userId);
+    const staleResult = await this.cleanupStaleSessions(userId);
+    const inactiveResult = await this.cleanupInactiveSessions(userId);
+    
+    return {
+      success: staleResult.success && inactiveResult.success,
+      cleanedSessions: staleResult.cleanedSessions + inactiveResult.cleanedSessions,
+      error: staleResult.error || inactiveResult.error
+    };
   }
 
   /**
@@ -106,6 +197,7 @@ export class SessionCleanupManager {
     setInterval(async () => {
       try {
         await this.cleanupStaleSessions();
+        await this.cleanupInactiveSessions();
       } catch (error) {
         logger.error('Periodic session cleanup failed:', error);
       }

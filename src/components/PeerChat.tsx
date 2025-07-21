@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,9 +21,11 @@ import {
 } from 'lucide-react';
 import PeerSelection from './PeerSelection';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
+import SessionInactivityWarning from './SessionInactivityWarning';
 import { PeerSpecialist } from '@/hooks/usePeerSpecialists';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useAuth } from '@/hooks/useAuth';
+import { sessionCleanup } from '@/utils/sessionCleanup';
 
 interface PeerChatProps {
   onBack?: () => void;
@@ -35,7 +36,9 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   const [selectedPeer, setSelectedPeer] = useState<PeerSpecialist | null>(null);
   const [message, setMessage] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
+  const [inactivityWarning, setInactivityWarning] = useState<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inactivityTimerRef = useRef<NodeJS.Timeout>();
   const { user } = useAuth();
   
   const {
@@ -73,6 +76,43 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Monitor session inactivity
+  useEffect(() => {
+    if (!session || session.status !== 'active' || !session.last_activity) {
+      setInactivityWarning(0);
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      return;
+    }
+
+    const checkInactivity = () => {
+      const timeUntilInactive = sessionCleanup.getTimeUntilInactive(session);
+      
+      // Show warning when less than 60 seconds remain
+      if (timeUntilInactive <= 60 && timeUntilInactive > 0) {
+        setInactivityWarning(timeUntilInactive);
+      } else if (timeUntilInactive <= 0) {
+        // Session should be ended
+        endSession('inactivity_timeout');
+        setInactivityWarning(0);
+      } else {
+        setInactivityWarning(0);
+      }
+    };
+
+    // Check immediately and then every second
+    checkInactivity();
+    const interval = setInterval(checkInactivity, 1000);
+
+    return () => {
+      clearInterval(interval);
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+    };
+  }, [session, endSession]);
+
   const handleSendMessage = async () => {
     if (!message.trim()) {
       console.log('💬 Empty message, not sending');
@@ -89,7 +129,22 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     });
     setMessage('');
     
+    // Reset inactivity warning when user sends message
+    setInactivityWarning(0);
+    
     console.log('✅ Message sent, clearing input');
+  };
+
+  const handleExtendSession = () => {
+    // Send a keep-alive message to reset inactivity timer
+    if (session) {
+      sendMessage({
+        content: 'Session extended by user',
+        sender_type: 'user',
+        message_type: 'system'
+      });
+      setInactivityWarning(0);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -141,12 +196,16 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         message_type: 'quick_action',
         metadata: { action_type: actionType }
       });
+      
+      // Reset inactivity warning when user takes action
+      setInactivityWarning(0);
     }
   };
 
   const handleStartNewChat = async () => {
     await startFreshSession();
     setIsInitialized(true);
+    setInactivityWarning(0);
   };
 
   const getSessionAge = () => {
@@ -243,6 +302,17 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
           <span className="text-sm font-oswald">Secure & Confidential Chat</span>
         </div>
       </div>
+
+      {/* Inactivity Warning */}
+      {inactivityWarning > 0 && (
+        <div className="p-4">
+          <SessionInactivityWarning
+            secondsRemaining={inactivityWarning}
+            onExtendSession={handleExtendSession}
+            onEndSession={() => endSession('manual')}
+          />
+        </div>
+      )}
 
       {/* Connection Status Indicators */}
       {loading && (
@@ -358,6 +428,9 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
             <div>RT: {realtimeConnected ? 'ON' : 'OFF'}</div>
             <div>Conn: {connectionStatus}</div>
             <div>Failed: {hasFailedMessages ? 'YES' : 'NO'}</div>
+            {session?.last_activity && (
+              <div>Inactive: {sessionCleanup.getTimeUntilInactive(session)}s</div>
+            )}
           </div>
         )}
         
