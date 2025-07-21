@@ -8,6 +8,7 @@ export interface ConnectionStatus {
   lastConnected: Date | null;
   reconnectAttempts: number;
   error: string | null;
+  quality: 'excellent' | 'good' | 'poor' | 'unknown';
 }
 
 export const useConnectionMonitor = () => {
@@ -15,13 +16,16 @@ export const useConnectionMonitor = () => {
     status: 'connecting',
     lastConnected: null,
     reconnectAttempts: 0,
-    error: null
+    error: null,
+    quality: 'unknown'
   });
 
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000;
   const testChannelRef = useRef<any>(null);
+  const healthCheckIntervalRef = useRef<NodeJS.Timeout>();
+  const connectionStartTime = useRef<number>(0);
 
   const clearReconnectTimeout = () => {
     if (reconnectTimeoutRef.current) {
@@ -37,19 +41,31 @@ export const useConnectionMonitor = () => {
     }));
   }, []);
 
+  // Enhanced connection test with quality metrics
   const testConnection = useCallback(async () => {
     try {
+      connectionStartTime.current = Date.now();
+      
+      // Test basic database connectivity
       const { error } = await supabase.from('chat_sessions').select('count').limit(1);
       
       if (error) {
         throw error;
       }
 
+      const responseTime = Date.now() - connectionStartTime.current;
+      
+      // Determine connection quality based on response time
+      let quality: ConnectionStatus['quality'] = 'excellent';
+      if (responseTime > 2000) quality = 'poor';
+      else if (responseTime > 1000) quality = 'good';
+
       updateConnectionStatus({
         status: 'connected',
         lastConnected: new Date(),
         reconnectAttempts: 0,
-        error: null
+        error: null,
+        quality
       });
       
       return true;
@@ -57,12 +73,14 @@ export const useConnectionMonitor = () => {
       logger.error('Connection test failed', error);
       updateConnectionStatus({
         status: 'disconnected',
-        error: 'Connection test failed'
+        error: 'Connection test failed',
+        quality: 'poor'
       });
       return false;
     }
   }, [updateConnectionStatus]);
 
+  // Enhanced reconnection with exponential backoff
   const scheduleReconnect = useCallback(() => {
     setConnectionStatus(current => {
       if (current.reconnectAttempts >= maxReconnectAttempts) {
@@ -74,8 +92,10 @@ export const useConnectionMonitor = () => {
         };
       }
 
+      // Exponential backoff with jitter
+      const jitter = Math.random() * 1000;
       const delay = Math.min(
-        baseReconnectDelay * Math.pow(2, current.reconnectAttempts),
+        baseReconnectDelay * Math.pow(2, current.reconnectAttempts) + jitter,
         30000
       );
 
@@ -93,7 +113,6 @@ export const useConnectionMonitor = () => {
           error: null
         }));
         
-        // Test the connection
         await testConnection();
       }, delay);
 
@@ -110,39 +129,97 @@ export const useConnectionMonitor = () => {
       error: null
     });
     
-    // Immediately test connection
     await testConnection();
   }, [updateConnectionStatus, testConnection]);
 
-  // Create a simple channel without subscription monitoring (let components handle their own)
-  const createChannel = useCallback((channelName: string) => {
-    logger.debug('Creating channel', { channelName });
-    return supabase.channel(channelName);
-  }, []);
+  // Create a reliable channel with enhanced error handling
+  const createChannel = useCallback((channelName: string, config?: any) => {
+    logger.debug('Creating channel', { channelName, config });
+    
+    const channel = supabase.channel(channelName, {
+      config: {
+        broadcast: { self: false },
+        presence: { key: 'user' },
+        ...config
+      }
+    });
 
-  // Initial connection test and periodic health checks
-  useEffect(() => {
-    // Initial connection test
-    testConnection();
+    // Enhanced subscription monitoring
+    const originalSubscribe = channel.subscribe.bind(channel);
+    channel.subscribe = (callback) => {
+      return originalSubscribe((status, error) => {
+        logger.debug('Channel subscription status', { channelName, status, error });
+        
+        if (status === 'SUBSCRIBED') {
+          updateConnectionStatus({
+            status: 'connected',
+            lastConnected: new Date(),
+            error: null
+          });
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          updateConnectionStatus({
+            status: 'disconnected',
+            error: `Channel error: ${status}`
+          });
+          
+          // Auto-retry on channel errors
+          setTimeout(() => {
+            scheduleReconnect();
+          }, 2000);
+        }
+        
+        if (callback) callback(status, error);
+      });
+    };
 
-    // Set up periodic health checks every 30 seconds
-    const healthCheckInterval = setInterval(async () => {
-      if (connectionStatus.status === 'connected') {
-        const isHealthy = await testConnection();
-        if (!isHealthy) {
+    return channel;
+  }, [updateConnectionStatus, scheduleReconnect]);
+
+  // WebSocket-specific health check
+  const performHealthCheck = useCallback(async () => {
+    if (testChannelRef.current) {
+      try {
+        // Send a presence ping to test real-time connectivity
+        await testChannelRef.current.track({ 
+          ping: Date.now(),
+          health_check: true 
+        });
+      } catch (error) {
+        logger.warn('Health check failed', error);
+        if (connectionStatus.status === 'connected') {
           scheduleReconnect();
         }
-      } else if (connectionStatus.status === 'disconnected' && connectionStatus.reconnectAttempts < maxReconnectAttempts) {
-        scheduleReconnect();
       }
-    }, 30000);
+    }
+  }, [connectionStatus.status, scheduleReconnect]);
+
+  // Initial connection test and health monitoring
+  useEffect(() => {
+    testConnection();
+
+    // Create a test channel for health checks
+    testChannelRef.current = supabase.channel('connection-health', {
+      config: { presence: { key: 'health' } }
+    });
+
+    testChannelRef.current.subscribe((status: string) => {
+      if (status === 'SUBSCRIBED') {
+        // Start periodic health checks
+        healthCheckIntervalRef.current = setInterval(performHealthCheck, 30000);
+      }
+    });
 
     return () => {
-      clearInterval(healthCheckInterval);
+      if (healthCheckIntervalRef.current) {
+        clearInterval(healthCheckIntervalRef.current);
+      }
+      if (testChannelRef.current) {
+        supabase.removeChannel(testChannelRef.current);
+      }
     };
-  }, [testConnection, scheduleReconnect, connectionStatus.status, connectionStatus.reconnectAttempts]);
+  }, [testConnection, performHealthCheck]);
 
-  // Monitor online/offline status
+  // Monitor browser online/offline status
   useEffect(() => {
     const handleOnline = () => {
       logger.debug('Browser came online');
@@ -167,10 +244,25 @@ export const useConnectionMonitor = () => {
     };
   }, [forceReconnect, updateConnectionStatus]);
 
+  // Auto-reconnect logic
+  useEffect(() => {
+    if (connectionStatus.status === 'disconnected' && 
+        connectionStatus.reconnectAttempts < maxReconnectAttempts) {
+      scheduleReconnect();
+    }
+
+    return () => {
+      clearReconnectTimeout();
+    };
+  }, [connectionStatus.status, connectionStatus.reconnectAttempts, scheduleReconnect]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       clearReconnectTimeout();
+      if (healthCheckIntervalRef.current) {
+        clearInterval(healthCheckIntervalRef.current);
+      }
       if (testChannelRef.current) {
         supabase.removeChannel(testChannelRef.current);
       }

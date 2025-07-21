@@ -52,6 +52,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     endSession,
     refreshSession,
     startFreshSession,
+    forceReconnect,
     isSessionStale
   } = useChatSession(selectedPeer?.id);
 
@@ -353,7 +354,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={refreshSession}
+                onClick={forceReconnect}
                 className="border-orange-500 text-orange-600 hover:bg-orange-50"
               >
                 <RefreshCw size={14} className="mr-1" />
