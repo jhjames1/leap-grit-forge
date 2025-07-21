@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useConnectionMonitor } from '@/hooks/useConnectionMonitor';
+import { useSpecialistSessions } from '@/hooks/useSpecialistSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,13 +38,9 @@ interface ChatSession {
 const PeerSpecialistDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { connectionStatus, createChannel } = useConnectionMonitor();
   
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [specialistId, setSpecialistId] = useState<string | null>(null);
-  const [refreshCount, setRefreshCount] = useState(0);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -54,18 +50,11 @@ const PeerSpecialistDashboard = () => {
   const [avgResponseTime, setAvgResponseTime] = useState<number | null>(null);
   const [specialistProfile, setSpecialistProfile] = useState<any>(null);
 
-  // Use refs to track component state and prevent stale closures
-  const currentSessionsRef = useRef<ChatSession[]>([]);
-  const selectedSessionRef = useRef<ChatSession | null>(null);
-  const channelRef = useRef<any>(null);
-  const connectionTimeoutRef = useRef<NodeJS.Timeout>();
-  const isInitializedRef = useRef(false);
+  // Use the new specialist sessions hook
+  const { sessions, isLoading, error, realtimeStatus, refreshSessions } = useSpecialistSessions(specialistId);
 
   // Keep refs synchronized with state
-  useEffect(() => {
-    currentSessionsRef.current = sessions;
-  }, [sessions]);
-  
+  const selectedSessionRef = useRef<ChatSession | null>(null);
   useEffect(() => {
     selectedSessionRef.current = selectedSession;
   }, [selectedSession]);
@@ -164,30 +153,16 @@ const PeerSpecialistDashboard = () => {
     getSpecialistProfile();
   }, [user]);
 
-  // Enhanced session update handler with better state synchronization
+  // Load today's stats when specialist ID changes
+  useEffect(() => {
+    if (specialistId) {
+      loadTodayStats();
+    }
+  }, [specialistId, loadTodayStats]);
+
+  // Enhanced session update handler
   const handleSessionUpdate = useCallback((updatedSession: ChatSession) => {
     logger.debug('Session update received:', updatedSession);
-
-    // Update sessions list immediately
-    setSessions(prevSessions => {
-      const updatedSessions = prevSessions.map(session => 
-        session.id === updatedSession.id ? {
-          ...session,
-          ...updatedSession,
-          updated_at: new Date().toISOString()
-        } : session
-      );
-
-      // If session wasn't in the list and it's relevant to this specialist, add it
-      if (!prevSessions.find(s => s.id === updatedSession.id)) {
-        if (updatedSession.status === 'waiting' || updatedSession.specialist_id === specialistId) {
-          updatedSessions.push(updatedSession);
-        }
-      }
-      return updatedSessions.sort((a, b) => 
-        new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime()
-      );
-    });
 
     // Update selected session if it matches
     setSelectedSession(prevSelected => {
@@ -206,9 +181,6 @@ const PeerSpecialistDashboard = () => {
         description: `Session #${updatedSession.session_number} is now active.`
       });
     } else if (updatedSession.status === 'ended') {
-      // Remove ended sessions from the active list
-      setSessions(prevSessions => prevSessions.filter(s => s.id !== updatedSession.id));
-
       // Close the chat window if it's the selected session and show popup
       if (selectedSessionRef.current?.id === updatedSession.id) {
         setSelectedSession(null);
@@ -223,254 +195,18 @@ const PeerSpecialistDashboard = () => {
       // Refresh today's stats when a session ends
       loadTodayStats();
     }
-  }, [specialistId, toast, loadTodayStats]);
-
-  const loadSessions = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    try {
-      logger.debug('Loading sessions for specialist');
-
-      // Get waiting sessions (unassigned) 
-      const { data: waitingSessions, error: waitingError } = await supabase
-        .from('chat_sessions')
-        .select('*')
-        .eq('status', 'waiting')
-        .is('specialist_id', null)
-        .order('started_at', { ascending: false });
-      
-      if (waitingError) throw waitingError;
-
-      // Get specialist's own active sessions only (remove 'ended' from filter)
-      const { data: ownSessions, error: ownError } = await supabase
-        .from('chat_sessions')
-        .select('*')
-        .eq('specialist_id', specialistId)
-        .in('status', ['active'])
-        .order('started_at', { ascending: false })
-        .limit(20);
-      
-      if (ownError) throw ownError;
-
-      // Get user profiles for all sessions
-      const allSessionData = [...(waitingSessions || []), ...(ownSessions || [])];
-      const userIds = allSessionData.map(s => s.user_id);
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, first_name, last_name')
-        .in('user_id', userIds);
-
-      // Combine sessions with profile data
-      const allSessions = allSessionData.map(session => {
-        const profile = profiles?.find(p => p.user_id === session.user_id);
-        return {
-          ...session,
-          user_first_name: profile?.first_name,
-          user_last_name: profile?.last_name
-        } as ChatSession;
-      });
-
-      // Sort by most recent activity
-      const sortedSessions = allSessions.sort((a, b) => 
-        new Date(b.updated_at || b.started_at).getTime() - new Date(a.updated_at || a.started_at).getTime()
-      );
-      
-      setSessions(sortedSessions);
-      logger.debug('Loaded sessions:', sortedSessions.length);
-      
-      // Load today's stats
-      await loadTodayStats();
-    } catch (err) {
-      logger.error('Error loading sessions:', err);
-      toast({
-        title: "Error Loading Sessions",
-        description: "Could not load chat sessions. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Enhanced real-time subscription with better session claiming handling
-  const setupRealtimeSubscription = useCallback(() => {
-    if (channelRef.current || !user || !specialistId) return;
-    
-    logger.debug('Setting up enhanced real-time subscription');
-    console.log('🔄 Setting up real-time subscription, current status:', connectionStatus.status);
-    
-    // The connection status is now managed by useConnectionMonitor
-    // Add timeout fallback - if not connected in 10 seconds, force reconnect
-    connectionTimeoutRef.current = setTimeout(() => {
-      logger.warn('Real-time subscription timeout - forcing reconnect');
-      // Don't manually set status - let connection monitor handle it
-    }, 10000);
-    
-    const channelName = `specialist-dashboard-${user.id}-${Date.now()}`;
-    const channel = createChannel(channelName);
-    
-    channel.on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'chat_sessions'
-    }, async payload => {
-      logger.debug('New session created via real-time:', payload);
-      const newSession = payload.new as ChatSession;
-
-      // Only show waiting sessions or sessions assigned to this specialist
-      if (newSession.status === 'waiting' || newSession.specialist_id === specialistId) {
-        // Get user details for the new session
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('user_id', newSession.user_id)
-          .single();
-        
-        const sessionWithProfile = {
-          ...newSession,
-          user_first_name: profile?.first_name,
-          user_last_name: profile?.last_name
-        };
-        
-        setSessions(prev => {
-          const exists = prev.find(s => s.id === newSession.id);
-          if (!exists) {
-            return [sessionWithProfile, ...prev];
-          }
-          return prev;
-        });
-      }
-    }).on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'chat_sessions'
-    }, async payload => {
-      logger.debug('Session updated via real-time:', payload);
-      const updatedSession = payload.new as ChatSession;
-
-      // Get user details if not already present
-      let sessionWithProfile = updatedSession;
-      if (!updatedSession.user_first_name) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('user_id', updatedSession.user_id)
-          .single();
-        
-        sessionWithProfile = {
-          ...updatedSession,
-          user_first_name: profile?.first_name,
-          user_last_name: profile?.last_name
-        };
-      }
-
-      // Handle session claiming - ensure immediate UI update
-      if (updatedSession.specialist_id === specialistId && updatedSession.status === 'active') {
-        logger.debug('Session claimed by this specialist, updating UI immediately');
-
-        // Update sessions list
-        setSessions(prev => prev.map(session => 
-          session.id === updatedSession.id ? sessionWithProfile : session
-        ));
-
-        // Update selected session if it matches
-        if (selectedSessionRef.current?.id === updatedSession.id) {
-          setSelectedSession(sessionWithProfile);
-        }
-      } else {
-        // Use the standard update handler
-        handleSessionUpdate(sessionWithProfile);
-      }
-
-      // Remove sessions that are no longer relevant
-      if (updatedSession.status === 'ended' || 
-          (updatedSession.specialist_id && updatedSession.specialist_id !== specialistId)) {
-        setSessions(prev => prev.filter(s => {
-          // Keep if it's our session or if it's a waiting session
-          return s.specialist_id === specialistId || (s.status === 'waiting' && !s.specialist_id);
-        }));
-      }
-    }).subscribe(status => {
-      console.log('🔗 Real-time subscription status received:', status);
-      logger.debug('Real-time subscription status:', status);
-      if (status === 'SUBSCRIBED') {
-        if (connectionTimeoutRef.current) {
-          clearTimeout(connectionTimeoutRef.current); // Clear timeout when successfully connected
-        }
-        // Connection status is now managed by useConnectionMonitor - no manual setting needed
-      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        if (connectionTimeoutRef.current) {
-          clearTimeout(connectionTimeoutRef.current); // Clear timeout when failed
-        }
-        // Connection status is now managed by useConnectionMonitor - no manual setting needed
-        
-        // Immediate data refresh when connection fails
-        logger.debug('Connection failed, refreshing sessions immediately');
-        loadSessions();
-        
-        // Attempt to reconnect after a delay
-        setTimeout(() => {
-          if (channelRef.current) {
-            supabase.removeChannel(channelRef.current);
-            channelRef.current = null;
-            setupRealtimeSubscription();
-          }
-        }, 5000);
-      }
-    });
-    
-    channelRef.current = channel;
-  }, [user, specialistId, handleSessionUpdate]);
-
-  // Cleanup real-time subscription
-  const cleanupRealtimeSubscription = useCallback(() => {
-    if (channelRef.current) {
-      logger.debug('Cleaning up real-time subscription');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-      // Connection status is now managed by useConnectionMonitor
-    }
-  }, []);
-
-  // Initialize dashboard
-  useEffect(() => {
-    if (!isInitializedRef.current && user && specialistId) {
-      isInitializedRef.current = true;
-      loadSessions();
-      setupRealtimeSubscription();
-    }
-    return cleanupRealtimeSubscription;
-  }, [user, specialistId, setupRealtimeSubscription, cleanupRealtimeSubscription, loadSessions]);
-
-  // Auto-refresh when disconnected for too long
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-    
-    if (connectionStatus.status === 'disconnected') {
-      // Refresh every 10 seconds when disconnected to catch new sessions
-      intervalId = setInterval(() => {
-        logger.debug('Auto-refreshing sessions due to disconnected state');
-        loadSessions();
-      }, 10000);
-    }
-    
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [connectionStatus, loadSessions]);
+  }, [toast, loadTodayStats]);
 
   // Enhanced refresh handler
   const handleRefresh = useCallback(async () => {
     logger.debug('Manual refresh triggered');
-    setRefreshCount(prev => prev + 1);
-    await loadSessions();
+    await refreshSessions();
+    await loadTodayStats();
     toast({
       title: "Refreshed",
       description: "Session list has been updated."
     });
-  }, [loadSessions, toast]);
+  }, [refreshSessions, loadTodayStats, toast]);
 
   // Session selection with better error handling
   const handleSessionSelect = useCallback((session: ChatSession) => {
@@ -483,8 +219,8 @@ const PeerSpecialistDashboard = () => {
     logger.debug('Closing selected session');
     setSelectedSession(null);
     // Refresh sessions to get latest state
-    loadSessions();
-  }, [loadSessions]);
+    refreshSessions();
+  }, [refreshSessions]);
 
   const getSessionStatusColor = (status: string) => {
     switch (status) {
@@ -582,6 +318,17 @@ const PeerSpecialistDashboard = () => {
     const randomIndex = Math.floor(Math.random() * messages.length);
     return messages[randomIndex];
   };
+
+  // Handle errors from the hook
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error Loading Sessions",
+        description: error,
+        variant: "destructive"
+      });
+    }
+  }, [error, toast]);
 
   return (
     <div className="min-h-screen w-full bg-background flex flex-col">
@@ -748,8 +495,8 @@ const PeerSpecialistDashboard = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Chat Sessions</CardTitle>
                 <div className="flex items-center gap-2">
-                  <Badge variant={connectionStatus.status === 'connected' ? 'default' : 'secondary'} className={connectionStatus.status === 'connected' ? 'bg-green-600' : ''}>
-                    {connectionStatus.status === 'connected' ? 'Connected' : 'Connecting...'}
+                  <Badge variant={realtimeStatus === 'connected' ? 'default' : 'secondary'} className={realtimeStatus === 'connected' ? 'bg-green-600' : ''}>
+                    {realtimeStatus === 'connected' ? 'Connected' : realtimeStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
                   </Badge>
                   {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
                 </div>
@@ -837,16 +584,11 @@ const PeerSpecialistDashboard = () => {
             </CardHeader>
             <CardContent className="p-0 flex-1">
               {selectedSession ? (
-                <div>
-                  <div style={{backgroundColor: 'red', color: 'white', padding: '10px'}}>
-                    DEBUG: RobustSpecialistChatWindow MOUNTED for session {selectedSession.id}
-                  </div>
-                  <RobustSpecialistChatWindow
-                    session={selectedSession}
-                    onClose={() => setSelectedSession(null)}
-                    onSessionUpdate={handleSessionUpdate}
-                  />
-                </div>
+                <RobustSpecialistChatWindow
+                  session={selectedSession}
+                  onClose={() => setSelectedSession(null)}
+                  onSessionUpdate={handleSessionUpdate}
+                />
               ) : (
                 <div className="flex-1 flex items-center justify-center h-[550px] bg-muted/20">
                   <div className="text-center text-muted-foreground">
