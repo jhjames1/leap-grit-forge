@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -94,13 +95,30 @@ export function useChatSession(specialistId?: string) {
           console.log('📨 New message received via realtime:', payload);
           const newMessage = payload.new as ChatMessage;
           setMessages(prev => {
-            // Avoid duplicates by checking if message already exists
-            if (prev.find(msg => msg.id === newMessage.id)) {
-              return prev;
-            }
-            return [...prev, newMessage].sort((a, b) => 
-              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            // CRITICAL FIX: Handle optimistic message replacement
+            const existingIndex = prev.findIndex(msg => 
+              msg.id === newMessage.id || 
+              (msg.id.startsWith('temp-') && msg.content === newMessage.content && msg.sender_id === newMessage.sender_id)
             );
+            
+            if (existingIndex !== -1) {
+              // Replace optimistic message with real one
+              const updated = [...prev];
+              updated[existingIndex] = newMessage;
+              console.log('🔄 Peer client: Replaced optimistic message with real one');
+              return updated;
+            }
+            
+            // Add new message if it doesn't exist
+            if (!prev.find(msg => msg.id === newMessage.id)) {
+              const updated = [...prev, newMessage].sort((a, b) => 
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              );
+              console.log('✅ Peer client: New message added instantly');
+              return updated;
+            }
+            
+            return prev;
           });
         }
       )
@@ -120,10 +138,14 @@ export function useChatSession(specialistId?: string) {
       )
       .subscribe((status) => {
         console.log('📡 Real-time subscription status:', status);
+        console.log('🔌 Peer client subscription status:', status);
+        
         if (status === 'SUBSCRIBED') {
           setConnectionStatus('connected');
+          console.log('✅ Peer client: Real-time subscription active');
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           setConnectionStatus('disconnected');
+          console.log('❌ Peer client: Subscription failed, status:', status);
         }
       });
 
@@ -348,6 +370,7 @@ export function useChatSession(specialistId?: string) {
     // Add optimistic message immediately
     if (sender_type === 'user') {
       setMessages(prev => [...prev, optimisticMessage]);
+      console.log('🚀 Peer client: Added optimistic message', content);
     }
 
     try {
@@ -368,6 +391,7 @@ export function useChatSession(specialistId?: string) {
         // Remove optimistic message on error
         if (sender_type === 'user') {
           setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+          console.log('❌ Peer client: Removed optimistic message due to error');
         }
         throw error;
       }
@@ -379,16 +403,13 @@ export function useChatSession(specialistId?: string) {
         // Remove optimistic message on error
         if (sender_type === 'user') {
           setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+          console.log('❌ Peer client: Removed optimistic message due to failure');
         }
         throw new Error(result.error_message || 'Failed to send message');
       }
 
-      // Replace optimistic message with real one
-      if (sender_type === 'user' && result.data?.message) {
-        setMessages(prev => prev.map(msg => 
-          msg.id === optimisticMessage.id ? result.data.message : msg
-        ));
-      }
+      // Note: Don't replace optimistic message here - let real-time subscription handle it
+      console.log('✅ Peer client: Message sent successfully, waiting for real-time confirmation');
 
       // Update session if it was modified
       if (result.data?.session) {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,14 +72,14 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const [specialistId, setSpecialistId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Use connection monitor for proper connection tracking
-  const { connectionStatus, createChannel, forceReconnect } = useConnectionMonitor();
+  const [subscriptionStatus, setSubscriptionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const channelRef = useRef<any>(null);
   const isInitializedRef = useRef(false);
+  const subscriptionRetryCount = useRef(0);
+  const maxRetries = 3;
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -191,20 +190,21 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const cleanupRealtimeSubscription = useCallback(() => {
     if (channelRef.current) {
       logger.debug('Cleaning up realtime subscription');
+      setSubscriptionStatus('disconnected');
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
   }, []);
 
-  // CRITICAL FIX: Use the same channel naming pattern as peer client
+  // CRITICAL FIX: Proper subscription status handling
   const setupRealtimeSubscription = useCallback(() => {
     if (channelRef.current || !session?.id) return;
     
     logger.debug('Setting up realtime subscription for session:', session.id);
+    setSubscriptionStatus('connecting');
     
-    // Use the SAME channel name as peer client: chat-session-${sessionId}
     const channelName = `chat-session-${session.id}`;
-    const channel = createChannel(channelName);
+    const channel = supabase.channel(channelName);
     
     channel.on('postgres_changes', {
       event: 'INSERT',
@@ -224,6 +224,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         const updated = [...prev, newMessage].sort((a, b) => 
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
+        console.log('✅ Specialist: Message added to UI instantly', newMessage.content);
         return updated;
       });
     }).on('postgres_changes', {
@@ -275,13 +276,35 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       loadSessionProposal();
     });
     
-    // Subscribe to the channel
+    // CRITICAL FIX: Proper subscription status handling
     channel.subscribe((status) => {
-      logger.debug('Channel subscription status:', status);
+      logger.debug('Specialist subscription status:', status);
+      console.log('🔌 Specialist subscription status:', status);
+      
+      if (status === 'SUBSCRIBED') {
+        setSubscriptionStatus('connected');
+        subscriptionRetryCount.current = 0;
+        console.log('✅ Specialist: Real-time subscription active');
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        setSubscriptionStatus('disconnected');
+        console.log('❌ Specialist: Subscription failed, status:', status);
+        
+        // Retry logic
+        if (subscriptionRetryCount.current < maxRetries) {
+          subscriptionRetryCount.current++;
+          setTimeout(() => {
+            if (channelRef.current) {
+              supabase.removeChannel(channelRef.current);
+              channelRef.current = null;
+            }
+            setupRealtimeSubscription();
+          }, 1000 * subscriptionRetryCount.current);
+        }
+      }
     });
     
     channelRef.current = channel;
-  }, [session.id, createChannel, handleSessionUpdate, loadSessionProposal, toast]);
+  }, [session.id, handleSessionUpdate, loadSessionProposal, toast, session.status]);
 
   // Enhanced claim session with immediate state update
   const claimSession = useCallback(async () => {
@@ -338,6 +361,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
 
     try {
+      console.log('🚀 Specialist sending message:', content);
+      
       // Use the SAME atomic function as peer client
       const { data, error } = await supabase.rpc('send_message_atomic', {
         p_session_id: session.id,
@@ -360,9 +385,10 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         throw new Error(result.error_message || 'Failed to send message');
       }
 
-      logger.debug('Message sent successfully via atomic function');
+      console.log('✅ Specialist: Message sent successfully via atomic function');
     } catch (err) {
       logger.error('Failed to send message:', err);
+      console.log('❌ Specialist: Message send failed:', err);
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
@@ -486,7 +512,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     session: !!session,
     isSessionEnded,
     sessionStatus: session?.status,
-    connectionStatus,
+    subscriptionStatus,
     isInputEnabled
   });
 
@@ -515,7 +541,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         
         <div className="flex items-center space-x-2">
           {/* Connection status indicator */}
-          <div className={`w-2 h-2 rounded-full ${connectionStatus.status === 'connected' ? 'bg-green-500' : connectionStatus.status === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} title={`Connection: ${connectionStatus.status}`} />
+          <div className={`w-2 h-2 rounded-full ${subscriptionStatus === 'connected' ? 'bg-green-500' : subscriptionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} title={`Connection: ${subscriptionStatus}`} />
           
           {!isSessionEnded && (
             <Button size="sm" variant="destructive" onClick={handleEndSession} disabled={loading}>
@@ -552,7 +578,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         </div>
       )}
 
-      {connectionStatus.status === 'disconnected' && !isSessionEnded && (
+      {subscriptionStatus === 'disconnected' && !isSessionEnded && (
         <div className="bg-destructive/10 border-b border-destructive/20 p-3">
           <p className="text-destructive text-sm text-center">
             ⚠ Connection issue - Messages may be delayed
