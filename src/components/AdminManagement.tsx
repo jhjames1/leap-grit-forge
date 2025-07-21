@@ -1,377 +1,383 @@
+
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
+import { Shield, UserPlus, Search, MoreHorizontal, Mail, Calendar, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  AlertDialog, 
-  AlertDialogAction, 
-  AlertDialogCancel, 
-  AlertDialogContent, 
-  AlertDialogDescription, 
-  AlertDialogFooter, 
-  AlertDialogHeader, 
-  AlertDialogTitle, 
-  AlertDialogTrigger 
-} from '@/components/ui/alert-dialog';
-import { Loader2, UserPlus, UserMinus, Key, Mail, Calendar, AlertTriangle } from 'lucide-react';
 
-interface AdminUser {
-  user_id: string;
+interface Admin {
+  id: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
   created_at: string;
-  role_created_at: string;
+  last_sign_in_at?: string;
+  email_confirmed_at?: string;
 }
 
-export default function AdminManagement() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+const AdminManagement = () => {
+  const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newAdminEmail, setNewAdminEmail] = useState('');
-  const [isAddingAdmin, setIsAddingAdmin] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteFirstName, setInviteFirstName] = useState('');
+  const [inviteLastName, setInviteLastName] = useState('');
   const [isInviting, setIsInviting] = useState(false);
-  const [processingUserId, setProcessingUserId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
-    loadAdminUsers();
+    loadAdmins();
   }, []);
 
-  const loadAdminUsers = async () => {
+  const loadAdmins = async () => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('get_admin_users');
-      if (error) throw error;
-      setAdminUsers(data || []);
+      // Get admin role users
+      const { data: adminRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (rolesError) throw rolesError;
+
+      if (!adminRoles || adminRoles.length === 0) {
+        setAdmins([]);
+        return;
+      }
+
+      const adminIds = adminRoles.map(role => role.user_id);
+
+      // Get user details from auth.users via the admin function
+      const { data: authUsers, error: authError } = await supabase.rpc('get_admin_users');
+
+      if (authError) throw authError;
+
+      // Filter to only admin users
+      const adminUsers = (authUsers || []).filter((user: any) => 
+        adminIds.includes(user.id)
+      );
+
+      setAdmins(adminUsers);
     } catch (error) {
-      console.error('Error loading admin users:', error);
+      console.error('Error loading admins:', error);
       toast({
         title: "Error",
-        description: "Failed to load administrator list",
-        variant: "destructive"
+        description: "Failed to load administrators",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddAdmin = async () => {
-    if (!newAdminEmail.trim()) return;
-    
-    setIsAddingAdmin(true);
-    try {
-      // First, check if user exists
-      const { data: existingUser } = await supabase
-        .rpc('find_user_by_email', { user_email: newAdminEmail })
-        .single();
-
-      if (existingUser) {
-        // User exists, add admin role directly
-        if (existingUser.is_admin) {
-          toast({
-            title: "Already an Admin",
-            description: "This user is already an administrator",
-            variant: "destructive"
-          });
-          return;
-        }
-
-        const { data: result } = await supabase
-          .rpc('add_admin_role', { target_user_id: existingUser.user_id })
-          .single();
-
-        if ((result as any).success) {
-          toast({
-            title: "Success",
-            description: "Administrator role granted successfully",
-          });
-          await loadAdminUsers();
-          setNewAdminEmail('');
-        } else {
-          toast({
-            title: "Error",
-            description: (result as any).error || "Failed to grant admin role",
-            variant: "destructive"
-          });
-        }
-      } else {
-        // User doesn't exist, send invitation
-        await sendInvitation(newAdminEmail);
-      }
-    } catch (error) {
-      console.error('Error adding admin:', error);
+  const handleInviteAdmin = async () => {
+    if (!inviteEmail || !inviteFirstName || !inviteLastName) {
       toast({
         title: "Error",
-        description: "Failed to process request",
-        variant: "destructive"
+        description: "Please fill in all fields",
+        variant: "destructive",
       });
-    } finally {
-      setIsAddingAdmin(false);
+      return;
     }
-  };
 
-  const sendInvitation = async (email: string) => {
     setIsInviting(true);
     try {
       const { data, error } = await supabase.functions.invoke('invite-admin', {
-        body: { 
-          email,
-          inviterName: user?.email || 'Administrator'
+        body: {
+          email: inviteEmail,
+          firstName: inviteFirstName,
+          lastName: inviteLastName
         }
       });
 
       if (error) throw error;
 
-      if (data.success) {
-        toast({
-          title: "Invitation Sent",
-          description: data.userExists 
-            ? "Admin role granted and notification sent"
-            : "Invitation email sent successfully",
-        });
-        if (data.userExists) {
-          await loadAdminUsers();
-        }
-        setNewAdminEmail('');
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || "Failed to send invitation",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Success",
+        description: "Admin invitation sent successfully",
+      });
+
+      setIsInviteDialogOpen(false);
+      setInviteEmail('');
+      setInviteFirstName('');
+      setInviteLastName('');
+      loadAdmins(); // Refresh the list
     } catch (error) {
-      console.error('Error sending invitation:', error);
+      console.error('Error inviting admin:', error);
       toast({
         title: "Error",
-        description: "Failed to send invitation",
-        variant: "destructive"
+        description: "Failed to send admin invitation",
+        variant: "destructive",
       });
     } finally {
       setIsInviting(false);
     }
   };
 
-  const handleRemoveAdmin = async (userId: string, userEmail: string) => {
-    setProcessingUserId(userId);
-    try {
-      const { data: result } = await supabase
-        .rpc('remove_admin_role', { target_user_id: userId })
-        .single();
+  const filteredAdmins = admins.filter(admin =>
+    admin.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    admin.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    admin.last_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-      if ((result as any).success) {
-        toast({
-          title: "Success",
-          description: "Administrator access removed successfully",
-        });
-        await loadAdminUsers();
-      } else {
-        toast({
-          title: "Error",
-          description: (result as any).error || "Failed to remove admin role",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Error removing admin:', error);
-      toast({
-        title: "Error",
-        description: "Failed to remove administrator access",
-        variant: "destructive"
-      });
-    } finally {
-      setProcessingUserId(null);
-    }
-  };
-
-  const handlePasswordReset = async (email: string) => {
-    try {
-      const { data: result } = await supabase
-        .rpc('request_admin_password_reset', { target_email: email })
-        .single();
-
-      if ((result as any).success) {
-        // Trigger password reset email through Supabase Auth
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth`
-        });
-
-        if (error) throw error;
-
-        toast({
-          title: "Password Reset Sent",
-          description: "Password reset email has been sent to the administrator",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: (result as any).error || "Failed to send password reset",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Error sending password reset:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send password reset email",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Never';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
-  const isCurrentUser = (userId: string) => userId === user?.id;
+  const getStatusBadge = (admin: Admin) => {
+    if (!admin.email_confirmed_at) {
+      return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
+    }
+    
+    const lastSignIn = admin.last_sign_in_at ? new Date(admin.last_sign_in_at) : null;
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    if (!lastSignIn || lastSignIn < thirtyDaysAgo) {
+      return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Inactive</Badge>;
+    }
+    
+    return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>;
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-fjalla font-bold text-card-foreground">Administrator Management</h2>
+            <p className="text-muted-foreground font-source">Manage system administrators and their access</p>
+          </div>
+        </div>
+        <Card className="bg-card border-0 shadow-none">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center py-8">
+              <div className="text-muted-foreground">Loading administrators...</div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Administrator Management</h2>
-        <Badge variant="outline">
-          {adminUsers.length} Administrator{adminUsers.length !== 1 ? 's' : ''}
-        </Badge>
+        <div>
+          <h2 className="text-2xl font-fjalla font-bold text-card-foreground">Administrator Management</h2>
+          <p className="text-muted-foreground font-source">Manage system administrators and their access</p>
+        </div>
+        
+        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Invite Administrator
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invite New Administrator</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="admin@example.com"
+                />
+              </div>
+              <div>
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={inviteFirstName}
+                  onChange={(e) => setInviteFirstName(e.target.value)}
+                  placeholder="John"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={inviteLastName}
+                  onChange={(e) => setInviteLastName(e.target.value)}
+                  placeholder="Doe"
+                />
+              </div>
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  The invited user will receive an email with instructions to set up their administrator account.
+                </AlertDescription>
+              </Alert>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleInviteAdmin} disabled={isInviting}>
+                  {isInviting ? 'Sending...' : 'Send Invitation'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Add New Administrator */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5" />
-            Add New Administrator
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Enter email address"
-              value={newAdminEmail}
-              onChange={(e) => setNewAdminEmail(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddAdmin()}
-              className="flex-1"
-            />
-            <Button 
-              onClick={handleAddAdmin}
-              disabled={isAddingAdmin || isInviting || !newAdminEmail.trim()}
-            >
-              {isAddingAdmin || isInviting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <UserPlus className="h-4 w-4" />
-              )}
-              Add Admin
-            </Button>
-          </div>
-          <Alert className="mt-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              If the user doesn't exist, they'll receive an invitation email. If they exist, they'll be granted admin access immediately.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-
-      {/* Current Administrators */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Administrators</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {adminUsers.map((admin) => (
-              <div
-                key={admin.user_id}
-                className="flex items-center justify-between p-4 border rounded-lg"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    <Mail className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <div className="font-medium flex items-center gap-2">
-                      {admin.email}
-                      {isCurrentUser(admin.user_id) && (
-                        <Badge variant="secondary">You</Badge>
-                      )}
-                    </div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-4">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Admin since: {formatDate(admin.role_created_at)}
-                      </span>
-                      <span>Account created: {formatDate(admin.created_at)}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePasswordReset(admin.email)}
-                  >
-                    <Key className="h-4 w-4 mr-1" />
-                    Reset Password
-                  </Button>
-                  
-                  {!isCurrentUser(admin.user_id) && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          disabled={processingUserId === admin.user_id}
-                        >
-                          {processingUserId === admin.user_id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <UserMinus className="h-4 w-4 mr-1" />
-                          )}
-                          Remove Admin
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Remove Administrator Access</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to remove administrator access for {admin.email}? 
-                            This action cannot be undone and they will lose all admin privileges immediately.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleRemoveAdmin(admin.user_id, admin.email)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Remove Access
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-card border-0 shadow-none">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="bg-primary p-3 rounded-sm">
+                <Shield className="text-primary-foreground" size={20} />
               </div>
-            ))}
+              <div>
+                <div className="text-2xl font-bold text-card-foreground">{admins.length}</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Total Admins</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-0 shadow-none">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="bg-green-500 p-3 rounded-sm">
+                <Activity className="text-white" size={20} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-card-foreground">
+                  {admins.filter(admin => {
+                    if (!admin.email_confirmed_at) return false;
+                    const lastSignIn = admin.last_sign_in_at ? new Date(admin.last_sign_in_at) : null;
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    return lastSignIn && lastSignIn >= thirtyDaysAgo;
+                  }).length}
+                </div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Active Admins</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-0 shadow-none">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-3">
+              <div className="bg-yellow-500 p-3 rounded-sm">
+                <Mail className="text-white" size={20} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-card-foreground">
+                  {admins.filter(admin => !admin.email_confirmed_at).length}
+                </div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide font-oswald">Pending Invites</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Search and Table */}
+      <Card className="bg-card border-0 shadow-none">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="font-fjalla font-bold text-card-foreground">Administrators</CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search administrators..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-64"
+              />
+            </div>
           </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide">Name</TableHead>
+                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide">Email</TableHead>
+                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide">Status</TableHead>
+                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide">Joined</TableHead>
+                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide">Last Sign In</TableHead>
+                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide w-12"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAdmins.map((admin) => (
+                <TableRow key={admin.id} className="hover:bg-muted/50">
+                  <TableCell className="font-medium">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Shield className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <div className="font-source font-medium text-card-foreground">
+                          {admin.first_name && admin.last_name 
+                            ? `${admin.first_name} ${admin.last_name}`
+                            : 'Name not set'
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-source text-muted-foreground">{admin.email}</TableCell>
+                  <TableCell>{getStatusBadge(admin)}</TableCell>
+                  <TableCell className="font-source text-muted-foreground">
+                    <div className="flex items-center space-x-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>{formatDate(admin.created_at)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="font-source text-muted-foreground">
+                    <div className="flex items-center space-x-1">
+                      <Activity className="h-3 w-3" />
+                      <span>{formatDate(admin.last_sign_in_at)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {filteredAdmins.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    {searchTerm ? 'No administrators found matching your search.' : 'No administrators found.'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
   );
-}
+};
+
+export default AdminManagement;
