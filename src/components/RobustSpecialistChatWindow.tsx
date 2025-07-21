@@ -197,139 +197,52 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, []);
 
-  // CRITICAL FIX: Proper subscription status handling
+  // FIXED: Simple subscription to prevent infinite recursion
   const setupRealtimeSubscription = useCallback(() => {
+    // Don't setup if already exists or no session
     if (channelRef.current || !session?.id) return;
     
-    logger.debug('Setting up realtime subscription for session:', session.id);
-    console.log('🔧 SPECIALIST: Setting up subscription for session:', session.id);
+    console.log('🔧 SIMPLE: Setting up subscription for session:', session.id);
     setSubscriptionStatus('connecting');
     
-    const channelName = `chat-session-${session.id}`;
-    const channel = supabase.channel(channelName, {
-      config: {
-        broadcast: { self: false },
-        presence: { key: 'specialist' }
-      }
-    });
-     
-    console.log('🔧 SPECIALIST: Subscribing to postgres_changes without filter - listening to ALL messages');
+    // Create simple channel
+    const channel = supabase.channel(`specialist-simple-${session.id}`);
     
-    // Try without filter first to see if we get any events
+    // Single event listener - no chaining
     channel.on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
       table: 'chat_messages'
     }, payload => {
-      console.log('🎯 SPECIALIST: ANY message received via realtime:', payload);
+      console.log('🎯 SIMPLE: Message received:', payload);
       
-      // Manual filter since Supabase filter might be broken
       const newMessage = payload.new as RealMessage;
-      if (newMessage.session_id !== session.id) {
-        console.log('🚫 SPECIALIST: Message filtered out, wrong session ID:', newMessage.session_id, 'vs', session.id);
-        return;
-      }
-      
-      console.log('🎯 SPECIALIST: Message matches our session!', newMessage.content);
-      logger.debug('New message received via realtime:', payload);
-      setMessages(prev => {
-        // Avoid duplicates
-        if (prev.find(msg => msg.id === newMessage.id)) {
-          return prev;
-        }
-        
-        // Add new message and sort
-        const updated = [...prev, newMessage].sort((a, b) => 
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
-        console.log('✅ Specialist: Message added to UI instantly', newMessage.content);
-        return updated;
-      });
-    }).on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'chat_sessions',
-      filter: `id=eq.${session.id}`
-    }, async payload => {
-      logger.debug('Session updated via realtime:', payload);
-      const updatedSession = payload.new as ChatSession;
-
-      // Fetch user details if not present
-      if (!updatedSession.user_first_name && updatedSession.user_id) {
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('first_name, last_name')
-            .eq('user_id', updatedSession.user_id)
-            .single();
-          if (profile) {
-            updatedSession.user_first_name = profile.first_name;
-            updatedSession.user_last_name = profile.last_name;
-          }
-        } catch (err) {
-          logger.debug('Could not fetch user profile:', err);
-        }
-      }
-
-      handleSessionUpdate(updatedSession);
-
-      // Show appropriate toasts for status changes
-      if (updatedSession.status === 'active' && session.status === 'waiting') {
-        toast({
-          title: "Session Activated",
-          description: "You are now connected to the user."
-        });
-      } else if (updatedSession.status === 'ended' && session.status !== 'ended') {
-        toast({
-          title: "Session Ended",
-          description: "This chat session has been ended."
+      if (newMessage.session_id === session.id) {
+        console.log('✅ SIMPLE: Adding message to UI:', newMessage.content);
+        setMessages(prev => {
+          const exists = prev.find(msg => msg.id === newMessage.id);
+          if (exists) return prev;
+          
+          return [...prev, newMessage].sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
         });
       }
-    }).on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'appointment_proposals',
-      filter: `chat_session_id=eq.${session.id}`
-    }, () => {
-      loadSessionProposal();
     });
     
-    // CRITICAL FIX: Proper subscription status handling
+    // Subscribe
     channel.subscribe((status) => {
-      logger.debug('Specialist subscription status:', status);
-      console.log('🔌 Specialist subscription status:', status);
-      
+      console.log('🔧 SIMPLE: Status:', status);
       if (status === 'SUBSCRIBED') {
         setSubscriptionStatus('connected');
-        subscriptionRetryCount.current = 0;
-        console.log('✅ Specialist: Real-time subscription active');
+        console.log('✅ SIMPLE: Connected!');
       } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         setSubscriptionStatus('disconnected');
-        console.log('❌ Specialist: Subscription failed, status:', status);
-        
-        // Clean up current channel first
-        if (channelRef.current) {
-          try {
-            supabase.removeChannel(channelRef.current);
-          } catch (e) {
-            logger.debug('Error removing channel:', e);
-          }
-          channelRef.current = null;
-        }
-        
-        // Retry logic with exponential backoff
-        if (subscriptionRetryCount.current < maxRetries) {
-          subscriptionRetryCount.current++;
-          const delay = Math.min(1000 * Math.pow(2, subscriptionRetryCount.current - 1), 10000);
-          setTimeout(() => {
-            setupRealtimeSubscription();
-          }, delay);
-        }
       }
     });
     
     channelRef.current = channel;
-  }, []); // CRITICAL: No dependencies to prevent subscription recreation
+  }, [session?.id]);
 
   // Enhanced claim session with immediate state update
   const claimSession = useCallback(async () => {
