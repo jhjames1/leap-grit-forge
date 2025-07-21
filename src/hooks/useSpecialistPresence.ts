@@ -98,7 +98,7 @@ export const useSpecialistPresence = () => {
     }
   };
 
-  // Fetch all specialist statuses
+  // Fetch all specialist statuses with better error handling
   const fetchStatuses = async () => {
     try {
       const { data, error } = await supabase
@@ -114,15 +114,34 @@ export const useSpecialistPresence = () => {
 
       if (error) throw error;
       
-      // Type assertion for status field
-      const typedData = (data || []).map(item => ({
-        ...item,
-        status: item.status as 'online' | 'away' | 'busy' | 'offline'
-      }));
+      // Type assertion for status field with fallback to offline for unknown states
+      const typedData = (data || []).map(item => {
+        let status = item.status as 'online' | 'away' | 'busy' | 'offline';
+        
+        // Handle unknown or invalid status values
+        if (!['online', 'away', 'busy', 'offline'].includes(status)) {
+          status = 'offline';
+        }
+        
+        // Check if status is stale (no activity in last 5 minutes)
+        const lastSeen = item.last_seen ? new Date(item.last_seen) : null;
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        
+        if (lastSeen && lastSeen < fiveMinutesAgo && status === 'online') {
+          status = 'away';
+        }
+        
+        return {
+          ...item,
+          status
+        };
+      });
       
       setSpecialistStatuses(typedData);
     } catch (error) {
       console.error('Error fetching specialist statuses:', error);
+      // Set empty array on error to prevent "unknown" displays
+      setSpecialistStatuses([]);
     }
   };
 

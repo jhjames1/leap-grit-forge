@@ -69,9 +69,11 @@ const SpecialistPerformanceMetrics = ({ specialistId }: SpecialistPerformanceMet
 
   return (
     <div className="space-y-3 w-full">
-      <p className="text-sm font-medium">Live Performance Metrics</p>
-      <div className="text-xs text-muted-foreground mb-3">
-        {displayMetrics.total_sessions} sessions • {displayMetrics.total_checkins} check-ins • {displayMetrics.total_ratings} ratings
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">Live Performance Metrics</p>
+        <div className="text-xs text-muted-foreground">
+          {displayMetrics.total_sessions} sessions • {displayMetrics.total_checkins} check-ins • {displayMetrics.total_ratings} ratings
+        </div>
       </div>
       
       <div className="flex gap-2 md:gap-3 w-full">

@@ -44,6 +44,10 @@ interface PeerSpecialist {
   activated_at: string | null;
   activation_method: string | null;
   manually_activated_by: string | null;
+  created_by_admin?: {
+    email: string;
+    raw_user_meta_data?: any;
+  } | null;
 }
 
 interface SpecialistFormData {
@@ -157,12 +161,18 @@ const PeerSpecialistManagement = () => {
       const {
         data,
         error
-      } = await supabase.from('peer_specialists').select('*').eq('is_active', true).order('created_at', {
+      } = await supabase.from('peer_specialists').select(`
+        *,
+        created_by_admin:created_by_admin_id (
+          email,
+          raw_user_meta_data
+        )
+      `).eq('is_active', true).order('created_at', {
         ascending: false
       });
       if (error) throw error;
       console.log('Fetched specialists with email data:', data);
-      setSpecialists(data || []);
+      setSpecialists((data as any) || []);
     } catch (error) {
       console.error('Error fetching specialists:', error);
       toast({
@@ -181,7 +191,13 @@ const PeerSpecialistManagement = () => {
       const {
         data,
         error
-      } = await supabase.from('peer_specialists').select('*').eq('is_active', false).order('updated_at', {
+      } = await supabase.from('peer_specialists').select(`
+        *,
+        created_by_admin:created_by_admin_id (
+          email,
+          raw_user_meta_data
+        )
+      `).eq('is_active', false).order('updated_at', {
         ascending: false
       });
       if (error) {
@@ -189,7 +205,7 @@ const PeerSpecialistManagement = () => {
         throw error;
       }
       console.log('Removed specialists data:', data);
-      setRemovedSpecialists(data || []);
+      setRemovedSpecialists((data as any) || []);
       console.log('Removed specialists state updated, count:', data?.length || 0);
     } catch (error) {
       console.error('Error fetching removed specialists:', error);
@@ -254,7 +270,8 @@ const PeerSpecialistManagement = () => {
           bio: formData.bio,
           specialties: formData.specialties,
           years_experience: formData.years_experience,
-          avatar_url: formData.avatar_url || null
+          avatar_url: formData.avatar_url || null,
+          created_by_admin_id: user.id
         }
       });
       console.log('Function call result:', {
@@ -837,6 +854,12 @@ const PeerSpecialistManagement = () => {
                               <Calendar className="h-3 w-3" />
                               Created: {formatDate(specialist.created_at)}
                             </span>
+                            {specialist.created_by_admin && (
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                By: {specialist.created_by_admin.email}
+                              </span>
+                            )}
                             <span className="flex items-center gap-1">
                               <div className={`w-2 h-2 ${onlineStatus.color} rounded-full`}></div>
                               {onlineStatus.text}
