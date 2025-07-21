@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,9 @@ import {
   Plus,
   Clock,
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import PeerSelection from './PeerSelection';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
@@ -41,6 +44,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     loading,
     error,
     connectionStatus,
+    realtimeConnected,
     startSession,
     sendMessage,
     endSession,
@@ -52,16 +56,16 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   } = useRobustChatSession(selectedPeer?.id);
 
   const handleSelectPeer = async (peer: PeerSpecialist) => {
-    console.log('Peer selected:', peer);
+    console.log('🎯 Peer selected:', peer);
     setSelectedPeer(peer);
     setCurrentView('chat');
     setIsInitialized(false);
   };
 
-  // Initialize session when peer is selected and view changes to chat
+  // Initialize session when peer is selected
   useEffect(() => {
     if (currentView === 'chat' && selectedPeer && !session && !isInitialized && !loading) {
-      console.log('Initializing chat session...');
+      console.log('🚀 Initializing chat session...');
       setIsInitialized(true);
       startSession();
     }
@@ -78,9 +82,9 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
       return;
     }
 
-    console.log('💬 Sending message from PeerChat:', message);
-    console.log('💬 Current session:', session);
-    console.log('💬 Current messages count before send:', messages.length);
+    console.log('📤 Sending message:', message);
+    console.log('📋 Current session:', session?.id);
+    console.log('📊 Messages before send:', messages.length);
     
     await sendMessage({ 
       content: message,
@@ -88,7 +92,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     });
     setMessage('');
     
-    console.log('💬 Message sent, clearing input');
+    console.log('✅ Message sent, clearing input');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -164,7 +168,6 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     );
   }
 
-  // Show ended session message with option to start new chat
   const isSessionEnded = session && session.status === 'ended';
   const isWaitingAndStale = session && session.status === 'waiting' && isSessionStale;
 
@@ -192,6 +195,12 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                 <p className="text-steel-light text-sm">
                   {selectedPeer?.status.status === 'online' ? 'Online' : selectedPeer?.status.status === 'away' ? 'Away' : 'Offline'}
                 </p>
+                {/* Realtime connection indicator */}
+                {realtimeConnected ? (
+                  <Wifi size={12} className="text-green-500" title="Real-time connected" />
+                ) : (
+                  <WifiOff size={12} className="text-red-500" title="Real-time disconnected" />
+                )}
               </div>
             </div>
           </div>
@@ -298,32 +307,60 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
 
       {error && (
         <div className="bg-red-500/10 border-b border-red-500/20 p-3">
-          <p className="text-red-600 text-sm text-center">Error: {error}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-red-600 text-sm">Error: {error}</p>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={refreshSession}
+              className="border-red-500 text-red-600 hover:bg-red-50"
+            >
+              <RefreshCw size={14} className="mr-1" />
+              Retry
+            </Button>
+          </div>
         </div>
       )}
 
-      {connectionStatus === 'connected' && session && !isSessionEnded && (
+      {realtimeConnected && session && !isSessionEnded && (
         <div className="bg-green-500/10 border-b border-green-500/20 p-3">
           <p className="text-green-600 text-sm text-center">
-            ✓ Real-time chat connected - Messages will appear instantly
+            ✅ Real-time chat connected - Messages will appear instantly
           </p>
         </div>
       )}
 
-      {connectionStatus === 'disconnected' && session && !isSessionEnded && (
+      {!realtimeConnected && session && !isSessionEnded && (
         <div className="bg-orange-500/10 border-b border-orange-500/20 p-3">
-          <p className="text-orange-600 text-sm text-center">
-            ⚠ Connection issue - Messages may be delayed
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-orange-600 text-sm">
+              ⚠️ Real-time disconnected - Messages may be delayed
+            </p>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={refreshSession}
+              className="border-orange-500 text-orange-600 hover:bg-orange-50"
+            >
+              <RefreshCw size={14} className="mr-1" />
+              Reconnect
+            </Button>
+          </div>
         </div>
       )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Debug info - only show in development */}
+        {/* Enhanced debug info */}
         {process.env.NODE_ENV === 'development' && (
           <div className="fixed top-0 left-0 bg-black text-white p-2 text-xs z-50 max-w-sm opacity-80">
-            Messages: {messages?.length || 0} | Session: {session?.id ? session.id.slice(0,8) : 'None'} | Status: {session?.status || 'None'} | Loading: {loading ? 'Yes' : 'No'} | Error: {error ? 'Yes' : 'No'}
+            <div>Messages: {messages?.length || 0}</div>
+            <div>Session: {session?.id ? session.id.slice(0,8) : 'None'}</div>
+            <div>Status: {session?.status || 'None'}</div>
+            <div>Loading: {loading ? 'Yes' : 'No'}</div>
+            <div>Error: {error ? 'Yes' : 'No'}</div>
+            <div>RT Connected: {realtimeConnected ? 'Yes' : 'No'}</div>
+            <div>Connection: {connectionStatus}</div>
           </div>
         )}
         
@@ -391,7 +428,7 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
                 </div>
               </div>
               
-              {/* Display appointment proposal handler if this is a proposal message - Updated to handle both types */}
+              {/* Appointment proposal handler */}
               {(msg.metadata?.action_type === 'appointment_proposal' || msg.metadata?.action_type === 'recurring_appointment_proposal') && (
                 <AppointmentProposalHandler 
                   message={msg} 
@@ -429,7 +466,6 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
           </>
         )}
         
-        {/* Invisible div for auto-scroll target */}
         <div ref={messagesEndRef} />
       </div>
 
@@ -468,7 +504,6 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
           </div>
         </div>
       )}
-
 
       {/* Message Input */}
       <div className="bg-midnight/90 backdrop-blur-sm border-t border-steel-dark p-4">
