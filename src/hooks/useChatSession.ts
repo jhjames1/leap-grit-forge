@@ -81,14 +81,8 @@ export function useChatSession(specialistId?: string) {
     const channelName = `chat-simple-${session.id}`;
     console.log('🔴 PEER CLIENT: Creating channel:', channelName);
     
-    // Create channel with additional configuration for better reliability
-    const messagesChannel = supabase.channel(channelName, {
-      config: {
-        presence: {
-          key: user?.id || 'anonymous'
-        }
-      }
-    });
+    // Create a clean, simple channel without extra configuration
+    const messagesChannel = supabase.channel(channelName);
 
     console.log('🔴 PEER CLIENT: Channel created, setting up listeners...');
     
@@ -97,8 +91,16 @@ export function useChatSession(specialistId?: string) {
       schema: 'public',
       table: 'chat_messages'
     }, (payload) => {
-      console.log('🔴 PEER CLIENT: Message received via realtime:', payload);
+      const messageTimestamp = new Date().toISOString();
+      console.log(`🔴 PEER CLIENT: Message received via realtime at ${messageTimestamp}:`, payload);
       const newMessage = payload.new as ChatMessage;
+      
+      // Calculate delay from message creation
+      const messageCreatedAt = new Date(newMessage.created_at).getTime();
+      const receivedAt = new Date().getTime();
+      const delayMs = receivedAt - messageCreatedAt;
+      
+      console.log(`📊 PEER CLIENT: Message delay: ${delayMs}ms (created: ${newMessage.created_at}, received: ${messageTimestamp})`);
       
       // Manual filter for this session
       if (newMessage.session_id !== session.id) {
