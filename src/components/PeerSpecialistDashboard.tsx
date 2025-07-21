@@ -837,11 +837,16 @@ const PeerSpecialistDashboard = () => {
             </CardHeader>
             <CardContent className="p-0 flex-1">
               {selectedSession ? (
-                <RobustSpecialistChatWindow
-                  session={selectedSession}
-                  onClose={() => setSelectedSession(null)}
-                  onSessionUpdate={handleSessionUpdate}
-                />
+                <div>
+                  <div style={{backgroundColor: 'red', color: 'white', padding: '10px'}}>
+                    DEBUG: RobustSpecialistChatWindow MOUNTED for session {selectedSession.id}
+                  </div>
+                  <RobustSpecialistChatWindow
+                    session={selectedSession}
+                    onClose={() => setSelectedSession(null)}
+                    onSessionUpdate={handleSessionUpdate}
+                  />
+                </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center h-[550px] bg-muted/20">
                   <div className="text-center text-muted-foreground">
