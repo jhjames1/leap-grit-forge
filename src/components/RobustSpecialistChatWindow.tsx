@@ -587,7 +587,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
-      behavior: 'smooth'
+      behavior: 'smooth',
+      block: 'nearest'
     });
   }, [messages]);
 
