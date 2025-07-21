@@ -24,8 +24,6 @@ export const realtimeSupabase = createClient<Database>(SUPABASE_URL, SUPABASE_PU
       // Enable detailed logging in development
       logger: process.env.NODE_ENV === 'development' ? logger : undefined,
     },
-    // Enhanced transport options
-    transport: 'websocket' as const,
     // Timeout configuration
     timeout: 10000,
   },
