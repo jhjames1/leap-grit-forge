@@ -10,6 +10,7 @@ import { logger } from '@/utils/logger';
 import { useConnectionMonitor } from '@/hooks/useConnectionMonitor';
 import { supabase } from '@/integrations/supabase/client';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
+import SpecialistProposalStatus from './SpecialistProposalStatus';
 import ChatAppointmentScheduler from './ChatAppointmentScheduler';
 import { format } from 'date-fns';
 
@@ -74,6 +75,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
+  const [proposalStatuses, setProposalStatuses] = useState<Record<string, string>>({});
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -122,6 +124,16 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       console.log('Messages loaded:', data?.length, 'messages');
       setMessages(data || []);
       
+      // Load proposal statuses for any proposal messages
+      const proposalMessages = (data || []).filter(msg => 
+        msg.metadata?.action_type === 'appointment_proposal' || 
+        msg.metadata?.action_type === 'recurring_appointment_proposal'
+      );
+      
+      if (proposalMessages.length > 0) {
+        await loadProposalStatuses(proposalMessages);
+      }
+      
       // Also load session data
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
@@ -143,6 +155,33 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       setLoading(false);
     }
   }, [session.id, user, onSessionUpdate]);
+
+  // Load proposal statuses for proposal messages
+  const loadProposalStatuses = useCallback(async (proposalMessages: RealMessage[]) => {
+    try {
+      const proposalIds = proposalMessages
+        .map(msg => msg.metadata?.proposal_data?.id)
+        .filter(Boolean);
+      
+      if (proposalIds.length === 0) return;
+      
+      const { data, error } = await supabase
+        .from('appointment_proposals')
+        .select('id, status')
+        .in('id', proposalIds);
+      
+      if (error) throw error;
+      
+      const statusMap = (data || []).reduce((acc, proposal) => {
+        acc[proposal.id] = proposal.status;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      setProposalStatuses(statusMap);
+    } catch (err) {
+      logger.error('Failed to load proposal statuses:', err);
+    }
+  }, []);
 
   // Load session proposal
   const loadSessionProposal = useCallback(async () => {
@@ -227,6 +266,12 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
             new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           );
         });
+        
+        // If this is a proposal message, load its status
+        if (newMessage.metadata?.action_type === 'appointment_proposal' || 
+            newMessage.metadata?.action_type === 'recurring_appointment_proposal') {
+          loadProposalStatuses([newMessage]);
+        }
       }
     });
     
@@ -242,7 +287,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     });
     
     channelRef.current = channel;
-  }, [session?.id]);
+  }, [session?.id, loadProposalStatuses]);
 
   // Enhanced claim session with immediate state update
   const claimSession = useCallback(async () => {
@@ -468,8 +513,15 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     isInputEnabled
   });
 
+  // Helper function to determine if current user is the specialist who sent the proposal
+  const isSpecialistProposal = (msg: RealMessage) => {
+    if (!specialistId || !msg.metadata?.proposal_data) return false;
+    return msg.metadata.proposal_data.specialist_id === specialistId;
+  };
+
   return (
     <Card className="h-[600px] flex flex-col bg-card border border-border shadow-sm">
+      
       {/* Enhanced Header with better session info display */}
       <div className="bg-card border-b border-border p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -552,11 +604,21 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               {/* Check if this is an appointment proposal message */}
               {msg.message_type === 'system' && (msg.metadata?.action_type === 'appointment_proposal' || msg.metadata?.action_type === 'recurring_appointment_proposal') ? (
                 <div className="w-full max-w-md">
-                  <AppointmentProposalHandler 
-                    message={msg} 
-                    isUser={false} 
-                    onResponse={() => loadSessionProposal()} 
-                  />
+                  {isSpecialistProposal(msg) ? (
+                    <SpecialistProposalStatus 
+                      message={msg} 
+                      proposalStatus={proposalStatuses[msg.metadata?.proposal_data?.id] || 'pending'}
+                    />
+                  ) : (
+                    <AppointmentProposalHandler 
+                      message={msg} 
+                      isUser={false} 
+                      onResponse={() => {
+                        loadSessionProposal();
+                        loadProposalStatuses([msg]);
+                      }}
+                    />
+                  )}
                 </div>
               ) : (
                 <>
