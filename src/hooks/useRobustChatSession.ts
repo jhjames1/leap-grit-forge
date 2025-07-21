@@ -383,7 +383,7 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
       const result = await chatOperations.sendMessage(session.id, messageData);
       
       if (!result.success) {
-        logger.error('Message send failed:', result.error);
+        logger.error('Message send failed:', result.error_message);
         // Mark message as failed and clean up pending tracking
         setMessages(prev => prev.map(msg => 
           msg.id === optimisticMessage.id && msg.isOptimistic
