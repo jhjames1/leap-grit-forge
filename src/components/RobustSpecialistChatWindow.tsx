@@ -47,6 +47,7 @@ interface RealMessage {
   content: string;
   sender_type: string;
   sender_id: string;
+  session_id: string;
   message_type: string;
   metadata?: any;
   created_at: string;
@@ -211,18 +212,26 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         presence: { key: 'specialist' }
       }
     });
-    
+     
     console.log('🔧 SPECIALIST: Subscribing to postgres_changes with filter:', `session_id=eq.${session.id}`);
     
+    // Try without filter first to see if we get any events
     channel.on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
-      table: 'chat_messages',
-      filter: `session_id=eq.${session.id}`
+      table: 'chat_messages'
     }, payload => {
-      console.log('🎯 SPECIALIST: New message received via realtime:', payload);
-      logger.debug('New message received via realtime:', payload);
+      console.log('🎯 SPECIALIST: ANY message received via realtime:', payload);
+      
+      // Manual filter since Supabase filter might be broken
       const newMessage = payload.new as RealMessage;
+      if (newMessage.session_id !== session.id) {
+        console.log('🚫 SPECIALIST: Message filtered out, wrong session ID:', newMessage.session_id, 'vs', session.id);
+        return;
+      }
+      
+      console.log('🎯 SPECIALIST: Message matches our session!', newMessage.content);
+      logger.debug('New message received via realtime:', payload);
       setMessages(prev => {
         // Avoid duplicates
         if (prev.find(msg => msg.id === newMessage.id)) {
