@@ -44,7 +44,7 @@ const MetricCard = ({ metricKey, value, title, formatValue, icon: Icon }: Metric
   };
 
   return (
-    <div className={getCardStyling()}>
+    <div className={`${getCardStyling()} flex-1 min-w-0`}>
       <div className="space-y-1">
         <div className="text-sm font-bold text-card-foreground">
           {formatValue(value)}
