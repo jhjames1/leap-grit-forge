@@ -205,8 +205,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     console.log('🔧 SIMPLE: Setting up subscription for session:', session.id);
     setSubscriptionStatus('connecting');
     
-    // Create simple channel
-    const channel = supabase.channel(`specialist-simple-${session.id}`);
+    // Create simple channel with same name as peer client
+    const channel = supabase.channel(`chat-simple-${session.id}`);
     
     // Single event listener - no chaining
     channel.on('postgres_changes', {

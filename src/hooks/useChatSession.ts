@@ -75,8 +75,8 @@ export function useChatSession(specialistId?: string) {
     
     setConnectionStatus('connecting');
     
-    // FIXED: Simple subscription to prevent infinite recursion (same fix as specialist)
-    const channelName = `peer-simple-${session.id}`;
+    // FIXED: Use same channel name as specialist for bidirectional messaging
+    const channelName = `chat-simple-${session.id}`;
     const messagesChannel = supabase.channel(channelName);
     
     messagesChannel.on('postgres_changes', {
