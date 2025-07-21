@@ -316,7 +316,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     });
     
     channelRef.current = channel;
-  }, [session.id, handleSessionUpdate, loadSessionProposal, toast, session.status]);
+  }, []); // CRITICAL: No dependencies to prevent subscription recreation
 
   // Enhanced claim session with immediate state update
   const claimSession = useCallback(async () => {
@@ -485,16 +485,23 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, [initialSession, session.id, session.status, session.specialist_id]);
 
-  // Initialize on mount
+  // Initialize on mount and setup real-time subscription
   useEffect(() => {
     if (!isInitializedRef.current && user) {
       isInitializedRef.current = true;
-      loadMessages();
-      loadSessionProposal();
-      setupRealtimeSubscription();
+      // Load messages first, then setup subscription
+      const initializeChat = async () => {
+        await loadMessages();
+        await loadSessionProposal();
+        // Delay subscription setup slightly to ensure messages are loaded first
+        setTimeout(() => {
+          setupRealtimeSubscription();
+        }, 100);
+      };
+      initializeChat();
     }
     return cleanupRealtimeSubscription;
-  }, [user, loadMessages, loadSessionProposal, setupRealtimeSubscription, cleanupRealtimeSubscription]);
+  }, [user]); // CRITICAL: Only depend on user, not the callback functions
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
