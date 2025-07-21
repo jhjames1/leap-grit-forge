@@ -491,14 +491,19 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
 
   // Initialize on mount and setup real-time subscription
   useEffect(() => {
+    console.log('🚀 SPECIALIST: useEffect triggered with user:', !!user, 'initialized:', isInitializedRef.current);
     if (!isInitializedRef.current && user) {
       isInitializedRef.current = true;
+      console.log('🚀 SPECIALIST: Starting initialization...');
       // Load messages first, then setup subscription
       const initializeChat = async () => {
+        console.log('🚀 SPECIALIST: Loading messages...');
         await loadMessages();
+        console.log('🚀 SPECIALIST: Loading proposals...');
         await loadSessionProposal();
         // Delay subscription setup slightly to ensure messages are loaded first
         setTimeout(() => {
+          console.log('🚀 SPECIALIST: Setting up real-time subscription...');
           setupRealtimeSubscription();
         }, 100);
       };
