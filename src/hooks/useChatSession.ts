@@ -80,23 +80,33 @@ export function useChatSession(specialistId?: string) {
     // FIXED: Use same channel name as specialist for bidirectional messaging
     const channelName = `chat-simple-${session.id}`;
     console.log('🔴 PEER CLIENT: Creating channel:', channelName);
-    const messagesChannel = supabase.channel(channelName);
+    
+    // Create channel with additional configuration for better reliability
+    const messagesChannel = supabase.channel(channelName, {
+      config: {
+        presence: {
+          key: user?.id || 'anonymous'
+        }
+      }
+    });
+
+    console.log('🔴 PEER CLIENT: Channel created, setting up listeners...');
     
     messagesChannel.on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
       table: 'chat_messages'
     }, (payload) => {
-      console.log('📨 Peer client: Message received via realtime:', payload);
+      console.log('🔴 PEER CLIENT: Message received via realtime:', payload);
       const newMessage = payload.new as ChatMessage;
       
       // Manual filter for this session
       if (newMessage.session_id !== session.id) {
-        console.log('🚫 Peer client: Message filtered out, wrong session ID');
+        console.log('🚫 PEER CLIENT: Message filtered out, wrong session ID');
         return;
       }
       
-      console.log('✅ Peer client: Message matches our session!', newMessage.content);
+      console.log('✅ PEER CLIENT: Message matches our session!', newMessage.content);
       setMessages(prev => {
         // CRITICAL FIX: Handle optimistic message replacement
         const existingIndex = prev.findIndex(msg => 
@@ -108,7 +118,7 @@ export function useChatSession(specialistId?: string) {
           // Replace optimistic message with real one
           const updated = [...prev];
           updated[existingIndex] = newMessage;
-          console.log('🔄 Peer client: Replaced optimistic message with real one');
+          console.log('🔄 PEER CLIENT: Replaced optimistic message with real one');
           return updated;
         }
         
@@ -117,7 +127,7 @@ export function useChatSession(specialistId?: string) {
           const updated = [...prev, newMessage].sort((a, b) => 
             new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           );
-          console.log('✅ Peer client: New message added instantly');
+          console.log('✅ PEER CLIENT: New message added instantly');
           return updated;
         }
         
@@ -130,13 +140,14 @@ export function useChatSession(specialistId?: string) {
       schema: 'public',
       table: 'chat_sessions'
     }, (payload) => {
-      console.log('📡 Session updated via realtime:', payload);
+      console.log('🔴 PEER CLIENT: Session updated via realtime:', payload);
       const updatedSession = payload.new as ChatSession;
       if (updatedSession.id === session.id) {
         setSession(updatedSession);
       }
     });
     
+    console.log('🔴 PEER CLIENT: Subscribing to channel...');
     messagesChannel.subscribe((status) => {
       console.log('🔴 PEER CLIENT: Subscription status changed to:', status);
       console.log('🔴 PEER CLIENT: Channel state:', messagesChannel.state);
@@ -148,6 +159,12 @@ export function useChatSession(specialistId?: string) {
         setConnectionStatus('disconnected');
         console.log('❌ PEER CLIENT: Subscription FAILED, status:', status);
         console.log('❌ PEER CLIENT: Channel error details:', messagesChannel);
+        
+        // Attempt reconnection after 3 seconds
+        setTimeout(() => {
+          console.log('🔄 PEER CLIENT: Attempting to reconnect...');
+          messagesChannel.subscribe();
+        }, 3000);
       } else {
         console.log('🔄 PEER CLIENT: Status in progress:', status);
       }
