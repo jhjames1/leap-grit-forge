@@ -21,6 +21,7 @@ import RealTimeSpecialistMetrics from './RealTimeSpecialistMetrics';
 import PeerPerformanceDashboard from './PeerPerformanceDashboard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, Edit, Check, X, Users, AlertCircle, Search, Activity, Clock, MessageSquare, TrendingUp, TrendingDown, Wifi, WifiOff, Mail, Send, Trash2, Star, RefreshCw, Key, Copy, Calendar, Loader2, AlertTriangle } from 'lucide-react';
+import { initializeSpecialistStatuses } from '@/utils/specialistStatusInitializer';
 
 interface PeerSpecialist {
   id: string;
@@ -119,9 +120,40 @@ const PeerSpecialistManagement = () => {
     specialistName: ''
   });
 
+  // Add function to ensure specialist has status record
+  const ensureSpecialistStatus = async (specialistId: string) => {
+    try {
+      const { data: existingStatus } = await supabase
+        .from('specialist_status')
+        .select('id')
+        .eq('specialist_id', specialistId)
+        .single();
+
+      if (!existingStatus) {
+        console.log(`Creating status record for specialist: ${specialistId}`);
+        await supabase
+          .from('specialist_status')
+          .insert({
+            specialist_id: specialistId,
+            status: 'offline',
+            last_seen: new Date().toISOString()
+          });
+      }
+    } catch (error) {
+      console.error('Error ensuring specialist status:', error);
+    }
+  };
+
   useEffect(() => {
-    fetchSpecialists();
-    fetchRemovedSpecialists();
+    const initialize = async () => {
+      // Initialize any missing specialist status records
+      await initializeSpecialistStatuses();
+      // Then fetch specialists
+      fetchSpecialists();
+      fetchRemovedSpecialists();
+    };
+    
+    initialize();
   }, []);
 
   const fetchCoachingTips = async (specialistId: string): Promise<string[]> => {
@@ -172,6 +204,12 @@ const PeerSpecialistManagement = () => {
       });
       if (error) throw error;
       console.log('Fetched specialists with email data:', data);
+      
+      // Ensure all specialists have status records
+      for (const specialist of data || []) {
+        await ensureSpecialistStatus(specialist.id);
+      }
+      
       setSpecialists((data as any) || []);
     } catch (error) {
       console.error('Error fetching specialists:', error);
@@ -282,6 +320,12 @@ const PeerSpecialistManagement = () => {
         console.error('Edge function error details:', error);
         throw error;
       }
+      
+      // If specialist was created successfully, ensure they have a status record
+      if (data?.specialist?.id) {
+        await ensureSpecialistStatus(data.specialist.id);
+      }
+      
       toast({
         title: "Success",
         description: "Specialist invitation sent successfully! They will receive an email with login credentials."
@@ -411,6 +455,9 @@ const PeerSpecialistManagement = () => {
         error
       } = await supabase.from('peer_specialists').update(updateData).eq('id', specialist.id);
       if (error) throw error;
+
+      // Ensure the specialist has a status record
+      await ensureSpecialistStatus(specialist.id);
 
       const specialistEmail = specialist.email || 'Email not available - contact admin';
 
@@ -560,12 +607,12 @@ const PeerSpecialistManagement = () => {
   };
 
   const getOnlineStatus = (specialistId: string) => {
-    const status = specialistStatuses[specialistId];
-    if (!status) return {
+    const statusRecord = specialistStatuses.find(s => s.specialist_id === specialistId);
+    if (!statusRecord) return {
       color: 'bg-gray-500',
-      text: 'Unknown'
+      text: 'Offline'
     };
-    switch (status.status) {
+    switch (statusRecord.status) {
       case 'online':
         return {
           color: 'bg-green-500',
@@ -637,7 +684,7 @@ const PeerSpecialistManagement = () => {
               </div>
               <div>
                 <div className="text-2xl font-bold">
-                  {specialists.filter(s => specialistStatuses[s.id]?.status === 'online').length}
+                  {specialistStatuses.filter(s => s.status === 'online').length}
                 </div>
                 <div className="text-sm text-muted-foreground">Online Now</div>
               </div>
