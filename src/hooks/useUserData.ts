@@ -7,6 +7,7 @@ import { notificationManager } from '@/utils/notificationManager';
 import { SupabaseUserService } from '@/services/supabaseUserService';
 import { DataMigrationService } from '@/utils/dataMigration';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ActivityLogEntry {
   id: string;
@@ -121,6 +122,17 @@ export const useUserData = () => {
 
   const loadSupabaseUserData = async (userId: string): Promise<UserData | null> => {
     try {
+      // Load profile data first to get the firstName
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('first_name')
+        .eq('user_id', userId)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') { // PGRST116 = not found
+        logger.error('Failed to load profile data:', profileError);
+      }
+
       // Load all user data from Supabase
       const [
         journeyProgress,
@@ -136,9 +148,14 @@ export const useUserData = () => {
         SupabaseUserService.getUserPreferences(userId)
       ]);
 
+      // Use profile first_name if available, fallback to preferences, then userId
+      const firstName = profileData?.first_name || 
+                       preferences?.preferences?.firstName || 
+                       userId;
+
       // Transform Supabase data to UserData format
       const userData: UserData = {
-        firstName: preferences?.preferences?.firstName || userId,
+        firstName,
         gratitudeEntries: gratitudeEntries.map(entry => ({
           id: entry.id,
           text: entry.entry_text,

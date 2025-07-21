@@ -1,3 +1,4 @@
+
 import { AlertCircle, Download, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export function AppUpdateNotification() {
             size="sm"
             variant="ghost"
             onClick={dismissUpdate}
+            className="text-foreground hover:text-foreground hover:bg-accent"
           >
             <X className="h-3 w-3" />
           </Button>
