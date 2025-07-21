@@ -35,28 +35,46 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   // Check admin and specialist status
   useEffect(() => {
     const checkUserRoles = async () => {
-      if (!authUser) return;
+      if (!authUser) {
+        setIsAdmin(false);
+        setIsSpecialist(false);
+        return;
+      }
 
-      // Check admin status
-      const { data: adminData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', authUser.id)
-        .eq('role', 'admin')
-        .single();
-      
-      setIsAdmin(!!adminData);
+      try {
+        // Check admin status
+        const { data: adminData, error: adminError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', authUser.id)
+          .eq('role', 'admin')
+          .single();
+        
+        if (adminError && adminError.code !== 'PGRST116') {
+          console.error('Error checking admin status:', adminError);
+        }
+        
+        setIsAdmin(!!adminData);
 
-      // Check specialist status
-      const { data: specialistData } = await supabase
-        .from('peer_specialists')
-        .select('id')
-        .eq('user_id', authUser.id)
-        .eq('is_active', true)
-        .eq('is_verified', true)
-        .single();
-      
-      setIsSpecialist(!!specialistData);
+        // Check specialist status
+        const { data: specialistData, error: specialistError } = await supabase
+          .from('peer_specialists')
+          .select('id')
+          .eq('user_id', authUser.id)
+          .eq('is_active', true)
+          .eq('is_verified', true)
+          .single();
+        
+        if (specialistError && specialistError.code !== 'PGRST116') {
+          console.error('Error checking specialist status:', specialistError);
+        }
+        
+        setIsSpecialist(!!specialistData);
+      } catch (error) {
+        console.error('Error checking user roles:', error);
+        setIsAdmin(false);
+        setIsSpecialist(false);
+      }
     };
 
     checkUserRoles();
