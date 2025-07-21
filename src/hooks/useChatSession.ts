@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useConnectionTest } from './useConnectionTest';
 
 export interface ChatMessage {
   id: string;
@@ -26,11 +27,17 @@ export interface ChatSession {
 
 export function useChatSession(specialistId?: string) {
   const { user } = useAuth();
+  const connectionTest = useConnectionTest();
   const [session, setSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+
+  // Log connection test results
+  useEffect(() => {
+    console.log('🔧 CONNECTION TEST:', connectionTest);
+  }, [connectionTest]);
 
   // Helper function to check if a session is stale (older than 10 minutes for waiting sessions)
   const isSessionStale = (session: ChatSession): boolean => {
@@ -77,12 +84,19 @@ export function useChatSession(specialistId?: string) {
     setConnectionStatus('connecting');
     console.log('🔴 PEER CLIENT: Connection status set to connecting');
     
-    // FIXED: Use same channel name as specialist for bidirectional messaging
+    // Force WebSocket transport and create a clean, simple channel 
     const channelName = `chat-simple-${session.id}`;
     console.log('🔴 PEER CLIENT: Creating channel:', channelName);
     
-    // Create a clean, simple channel without extra configuration
-    const messagesChannel = supabase.channel(channelName);
+    // Remove any existing channels with the same name first
+    supabase.removeAllChannels();
+    
+    const messagesChannel = supabase.channel(channelName, {
+      config: {
+        broadcast: { self: false },
+        presence: { key: user?.id || 'anonymous' }
+      }
+    });
 
     console.log('🔴 PEER CLIENT: Channel created, setting up listeners...');
     
