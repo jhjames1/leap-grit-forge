@@ -381,6 +381,8 @@ const PeerSpecialistManagement = () => {
     try {
       const tempPassword = generateTempPassword();
       const tempPasswordHash = await hashPassword(tempPassword);
+      
+      // First, update the specialist record
       const updateData = {
         is_verified: true,
         is_active: true,
@@ -390,10 +392,39 @@ const PeerSpecialistManagement = () => {
         temporary_password_hash: tempPasswordHash,
         must_change_password: true
       };
-      const {
-        error
-      } = await supabase.from('peer_specialists').update(updateData).eq('id', specialist.id);
-      if (error) throw error;
+      
+      const { error: updateError } = await supabase
+        .from('peer_specialists')
+        .update(updateData)
+        .eq('id', specialist.id);
+      
+      if (updateError) throw updateError;
+
+      // Now update the actual auth user's password using an edge function
+      const { data: authUpdateResult, error: authError } = await supabase.functions.invoke('update-specialist-password', {
+        body: {
+          userId: specialist.user_id,
+          newPassword: tempPassword,
+          adminId: user.id
+        }
+      });
+
+      if (authError) {
+        console.error('Error updating auth password:', authError);
+        // Don't fail completely, but warn the admin
+        toast({
+          title: "Partial Success",
+          description: "Specialist activated but password update failed. Please use 'Reset Password' or contact admin.",
+          variant: "destructive"
+        });
+      } else if (!authUpdateResult?.success) {
+        console.error('Auth password update failed:', authUpdateResult);
+        toast({
+          title: "Partial Success", 
+          description: "Specialist activated but password update failed. Please use 'Reset Password' or contact admin.",
+          variant: "destructive"
+        });
+      }
 
       const specialistEmail = specialist.email || 'Email not available - contact admin';
 
@@ -403,7 +434,9 @@ const PeerSpecialistManagement = () => {
         password: tempPassword,
         specialistName: `${specialist.first_name} ${specialist.last_name}`
       });
+      
       fetchSpecialists();
+      
       toast({
         title: "Success",
         description: "Specialist manually activated. Temporary credentials generated."
