@@ -68,15 +68,18 @@ export function useChatSession(specialistId?: string) {
   useEffect(() => {
     if (!session) return;
 
-    console.log('🔴 Setting up real-time subscription for session:', session.id);
+    console.log('🔴 PEER CLIENT: Setting up real-time subscription for session:', session.id);
+    console.log('🔴 PEER CLIENT: User ID:', user?.id);
     
     // Load existing messages first
     loadMessages(session.id);
     
     setConnectionStatus('connecting');
+    console.log('🔴 PEER CLIENT: Connection status set to connecting');
     
     // FIXED: Use same channel name as specialist for bidirectional messaging
     const channelName = `chat-simple-${session.id}`;
+    console.log('🔴 PEER CLIENT: Creating channel:', channelName);
     const messagesChannel = supabase.channel(channelName);
     
     messagesChannel.on('postgres_changes', {
