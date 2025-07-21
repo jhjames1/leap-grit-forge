@@ -201,6 +201,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     if (channelRef.current || !session?.id) return;
     
     logger.debug('Setting up realtime subscription for session:', session.id);
+    console.log('🔧 SPECIALIST: Setting up subscription for session:', session.id);
     setSubscriptionStatus('connecting');
     
     const channelName = `chat-session-${session.id}`;
@@ -211,12 +212,15 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       }
     });
     
+    console.log('🔧 SPECIALIST: Subscribing to postgres_changes with filter:', `session_id=eq.${session.id}`);
+    
     channel.on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
       table: 'chat_messages',
       filter: `session_id=eq.${session.id}`
     }, payload => {
+      console.log('🎯 SPECIALIST: New message received via realtime:', payload);
       logger.debug('New message received via realtime:', payload);
       const newMessage = payload.new as RealMessage;
       setMessages(prev => {
