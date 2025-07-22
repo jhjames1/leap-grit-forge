@@ -66,20 +66,8 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
       
       if (activeError) throw activeError;
 
-      // Also fetch recent ended sessions for this specialist (for chat history display)
-      const { data: endedSessions, error: endedError } = await supabase
-        .from('chat_sessions')
-        .select('*')
-        .eq('status', 'ended')
-        .eq('specialist_id', specialistId)
-        .gte('ended_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
-        .order('ended_at', { ascending: false })
-        .limit(10);
-      
-      if (endedError) throw endedError;
-
       // Get user profiles for all sessions
-      const allSessionData = [...(waitingSessions || []), ...(activeSessions || []), ...(endedSessions || [])];
+      const allSessionData = [...(waitingSessions || []), ...(activeSessions || [])];
       const userIds = allSessionData.map(s => s.user_id);
       
       if (userIds.length === 0) return [];
@@ -202,11 +190,8 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
           }
           return session;
         }).filter(session => {
-          // Keep sessions that are:
-          // 1. Still waiting/active OR
-          // 2. Ended sessions that belong to this specialist (for chat history)
-          if (session.status === 'ended' && session.specialist_id === specialistId) return true;
-          if (session.status === 'ended') return false;
+          // Remove sessions that are no longer relevant to the main dashboard
+          if (session.status === 'ended') return false; // Ended sessions go to Chat History only
           if (session.specialist_id && session.specialist_id !== specialistId) return false;
           return true;
         });
