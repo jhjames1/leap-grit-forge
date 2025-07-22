@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { logger } from '@/utils/logger';
+import PasswordChangePrompt from '@/components/PasswordChangePrompt';
 
 const PeerSpecialistPortal = () => {
   const { user, loading } = useAuth();
@@ -15,6 +16,9 @@ const PeerSpecialistPortal = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasChecked, setHasChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [specialistId, setSpecialistId] = useState<string | null>(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [passwordStatusChecked, setPasswordStatusChecked] = useState(false);
   
   // Use refs to prevent unnecessary re-renders and track operation state
   const isCheckingRef = useRef(false);
@@ -49,6 +53,8 @@ const PeerSpecialistPortal = () => {
       if (!error && specialistData) {
         logger.debug('User is verified specialist');
         setIsVerifiedSpecialist(true);
+        setSpecialistId(specialistData.id);
+        setMustChangePassword(specialistData.must_change_password || false);
         
         // Log portal access
         await supabase
@@ -59,20 +65,24 @@ const PeerSpecialistPortal = () => {
             type: 'specialist_portal',
             details: JSON.stringify({
               specialist_id: specialistData.id,
-              access_time: new Date().toISOString()
+              access_time: new Date().toISOString(),
+              must_change_password: specialistData.must_change_password
             })
           });
       } else {
         logger.debug('User is not verified specialist', { error });
         setIsVerifiedSpecialist(false);
+        setSpecialistId(null);
       }
       
       setHasChecked(true);
+      setPasswordStatusChecked(true);
     } catch (error) {
       logger.error('Error checking specialist status', error);
       if (mountedRef.current) {
         setIsVerifiedSpecialist(false);
         setHasChecked(true);
+        setPasswordStatusChecked(true);
         setError(error instanceof Error ? error.message : 'Failed to check specialist status');
       }
     } finally {
@@ -177,9 +187,36 @@ const PeerSpecialistPortal = () => {
     );
   }
 
+  // Handle password change requirement
+  const handlePasswordChangeComplete = useCallback(async () => {
+    setMustChangePassword(false);
+    
+    // Log password change completion
+    await supabase
+      .from('user_activity_logs')
+      .insert({
+        user_id: user.id,
+        action: 'password_changed_first_login',
+        type: 'security',
+        details: JSON.stringify({
+          specialist_id: specialistId,
+          timestamp: new Date().toISOString()
+        })
+      });
+  }, [specialistId, user?.id]);
+
   return (
     <ErrorBoundary>
       <ChatErrorBoundary onError={handleError}>
+        {/* Password change prompt modal */}
+        {passwordStatusChecked && mustChangePassword && specialistId && (
+          <PasswordChangePrompt 
+            isOpen={mustChangePassword}
+            specialistId={specialistId}
+            onComplete={handlePasswordChangeComplete}
+          />
+        )}
+        
         <PeerSpecialistDashboard />
       </ChatErrorBoundary>
     </ErrorBoundary>
