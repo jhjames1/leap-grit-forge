@@ -50,9 +50,9 @@ function App() {
                   <Route path="/reset-password" element={<PasswordReset />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                <Toaster />
+                <Sonner />
               </BrowserRouter>
-              <Toaster />
-              <Sonner />
             </SafeToastProvider>
           </LanguageProvider>
         </ThemeProvider>
