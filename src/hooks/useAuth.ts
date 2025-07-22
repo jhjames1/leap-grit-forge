@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -47,7 +46,7 @@ export function useAuth(): AuthContextType {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: any, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
         if (mounted) {
@@ -55,6 +54,7 @@ export function useAuth(): AuthContextType {
           setUser(session?.user ?? null);
           
           // Track if this is a new sign-up event
+          console.log('Auth event type:', event);
           if (event === 'SIGNED_UP') {
             console.log('New user signed up, will show onboarding');
             setIsNewSignUp(true);
@@ -93,7 +93,7 @@ export function useAuth(): AuthContextType {
 
   const signOut = async () => {
     setIsNewSignUp(false); // Reset sign-up status on sign out
-    return supabase.auth.signOut();
+    await supabase.auth.signOut();
   };
 
   return {
