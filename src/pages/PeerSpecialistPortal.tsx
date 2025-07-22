@@ -24,6 +24,62 @@ const PeerSpecialistPortal = () => {
   const isCheckingRef = useRef(false);
   const mountedRef = useRef(true);
 
+  // ALL HOOKS MUST BE AT THE TOP - Define all callbacks first
+  const handleLogin = useCallback(() => {
+    logger.debug('Login handler called');
+    // Reset states and re-check
+    setIsVerifiedSpecialist(false);
+    setHasChecked(false);
+    setError(null);
+    isCheckingRef.current = false;
+  }, []);
+
+  const handleError = useCallback((error: Error, errorInfo: any) => {
+    logger.error('Portal error caught by boundary', {
+      error: error.message,
+      stack: error.stack,
+      errorInfo
+    });
+
+    // Log error to database for monitoring
+    if (user?.id) {
+      supabase
+        .from('user_activity_logs')
+        .insert({
+          user_id: user.id,
+          action: 'portal_error',
+          type: 'error',
+          details: JSON.stringify({
+            error: error.message,
+            stack: error.stack,
+            timestamp: new Date().toISOString()
+          })
+        })
+        .then(() => {
+          logger.debug('Portal error logged successfully');
+        });
+    }
+  }, [user?.id]);
+
+  const handlePasswordChangeComplete = useCallback(async () => {
+    setMustChangePassword(false);
+    
+    // Log password change completion
+    if (user?.id && specialistId) {
+      await supabase
+        .from('user_activity_logs')
+        .insert({
+          user_id: user.id,
+          action: 'password_changed_first_login',
+          type: 'security',
+          details: JSON.stringify({
+            specialist_id: specialistId,
+            timestamp: new Date().toISOString()
+          })
+        });
+    }
+  }, [specialistId, user?.id]);
+
   // Define checkSpecialistStatus with useCallback to prevent recreation
   const checkSpecialistStatus = useCallback(async () => {
     if (!user || isCheckingRef.current || !mountedRef.current) {
@@ -113,42 +169,7 @@ const PeerSpecialistPortal = () => {
     };
   }, [user?.id, loading, hasChecked, checkSpecialistStatus]);
 
-  const handleLogin = useCallback(() => {
-    logger.debug('Login handler called');
-    // Reset states and re-check
-    setIsVerifiedSpecialist(false);
-    setHasChecked(false);
-    setError(null);
-    isCheckingRef.current = false;
-  }, []);
-
-  const handleError = useCallback((error: Error, errorInfo: any) => {
-    logger.error('Portal error caught by boundary', {
-      error: error.message,
-      stack: error.stack,
-      errorInfo
-    });
-
-    // Log error to database for monitoring
-    if (user?.id) {
-      supabase
-        .from('user_activity_logs')
-        .insert({
-          user_id: user.id,
-          action: 'portal_error',
-          type: 'error',
-          details: JSON.stringify({
-            error: error.message,
-            stack: error.stack,
-            timestamp: new Date().toISOString()
-          })
-        })
-        .then(() => {
-          logger.debug('Portal error logged successfully');
-        });
-    }
-  }, [user?.id]);
-
+  // NOW we can have conditional returns AFTER all hooks are defined
   // Show error state if there's an error
   if (error) {
     return (
@@ -186,24 +207,6 @@ const PeerSpecialistPortal = () => {
       </ChatErrorBoundary>
     );
   }
-
-  // Handle password change requirement
-  const handlePasswordChangeComplete = useCallback(async () => {
-    setMustChangePassword(false);
-    
-    // Log password change completion
-    await supabase
-      .from('user_activity_logs')
-      .insert({
-        user_id: user.id,
-        action: 'password_changed_first_login',
-        type: 'security',
-        details: JSON.stringify({
-          specialist_id: specialistId,
-          timestamp: new Date().toISOString()
-        })
-      });
-  }, [specialistId, user?.id]);
 
   return (
     <ErrorBoundary>
