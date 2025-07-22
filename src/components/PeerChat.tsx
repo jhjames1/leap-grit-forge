@@ -308,8 +308,16 @@ const PeerChat = ({
                 </div>
               </div>
               
-              {/* Appointment proposal handler */}
-              {(msg.metadata?.action_type === 'appointment_proposal' || msg.metadata?.action_type === 'recurring_appointment_proposal') && <AppointmentProposalHandler message={msg} isUser={msg.sender_type === 'user'} onResponse={() => console.log('User responded to appointment proposal')} />}
+              {/* Appointment proposal handler - only for system messages with proposal metadata */}
+              {msg.message_type === 'system' && (msg.metadata?.action_type === 'appointment_proposal' || msg.metadata?.action_type === 'recurring_appointment_proposal') && (
+                <div className="w-full mt-2">
+                  <AppointmentProposalHandler 
+                    message={msg} 
+                    isUser={msg.sender_type === 'user'} 
+                    onResponse={() => console.log('User responded to appointment proposal')} 
+                  />
+                </div>
+              )}
             </div>) : <div className="text-center text-muted-foreground py-8">
             {session && !loading && !isSessionEnded ? <p className="font-source">Chat session started. Send a message to begin the conversation.</p> : !session && !loading ? <p className="font-source">No chat session active. Initializing...</p> : loading ? <p className="font-source">Loading chat...</p> : isSessionEnded ? <p className="font-source">This chat session has ended. Click "Start New Chat" to begin a new conversation.</p> : null}
           </div>}

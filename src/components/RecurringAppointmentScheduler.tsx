@@ -104,7 +104,9 @@ const RecurringAppointmentScheduler = ({
               start_time: formData.startTime,
               duration: formData.duration,
               frequency: formData.frequency,
-              occurrences: formData.occurrences
+              occurrences: formData.occurrences,
+              specialist_id: proposal.specialist_id,
+              user_id: proposal.user_id
             }
           }
         });

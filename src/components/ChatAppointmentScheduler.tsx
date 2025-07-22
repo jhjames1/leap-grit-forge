@@ -225,6 +225,8 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
               duration: data.duration.toString(),
               frequency: data.frequency,
               occurrences: data.occurrences.toString(),
+              specialist_id: data.specialist_id,
+              user_id: data.user_id,
               is_recurring: isRecurring
             }
           }
