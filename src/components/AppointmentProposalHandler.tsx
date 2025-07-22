@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Check, X, Timer, User } from 'lucide-react';
+import { Calendar, Clock, Check, X, Timer, User, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -43,6 +43,7 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
   const [responded, setResponded] = useState(false);
   const [expired, setExpired] = useState(false);
   const [proposalStatus, setProposalStatus] = useState<string | null>(null);
+  const [appointmentCreationStatus, setAppointmentCreationStatus] = useState<'idle' | 'creating' | 'success' | 'failed'>('idle');
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -105,6 +106,19 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
         if (data) {
           setProposalStatus(data.status);
           setResponded(data.status !== 'pending');
+          
+          // Check if appointments were already created for this proposal
+          if (data.status === 'accepted') {
+            const { data: appointmentData } = await supabase
+              .from('scheduled_appointments')
+              .select('id')
+              .eq('proposal_id', proposalData.id)
+              .limit(1);
+            
+            if (appointmentData && appointmentData.length > 0) {
+              setAppointmentCreationStatus('success');
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading proposal status:', error);
@@ -157,8 +171,10 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
       }
 
       if (response === 'accepted') {
-        // Call unified appointment creation function
-        const { error: functionError } = await supabase.functions.invoke('create-appointments', {
+        setAppointmentCreationStatus('creating');
+        
+        // Call unified appointment creation function with better error handling
+        const { data: functionResult, error: functionError } = await supabase.functions.invoke('create-appointments', {
           body: { 
             proposalId: proposalData.id,
             isRecurring: isRecurringProposal
@@ -166,13 +182,23 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
         });
 
         if (functionError) {
-          console.error('Error creating appointments:', functionError);
-          throw functionError;
+          console.error('Function invocation error:', functionError);
+          setAppointmentCreationStatus('failed');
+          throw new Error(`Failed to create appointments: ${functionError.message}`);
         }
 
+        if (!functionResult?.success) {
+          console.error('Function returned error:', functionResult);
+          setAppointmentCreationStatus('failed');
+          throw new Error(functionResult?.error || 'Unknown error creating appointments');
+        }
+
+        setAppointmentCreationStatus('success');
+        
         toast({
           title: "Proposal Accepted",
-          description: `${isRecurringProposal ? 'Recurring appointments' : 'Appointment'} have been scheduled successfully and added to both calendars!`
+          description: `${isRecurringProposal ? 'Recurring appointments' : 'Appointment'} have been scheduled successfully and added to both calendars!`,
+          duration: 8000
         });
       } else {
         toast({
@@ -187,9 +213,10 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
       
     } catch (error) {
       console.error('Error handling proposal response:', error);
+      setAppointmentCreationStatus('failed');
       toast({
         title: "Error",
-        description: "Failed to process your response. Please try again.",
+        description: `Failed to process your response: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -201,6 +228,13 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
   const getStatusMessage = () => {
     if (userRole === 'sender') {
       if (proposalStatus === 'accepted') {
+        if (appointmentCreationStatus === 'creating') {
+          return "⏳ Creating appointments...";
+        } else if (appointmentCreationStatus === 'success') {
+          return "✅ Your proposal has been accepted and appointments have been created!";
+        } else if (appointmentCreationStatus === 'failed') {
+          return "⚠️ Your proposal was accepted but there was an issue creating the appointments.";
+        }
         return "✅ Your proposal has been accepted!";
       } else if (proposalStatus === 'rejected') {
         return "❌ Your proposal has been declined.";
@@ -211,6 +245,13 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
       }
     } else if (userRole === 'recipient') {
       if (proposalStatus === 'accepted') {
+        if (appointmentCreationStatus === 'creating') {
+          return "⏳ Creating your appointments...";
+        } else if (appointmentCreationStatus === 'success') {
+          return "✅ You have accepted this proposal and appointments have been created!";
+        } else if (appointmentCreationStatus === 'failed') {
+          return "⚠️ You accepted this proposal but there was an issue creating the appointments.";
+        }
         return "✅ You have accepted this proposal.";
       } else if (proposalStatus === 'rejected') {
         return "❌ You have declined this proposal.";
@@ -224,6 +265,8 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
   };
 
   const getStatusColor = () => {
+    if (appointmentCreationStatus === 'creating') return 'bg-blue-50 border-blue-200';
+    if (appointmentCreationStatus === 'failed') return 'bg-red-50 border-red-200';
     if (proposalStatus === 'accepted') return 'bg-green-50 border-green-200';
     if (proposalStatus === 'rejected') return 'bg-red-50 border-red-200';
     if (expired) return 'bg-gray-50 border-gray-200';
@@ -254,6 +297,12 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
             <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
               <Timer className="w-3 h-3 mr-1" />
               Expires in 7 days
+            </Badge>
+          )}
+          {appointmentCreationStatus === 'creating' && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              Creating...
             </Badge>
           )}
         </div>
@@ -318,17 +367,26 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
               <Button
                 size="sm"
                 onClick={() => handleResponse('accepted')}
-                disabled={loading}
+                disabled={loading || appointmentCreationStatus === 'creating'}
                 className="bg-green-600 hover:bg-green-700 text-white flex-1"
               >
-                <Check className="w-4 h-4 mr-1" />
-                Accept & Schedule
+                {loading || appointmentCreationStatus === 'creating' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    {appointmentCreationStatus === 'creating' ? 'Creating...' : 'Processing...'}
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 mr-1" />
+                    Accept & Schedule
+                  </>
+                )}
               </Button>
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={() => handleResponse('rejected')}
-                disabled={loading}
+                disabled={loading || appointmentCreationStatus === 'creating'}
                 className="flex-1"
               >
                 <X className="w-4 h-4 mr-1" />
@@ -336,6 +394,14 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
               </Button>
             </div>
           </>
+        )}
+
+        {appointmentCreationStatus === 'failed' && (
+          <div className="bg-red-50 p-3 rounded-lg">
+            <p className="text-sm text-red-800">
+              ⚠️ <strong>Appointment Creation Failed:</strong> There was an issue creating the appointments. Please contact support or try again later.
+            </p>
+          </div>
         )}
       </div>
     </Card>
