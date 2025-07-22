@@ -5,8 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
   Send, 
-  Phone, 
-  Video, 
   Calendar, 
   ArrowLeft,
   User,
@@ -155,31 +153,6 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
     }
   };
 
-  const handlePhoneCall = () => {
-    if (selectedPeer?.status.status === 'online') {
-      window.location.href = 'tel:+14327018678';
-    } else {
-      alert('This specialist is not available for calls right now.');
-    }
-  };
-
-  const handleVideoCall = () => {
-    if (selectedPeer?.status.status === 'online') {
-      const userAgent = navigator.userAgent.toLowerCase();
-      const isMobile = /android|iphone|ipad|mobile/.test(userAgent);
-      
-      if (isMobile) {
-        window.location.href = 'msteams://';
-        setTimeout(() => {
-          window.location.href = 'zoomus://';
-        }, 1000);
-      } else {
-        window.open('https://teams.microsoft.com/start', '_blank');
-      }
-    } else {
-      alert('This specialist is not available for video calls right now.');
-    }
-  };
 
   const handleQuickAction = async (actionType: string) => {
     const actionMessages = {
@@ -233,25 +206,25 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
   return (
     <div className="flex flex-col h-screen bg-background pb-24">
       {/* Header */}
-      <div className="bg-midnight/90 backdrop-blur-sm border-b border-steel-dark p-4">
+      <div className="bg-card border-b border-border p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setCurrentView('selection')}
-              className="text-steel-light hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft size={20} />
             </Button>
-            <div className="w-10 h-10 bg-steel rounded-full flex items-center justify-center">
-              <User className="text-white" size={16} />
+            <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+              <User className="text-muted-foreground" size={16} />
             </div>
             <div>
-              <h2 className="font-oswald font-semibold text-white">{selectedPeer?.first_name} {selectedPeer?.last_name}</h2>
+              <h2 className="font-fjalla font-bold text-foreground">{selectedPeer?.first_name} {selectedPeer?.last_name}</h2>
               <div className="flex items-center space-x-2">
                 <div className={`w-2 h-2 rounded-full ${selectedPeer?.status.status === 'online' ? 'bg-green-500' : selectedPeer?.status.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'}`}></div>
-                <p className="text-steel-light text-sm">
+                <p className="text-muted-foreground text-sm">
                   {selectedPeer?.status.status === 'online' ? 'Online' : selectedPeer?.status.status === 'away' ? 'Away' : 'Offline'}
                 </p>
                 {/* Realtime connection indicator */}
@@ -268,39 +241,21 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
             <Button 
               size="sm" 
               variant="outline" 
-              className="border-construction text-construction hover:bg-construction/10"
+              className="border-primary text-primary hover:bg-primary/10"
               onClick={handleStartNewChat}
             >
               <Plus size={16} className="mr-1" />
               New Chat
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
-              onClick={handlePhoneCall}
-              disabled={selectedPeer?.status.status !== 'online'}
-            >
-              <Phone size={16} />
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="border-steel text-steel-light hover:text-white hover:bg-steel/20"
-              onClick={handleVideoCall}
-              disabled={selectedPeer?.status.status !== 'online'}
-            >
-              <Video size={16} />
             </Button>
           </div>
         </div>
       </div>
 
       {/* Security Notice */}
-      <div className="bg-steel/10 border-b border-steel/20 p-3">
-        <div className="flex items-center space-x-2 text-steel-light">
+      <div className="bg-muted/50 border-b border-border p-3">
+        <div className="flex items-center space-x-2 text-muted-foreground">
           <Shield size={16} />
-          <span className="text-sm font-oswald">Secure & Confidential Chat</span>
+          <span className="text-sm font-fjalla font-bold">SECURE & CONFIDENTIAL CHAT</span>
         </div>
       </div>
 
@@ -399,18 +354,18 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
         </div>
       )}
 
-      {session && session.status === 'waiting' && !isWaitingAndStale && (
-        <div className="bg-blue-500/10 border-b border-blue-500/20 p-3">
+        {session && session.status === 'waiting' && !isWaitingAndStale && (
+        <div className="bg-primary/10 border-b border-primary/20 p-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-600 text-sm font-medium">Waiting for specialist...</p>
-              <p className="text-blue-500 text-xs">Started {getSessionAge()}</p>
+              <p className="text-foreground text-sm font-fjalla font-bold">WAITING FOR SPECIALIST...</p>
+              <p className="text-muted-foreground text-xs">Started {getSessionAge()}</p>
             </div>
             <Button 
               size="sm" 
               variant="outline"
               onClick={handleStartNewChat}
-              className="border-blue-500 text-blue-600 hover:bg-blue-50"
+              className="border-primary text-primary hover:bg-primary/10"
             >
               Start Fresh Instead
             </Button>
@@ -443,15 +398,15 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
             >
               <div className={`max-w-[80%] ${
                 msg.sender_type === 'user' 
-                  ? 'bg-steel text-white' 
+                  ? 'bg-primary text-primary-foreground' 
                   : msg.message_type === 'system'
-                  ? 'bg-construction/20 text-construction border border-construction/30'
-                  : 'bg-white/10 backdrop-blur-sm text-muted-foreground'
+                  ? 'bg-muted/50 text-muted-foreground border border-border'
+                  : 'bg-card border border-border text-card-foreground'
                 } rounded-2xl p-4`}>
                 <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
                 <div className="flex items-center justify-between">
                   <p className={`text-xs ${
-                    msg.sender_type === 'user' ? 'text-white/70' : msg.message_type === 'system' ? 'text-construction/70' : 'text-steel-light'
+                    msg.sender_type === 'user' ? 'text-primary-foreground/70' : msg.message_type === 'system' ? 'text-muted-foreground/70' : 'text-muted-foreground'
                   }`}>
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -469,15 +424,15 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
             </div>
           ))
         ) : (
-          <div className="text-center text-steel-light py-8">
+          <div className="text-center text-muted-foreground py-8">
             {session && !loading && !isSessionEnded ? (
-              <p>Chat session started. Send a message to begin the conversation.</p>
+              <p className="font-source">Chat session started. Send a message to begin the conversation.</p>
             ) : !session && !loading ? (
-              <p>No chat session active. Initializing...</p>
+              <p className="font-source">No chat session active. Initializing...</p>
             ) : loading ? (
-              <p>Loading chat...</p>
+              <p className="font-source">Loading chat...</p>
             ) : isSessionEnded ? (
-              <p>This chat session has ended. Click "Start New Chat" to begin a new conversation.</p>
+              <p className="font-source">This chat session has ended. Click "Start New Chat" to begin a new conversation.</p>
             ) : null}
           </div>
         )}
@@ -492,49 +447,49 @@ const PeerChat = ({ onBack }: PeerChatProps) => {
             <Button 
               size="sm"
               onClick={() => handleQuickAction('need-support')}
-              className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+              className="bg-primary text-primary-foreground font-fjalla font-bold whitespace-nowrap hover:bg-primary/90"
             >
-              Need Support
+              NEED SUPPORT
             </Button>
             <Button 
               size="sm"
               onClick={() => handleQuickAction('feeling-triggered')}
-              className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+              className="bg-secondary text-secondary-foreground font-fjalla font-bold whitespace-nowrap hover:bg-secondary/90"
             >
-              Feeling Triggered
+              FEELING TRIGGERED
             </Button>
             <Button 
               size="sm"
               onClick={() => handleQuickAction('good-day')}
-              className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+              className="bg-primary text-primary-foreground font-fjalla font-bold whitespace-nowrap hover:bg-primary/90"
             >
-              Good Day Today
+              GOOD DAY TODAY
             </Button>
             <Button 
               size="sm"
               onClick={() => handleQuickAction('question')}
-              className="bg-steel text-white font-oswald whitespace-nowrap hover:bg-steel-light"
+              className="bg-secondary text-secondary-foreground font-fjalla font-bold whitespace-nowrap hover:bg-secondary/90"
             >
-              Question
+              QUESTION
             </Button>
           </div>
         </div>
       )}
 
       {/* Message Input */}
-      <div className="bg-midnight/90 backdrop-blur-sm border-t border-steel-dark p-4">
+      <div className="bg-card border-t border-border p-4">
         <div className="flex space-x-3">
           <Input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder={session && !isSessionEnded ? "Type your message..." : isSessionEnded ? "Start a new chat to send messages" : "Starting chat session..."}
-            className="flex-1 bg-white/10 border-steel-dark text-white placeholder:text-steel-light"
+            className="flex-1 bg-background border-border text-foreground placeholder:text-muted-foreground"
             onKeyPress={handleKeyPress}
             disabled={!session || loading || isSessionEnded}
           />
           <Button 
             onClick={handleSendMessage}
-            className="bg-steel hover:bg-steel-light text-white px-6"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
             disabled={!session || loading || !message.trim() || isSessionEnded}
           >
             <Send size={16} />
