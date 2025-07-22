@@ -17,8 +17,6 @@ import { useUserData } from '@/hooks/useUserData';
 import { useAuth } from '@/hooks/useAuth';
 import { useBadgeNotifications } from '@/hooks/useBadgeNotifications';
 import { BadgeCelebrationModal } from '@/components/BadgeCelebrationModal';
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -26,7 +24,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [currentPage, setCurrentPage] = useState('home');
   
-  const { user, loading, signOut, isAuthenticated } = useAuth();
+  const { user, loading, signOut, isAuthenticated, isNewSignUp } = useAuth();
   const { updateUserData } = useUserData();
   const { newBadges, showCelebration, markBadgesAsSeen } = useBadgeNotifications();
 
@@ -37,9 +35,11 @@ const Index = () => {
       // Check if authenticated user needs onboarding
       if (isAuthenticated && user) {
         console.log('Auth state changed - checking onboarding status for user:', user.id);
+        console.log('Is new sign up:', isNewSignUp);
+        
         const hasCompletedOnboarding = localStorage.getItem(`leap_onboarding_completed_${user.id}`);
         
-        // Also check if user has existing data (focus areas) indicating previous setup
+        // Check if user has existing data (focus areas) indicating previous setup
         const existingUserData = localStorage.getItem('leap_user_data');
         let hasExistingSetup = false;
         
@@ -55,11 +55,15 @@ const Index = () => {
         console.log('Onboarding completion status:', hasCompletedOnboarding);
         console.log('Has existing setup:', hasExistingSetup);
         
-        if (!hasCompletedOnboarding && !hasExistingSetup) {
-          console.log('Triggering onboarding flow for user:', user.id);
+        // Only show onboarding if:
+        // 1. This is a new sign-up (not existing user signing in)
+        // 2. User hasn't completed onboarding
+        // 3. User doesn't have existing setup
+        if (isNewSignUp && !hasCompletedOnboarding && !hasExistingSetup) {
+          console.log('Triggering onboarding flow for new user:', user.id);
           setShowOnboarding(true);
         } else {
-          console.log('User has already completed onboarding or has existing setup');
+          console.log('Skipping onboarding - existing user or already completed');
           // Mark as completed if they have existing setup but no completion flag
           if (!hasCompletedOnboarding && hasExistingSetup) {
             localStorage.setItem(`leap_onboarding_completed_${user.id}`, 'completed');
@@ -70,7 +74,7 @@ const Index = () => {
         setShowOnboarding(false);
       }
     }
-  }, [loading, isAuthenticated, user]);
+  }, [loading, isAuthenticated, user, isNewSignUp]);
 
   const handleSplashComplete = () => {
     setShowSplash(false);
@@ -118,7 +122,7 @@ const Index = () => {
     setActiveTab('home');
   };
 
-  console.log('Index render state:', { loading, showSplash, isAuthenticated, showOnboarding, user: user?.id });
+  console.log('Index render state:', { loading, showSplash, isAuthenticated, showOnboarding, isNewSignUp, user: user?.id });
 
   if (loading || showSplash) {
     console.log('Showing splash screen');
@@ -131,10 +135,9 @@ const Index = () => {
   }
 
   if (showOnboarding) {
-    console.log('Showing onboarding');
+    console.log('Showing onboarding for new user');
     return <OnboardingFlow onComplete={handleOnboardingComplete} />;
   }
-
 
   const renderActivePage = () => {
     switch (currentPage) {
