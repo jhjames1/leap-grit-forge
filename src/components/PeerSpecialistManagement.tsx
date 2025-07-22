@@ -20,7 +20,9 @@ import CoachingTips from './CoachingTips';
 import RealTimeSpecialistMetrics from './RealTimeSpecialistMetrics';
 import PeerPerformanceDashboard from './PeerPerformanceDashboard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Edit, Check, X, Users, AlertCircle, Search, Activity, Clock, MessageSquare, TrendingUp, TrendingDown, Wifi, WifiOff, Mail, Send, Trash2, Star, RefreshCw, Key, Copy, Calendar, Loader2, AlertTriangle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { UserPlus, Edit, Check, X, Users, AlertCircle, Search, Activity, Clock, MessageSquare, TrendingUp, TrendingDown, Wifi, WifiOff, Mail, Send, Trash2, Star, RefreshCw, Key, Copy, Calendar, Loader2, AlertTriangle, MoreHorizontal, RotateCcw } from 'lucide-react';
+
 interface PeerSpecialist {
   id: string;
   user_id: string;
@@ -44,6 +46,7 @@ interface PeerSpecialist {
   activation_method: string | null;
   manually_activated_by: string | null;
 }
+
 interface SpecialistFormData {
   email: string;
   first_name: string;
@@ -53,6 +56,7 @@ interface SpecialistFormData {
   years_experience: number;
   avatar_url: string;
 }
+
 interface SpecialistMetrics {
   chat_completion_rate: number;
   checkin_completion_rate: number;
@@ -63,6 +67,7 @@ interface SpecialistMetrics {
   total_checkins: number;
   total_ratings: number;
 }
+
 const PeerSpecialistManagement = () => {
   const {
     t
@@ -110,10 +115,13 @@ const PeerSpecialistManagement = () => {
     password: '',
     specialistName: ''
   });
+  const [isResettingPassword, setIsResettingPassword] = useState<string | null>(null);
+
   useEffect(() => {
     fetchSpecialists();
     fetchRemovedSpecialists();
   }, []);
+
   const fetchCoachingTips = async (specialistId: string): Promise<string[]> => {
     try {
       const {
@@ -144,6 +152,7 @@ const PeerSpecialistManagement = () => {
       return ["Focus on maintaining consistent communication with your assigned users"];
     }
   };
+
   const fetchSpecialists = async () => {
     try {
       setLoading(true);
@@ -167,6 +176,7 @@ const PeerSpecialistManagement = () => {
       setLoading(false);
     }
   };
+
   const fetchRemovedSpecialists = async () => {
     try {
       console.log('Fetching removed specialists...');
@@ -187,6 +197,7 @@ const PeerSpecialistManagement = () => {
       console.error('Error fetching removed specialists:', error);
     }
   };
+
   const resetForm = () => {
     setFormData({
       email: '',
@@ -200,6 +211,7 @@ const PeerSpecialistManagement = () => {
     setEditingSpecialist(null);
     setNewSpecialty('');
   };
+
   const handleInviteSpecialist = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email || !formData.first_name || !formData.last_name) {
@@ -273,6 +285,7 @@ const PeerSpecialistManagement = () => {
       setIsInviting(false);
     }
   };
+
   const handleEditSpecialist = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSpecialist) return;
@@ -342,6 +355,7 @@ const PeerSpecialistManagement = () => {
       });
     }
   };
+
   const handleEdit = (specialist: PeerSpecialist) => {
     setEditingSpecialist(specialist);
     setFormData({
@@ -355,6 +369,7 @@ const PeerSpecialistManagement = () => {
     });
     setIsDialogOpen(true);
   };
+
   const handleForceActivate = async (specialist: PeerSpecialist) => {
     if (!user?.id) {
       toast({
@@ -431,6 +446,88 @@ const PeerSpecialistManagement = () => {
       });
     }
   };
+
+  const handleResetPassword = async (specialist: PeerSpecialist) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "Admin user not found",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsResettingPassword(specialist.id);
+    
+    try {
+      const tempPassword = generateTempPassword();
+
+      // Call the edge function to update the specialist's password
+      const { data: authUpdateResult, error: authError } = await supabase.functions.invoke('update-specialist-password', {
+        body: {
+          userId: specialist.user_id,
+          newPassword: tempPassword,
+          adminId: user.id
+        }
+      });
+
+      if (authError) {
+        console.error('Error updating auth password:', authError);
+        throw new Error(`Password update failed: ${authError.message}`);
+      }
+
+      if (!authUpdateResult?.success) {
+        console.error('Auth password update failed:', authUpdateResult);
+        throw new Error(authUpdateResult?.error || 'Password update failed');
+      }
+
+      // Update the specialist record to require password change
+      const { error: updateError } = await supabase
+        .from('peer_specialists')
+        .update({ 
+          must_change_password: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', specialist.id);
+
+      if (updateError) {
+        console.error('Error updating specialist record:', updateError);
+        // Don't fail completely, password was already reset
+        toast({
+          title: "Partial Success", 
+          description: "Password reset but database update failed. Password change will still be required.",
+          variant: "destructive"
+        });
+      }
+
+      // Show the new credentials
+      const specialistEmail = specialist.email || 'Email not available - contact admin';
+      setCredentialsDialog({
+        isOpen: true,
+        email: specialistEmail,
+        password: tempPassword,
+        specialistName: `${specialist.first_name} ${specialist.last_name}`
+      });
+
+      toast({
+        title: "Success",
+        description: "Password reset successfully. Temporary credentials generated."
+      });
+
+      fetchSpecialists();
+
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: "Error",
+        description: `Failed to reset password: ${error?.message || 'Unknown error'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsResettingPassword(null);
+    }
+  };
+
   const generateTempPassword = (): string => {
     const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     let password = '';
@@ -439,6 +536,7 @@ const PeerSpecialistManagement = () => {
     }
     return password;
   };
+
   const hashPassword = async (password: string): Promise<string> => {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -446,6 +544,7 @@ const PeerSpecialistManagement = () => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -461,6 +560,7 @@ const PeerSpecialistManagement = () => {
       });
     }
   };
+
   const getInvitationStatus = (specialist: PeerSpecialist) => {
     if (specialist.activated_at) {
       const activationMethod = specialist.activation_method || 'email';
@@ -493,6 +593,7 @@ const PeerSpecialistManagement = () => {
       text: 'Not Sent'
     };
   };
+
   const handleDeactivateSpecialist = async (specialistId: string) => {
     setDeletingSpecialistId(specialistId);
     try {
@@ -525,6 +626,7 @@ const PeerSpecialistManagement = () => {
       setDeletingSpecialistId(null);
     }
   };
+
   const addSpecialty = () => {
     if (newSpecialty.trim() && !formData.specialties.includes(newSpecialty.trim())) {
       setFormData({
@@ -534,12 +636,14 @@ const PeerSpecialistManagement = () => {
       setNewSpecialty('');
     }
   };
+
   const removeSpecialty = (specialty: string) => {
     setFormData({
       ...formData,
       specialties: formData.specialties.filter(s => s !== specialty)
     });
   };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -547,6 +651,7 @@ const PeerSpecialistManagement = () => {
       day: 'numeric'
     });
   };
+
   const getOnlineStatus = (specialistId: string) => {
     const status = specialistStatuses[specialistId];
     if (!status) return {
@@ -576,16 +681,20 @@ const PeerSpecialistManagement = () => {
         };
     }
   };
+
   if (loading) {
     return <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>;
   }
+
   const handleDashboardRefresh = () => {
     setDashboardRefreshTrigger(prev => prev + 1);
     refreshData();
   };
-  return <div className="space-y-6">
+
+  return (
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Peer Support Specialist Management</h2>
         <div className="flex items-center gap-2">
@@ -853,18 +962,46 @@ const PeerSpecialistManagement = () => {
                         <SpecialistPerformanceMetrics specialistId={specialist.id} />
                       </div>
                       <div className="flex items-center justify-end gap-2 pt-3 border-t">
-                        <Button variant="outline" size="sm" onClick={() => handleEdit(specialist)}>
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        {!specialist.is_verified && <Button variant="outline" size="sm" onClick={() => handleForceActivate(specialist)} className="text-green-600 border-green-600 hover:bg-green-50">
-                            <Key className="h-4 w-4 mr-1" />
-                            Force Activate
-                          </Button>}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-background border shadow-md">
+                            <DropdownMenuItem onClick={() => handleEdit(specialist)} className="cursor-pointer">
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleResetPassword(specialist)} 
+                              className="cursor-pointer"
+                              disabled={isResettingPassword === specialist.id}
+                            >
+                              {isResettingPassword === specialist.id ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <RotateCcw className="mr-2 h-4 w-4" />
+                              )}
+                              Reset Password
+                            </DropdownMenuItem>
+                            {!specialist.is_verified && (
+                              <DropdownMenuItem onClick={() => handleForceActivate(specialist)} className="cursor-pointer text-green-600">
+                                <Key className="mr-2 h-4 w-4" />
+                                Force Activate
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="sm" disabled={deletingSpecialistId === specialist.id}>
-                              {deletingSpecialistId === specialist.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
+                              {deletingSpecialistId === specialist.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4 mr-1" />
+                              )}
                               Deactivate
                             </Button>
                           </AlertDialogTrigger>
@@ -928,20 +1065,17 @@ const PeerSpecialistManagement = () => {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={credentialsDialog.isOpen} onOpenChange={open => setCredentialsDialog(prev => ({
-      ...prev,
-      isOpen: open
-    }))}>
+      <Dialog open={credentialsDialog.isOpen} onOpenChange={open => setCredentialsDialog(prev => ({ ...prev, isOpen: open }))}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Manual Activation Credentials</DialogTitle>
+            <DialogTitle>Temporary Login Credentials</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <strong>{credentialsDialog.specialistName}</strong> has been manually activated.
-                Please securely share these temporary credentials with them.
+                <strong>{credentialsDialog.specialistName}</strong> has been provided with new temporary credentials.
+                Please securely share these credentials with them.
               </AlertDescription>
             </Alert>
             
@@ -977,6 +1111,8 @@ const PeerSpecialistManagement = () => {
         </DialogContent>
       </Dialog>
 
-    </div>;
+    </div>
+  );
 };
+
 export default PeerSpecialistManagement;
