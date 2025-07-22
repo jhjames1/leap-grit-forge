@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,6 +29,10 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  // Debug: Verify React is available
+  console.log('React object:', React);
+  console.log('React.useState:', React?.useState);
+  
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
