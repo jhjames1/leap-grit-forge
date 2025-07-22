@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
+import { realtimeService, RealtimeEventHandler } from '@/services/realtimeService';
 
 interface ChatSession {
   id: string;
@@ -34,7 +35,7 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
   const [error, setError] = useState<string | null>(null);
   const [realtimeStatus, setRealtimeStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   
-  const channelRef = useRef<any>(null);
+  const subscriptionRefs = useRef<string[]>([]);
   const mountedRef = useRef(true);
 
   // Function to load sessions from database
@@ -118,23 +119,18 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
     }
   }, [loadSessions]);
 
-  // Set up real-time subscription
+  // Set up real-time subscription using centralized service
   const setupRealtimeSubscription = useCallback(() => {
-    if (!user || !specialistId || channelRef.current) return;
+    if (!user || !specialistId || subscriptionRefs.current.length > 0) return;
     
     logger.debug('Setting up real-time subscription for specialist sessions');
     setRealtimeStatus('connecting');
     
     // Use a consistent channel name for this specialist
     const channelName = `specialist-sessions-${specialistId}`;
-    const channel = supabase.channel(channelName);
     
-    // Listen for new chat sessions
-    channel.on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'chat_sessions'
-    }, async (payload) => {
+    // Handler for session inserts
+    const handleSessionInsert: RealtimeEventHandler = async (payload) => {
       logger.debug('New session detected via realtime:', payload.new);
       const newSession = payload.new as ChatSession;
       
@@ -163,14 +159,10 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
           return prevSessions;
         });
       }
-    });
+    };
     
-    // Listen for session updates
-    channel.on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'chat_sessions'
-    }, async (payload) => {
+    // Handler for session updates
+    const handleSessionUpdate: RealtimeEventHandler = async (payload) => {
       logger.debug('Session updated via realtime:', payload.new);
       const updatedSession = payload.new as ChatSession;
       
@@ -204,42 +196,71 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
           return true;
         });
       });
-    });
+    };
     
-    // Subscribe to the channel
-    channel.subscribe((status) => {
-      logger.debug('Specialist sessions realtime status:', status);
+    // Subscribe to session inserts
+    const insertSubscriptionId = realtimeService.subscribe(
+      channelName,
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_sessions'
+      },
+      handleSessionInsert
+    );
+    
+    // Subscribe to session updates
+    const updateSubscriptionId = realtimeService.subscribe(
+      channelName,
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'chat_sessions'
+      },
+      handleSessionUpdate
+    );
+    
+    subscriptionRefs.current = [insertSubscriptionId, updateSubscriptionId];
+    
+    // Monitor connection status
+    const checkConnection = () => {
+      const status = realtimeService.getConnectionStatus();
       if (mountedRef.current) {
-        if (status === 'SUBSCRIBED') {
+        if (status.isConnected) {
           setRealtimeStatus('connected');
-          logger.debug('Specialist sessions realtime connected');
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          setRealtimeStatus('disconnected');
-          logger.debug('Specialist sessions realtime disconnected, status:', status);
-          
-          // Clean up and retry after delay
-          setTimeout(() => {
-            if (mountedRef.current && channelRef.current) {
-              supabase.removeChannel(channelRef.current);
-              channelRef.current = null;
-              setupRealtimeSubscription();
-            }
-          }, 5000);
-        } else {
+        } else if (status.totalSubscriptions > 0) {
           setRealtimeStatus('connecting');
+        } else {
+          setRealtimeStatus('disconnected');
         }
       }
-    });
+    };
     
-    channelRef.current = channel;
+    // Check connection status periodically
+    const statusInterval = setInterval(checkConnection, 1000);
+    checkConnection();
+    
+    // Store interval reference for cleanup
+    (subscriptionRefs.current as any).statusInterval = statusInterval;
   }, [user, specialistId]);
 
   // Clean up subscription
   const cleanupSubscription = useCallback(() => {
-    if (channelRef.current) {
+    if (subscriptionRefs.current.length > 0) {
       logger.debug('Cleaning up specialist sessions subscription');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
+      subscriptionRefs.current.forEach(subscriptionId => {
+        realtimeService.unsubscribe(subscriptionId, () => {});
+      });
+      
+      // Clear status interval if it exists
+      const statusInterval = (subscriptionRefs.current as any).statusInterval;
+      if (statusInterval) {
+        clearInterval(statusInterval);
+      }
+      
+      subscriptionRefs.current = [];
     }
   }, []);
 

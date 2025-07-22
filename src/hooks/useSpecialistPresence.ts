@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { updateSpecialistStatusFromCalendar } from '@/utils/calendarAvailability';
+import { realtimeService, RealtimeEventHandler } from '@/services/realtimeService';
 
 interface SpecialistStatus {
   id: string;
@@ -26,6 +27,7 @@ export const useSpecialistPresence = () => {
   const [specialistStatuses, setSpecialistStatuses] = useState<SpecialistStatus[]>([]);
   const [analytics, setAnalytics] = useState<SpecialistAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
+  const subscriptionRefs = useRef<string[]>([]);
 
   // Enhanced update status function that considers calendar availability
   const updateStatus = async (status: 'online' | 'away' | 'busy' | 'offline', message?: string) => {
@@ -183,60 +185,88 @@ export const useSpecialistPresence = () => {
     }
   };
 
-  // Enhanced presence tracking that syncs with calendar
+  // Enhanced presence tracking that syncs with calendar using centralized service
   useEffect(() => {
     fetchStatuses();
     fetchAnalytics();
     setLoading(false);
 
+    // Handler for status changes
+    const handleStatusChange: RealtimeEventHandler = (payload) => {
+      console.log('Specialist status changed:', payload);
+      fetchStatuses();
+    };
+    
+    // Handler for session analytics
+    const handleSessionChange: RealtimeEventHandler = () => {
+      fetchAnalytics();
+    };
+
     // Subscribe to specialist status changes
-    const statusChannel = supabase
-      .channel('specialist-status-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'specialist_status'
-        },
-        (payload) => {
-          console.log('Specialist status changed:', payload);
-          fetchStatuses();
-        }
-      )
-      .subscribe();
+    const statusSubscriptionId = realtimeService.subscribe(
+      'specialist-status-changes',
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'specialist_status'
+      },
+      handleStatusChange
+    );
 
     // Subscribe to chat session changes for analytics
-    const sessionChannel = supabase
-      .channel('chat-session-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_sessions'
-        },
-        () => {
-          fetchAnalytics();
-        }
-      )
-      .subscribe();
+    const sessionSubscriptionId = realtimeService.subscribe(
+      'chat-session-changes',
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'chat_sessions'
+      },
+      handleSessionChange
+    );
 
-    // Set up presence tracking
-    const presenceChannel = supabase.channel('specialist-presence');
+    // Set up presence tracking using centralized service
+    const presenceJoinHandler: RealtimeEventHandler = ({ key, newPresences }) => {
+      console.log('Specialist joined:', key, newPresences);
+    };
     
-    presenceChannel
-      .on('presence', { event: 'sync' }, () => {
-        const state = presenceChannel.presenceState();
-        console.log('Presence sync:', state);
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('Specialist joined:', key, newPresences);
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('Specialist left:', key, leftPresences);
-      })
-      .subscribe();
+    const presenceLeaveHandler: RealtimeEventHandler = ({ key, leftPresences }) => {
+      console.log('Specialist left:', key, leftPresences);
+    };
+    
+    const presenceSyncHandler: RealtimeEventHandler = (payload) => {
+      console.log('Presence sync:', payload);
+    };
+    
+    const presenceJoinId = realtimeService.subscribe(
+      'specialist-presence',
+      'presence',
+      { event: 'join' },
+      presenceJoinHandler
+    );
+    
+    const presenceLeaveId = realtimeService.subscribe(
+      'specialist-presence',
+      'presence',
+      { event: 'leave' },
+      presenceLeaveHandler
+    );
+    
+    const presenceSyncId = realtimeService.subscribe(
+      'specialist-presence',
+      'presence',
+      { event: 'sync' },
+      presenceSyncHandler
+    );
+
+    subscriptionRefs.current = [
+      statusSubscriptionId, 
+      sessionSubscriptionId, 
+      presenceJoinId, 
+      presenceLeaveId, 
+      presenceSyncId
+    ];
 
     // Track current user's presence if they're a specialist
     if (user) {
@@ -249,21 +279,15 @@ export const useSpecialistPresence = () => {
           if (data) {
             // Initialize with calendar-based status
             updateSpecialistStatusFromCalendar(data.id);
-            
-            presenceChannel.track({
-              specialist_id: data.id,
-              online_at: new Date().toISOString(),
-              status: 'online',
-              calendar_aware: true
-            });
           }
         });
     }
 
     return () => {
-      supabase.removeChannel(statusChannel);
-      supabase.removeChannel(sessionChannel);
-      supabase.removeChannel(presenceChannel);
+      subscriptionRefs.current.forEach(subscriptionId => {
+        realtimeService.unsubscribe(subscriptionId, () => {});
+      });
+      subscriptionRefs.current = [];
     };
   }, [user]);
 

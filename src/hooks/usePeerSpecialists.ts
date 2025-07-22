@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { realtimeService, RealtimeEventHandler } from '@/services/realtimeService';
 
 export interface PeerSpecialist {
   id: string;
@@ -21,35 +22,35 @@ export function usePeerSpecialists() {
   const [specialists, setSpecialists] = useState<PeerSpecialist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const subscriptionRef = useRef<string | null>(null);
 
   useEffect(() => {
     fetchSpecialists();
     
-    // Set up real-time subscription for status changes
-    const statusChannel = supabase
-      .channel('specialist-status-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'specialist_status'
-        },
-        (payload) => {
-          console.log('Status change detected:', payload);
-          fetchSpecialists(); // Refetch when status changes
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('Real-time subscription active for specialist status');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('Real-time subscription error');
-        }
-      });
+    // Set up real-time subscription for status changes using centralized service
+    const handleStatusChange: RealtimeEventHandler = (payload) => {
+      console.log('Status change detected:', payload);
+      fetchSpecialists(); // Refetch when status changes
+    };
+    
+    const subscriptionId = realtimeService.subscribe(
+      'specialist-status-changes',
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'specialist_status'
+      },
+      handleStatusChange
+    );
+    
+    subscriptionRef.current = subscriptionId;
 
     return () => {
-      supabase.removeChannel(statusChannel);
+      if (subscriptionRef.current) {
+        realtimeService.unsubscribe(subscriptionRef.current, handleStatusChange);
+        subscriptionRef.current = null;
+      }
     };
   }, []);
 

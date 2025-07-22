@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useChatOperations, MessageData, ChatOperationResult } from '@/hooks/useChatOperations';
 import { useConnectionMonitor } from '@/hooks/useConnectionMonitor';
 import { logger } from '@/utils/logger';
+import { realtimeService, RealtimeEventHandler } from '@/services/realtimeService';
 
 export interface OptimisticMessage {
   id: string;
@@ -77,7 +78,7 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
   const chatOperations = useChatOperations();
   const { connectionStatus, createChannel, forceReconnect, testConnection } = useConnectionMonitor();
   
-  const channelRef = useRef<any>(null);
+  const subscriptionRefs = useRef<string[]>([]);
   const messageTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const refreshTimeoutRef = useRef<NodeJS.Timeout>();
   const isInitializedRef = useRef(false);
@@ -135,107 +136,128 @@ export const useRobustChatSession = (preassignedSpecialistId?: string): UseRobus
     }
   }, [user, chatOperations]);
 
-  // Setup realtime subscription - immediate setup when session exists
+  // Set up realtime subscription for this session using centralized service
   const setupRealtimeSubscription = useCallback((sessionId: string) => {
-    if (channelRef.current) {
-      logger.debug('🧹 Cleaning up existing subscription');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
+    if (subscriptionRefs.current.length > 0) {
+      logger.debug('🧹 Cleaning up existing subscriptions before creating new ones');
+      cleanupRealtimeSubscription();
     }
 
     logger.debug('📡 Setting up realtime subscription for session:', sessionId);
+    const channelName = `chat-session-${sessionId}`;
 
-    const channel = supabase.channel(`session:${sessionId}`);
-    setRealtimeConnected(false);
-
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        logger.debug('📡 Realtime presence synced');
-        setRealtimeConnected(true);
-      })
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `session_id=eq.${sessionId}`
-        },
-        (payload) => {
-          logger.debug('📨 New message via realtime:', payload.new);
-          const newMessage = payload.new as RealMessage;
+    // Handler for new messages
+    const handleNewMessage: RealtimeEventHandler = (payload) => {
+      logger.debug('📨 New message via realtime:', payload.new);
+      const newMessage = payload.new as RealMessage;
+      
+      setMessages(prev => {
+        // Remove any matching optimistic message
+        const withoutOptimistic = prev.filter(msg => {
+          if (!msg.isOptimistic) return true;
           
-          setMessages(prev => {
-            // Remove any matching optimistic message
-            const withoutOptimistic = prev.filter(msg => {
-              if (!msg.isOptimistic) return true;
-              
-              // Simple matching based on content and timing
-              const isMatch = msg.content === newMessage.content && 
-                            msg.sender_type === newMessage.sender_type &&
-                            Math.abs(new Date(newMessage.created_at).getTime() - new Date(msg.created_at).getTime()) < 5000;
-              
-              if (isMatch) {
-                logger.debug('✅ Matched optimistic message:', { optimisticId: msg.id, realId: newMessage.id });
-                // Clear timeout
-                const timeout = messageTimeoutsRef.current.get(msg.id);
-                if (timeout) {
-                  clearTimeout(timeout);
-                  messageTimeoutsRef.current.delete(msg.id);
-                }
-              }
-              
-              return !isMatch;
-            });
-            
-            // Check if real message already exists
-            if (withoutOptimistic.find(msg => msg.id === newMessage.id)) {
-              logger.debug('⚠️ Duplicate real message, skipping');
-              return prev;
+          // Simple matching based on content and timing
+          const isMatch = msg.content === newMessage.content && 
+                        msg.sender_type === newMessage.sender_type &&
+                        Math.abs(new Date(newMessage.created_at).getTime() - new Date(msg.created_at).getTime()) < 5000;
+          
+          if (isMatch) {
+            logger.debug('✅ Matched optimistic message:', { optimisticId: msg.id, realId: newMessage.id });
+            // Clear timeout
+            const timeout = messageTimeoutsRef.current.get(msg.id);
+            if (timeout) {
+              clearTimeout(timeout);
+              messageTimeoutsRef.current.delete(msg.id);
             }
-            
-            // Add new message and sort by timestamp
-            const updated = [...withoutOptimistic, newMessage].sort((a, b) => 
-              new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            );
-            
-            logger.debug('📨 Messages updated via realtime:', { 
-              before: prev.length, 
-              after: updated.length,
-              newMessageId: newMessage.id
-            });
-            return updated;
-          });
+          }
+          
+          return !isMatch;
+        });
+        
+        // Check if real message already exists
+        if (withoutOptimistic.find(msg => msg.id === newMessage.id)) {
+          logger.debug('⚠️ Duplicate real message, skipping');
+          return prev;
         }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'chat_sessions',
-          filter: `id=eq.${sessionId}`
-        },
-        (payload) => {
-          logger.debug('📋 Session updated via realtime:', payload.new);
-          const updatedSession = payload.new as ChatSession;
-          setSession(updatedSession);
-        }
-      )
-      .subscribe((status) => {
-        logger.debug('📡 Realtime subscription status:', status);
-        setRealtimeConnected(status === 'SUBSCRIBED');
+        
+        // Add new message and sort by timestamp
+        const updated = [...withoutOptimistic, newMessage].sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+        
+        logger.debug('📨 Messages updated via realtime:', { 
+          before: prev.length, 
+          after: updated.length,
+          newMessageId: newMessage.id
+        });
+        return updated;
       });
+    };
 
-    channelRef.current = channel;
+    // Handler for session updates
+    const handleSessionUpdate: RealtimeEventHandler = (payload) => {
+      logger.debug('📋 Session updated via realtime:', payload.new);
+      const updatedSession = payload.new as ChatSession;
+      setSession(updatedSession);
+    };
+
+    // Subscribe to message inserts
+    const messageSubscriptionId = realtimeService.subscribe(
+      channelName,
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+        filter: `session_id=eq.${sessionId}`
+      },
+      handleNewMessage
+    );
+
+    // Subscribe to session updates
+    const sessionSubscriptionId = realtimeService.subscribe(
+      channelName,
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'chat_sessions',
+        filter: `id=eq.${sessionId}`
+      },
+      handleSessionUpdate
+    );
+
+    subscriptionRefs.current = [messageSubscriptionId, sessionSubscriptionId];
+
+    // Monitor connection status
+    const checkConnection = () => {
+      const status = realtimeService.getConnectionStatus();
+      setRealtimeConnected(status.isConnected);
+    };
+    
+    // Check connection status periodically
+    const statusInterval = setInterval(checkConnection, 1000);
+    checkConnection();
+    
+    // Store interval reference for cleanup
+    (subscriptionRefs.current as any).statusInterval = statusInterval;
   }, []);
 
   // Cleanup subscription
   const cleanupRealtimeSubscription = useCallback(() => {
-    if (channelRef.current) {
+    if (subscriptionRefs.current.length > 0) {
       logger.debug('🧹 Cleaning up realtime subscription');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
+      subscriptionRefs.current.forEach(subscriptionId => {
+        realtimeService.unsubscribe(subscriptionId, () => {});
+      });
+      
+      // Clear status interval if it exists
+      const statusInterval = (subscriptionRefs.current as any).statusInterval;
+      if (statusInterval) {
+        clearInterval(statusInterval);
+      }
+      
+      subscriptionRefs.current = [];
       setRealtimeConnected(false);
     }
     

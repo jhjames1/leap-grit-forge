@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { realtimeSupabase } from '@/integrations/supabase/realtimeClient';
 import { logger } from '@/utils/logger';
 
 export interface RealtimeEventHandler {
@@ -53,7 +53,7 @@ class RealtimeService {
   }
 
   private createSubscription(id: string, channelName: string): RealtimeSubscription {
-    const channel = supabase.channel(channelName, {
+    const channel = realtimeSupabase.channel(channelName, {
       config: {
         broadcast: { self: false },
         presence: { key: 'user' }
@@ -161,7 +161,7 @@ class RealtimeService {
 
     // If no more handlers, remove the entire subscription
     if (subscription.handlers.size === 0) {
-      supabase.removeChannel(subscription.channel);
+      realtimeSupabase.removeChannel(subscription.channel);
       this.subscriptions.delete(subscriptionId);
       this.reconnectAttempts.delete(subscriptionId);
     }
@@ -191,7 +191,7 @@ class RealtimeService {
   // Cleanup all subscriptions
   cleanup() {
     for (const subscription of this.subscriptions.values()) {
-      supabase.removeChannel(subscription.channel);
+      realtimeSupabase.removeChannel(subscription.channel);
     }
     this.subscriptions.clear();
     this.reconnectAttempts.clear();
