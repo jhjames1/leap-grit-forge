@@ -21,7 +21,6 @@ import RealTimeSpecialistMetrics from './RealTimeSpecialistMetrics';
 import PeerPerformanceDashboard from './PeerPerformanceDashboard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserPlus, Edit, Check, X, Users, AlertCircle, Search, Activity, Clock, MessageSquare, TrendingUp, TrendingDown, Wifi, WifiOff, Mail, Send, Trash2, Star, RefreshCw, Key, Copy, Calendar, Loader2, AlertTriangle } from 'lucide-react';
-
 interface PeerSpecialist {
   id: string;
   user_id: string;
@@ -45,7 +44,6 @@ interface PeerSpecialist {
   activation_method: string | null;
   manually_activated_by: string | null;
 }
-
 interface SpecialistFormData {
   email: string;
   first_name: string;
@@ -55,7 +53,6 @@ interface SpecialistFormData {
   years_experience: number;
   avatar_url: string;
 }
-
 interface SpecialistMetrics {
   chat_completion_rate: number;
   checkin_completion_rate: number;
@@ -66,7 +63,6 @@ interface SpecialistMetrics {
   total_checkins: number;
   total_ratings: number;
 }
-
 const PeerSpecialistManagement = () => {
   const {
     t
@@ -114,12 +110,10 @@ const PeerSpecialistManagement = () => {
     password: '',
     specialistName: ''
   });
-
   useEffect(() => {
     fetchSpecialists();
     fetchRemovedSpecialists();
   }, []);
-
   const fetchCoachingTips = async (specialistId: string): Promise<string[]> => {
     try {
       const {
@@ -150,7 +144,6 @@ const PeerSpecialistManagement = () => {
       return ["Focus on maintaining consistent communication with your assigned users"];
     }
   };
-
   const fetchSpecialists = async () => {
     try {
       setLoading(true);
@@ -174,7 +167,6 @@ const PeerSpecialistManagement = () => {
       setLoading(false);
     }
   };
-
   const fetchRemovedSpecialists = async () => {
     try {
       console.log('Fetching removed specialists...');
@@ -195,7 +187,6 @@ const PeerSpecialistManagement = () => {
       console.error('Error fetching removed specialists:', error);
     }
   };
-
   const resetForm = () => {
     setFormData({
       email: '',
@@ -209,7 +200,6 @@ const PeerSpecialistManagement = () => {
     setEditingSpecialist(null);
     setNewSpecialty('');
   };
-
   const handleInviteSpecialist = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email || !formData.first_name || !formData.last_name) {
@@ -283,7 +273,6 @@ const PeerSpecialistManagement = () => {
       setIsInviting(false);
     }
   };
-
   const handleEditSpecialist = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSpecialist) return;
@@ -329,7 +318,6 @@ const PeerSpecialistManagement = () => {
         years_experience: formData.years_experience,
         avatar_url: formData.avatar_url || null
       }).eq('id', editingSpecialist.id).select();
-
       console.log('Update result:', {
         data,
         error
@@ -354,7 +342,6 @@ const PeerSpecialistManagement = () => {
       });
     }
   };
-
   const handleEdit = (specialist: PeerSpecialist) => {
     setEditingSpecialist(specialist);
     setFormData({
@@ -368,7 +355,6 @@ const PeerSpecialistManagement = () => {
     });
     setIsDialogOpen(true);
   };
-
   const handleForceActivate = async (specialist: PeerSpecialist) => {
     if (!user?.id) {
       toast({
@@ -381,7 +367,7 @@ const PeerSpecialistManagement = () => {
     try {
       const tempPassword = generateTempPassword();
       const tempPasswordHash = await hashPassword(tempPassword);
-      
+
       // First, update the specialist record
       const updateData = {
         is_verified: true,
@@ -392,23 +378,22 @@ const PeerSpecialistManagement = () => {
         temporary_password_hash: tempPasswordHash,
         must_change_password: true
       };
-      
-      const { error: updateError } = await supabase
-        .from('peer_specialists')
-        .update(updateData)
-        .eq('id', specialist.id);
-      
+      const {
+        error: updateError
+      } = await supabase.from('peer_specialists').update(updateData).eq('id', specialist.id);
       if (updateError) throw updateError;
 
       // Now update the actual auth user's password using an edge function
-      const { data: authUpdateResult, error: authError } = await supabase.functions.invoke('update-specialist-password', {
+      const {
+        data: authUpdateResult,
+        error: authError
+      } = await supabase.functions.invoke('update-specialist-password', {
         body: {
           userId: specialist.user_id,
           newPassword: tempPassword,
           adminId: user.id
         }
       });
-
       if (authError) {
         console.error('Error updating auth password:', authError);
         // Don't fail completely, but warn the admin
@@ -420,23 +405,19 @@ const PeerSpecialistManagement = () => {
       } else if (!authUpdateResult?.success) {
         console.error('Auth password update failed:', authUpdateResult);
         toast({
-          title: "Partial Success", 
+          title: "Partial Success",
           description: "Specialist activated but password update failed. Please use 'Reset Password' or contact admin.",
           variant: "destructive"
         });
       }
-
       const specialistEmail = specialist.email || 'Email not available - contact admin';
-
       setCredentialsDialog({
         isOpen: true,
         email: specialistEmail,
         password: tempPassword,
         specialistName: `${specialist.first_name} ${specialist.last_name}`
       });
-      
       fetchSpecialists();
-      
       toast({
         title: "Success",
         description: "Specialist manually activated. Temporary credentials generated."
@@ -450,7 +431,6 @@ const PeerSpecialistManagement = () => {
       });
     }
   };
-
   const generateTempPassword = (): string => {
     const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     let password = '';
@@ -459,7 +439,6 @@ const PeerSpecialistManagement = () => {
     }
     return password;
   };
-
   const hashPassword = async (password: string): Promise<string> => {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -467,7 +446,6 @@ const PeerSpecialistManagement = () => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
-
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -483,7 +461,6 @@ const PeerSpecialistManagement = () => {
       });
     }
   };
-
   const getInvitationStatus = (specialist: PeerSpecialist) => {
     if (specialist.activated_at) {
       const activationMethod = specialist.activation_method || 'email';
@@ -516,7 +493,6 @@ const PeerSpecialistManagement = () => {
       text: 'Not Sent'
     };
   };
-
   const handleDeactivateSpecialist = async (specialistId: string) => {
     setDeletingSpecialistId(specialistId);
     try {
@@ -549,7 +525,6 @@ const PeerSpecialistManagement = () => {
       setDeletingSpecialistId(null);
     }
   };
-
   const addSpecialty = () => {
     if (newSpecialty.trim() && !formData.specialties.includes(newSpecialty.trim())) {
       setFormData({
@@ -559,14 +534,12 @@ const PeerSpecialistManagement = () => {
       setNewSpecialty('');
     }
   };
-
   const removeSpecialty = (specialty: string) => {
     setFormData({
       ...formData,
       specialties: formData.specialties.filter(s => s !== specialty)
     });
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -574,7 +547,6 @@ const PeerSpecialistManagement = () => {
       day: 'numeric'
     });
   };
-
   const getOnlineStatus = (specialistId: string) => {
     const status = specialistStatuses[specialistId];
     if (!status) return {
@@ -604,25 +576,20 @@ const PeerSpecialistManagement = () => {
         };
     }
   };
-
   if (loading) {
     return <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>;
   }
-
   const handleDashboardRefresh = () => {
     setDashboardRefreshTrigger(prev => prev + 1);
     refreshData();
   };
-
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Peer Support Specialist Management</h2>
         <div className="flex items-center gap-2">
-          <Badge variant="outline">
-            {specialists.length} Active Specialist{specialists.length !== 1 ? 's' : ''}
-          </Badge>
+          
           <Button onClick={refreshData} variant="outline" disabled={presenceLoading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${presenceLoading ? 'animate-spin' : ''}`} />
             {presenceLoading ? 'Refreshing...' : 'Refresh'}
@@ -759,16 +726,16 @@ const PeerSpecialistManagement = () => {
                         <div>
                           <Label htmlFor="email">Email *</Label>
                           <Input id="email" type="email" value={formData.email} onChange={e => setFormData({
-                              ...formData,
-                              email: e.target.value
-                            })} required />
+                          ...formData,
+                          email: e.target.value
+                        })} required />
                         </div>
                         <div>
                           <Label htmlFor="years_experience">Years of Experience</Label>
                           <Input id="years_experience" type="number" min="0" value={formData.years_experience} onChange={e => setFormData({
-                              ...formData,
-                              years_experience: parseInt(e.target.value) || 0
-                            })} />
+                          ...formData,
+                          years_experience: parseInt(e.target.value) || 0
+                        })} />
                         </div>
                       </div>
 
@@ -776,33 +743,33 @@ const PeerSpecialistManagement = () => {
                         <div>
                           <Label htmlFor="first_name">First Name *</Label>
                           <Input id="first_name" value={formData.first_name} onChange={e => setFormData({
-                              ...formData,
-                              first_name: e.target.value
-                            })} required />
+                          ...formData,
+                          first_name: e.target.value
+                        })} required />
                         </div>
                         <div>
                           <Label htmlFor="last_name">Last Name *</Label>
                           <Input id="last_name" value={formData.last_name} onChange={e => setFormData({
-                              ...formData,
-                              last_name: e.target.value
-                            })} required />
+                          ...formData,
+                          last_name: e.target.value
+                        })} required />
                         </div>
                       </div>
 
                       <div>
                         <Label htmlFor="bio">Bio</Label>
                         <Textarea id="bio" value={formData.bio} onChange={e => setFormData({
-                            ...formData,
-                            bio: e.target.value
-                          })} rows={3} />
+                        ...formData,
+                        bio: e.target.value
+                      })} rows={3} />
                       </div>
 
                       <div>
                         <Label htmlFor="avatar_url">Avatar URL</Label>
                         <Input id="avatar_url" type="url" value={formData.avatar_url} onChange={e => setFormData({
-                            ...formData,
-                            avatar_url: e.target.value
-                          })} placeholder="https://example.com/avatar.jpg" />
+                        ...formData,
+                        avatar_url: e.target.value
+                      })} placeholder="https://example.com/avatar.jpg" />
                       </div>
 
                       <div>
@@ -823,9 +790,9 @@ const PeerSpecialistManagement = () => {
 
                       <div className="flex justify-end gap-2 pt-4">
                         <Button type="button" variant="outline" onClick={() => {
-                            setIsDialogOpen(false);
-                            resetForm();
-                          }}>
+                        setIsDialogOpen(false);
+                        resetForm();
+                      }}>
                           Cancel
                         </Button>
                         <Button type="submit" disabled={isInviting}>
@@ -875,15 +842,11 @@ const PeerSpecialistManagement = () => {
                               {onlineStatus.text}
                             </span>
                           </div>
-                          {specialist.specialties && specialist.specialties.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-2">
-                              {specialist.specialties.map((specialty, index) => (
-                                <Badge key={index} variant="outline" className="text-xs">
+                          {specialist.specialties && specialist.specialties.length > 0 && <div className="flex flex-wrap gap-1 mb-2">
+                              {specialist.specialties.map((specialty, index) => <Badge key={index} variant="outline" className="text-xs">
                                   {specialty}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
+                                </Badge>)}
+                            </div>}
                         </div>
                       </div>
                       <div className="mb-4">
@@ -894,20 +857,14 @@ const PeerSpecialistManagement = () => {
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
-                        {!specialist.is_verified && (
-                          <Button variant="outline" size="sm" onClick={() => handleForceActivate(specialist)} className="text-green-600 border-green-600 hover:bg-green-50">
+                        {!specialist.is_verified && <Button variant="outline" size="sm" onClick={() => handleForceActivate(specialist)} className="text-green-600 border-green-600 hover:bg-green-50">
                             <Key className="h-4 w-4 mr-1" />
                             Force Activate
-                          </Button>
-                        )}
+                          </Button>}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="sm" disabled={deletingSpecialistId === specialist.id}>
-                              {deletingSpecialistId === specialist.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4 mr-1" />
-                              )}
+                              {deletingSpecialistId === specialist.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
                               Deactivate
                             </Button>
                           </AlertDialogTrigger>
@@ -1022,5 +979,4 @@ const PeerSpecialistManagement = () => {
 
     </div>;
 };
-
 export default PeerSpecialistManagement;
