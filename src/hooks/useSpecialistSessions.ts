@@ -126,16 +126,18 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
     logger.debug('Setting up real-time subscription for specialist sessions');
     setRealtimeStatus('connecting');
     
-    // Use a consistent channel name for this specialist
-    const channelName = `specialist-sessions-${specialistId}`;
+    // Use a consistent channel name for all waiting sessions
+    const channelName = `all-chat-sessions`;
     
-    // Handler for session inserts
+    // Handler for session inserts - specifically looking for waiting sessions
     const handleSessionInsert: RealtimeEventHandler = async (payload) => {
-      logger.debug('New session detected via realtime:', payload.new);
+      logger.debug('🟢 SPECIALIST: New session detected via realtime:', payload.new);
       const newSession = payload.new as ChatSession;
       
-      // Only process waiting sessions or sessions assigned to this specialist
-      if (newSession.status === 'waiting' || newSession.specialist_id === specialistId) {
+      // Process all waiting sessions (unassigned) and sessions assigned to this specialist
+      if (newSession.status === 'waiting' && !newSession.specialist_id) {
+        logger.debug('🟢 SPECIALIST: Processing new waiting session:', newSession.id);
+        
         // Get user profile for the new session
         const { data: profile } = await supabase
           .from('profiles')
@@ -153,7 +155,32 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
         setSessions(prevSessions => {
           const exists = prevSessions.find(s => s.id === newSession.id);
           if (!exists) {
-            logger.debug('Adding new session to list:', sessionWithProfile.id);
+            logger.debug('🟢 SPECIALIST: Adding new waiting session to list:', sessionWithProfile.id);
+            return [sessionWithProfile, ...prevSessions];
+          }
+          return prevSessions;
+        });
+      } else if (newSession.specialist_id === specialistId) {
+        logger.debug('🟢 SPECIALIST: Processing session assigned to this specialist:', newSession.id);
+        
+        // Get user profile for the new session
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('user_id', newSession.user_id)
+          .single();
+        
+        const sessionWithProfile = {
+          ...newSession,
+          user_first_name: profile?.first_name,
+          user_last_name: profile?.last_name
+        };
+        
+        // Update sessions using functional update to avoid stale closures
+        setSessions(prevSessions => {
+          const exists = prevSessions.find(s => s.id === newSession.id);
+          if (!exists) {
+            logger.debug('🟢 SPECIALIST: Adding assigned session to list:', sessionWithProfile.id);
             return [sessionWithProfile, ...prevSessions];
           }
           return prevSessions;
