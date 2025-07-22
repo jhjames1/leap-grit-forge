@@ -294,6 +294,10 @@ const PeerSpecialistManagement = () => {
       console.log('Current user ID:', user?.id);
       console.log('Current user email:', user?.email);
 
+      // Check auth session status
+      const { data: session } = await supabase.auth.getSession();
+      console.log('Current session:', session?.session?.user?.id, session?.session?.user?.email);
+
       // Test admin access first
       const {
         data: adminTest,
@@ -313,6 +317,11 @@ const PeerSpecialistManagement = () => {
         });
         return;
       }
+
+      // Additional debug: Test direct auth context
+      const { data: debugAuth } = await supabase.rpc('debug_auth_context');
+      console.log('Auth context debug:', debugAuth);
+
       console.log('Updating specialist with data:', {
         id: editingSpecialist.id,
         email: formData.email,
