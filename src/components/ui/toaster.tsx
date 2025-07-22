@@ -1,4 +1,5 @@
 
+import * as React from "react"
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -11,6 +12,12 @@ import {
 
 export function Toaster() {
   try {
+    // Add defensive check for React hooks availability
+    if (typeof React === 'undefined' || !React.useState) {
+      console.warn('React hooks not available, skipping toaster render');
+      return <div style={{ display: 'none' }} />;
+    }
+    
     const { toasts } = useToast()
 
     return (
