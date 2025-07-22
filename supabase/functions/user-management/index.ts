@@ -22,7 +22,13 @@ interface GetLoginHistoryRequest {
   limit?: number
 }
 
-type UserManagementRequest = BanUserRequest | UnbanUserRequest | GetLoginHistoryRequest
+interface ResetPasswordRequest {
+  action: 'reset_password'
+  userId: string
+  userEmail: string
+}
+
+type UserManagementRequest = BanUserRequest | UnbanUserRequest | GetLoginHistoryRequest | ResetPasswordRequest
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -163,6 +169,45 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ 
           success: true, 
           data: loginHistory || [] 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      case 'reset_password': {
+        const { userId, userEmail } = body
+
+        // Generate a secure temporary password
+        const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12).toUpperCase()
+
+        // Reset the user's password using Supabase Admin API
+        const { error: resetError } = await supabase.auth.admin.updateUserById(userId, {
+          password: tempPassword
+        })
+
+        if (resetError) {
+          throw new Error(`Failed to reset password: ${resetError.message}`)
+        }
+
+        // Log the password reset action
+        await supabase
+          .from('user_activity_logs')
+          .insert({
+            user_id: user.id,
+            action: 'reset_password',
+            type: 'admin_management',
+            details: JSON.stringify({
+              target_user_id: userId,
+              target_user_email: userEmail,
+              reset_by_admin: user.id
+            })
+          })
+
+        console.log('Password reset successfully:', { userId, userEmail })
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Password reset successfully',
+          temporary_password: tempPassword
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })

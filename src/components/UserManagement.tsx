@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Search, Users, Calendar, Phone, Mail, MapPin, User, MoreHorizontal, Eye, UserX, UserCheck } from 'lucide-react';
+import { Loader2, Search, Users, Calendar, Phone, Mail, MapPin, User, MoreHorizontal, Eye, UserX, UserCheck, Key } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -243,6 +243,36 @@ const UserManagement = () => {
     }
   };
 
+  const handleResetPassword = async (user: UserData) => {
+    setActionLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('user-management', {
+        body: {
+          action: 'reset_password',
+          userId: user.id,
+          userEmail: user.email
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.temporary_password) {
+        toast.success(
+          `Password reset successfully! Temporary password: ${data.temporary_password}`,
+          { duration: 10000 }
+        );
+      } else {
+        toast.success("Password reset successfully");
+      }
+      
+      fetchUsers();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to reset password");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -362,6 +392,13 @@ const UserManagement = () => {
                       <DropdownMenuItem onClick={() => handleViewLoginHistory(user)}>
                         <Eye className="h-4 w-4 mr-2" />
                         View Login History
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleResetPassword(user)}
+                        disabled={actionLoading}
+                      >
+                        <Key className="h-4 w-4 mr-2" />
+                        Reset Password
                       </DropdownMenuItem>
                       {userStatus.isBanned ? (
                         <DropdownMenuItem 

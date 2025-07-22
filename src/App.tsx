@@ -12,6 +12,7 @@ import AdminPortal from "./pages/AdminPortal";
 import PeerSpecialistPortal from "./pages/PeerSpecialistPortal";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { PasswordReset } from "./components/PasswordReset";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +53,7 @@ function App() {
                         </ErrorBoundary>
                       } 
                     />
+                    <Route path="/reset-password" element={<PasswordReset />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>
