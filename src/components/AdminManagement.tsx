@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,11 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, UserPlus, Search, MoreHorizontal, Mail, Calendar, Activity } from 'lucide-react';
+import { Shield, UserPlus, Search, MoreHorizontal, Mail, Calendar, Activity, Edit, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AdminActivityLogModal from './AdminActivityLogModal';
 
 interface Admin {
   id: string;
@@ -27,10 +28,16 @@ const AdminManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteFirstName, setInviteFirstName] = useState('');
   const [inviteLastName, setInviteLastName] = useState('');
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
   const [isInviting, setIsInviting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -40,7 +47,6 @@ const AdminManagement = () => {
   const loadAdmins = async () => {
     setLoading(true);
     try {
-      // Get admin role users
       const { data: adminRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id')
@@ -55,12 +61,10 @@ const AdminManagement = () => {
 
       const adminIds = adminRoles.map(role => role.user_id);
 
-      // Get user details from auth.users via the admin function
       const { data: authUsers, error: authError } = await supabase.rpc('get_admin_users');
 
       if (authError) throw authError;
 
-      // Filter to only admin users and map the data structure
       const adminUsers = (authUsers || []).filter((user: any) => 
         adminIds.includes(user.user_id)
       ).map((user: any) => ({
@@ -114,7 +118,7 @@ const AdminManagement = () => {
       setInviteEmail('');
       setInviteFirstName('');
       setInviteLastName('');
-      loadAdmins(); // Refresh the list
+      loadAdmins();
     } catch (error) {
       console.error('Error inviting admin:', error);
       toast({
@@ -125,6 +129,55 @@ const AdminManagement = () => {
     } finally {
       setIsInviting(false);
     }
+  };
+
+  const handleEditAdmin = (admin: Admin) => {
+    setSelectedAdmin(admin);
+    setEditFirstName(admin.first_name || '');
+    setEditLastName(admin.last_name || '');
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateAdmin = async () => {
+    if (!selectedAdmin) return;
+    
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: editFirstName,
+          last_name: editLastName
+        })
+        .eq('user_id', selectedAdmin.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Administrator updated successfully",
+      });
+
+      setIsEditDialogOpen(false);
+      setSelectedAdmin(null);
+      setEditFirstName('');
+      setEditLastName('');
+      loadAdmins();
+    } catch (error) {
+      console.error('Error updating admin:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update administrator",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleViewActivity = (admin: Admin) => {
+    setSelectedAdmin(admin);
+    setIsActivityLogOpen(true);
   };
 
   const filteredAdmins = admins.filter(admin =>
@@ -158,6 +211,13 @@ const AdminManagement = () => {
     }
     
     return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>;
+  };
+
+  const getAdminName = (admin: Admin) => {
+    if (admin.first_name && admin.last_name) {
+      return `${admin.first_name} ${admin.last_name}`;
+    }
+    return 'Name not set';
   };
 
   if (loading) {
@@ -341,10 +401,7 @@ const AdminManagement = () => {
                       </div>
                       <div>
                         <div className="font-source font-medium text-card-foreground">
-                          {admin.first_name && admin.last_name 
-                            ? `${admin.first_name} ${admin.last_name}`
-                            : 'Name not set'
-                          }
+                          {getAdminName(admin)}
                         </div>
                       </div>
                     </div>
@@ -364,9 +421,23 @@ const AdminManagement = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-background border shadow-md">
+                        <DropdownMenuItem onClick={() => handleEditAdmin(admin)} className="cursor-pointer">
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewActivity(admin)} className="cursor-pointer">
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Activity
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -381,6 +452,54 @@ const AdminManagement = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit Admin Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Administrator</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="editFirstName">First Name</Label>
+              <Input
+                id="editFirstName"
+                value={editFirstName}
+                onChange={(e) => setEditFirstName(e.target.value)}
+                placeholder="First name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="editLastName">Last Name</Label>
+              <Input
+                id="editLastName"
+                value={editLastName}
+                onChange={(e) => setEditLastName(e.target.value)}
+                placeholder="Last name"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateAdmin} disabled={isUpdating}>
+                {isUpdating ? 'Updating...' : 'Update'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Activity Log Modal */}
+      {selectedAdmin && (
+        <AdminActivityLogModal
+          isOpen={isActivityLogOpen}
+          onClose={() => setIsActivityLogOpen(false)}
+          adminId={selectedAdmin.id}
+          adminEmail={selectedAdmin.email}
+          adminName={getAdminName(selectedAdmin)}
+        />
+      )}
     </div>
   );
 };
