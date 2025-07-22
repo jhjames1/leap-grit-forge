@@ -9,8 +9,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, UserPlus, Search, MoreHorizontal, Mail, Calendar, Activity, Edit, Eye, Key } from 'lucide-react';
+import { Shield, UserPlus, Search, MoreHorizontal, Mail, Calendar, Activity, Edit, Eye, Key, Trash2, AtSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import AdminActivityLogModal from './AdminActivityLogModal';
 
 interface Admin {
@@ -30,15 +31,22 @@ const AdminManagement = () => {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteFirstName, setInviteFirstName] = useState('');
   const [inviteLastName, setInviteLastName] = useState('');
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
   const [isInviting, setIsInviting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+
+  const { user } = useAuth();
 
   useEffect(() => {
     loadAdmins();
@@ -192,33 +200,25 @@ const AdminManagement = () => {
 
   const handleResetPassword = async (admin: Admin) => {
     try {
-      // Generate a temporary password
+      // Generate a secure temporary password
       const tempPassword = Math.random().toString(36).slice(-12).toUpperCase();
       
-      // Call the update-specialist-password function (which works for any user)
-      const { error } = await supabase.functions.invoke('update-specialist-password', {
+      const { data, error } = await supabase.functions.invoke('admin-management', {
         body: {
+          action: 'reset_password',
+          adminId: admin.id,
           email: admin.email,
-          newPassword: tempPassword
+          newPassword: tempPassword,
+          currentUserEmail: user?.email
         }
       });
 
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: `Password reset successfully. New password: ${tempPassword}`,
+        title: "Password Reset Successfully",
+        description: `New temporary password: ${tempPassword}`,
       });
-
-      // Log the action
-      await supabase
-        .from('user_activity_logs')
-        .insert({
-          user_id: admin.id,
-          action: 'password_reset',
-          type: 'admin_management',
-          details: JSON.stringify({ admin_id: admin.id, reset_by_admin: true })
-        });
 
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -227,6 +227,90 @@ const AdminManagement = () => {
         description: "Failed to reset password",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleChangeEmail = (admin: Admin) => {
+    setSelectedAdmin(admin);
+    setNewEmail(admin.email);
+    setIsEmailDialogOpen(true);
+  };
+
+  const handleUpdateEmail = async () => {
+    if (!selectedAdmin || !newEmail) return;
+    
+    setIsChangingEmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-management', {
+        body: {
+          action: 'change_email',
+          adminId: selectedAdmin.id,
+          newEmail: newEmail,
+          currentUserEmail: user?.email
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Email updated successfully",
+      });
+
+      setIsEmailDialogOpen(false);
+      setSelectedAdmin(null);
+      setNewEmail('');
+      loadAdmins();
+    } catch (error) {
+      console.error('Error updating email:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingEmail(false);
+    }
+  };
+
+  const handleDeleteAdmin = (admin: Admin) => {
+    setSelectedAdmin(admin);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedAdmin) return;
+    
+    setIsDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-management', {
+        body: {
+          action: 'delete_admin',
+          adminId: selectedAdmin.id,
+          email: selectedAdmin.email,
+          currentUserEmail: user?.email
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Administrator deleted successfully",
+      });
+
+      setIsDeleteDialogOpen(false);
+      setSelectedAdmin(null);
+      loadAdmins();
+    } catch (error) {
+      console.error('Error deleting admin:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete administrator",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -473,6 +557,10 @@ const AdminManagement = () => {
                           <Edit className="mr-2 h-4 w-4" />
                           Edit Profile
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleChangeEmail(admin)} className="cursor-pointer">
+                          <AtSign className="mr-2 h-4 w-4" />
+                          Change Email
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleResetPassword(admin)} className="cursor-pointer">
                           <Key className="mr-2 h-4 w-4" />
                           Reset Password
@@ -481,6 +569,15 @@ const AdminManagement = () => {
                           <Eye className="mr-2 h-4 w-4" />
                           View Activity
                         </DropdownMenuItem>
+                        {(admin.email !== 'jjames@modecommunications.net' || user?.email === 'jjames@modecommunications.net') && (
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteAdmin(admin)} 
+                            className="cursor-pointer text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Admin
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -551,7 +648,7 @@ const AdminManagement = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Administrator</DialogTitle>
+            <DialogTitle>Edit Administrator Profile</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -577,7 +674,81 @@ const AdminManagement = () => {
                 Cancel
               </Button>
               <Button onClick={handleUpdateAdmin} disabled={isUpdating}>
-                {isUpdating ? 'Updating...' : 'Update'}
+                {isUpdating ? 'Updating...' : 'Update Profile'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Email Dialog */}
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Administrator Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="currentEmail">Current Email</Label>
+              <Input
+                id="currentEmail"
+                value={selectedAdmin?.email || ''}
+                disabled
+                className="bg-muted"
+              />
+            </div>
+            <div>
+              <Label htmlFor="newEmail">New Email</Label>
+              <Input
+                id="newEmail"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="admin@example.com"
+              />
+            </div>
+            <Alert>
+              <Mail className="h-4 w-4" />
+              <AlertDescription>
+                The email will be updated immediately. The administrator will be able to log in with the new email address.
+              </AlertDescription>
+            </Alert>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsEmailDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateEmail} disabled={isChangingEmail}>
+                {isChangingEmail ? 'Updating...' : 'Change Email'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Admin Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Administrator</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Alert>
+              <Trash2 className="h-4 w-4" />
+              <AlertDescription>
+                This will permanently delete the administrator account for <strong>{selectedAdmin?.email}</strong>. 
+                This action cannot be undone.
+              </AlertDescription>
+            </Alert>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleConfirmDelete} 
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete Administrator'}
               </Button>
             </div>
           </div>
