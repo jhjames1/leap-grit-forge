@@ -9,12 +9,12 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import SpecialistStatusIndicator from '@/components/SpecialistStatusIndicator';
+import { SpecialistStatusIndicator } from '@/components/SpecialistStatusIndicator';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import UserAuth from '@/components/UserAuth';
+import { UserAuth } from '@/components/UserAuth';
 import { TestingModeControls } from '@/components/TestingModeControls';
 import { useProfile } from '@/hooks/useProfile';
-import SpecialistChat from '@/components/SpecialistChat';
+import { SpecialistChat } from '@/components/SpecialistChat';
 import ProposalManagement from '@/components/ProposalManagement';
 import SpecialistAnalytics from '@/components/SpecialistAnalytics';
 import SpecialistSettings from '@/components/SpecialistSettings';
@@ -105,7 +105,7 @@ const PeerSpecialistDashboard: React.FC<PeerSpecialistDashboardProps> = ({
             <TestingModeControls />
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <UserAuth onLogin={() => {}} />
+              <UserAuth />
             </div>
           </div>
         </div>
@@ -191,12 +191,7 @@ const PeerSpecialistDashboard: React.FC<PeerSpecialistDashboardProps> = ({
             <SpecialistAnalytics />
           </TabsContent>
           <TabsContent value="settings" className="space-y-1">
-            <SpecialistSettings 
-              isOpen={activeTab === 'settings'}
-              onClose={() => setActiveTab('dashboard')}
-              specialist={null}
-              onUpdateSpecialist={() => {}}
-            />
+            <SpecialistSettings />
           </TabsContent>
         </Tabs>
       </div>
