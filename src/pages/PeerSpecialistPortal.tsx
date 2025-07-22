@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { PeerSpecialistDashboard } from '@/components/PeerSpecialistDashboard';
-import { SpecialistLogin } from '@/components/SpecialistLogin';
-import { PasswordChangePrompt } from '@/components/PasswordChangePrompt';
+import SpecialistLogin from '@/components/SpecialistLogin';
+import PasswordChangePrompt from '@/components/PasswordChangePrompt';
 import { ChatErrorBoundary } from '@/components/ChatErrorBoundary';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { supabase } from '@/integrations/supabase/client';
@@ -188,7 +188,7 @@ const PeerSpecialistPortal = () => {
   if (!user) {
     return (
       <ChatErrorBoundary onError={handleError}>
-        <SpecialistLogin onLogin={handleLogin} />
+        <SpecialistLogin onLogin={handleLogin} onBack={() => window.location.href = '/'} />
       </ChatErrorBoundary>
     );
   }
@@ -198,8 +198,9 @@ const PeerSpecialistPortal = () => {
     return (
       <ChatErrorBoundary onError={handleError}>
         <PasswordChangePrompt 
-          onPasswordChanged={handlePasswordChangeComplete}
-          userType="specialist"
+          isOpen={true}
+          specialistId={specialistId || ''}
+          onComplete={handlePasswordChangeComplete}
         />
       </ChatErrorBoundary>
     );
@@ -209,7 +210,7 @@ const PeerSpecialistPortal = () => {
   if (!isVerifiedSpecialist) {
     return (
       <ChatErrorBoundary onError={handleError}>
-        <SpecialistLogin onLogin={handleLogin} />
+        <SpecialistLogin onLogin={handleLogin} onBack={() => window.location.href = '/'} />
       </ChatErrorBoundary>
     );
   }
