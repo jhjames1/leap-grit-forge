@@ -45,8 +45,8 @@ export function useProposalNotifications(specialistId: string) {
 
     fetchCounts();
 
-    // Set up real-time subscription for proposal changes
-    const proposalChannel = supabase
+    // Set up real-time subscription
+    const channel = supabase
       .channel('proposal-notifications')
       .on(
         'postgres_changes',
@@ -80,10 +80,8 @@ export function useProposalNotifications(specialistId: string) {
               }
 
               toast({
-                title: newStatus === 'accepted' ? "Proposal Accepted! 🎉" : "Proposal Response",
-                description: newStatus === 'accepted' 
-                  ? "The appointment has been scheduled and added to your calendar!"
-                  : `A user has ${newStatus} your appointment proposal`,
+                title: "Proposal Response",
+                description: `A user has ${newStatus} your appointment proposal`,
                 variant: newStatus === 'accepted' ? 'default' : 'destructive'
               });
             }
@@ -95,39 +93,13 @@ export function useProposalNotifications(specialistId: string) {
       )
       .subscribe();
 
-    // Set up real-time subscription for new appointments created from accepted proposals
-    const appointmentChannel = supabase
-      .channel('appointment-notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'specialist_appointments',
-          filter: `specialist_id=eq.${specialistId}`
-        },
-        (payload) => {
-          console.log('New appointment created:', payload);
-          
-          // Show notification for new appointment
-          if (Notification.permission === 'granted') {
-            new Notification('New Appointment Scheduled', {
-              body: 'A new appointment has been added to your calendar',
-              icon: '/favicon.ico'
-            });
-          }
-        }
-      )
-      .subscribe();
-
     // Request notification permission
     if (Notification.permission === 'default') {
       Notification.requestPermission();
     }
 
     return () => {
-      supabase.removeChannel(proposalChannel);
-      supabase.removeChannel(appointmentChannel);
+      supabase.removeChannel(channel);
     };
   }, [specialistId, toast]);
 
