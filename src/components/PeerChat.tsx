@@ -199,7 +199,7 @@ const PeerChat = ({
           </div>
           
           <div className="flex space-x-2">
-            <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/10" onClick={handleStartNewChat}>
+            <Button size="sm" variant="outline" onClick={handleStartNewChat} className="border-primary text-gray-950 bg-yellow-400 hover:bg-yellow-300">
               <Plus size={16} className="mr-1" />
               New Chat
             </Button>
@@ -276,7 +276,7 @@ const PeerChat = ({
               <p className="text-foreground text-sm font-fjalla font-bold">WAITING FOR SPECIALIST...</p>
               <p className="text-muted-foreground text-xs">Started {getSessionAge()}</p>
             </div>
-            <Button size="sm" variant="outline" onClick={handleStartNewChat} className="border-primary text-primary hover:bg-primary/10">
+            <Button size="sm" variant="outline" onClick={handleStartNewChat} className="border-primary text-gray-950 bg-yellow-400 hover:bg-yellow-300">
               Start Fresh Instead
             </Button>
           </div>
@@ -320,7 +320,7 @@ const PeerChat = ({
       {/* Quick Actions */}
       {session && !isSessionEnded && <div className="px-4 py-2">
           <div className="flex space-x-2 overflow-x-auto">
-            <Button size="sm" onClick={() => handleQuickAction('need-support')} className="font-fjalla whitespace-nowrap font-light bg-neutral-600 hover:bg-neutral-500 text-zinc-50">
+            <Button size="sm" onClick={() => handleQuickAction('need-support')} className="font-fjalla whitespace-nowrap font-light text-zinc-50 bg-zinc-600 hover:bg-zinc-500">
               NEED SUPPORT
             </Button>
             <Button size="sm" onClick={() => handleQuickAction('feeling-triggered')} className="bg-secondary text-secondary-foreground font-fjalla whitespace-nowrap hover:bg-secondary/90 font-light">
