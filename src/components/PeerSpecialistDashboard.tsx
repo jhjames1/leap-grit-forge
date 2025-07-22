@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { RefreshCw, MessageSquare, BarChart3, UserCircle, Activity, Clock, CheckCircle, User, History, TrendingUp } from 'lucide-react';
+import { RefreshCw, MessageSquare, BarChart3, UserCircle, Activity, Clock, CheckCircle, User, History, TrendingUp, LogOut } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import RobustSpecialistChatWindow from './RobustSpecialistChatWindow';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
@@ -36,7 +36,7 @@ interface ChatSession {
 }
 
 const PeerSpecialistDashboard = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
   
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
@@ -222,6 +222,23 @@ const PeerSpecialistDashboard = () => {
     refreshSessions();
   }, [refreshSessions]);
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out."
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout Error",
+        description: "There was an issue logging out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getSessionStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -401,6 +418,12 @@ const PeerSpecialistDashboard = () => {
             <Button onClick={handleRefresh} disabled={isLoading} variant="outline" size="sm" className="gap-2">
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
+            </Button>
+
+            {/* Logout Button */}
+            <Button onClick={handleLogout} variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
+              <LogOut className="w-4 h-4" />
+              Logout
             </Button>
           </div>
         </div>

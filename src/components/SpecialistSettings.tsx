@@ -15,7 +15,10 @@ import {
   Bell, 
   Shield,
   Save,
-  X
+  X,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,6 +38,12 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
   onUpdateSpecialist
 }) => {
   const [loading, setLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -43,6 +52,13 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
     status: 'offline' as 'online' | 'away' | 'offline',
     status_message: ''
   });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -58,6 +74,93 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
       });
     }
   }, [specialist]);
+
+  const validatePassword = (password: string) => {
+    if (password.length < 8) return 'Password must be at least 8 characters long';
+    if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter';
+    if (!/[a-z]/.test(password)) return 'Password must contain at least one lowercase letter';
+    if (!/\d/.test(password)) return 'Password must contain at least one number';
+    return null;
+  };
+
+  const handlePasswordChange = async () => {
+    if (!user) return;
+
+    // Validate passwords
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "New passwords do not match.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const passwordError = validatePassword(passwordData.newPassword);
+    if (passwordError) {
+      toast({
+        title: "Invalid Password",
+        description: passwordError,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!passwordData.currentPassword) {
+      toast({
+        title: "Current Password Required",
+        description: "Please enter your current password.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) throw error;
+
+      // Clear password fields
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+
+      setShowPasswordSection(false);
+
+      toast({
+        title: "Password Updated",
+        description: "Your password has been updated successfully."
+      });
+
+      // Log the password change
+      await supabase
+        .from('user_activity_logs')
+        .insert({
+          user_id: user.id,
+          action: 'password_changed',
+          type: 'security',
+          details: JSON.stringify({
+            timestamp: new Date().toISOString(),
+            source: 'specialist_settings'
+          })
+        });
+
+    } catch (error) {
+      console.error('Error updating password:', error);
+      toast({
+        title: "Password Update Failed",
+        description: "Failed to update password. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!user || !specialist) return;
@@ -107,7 +210,6 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
         description: "Your profile and status have been updated successfully."
       });
 
-      onClose();
     } catch (error) {
       console.error('Error updating settings:', error);
       toast({
@@ -244,6 +346,118 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
                 />
               </div>
             </div>
+          </div>
+
+          {/* Security Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Lock size={18} />
+                Security Settings
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPasswordSection(!showPasswordSection)}
+              >
+                Change Password
+              </Button>
+            </div>
+
+            {showPasswordSection && (
+              <Card className="p-4 space-y-4">
+                <div>
+                  <Label htmlFor="current_password">Current Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="current_password"
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      placeholder="Enter current password"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    >
+                      {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="new_password">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="new_password"
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      placeholder="Enter new password"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                    >
+                      {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </Button>
+                  </div>
+                  {passwordData.newPassword && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Password must be at least 8 characters with uppercase, lowercase, and numbers
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="confirm_password">Confirm New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirm_password"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      placeholder="Confirm new password"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handlePasswordChange}
+                    disabled={passwordLoading || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                    size="sm"
+                  >
+                    {passwordLoading ? 'Updating...' : 'Update Password'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowPasswordSection(false);
+                      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                    }}
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </Card>
+            )}
           </div>
 
           {/* Specialties */}
