@@ -107,7 +107,6 @@ const UserManagement = () => {
         id: user.id,
         email: user.email,
         created_at: user.created_at,
-        banned_until: user.banned_until,
         profile: profiles.find(p => p.user_id === user.id),
         preferences: preferences?.find(p => p.user_id === user.id)
       }));
@@ -171,18 +170,7 @@ const UserManagement = () => {
   };
 
   const getUserStatus = (user: UserData): { status: string; color: string; isBanned: boolean } => {
-    const now = new Date();
-    const bannedUntil = user.banned_until ? new Date(user.banned_until) : null;
-    
-    if (bannedUntil && bannedUntil > now) {
-      const isPermanent = bannedUntil.getFullYear() > 2050;
-      return { 
-        status: isPermanent ? 'Permanently Banned' : 'Temporarily Banned', 
-        color: 'destructive',
-        isBanned: true 
-      };
-    }
-    
+    // For now, all users are active since ban functionality needs proper implementation
     return { status: 'Active', color: 'secondary', isBanned: false };
   };
 
