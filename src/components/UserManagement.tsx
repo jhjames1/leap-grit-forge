@@ -3,14 +3,27 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, Users, Calendar, Phone, Mail, MapPin, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Search, Users, Calendar, Phone, Mail, MapPin, User, MoreHorizontal, Eye, UserX, UserCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+interface LoginHistoryItem {
+  id: string;
+  ip_address: string;
+  user_agent?: string;
+  login_status: string;
+  location_data?: any;
+  created_at: string;
+}
 
 interface UserData {
   id: string;
   email: string;
   created_at: string;
+  banned_until?: string;
   profile?: {
     first_name?: string;
     last_name?: string;
@@ -32,6 +45,13 @@ const UserManagement = () => {
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [showBanModal, setShowBanModal] = useState(false);
+  const [showLoginHistory, setShowLoginHistory] = useState(false);
+  const [loginHistory, setLoginHistory] = useState<LoginHistoryItem[]>([]);
+  const [banDuration, setBanDuration] = useState<string>('24');
+  const [banReason, setBanReason] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -87,6 +107,7 @@ const UserManagement = () => {
         id: user.id,
         email: user.email,
         created_at: user.created_at,
+        banned_until: user.banned_until,
         profile: profiles.find(p => p.user_id === user.id),
         preferences: preferences?.find(p => p.user_id === user.id)
       }));
@@ -147,6 +168,91 @@ const UserManagement = () => {
       return `${firstName} ${lastName}`.trim();
     }
     return 'No name provided';
+  };
+
+  const getUserStatus = (user: UserData): { status: string; color: string; isBanned: boolean } => {
+    const now = new Date();
+    const bannedUntil = user.banned_until ? new Date(user.banned_until) : null;
+    
+    if (bannedUntil && bannedUntil > now) {
+      const isPermanent = bannedUntil.getFullYear() > 2050;
+      return { 
+        status: isPermanent ? 'Permanently Banned' : 'Temporarily Banned', 
+        color: 'destructive',
+        isBanned: true 
+      };
+    }
+    
+    return { status: 'Active', color: 'secondary', isBanned: false };
+  };
+
+  const handleBanUser = async (user: UserData, duration?: number) => {
+    setActionLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('user-management', {
+        body: {
+          action: 'ban_user',
+          userId: user.id,
+          banDuration: duration,
+          reason: banReason || undefined
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(duration ? `User banned for ${duration} hours` : "User permanently banned");
+      setBanReason('');
+      setShowBanModal(false);
+      fetchUsers();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to ban user");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnbanUser = async (user: UserData) => {
+    setActionLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('user-management', {
+        body: {
+          action: 'unban_user',
+          userId: user.id
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success("User unbanned successfully");
+      fetchUsers();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to unban user");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleViewLoginHistory = async (user: UserData) => {
+    setSelectedUser(user);
+    setActionLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('user-management', {
+        body: {
+          action: 'get_login_history',
+          userId: user.id,
+          limit: 100
+        }
+      });
+
+      if (error) throw error;
+
+      setLoginHistory(data || []);
+      setShowLoginHistory(true);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to fetch login history");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -244,14 +350,53 @@ const UserManagement = () => {
             </p>
           </Card>
         ) : (
-          filteredUsers.map((user) => (
-            <Card key={user.id} className="bg-card p-6 rounded-lg border-0 shadow-none">
-              {/* User ID Header */}
-              <div className="mb-4 pb-3 border-b border-border">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  User ID: <span className="font-mono text-foreground">{user.id}</span>
-                </h3>
-              </div>
+          filteredUsers.map((user) => {
+            const userStatus = getUserStatus(user);
+            return (
+              <Card key={user.id} className="bg-card p-6 rounded-lg border-0 shadow-none">
+                {/* User ID Header with Actions */}
+                <div className="mb-4 pb-3 border-b border-border flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      User ID: <span className="font-mono text-foreground">{user.id}</span>
+                    </h3>
+                    <Badge variant={userStatus.color as any}>
+                      {userStatus.status}
+                    </Badge>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleViewLoginHistory(user)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Login History
+                      </DropdownMenuItem>
+                      {userStatus.isBanned ? (
+                        <DropdownMenuItem 
+                          onClick={() => handleUnbanUser(user)}
+                          disabled={actionLoading}
+                        >
+                          <UserCheck className="h-4 w-4 mr-2" />
+                          Unban User
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowBanModal(true);
+                          }}
+                        >
+                          <UserX className="h-4 w-4 mr-2" />
+                          Ban User
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Basic Info */}
                 <div className="space-y-3">
@@ -328,9 +473,106 @@ const UserManagement = () => {
               </div>
 
             </Card>
-          ))
+            );
+          })
         )}
       </div>
+
+      {/* Ban User Modal */}
+      <Dialog open={showBanModal} onOpenChange={setShowBanModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ban User</DialogTitle>
+            <DialogDescription>
+              Choose ban duration for {selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Ban Duration</label>
+              <Select value={banDuration} onValueChange={setBanDuration}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 Hour</SelectItem>
+                  <SelectItem value="24">24 Hours</SelectItem>
+                  <SelectItem value="168">1 Week</SelectItem>
+                  <SelectItem value="720">30 Days</SelectItem>
+                  <SelectItem value="permanent">Permanent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Reason (Optional)</label>
+              <Input
+                value={banReason}
+                onChange={(e) => setBanReason(e.target.value)}
+                placeholder="Enter ban reason..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBanModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => selectedUser && handleBanUser(selectedUser, banDuration === 'permanent' ? undefined : parseInt(banDuration))}
+              disabled={actionLoading}
+              variant="destructive"
+            >
+              {actionLoading ? 'Banning...' : 'Ban User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Login History Modal */}
+      <Dialog open={showLoginHistory} onOpenChange={setShowLoginHistory}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Login History</DialogTitle>
+            <DialogDescription>
+              Recent login attempts for {selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-96 overflow-y-auto">
+            {loginHistory.length > 0 ? (
+              <div className="space-y-2">
+                {loginHistory.map((login) => (
+                  <div key={login.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <Badge variant={login.login_status === 'success' ? 'secondary' : 'destructive'}>
+                          {login.login_status}
+                        </Badge>
+                        <span className="font-mono text-sm">{login.ip_address}</span>
+                      </div>
+                      {login.user_agent && (
+                        <p className="text-xs text-muted-foreground mt-1 truncate">
+                          {login.user_agent}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatDateTime(login.created_at)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No login history found
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowLoginHistory(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

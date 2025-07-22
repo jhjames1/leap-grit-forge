@@ -1428,6 +1428,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_login_history: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown
+          location_data: Json | null
+          login_status: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address: unknown
+          location_data?: Json | null
+          login_status?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          location_data?: Json | null
+          login_status?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           created_at: string
@@ -1695,6 +1725,16 @@ export type Database = {
       is_admin: {
         Args: { _user_id?: string }
         Returns: boolean
+      }
+      log_login_attempt: {
+        Args: {
+          p_user_id: string
+          p_ip_address: unknown
+          p_user_agent: string
+          p_login_status?: string
+          p_location_data?: Json
+        }
+        Returns: string
       }
       permanently_delete_specialist: {
         Args:
