@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
-import { Shield, UserPlus, Search, MoreHorizontal, Mail, Calendar, Activity, Edit, Eye } from 'lucide-react';
+import { Shield, UserPlus, Search, MoreHorizontal, Mail, Calendar, Activity, Edit, Eye, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AdminActivityLogModal from './AdminActivityLogModal';
 
@@ -61,18 +61,33 @@ const AdminManagement = () => {
 
       const adminIds = adminRoles.map(role => role.user_id);
 
+      // Get auth users data
       const { data: authUsers, error: authError } = await supabase.rpc('get_admin_users');
+      
+      // Get profile data for admin users
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, first_name, last_name')
+        .in('user_id', adminIds);
 
       if (authError) throw authError;
+      if (profilesError) console.error('Error fetching profiles:', profilesError);
 
       const adminUsers = (authUsers || []).filter((user: any) => 
         adminIds.includes(user.user_id)
-      ).map((user: any) => ({
-        id: user.user_id,
-        email: user.email,
-        created_at: user.created_at,
-        role_created_at: user.role_created_at
-      }));
+      ).map((user: any) => {
+        const profile = profiles?.find(p => p.user_id === user.user_id);
+        return {
+          id: user.user_id,
+          email: user.email,
+          created_at: user.created_at,
+          last_sign_in_at: user.last_sign_in_at,
+          email_confirmed_at: user.email_confirmed_at,
+          first_name: profile?.first_name,
+          last_name: profile?.last_name,
+          role_created_at: user.role_created_at
+        };
+      });
 
       setAdmins(adminUsers);
     } catch (error) {
@@ -172,6 +187,46 @@ const AdminManagement = () => {
       });
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleResetPassword = async (admin: Admin) => {
+    try {
+      // Generate a temporary password
+      const tempPassword = Math.random().toString(36).slice(-12).toUpperCase();
+      
+      // Call the update-specialist-password function (which works for any user)
+      const { error } = await supabase.functions.invoke('update-specialist-password', {
+        body: {
+          email: admin.email,
+          newPassword: tempPassword
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Password reset successfully. New password: ${tempPassword}`,
+      });
+
+      // Log the action
+      await supabase
+        .from('user_activity_logs')
+        .insert({
+          user_id: admin.id,
+          action: 'password_reset',
+          type: 'admin_management',
+          details: JSON.stringify({ admin_id: admin.id, reset_by_admin: true })
+        });
+
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset password",
+        variant: "destructive",
+      });
     }
   };
 
@@ -413,16 +468,20 @@ const AdminManagement = () => {
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-background border shadow-md">
-                      <DropdownMenuItem onClick={() => handleEditAdmin(admin)} className="cursor-pointer">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleViewActivity(admin)} className="cursor-pointer">
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Activity
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
+                      <DropdownMenuContent align="end" className="bg-background border shadow-md">
+                        <DropdownMenuItem onClick={() => handleEditAdmin(admin)} className="cursor-pointer">
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Profile
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleResetPassword(admin)} className="cursor-pointer">
+                          <Key className="mr-2 h-4 w-4" />
+                          Reset Password
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewActivity(admin)} className="cursor-pointer">
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Activity
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               </div>
