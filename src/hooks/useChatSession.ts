@@ -37,7 +37,13 @@ export function useChatSession(specialistId?: string) {
   const { isConnected: realtimeConnected, forceReconnect } = useRealtimeChat({
     sessionId: session?.id || null,
     onMessage: (newMessage) => {
-      console.log('✅ PEER CLIENT: New message received instantly:', newMessage.content);
+      console.log('✅ PEER CLIENT: New message received instantly via useRealtimeChat:', newMessage.content);
+      console.log('🎯 PEER CLIENT: Message details:', {
+        id: newMessage.id,
+        sender_type: newMessage.sender_type,
+        session_id: newMessage.session_id,
+        current_session: session?.id
+      });
       setMessages(prev => {
         // Handle optimistic message replacement
         const existingIndex = prev.findIndex(msg => 
@@ -63,7 +69,7 @@ export function useChatSession(specialistId?: string) {
       });
     },
     onSessionUpdate: (updatedSession) => {
-      console.log('🔄 PEER CLIENT: Session updated:', updatedSession);
+      console.log('🔄 PEER CLIENT: Session updated via useRealtimeChat:', updatedSession);
       setSession(updatedSession);
     }
   });

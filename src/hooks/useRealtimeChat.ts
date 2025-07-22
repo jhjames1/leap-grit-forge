@@ -52,39 +52,44 @@ export const useRealtimeChat = ({ sessionId, onMessage, onSessionUpdate }: UseRe
 
   // Message event handler
   const handleNewMessage = useCallback((payload: any) => {
-    logger.debug('🔴 New message received via realtime:', payload.new);
+    logger.debug('🔴 PEER CLIENT: New message received via realtime:', payload.new);
     const newMessage = payload.new as ChatMessage;
     
     if (newMessage.session_id === sessionId) {
       setLastMessageAt(new Date());
+      logger.debug('🔴 PEER CLIENT: Calling message handler for session:', sessionId);
       messageHandler.current?.(newMessage);
+    } else {
+      logger.debug('🔴 PEER CLIENT: Message for different session, ignoring:', newMessage.session_id);
     }
   }, [sessionId]);
 
   // Session event handler
   const handleSessionUpdate = useCallback((payload: any) => {
-    logger.debug('🔴 Session updated via realtime:', payload.new);
+    logger.debug('🔴 PEER CLIENT: Session updated via realtime:', payload.new);
     const updatedSession = payload.new as ChatSession;
     
     if (updatedSession.id === sessionId) {
+      logger.debug('🔴 PEER CLIENT: Calling session handler for session:', sessionId);
       sessionHandler.current?.(updatedSession);
+    } else {
+      logger.debug('🔴 PEER CLIENT: Session update for different session, ignoring:', updatedSession.id);
     }
   }, [sessionId]);
 
   // Set up real-time subscriptions
   useEffect(() => {
     if (!sessionId) {
-      // Clean up existing subscriptions
+      // Clean up existing subscriptions - use proper cleanup
       subscriptionIds.current.forEach(id => {
-        realtimeService.unsubscribe(id, handleNewMessage);
-        realtimeService.unsubscribe(id, handleSessionUpdate);
+        realtimeService.unsubscribe(id, () => {}); // Clean function for proper removal
       });
       subscriptionIds.current = [];
       setIsConnected(false);
       return;
     }
 
-    logger.debug('🔴 Setting up realtime subscriptions for session:', sessionId);
+    logger.debug('🔴 PEER CLIENT: Setting up realtime subscriptions for session:', sessionId);
 
     // Subscribe to messages
     const messageSubscriptionId = realtimeService.subscribe(
@@ -125,10 +130,9 @@ export const useRealtimeChat = ({ sessionId, onMessage, onSessionUpdate }: UseRe
 
     return () => {
       clearInterval(intervalId);
-      subscriptionIds.current.forEach(id => {
-        realtimeService.unsubscribe(id, handleNewMessage);
-        realtimeService.unsubscribe(id, handleSessionUpdate);
-      });
+      // Clean up subscriptions properly using handlers
+      realtimeService.unsubscribe(messageSubscriptionId, handleNewMessage);
+      realtimeService.unsubscribe(sessionSubscriptionId, handleSessionUpdate);
       subscriptionIds.current = [];
     };
   }, [sessionId, handleNewMessage, handleSessionUpdate, connectionStatus.status]);
