@@ -501,7 +501,7 @@ const PeerSpecialistDashboard = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Avg Response Time</p>
+                  <p className="text-sm font-medium text-muted-foreground">Ave. Response Time Today</p>
                   <p className="text-2xl font-bold text-purple-600">{formatResponseTime(avgResponseTime)}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-purple-600" />
