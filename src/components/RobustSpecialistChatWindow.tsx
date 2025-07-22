@@ -76,6 +76,8 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
   const [proposalStatuses, setProposalStatuses] = useState<Record<string, string>>({});
+  const [autoCloseCountdown, setAutoCloseCountdown] = useState<number | null>(null);
+  const [showKeepOpenOption, setShowKeepOpenOption] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -83,6 +85,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const isInitializedRef = useRef(false);
   const subscriptionRetryCount = useRef(0);
   const maxRetries = 3;
+  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -204,6 +207,39 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, [session.id]);
 
+  // Auto-close timer functions
+  const startAutoCloseTimer = useCallback(() => {
+    if (autoCloseTimerRef.current) return; // Don't start if already running
+    
+    setAutoCloseCountdown(15);
+    setShowKeepOpenOption(true);
+    
+    autoCloseTimerRef.current = setInterval(() => {
+      setAutoCloseCountdown(prev => {
+        if (prev === null || prev <= 1) {
+          // Timer reached 0, close the chat
+          if (autoCloseTimerRef.current) {
+            clearInterval(autoCloseTimerRef.current);
+            autoCloseTimerRef.current = null;
+          }
+          setShowKeepOpenOption(false);
+          onClose();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [onClose]);
+
+  const cancelAutoClose = useCallback(() => {
+    if (autoCloseTimerRef.current) {
+      clearInterval(autoCloseTimerRef.current);
+      autoCloseTimerRef.current = null;
+    }
+    setAutoCloseCountdown(null);
+    setShowKeepOpenOption(false);
+  }, []);
+
   // Enhanced session update handler
   const handleSessionUpdate = useCallback((updatedSession: ChatSession) => {
     logger.debug('RobustSpecialistChatWindow: Session update received', {
@@ -211,8 +247,16 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       oldStatus: session.status,
       newStatus: updatedSession.status,
       oldSpecialistId: session.specialist_id,
-      newSpecialistId: updatedSession.specialist_id
+      newSpecialistId: updatedSession.specialist_id,
+      endReason: updatedSession.end_reason
     });
+
+    // Check if session was auto-ended due to timeout
+    if (session.status !== 'ended' && 
+        updatedSession.status === 'ended' && 
+        updatedSession.end_reason === 'auto_timeout') {
+      startAutoCloseTimer();
+    }
 
     setSession(prevSession => {
       const mergedSession = {
@@ -227,7 +271,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     if (onSessionUpdate) {
       onSessionUpdate(updatedSession);
     }
-  }, [session.status, session.specialist_id, onSessionUpdate]);
+  }, [session.status, session.specialist_id, onSessionUpdate, startAutoCloseTimer]);
 
   // Cleanup function for real-time subscription
   const cleanupRealtimeSubscription = useCallback(() => {
@@ -250,7 +294,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     // Create simple channel with same name as peer client
     const channel = supabase.channel(`chat-simple-${session.id}`);
     
-    // Single event listener - no chaining
+    // Listen for new messages
     channel.on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
@@ -275,6 +319,21 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
             newMessage.metadata?.action_type === 'recurring_appointment_proposal') {
           loadProposalStatuses([newMessage]);
         }
+      }
+    });
+
+    // Listen for session status changes (including auto-timeout)
+    channel.on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'chat_sessions'
+    }, payload => {
+      console.log('🎯 SIMPLE: Session update received:', payload);
+      
+      const updatedSession = payload.new as ChatSession;
+      if (updatedSession.id === session.id) {
+        console.log('✅ SIMPLE: Session status updated:', updatedSession.status, 'End reason:', updatedSession.end_reason);
+        handleSessionUpdate(updatedSession);
       }
     });
     
@@ -499,6 +558,16 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, [session.status, specialistId, claimSession]);
 
+  // Cleanup auto-close timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoCloseTimerRef.current) {
+        clearInterval(autoCloseTimerRef.current);
+        autoCloseTimerRef.current = null;
+      }
+    };
+  }, []);
+
   const getSessionAge = () => {
     const age = Date.now() - new Date(session.started_at).getTime();
     const minutes = Math.floor(age / (1000 * 60));
@@ -563,8 +632,35 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         </div>
       </div>
 
+      {/* Auto-close countdown warning */}
+      {showKeepOpenOption && autoCloseCountdown !== null && (
+        <div className="bg-orange-50 border-b border-orange-200 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <div>
+                <p className="text-orange-800 text-sm font-medium">
+                  Chat window will close automatically
+                </p>
+                <p className="text-orange-700 text-xs">
+                  Closing in {autoCloseCountdown} second{autoCloseCountdown !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={cancelAutoClose}
+              className="border-orange-500 text-orange-600 hover:bg-orange-50"
+            >
+              Keep Open
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Enhanced Status Messages */}
-      {isSessionEnded && (
+      {isSessionEnded && !showKeepOpenOption && (
         <div className="bg-muted/50 border-b border-border p-3">
           <p className="text-muted-foreground text-sm text-center">
             This chat session has ended. {session.end_reason && `Reason: ${session.end_reason}`}
