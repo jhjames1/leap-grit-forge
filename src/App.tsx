@@ -30,10 +30,6 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  // Debug: Verify React is available
-  console.log('React object:', React);
-  console.log('React.useState:', React?.useState);
-  
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
