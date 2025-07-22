@@ -244,12 +244,25 @@ const AdminManagement = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-fjalla font-bold text-card-foreground">Administrator Management</h2>
-          <p className="text-muted-foreground font-source">Manage system administrators and their access</p>
+        <div className="flex items-center space-x-3">
+          <div className="bg-primary p-3 rounded-sm">
+            <Shield className="text-primary-foreground" size={20} />
+          </div>
+          <div>
+            <h2 className="font-fjalla font-bold text-2xl text-foreground tracking-wide">ADMINISTRATOR MANAGEMENT</h2>
+            <p className="text-muted-foreground text-sm">Manage system administrators and their access</p>
+          </div>
         </div>
-        
-        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <div className="flex items-center space-x-2">
+          <Button 
+            onClick={loadAdmins}
+            variant="outline"
+            disabled={loading}
+            className="border-primary text-primary hover:bg-primary/10"
+          >
+            {loading ? 'Loading...' : 'Refresh'}
+          </Button>
+          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
               <UserPlus className="mr-2 h-4 w-4" />
@@ -306,6 +319,7 @@ const AdminManagement = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -363,95 +377,116 @@ const AdminManagement = () => {
         </Card>
       </div>
 
-      {/* Search and Table */}
-      <Card className="bg-card border-0 shadow-none">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="font-fjalla font-bold text-card-foreground">Administrators</CardTitle>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search administrators..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide">Name</TableHead>
-                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide">Email</TableHead>
-                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide">Status</TableHead>
-                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide">Joined</TableHead>
-                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide">Last Sign In</TableHead>
-                <TableHead className="font-oswald font-medium text-muted-foreground uppercase tracking-wide w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAdmins.map((admin) => (
-                <TableRow key={admin.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Shield className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <div className="font-source font-medium text-card-foreground">
-                          {getAdminName(admin)}
-                        </div>
-                      </div>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search administrators by name or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Administrators List */}
+      <div className="space-y-4">
+        {filteredAdmins.length === 0 ? (
+          <Card className="bg-card p-8 rounded-lg border-0 shadow-none text-center">
+            <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              {searchTerm ? 'No administrators found matching your search.' : 'No administrators found.'}
+            </p>
+          </Card>
+        ) : (
+          filteredAdmins.map((admin) => (
+            <Card key={admin.id} className="bg-card p-6 rounded-lg border-0 shadow-none">
+              {/* Admin ID Header */}
+              <div className="mb-4 pb-3 border-b border-border flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  Admin ID: <span className="font-mono text-foreground">{admin.id}</span>
+                </h3>
+                <div className="flex items-center space-x-2">
+                  {getStatusBadge(admin)}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-background border shadow-md">
+                      <DropdownMenuItem onClick={() => handleEditAdmin(admin)} className="cursor-pointer">
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleViewActivity(admin)} className="cursor-pointer">
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Activity
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Basic Info */}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-semibold text-foreground">Basic Information</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Name: </span>
+                      <span className="text-foreground font-medium">{getAdminName(admin)}</span>
                     </div>
-                  </TableCell>
-                  <TableCell className="font-source text-muted-foreground">{admin.email}</TableCell>
-                  <TableCell>{getStatusBadge(admin)}</TableCell>
-                  <TableCell className="font-source text-muted-foreground">
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{formatDate(admin.created_at)}</span>
+                    <div className="flex items-center space-x-2">
+                      <Mail className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-foreground break-all">{admin.email}</span>
                     </div>
-                  </TableCell>
-                  <TableCell className="font-source text-muted-foreground">
-                    <div className="flex items-center space-x-1">
-                      <Activity className="h-3 w-3" />
-                      <span>{formatDate(admin.last_sign_in_at)}</span>
+                  </div>
+                </div>
+
+                {/* Account Status */}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Activity className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-semibold text-foreground">Account Status</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Status: </span>
+                      {getStatusBadge(admin)}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-background border shadow-md">
-                        <DropdownMenuItem onClick={() => handleEditAdmin(admin)} className="cursor-pointer">
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleViewActivity(admin)} className="cursor-pointer">
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Activity
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filteredAdmins.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    {searchTerm ? 'No administrators found matching your search.' : 'No administrators found.'}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                    <div>
+                      <span className="text-muted-foreground">Email Confirmed: </span>
+                      <span className="text-foreground">
+                        {admin.email_confirmed_at ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Dates */}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-semibold text-foreground">Account Dates</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Joined: </span>
+                      <span className="text-foreground">{formatDate(admin.created_at)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Last Sign In: </span>
+                      <span className="text-foreground">{formatDate(admin.last_sign_in_at)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
 
       {/* Edit Admin Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
