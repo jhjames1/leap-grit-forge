@@ -10,6 +10,7 @@ import SessionInactivityWarning from './SessionInactivityWarning';
 import { PeerSpecialist } from '@/hooks/usePeerSpecialists';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useAuth } from '@/hooks/useAuth';
+import { useRealtimeSpecialistStatus } from '@/hooks/useRealtimeSpecialistStatus';
 import { sessionCleanup } from '@/utils/sessionCleanup';
 interface PeerChatProps {
   onBack?: () => void;
@@ -27,6 +28,10 @@ const PeerChat = ({
   const {
     user
   } = useAuth();
+  
+  // Get real-time status for selected specialist
+  const { getStatusDisplay } = useRealtimeSpecialistStatus(selectedPeer?.id);
+  
   const {
     session,
     messages,
@@ -188,9 +193,9 @@ const PeerChat = ({
             <div>
               <h2 className="font-fjalla font-bold text-foreground">{selectedPeer?.first_name} {selectedPeer?.last_name}</h2>
               <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${selectedPeer?.status.status === 'online' ? 'bg-green-500' : selectedPeer?.status.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${getStatusDisplay().colorClass}`}></div>
                 <p className="text-muted-foreground text-sm">
-                  {selectedPeer?.status.status === 'online' ? 'Online' : selectedPeer?.status.status === 'away' ? 'Away' : 'Offline'}
+                  {getStatusDisplay().displayText}
                 </p>
                 {/* Realtime connection indicator */}
                 {realtimeConnected ? <Wifi size={12} className="text-green-500" /> : <WifiOff size={12} className="text-red-500" />}
