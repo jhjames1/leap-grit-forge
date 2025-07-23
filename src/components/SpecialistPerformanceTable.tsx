@@ -4,12 +4,26 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Star, MessageSquare, Clock, TrendingUp, AlertCircle } from 'lucide-react';
 import { SpecialistPerformance } from '@/services/adminAnalyticsService';
+import { SpecialistDetailModal } from './SpecialistDetailModal';
+import { useState } from 'react';
 
 interface SpecialistPerformanceTableProps {
   specialists: SpecialistPerformance[];
 }
 
 export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanceTableProps) => {
+  const [selectedSpecialist, setSelectedSpecialist] = useState<SpecialistPerformance | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleViewDetails = (specialist: SpecialistPerformance) => {
+    setSelectedSpecialist(specialist);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedSpecialist(null);
+  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online': return 'bg-green-500';
@@ -146,7 +160,11 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
                   </TableCell>
                   
                   <TableCell className="text-center">
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleViewDetails(specialist)}
+                    >
                       View Details
                     </Button>
                   </TableCell>
@@ -162,6 +180,12 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
           )}
         </div>
       </CardContent>
+
+      <SpecialistDetailModal
+        specialist={selectedSpecialist}
+        open={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </Card>
   );
 };
