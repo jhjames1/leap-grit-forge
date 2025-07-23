@@ -151,7 +151,11 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
 
       if (error) throw error;
       
-      setMessages(data || []);
+      setMessages((data || []).map(msg => ({
+        ...msg,
+        sender_type: msg.sender_type as 'user' | 'specialist',
+        message_type: msg.message_type as 'text' | 'quick_action' | 'system'
+      })));
       
       // Load proposal statuses for any proposal messages
       const proposalMessages = (data || []).filter(msg => 
@@ -163,7 +167,11 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       );
       
       if (proposalMessages.length > 0) {
-        await loadProposalStatuses(proposalMessages);
+        await loadProposalStatuses(proposalMessages.map(msg => ({
+          ...msg,
+          sender_type: msg.sender_type as 'user' | 'specialist',
+          message_type: msg.message_type as 'text' | 'quick_action' | 'system'
+        })));
       }
       
       // Also load session data
