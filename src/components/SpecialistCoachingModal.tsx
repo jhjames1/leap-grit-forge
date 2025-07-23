@@ -62,6 +62,56 @@ export const SpecialistCoachingModal: React.FC<SpecialistCoachingModalProps> = (
     ? Math.round((specialist.completed_sessions / specialist.total_sessions) * 100) 
     : 0;
 
+  const getMetricColor = (value: number, goal: number, isReversed: boolean = false) => {
+    if (isReversed) {
+      // For metrics where lower is better (like response time)
+      if (value <= goal) return 'text-success bg-success/10';
+      if (value <= goal * 1.11) return 'text-warning bg-warning/10'; // ~5% above goal
+      return 'text-destructive bg-destructive/10';
+    } else {
+      // For metrics where higher is better
+      if (value >= goal) return 'text-success bg-success/10';
+      if (value >= goal * 0.95) return 'text-warning bg-warning/10'; // 5% below goal
+      return 'text-destructive bg-destructive/10';
+    }
+  };
+
+  const getRatingColor = (rating: number) => {
+    if (rating >= 4.5) return 'text-success bg-success/10';
+    if (rating >= 3.0) return 'text-warning bg-warning/10';
+    return 'text-destructive bg-destructive/10';
+  };
+
+  const getWorkloadColor = (workload: number) => {
+    if (workload <= 70) return 'text-success bg-success/10';
+    if (workload <= 85) return 'text-warning bg-warning/10';
+    return 'text-destructive bg-destructive/10';
+  };
+
+  const getProgressColor = (value: number, goal: number, isReversed: boolean = false) => {
+    if (isReversed) {
+      if (value <= goal) return 'bg-success';
+      if (value <= goal * 1.11) return 'bg-warning';
+      return 'bg-destructive';
+    } else {
+      if (value >= goal) return 'bg-success';
+      if (value >= goal * 0.95) return 'bg-warning';
+      return 'bg-destructive';
+    }
+  };
+
+  const getRatingProgressColor = (rating: number) => {
+    if (rating >= 4.5) return 'bg-success';
+    if (rating >= 3.0) return 'bg-warning';
+    return 'bg-destructive';
+  };
+
+  const getWorkloadProgressColor = (workload: number) => {
+    if (workload <= 70) return 'bg-success';
+    if (workload <= 85) return 'bg-warning';
+    return 'bg-destructive';
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
@@ -87,26 +137,50 @@ export const SpecialistCoachingModal: React.FC<SpecialistCoachingModalProps> = (
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Completion Rate</p>
                     <div className="space-y-1">
-                      <Progress value={completionRate} className="h-2" />
-                      <p className="text-sm font-medium">{completionRate}%</p>
+                      <Progress 
+                        value={completionRate} 
+                        className={`h-2 ${getMetricColor(completionRate, 75)}`}
+                        style={{
+                          // @ts-ignore
+                          '--progress-background': getProgressColor(completionRate, 75) === 'bg-success' ? 'hsl(var(--success))' : 
+                            getProgressColor(completionRate, 75) === 'bg-warning' ? 'hsl(var(--warning))' : 'hsl(var(--destructive))'
+                        }}
+                      />
+                      <p className={`text-sm font-medium ${getMetricColor(completionRate, 75).split(' ')[0]}`}>{completionRate}%</p>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">User Rating</p>
                     <div className="space-y-1">
-                      <Progress value={(specialist.avg_rating / 5) * 100} className="h-2" />
-                      <p className="text-sm font-medium">{specialist.avg_rating.toFixed(1)}★</p>
+                      <Progress 
+                        value={(specialist.avg_rating / 5) * 100} 
+                        className={`h-2 ${getRatingColor(specialist.avg_rating)}`}
+                        style={{
+                          // @ts-ignore
+                          '--progress-background': getRatingProgressColor(specialist.avg_rating) === 'bg-success' ? 'hsl(var(--success))' : 
+                            getRatingProgressColor(specialist.avg_rating) === 'bg-warning' ? 'hsl(var(--warning))' : 'hsl(var(--destructive))'
+                        }}
+                      />
+                      <p className={`text-sm font-medium ${getRatingColor(specialist.avg_rating).split(' ')[0]}`}>{specialist.avg_rating.toFixed(1)}★</p>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Response Time</p>
-                    <p className="text-sm font-medium">{specialist.avg_response_time_seconds}s</p>
+                    <p className={`text-sm font-medium ${getMetricColor(specialist.avg_response_time_seconds, 45, true).split(' ')[0]}`}>{specialist.avg_response_time_seconds}s</p>
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Workload</p>
                     <div className="space-y-1">
-                      <Progress value={specialist.workload_score} className="h-2" />
-                      <p className="text-sm font-medium">{specialist.workload_score}%</p>
+                      <Progress 
+                        value={specialist.workload_score} 
+                        className={`h-2 ${getWorkloadColor(specialist.workload_score)}`}
+                        style={{
+                          // @ts-ignore
+                          '--progress-background': getWorkloadProgressColor(specialist.workload_score) === 'bg-success' ? 'hsl(var(--success))' : 
+                            getWorkloadProgressColor(specialist.workload_score) === 'bg-warning' ? 'hsl(var(--warning))' : 'hsl(var(--destructive))'
+                        }}
+                      />
+                      <p className={`text-sm font-medium ${getWorkloadColor(specialist.workload_score).split(' ')[0]}`}>{specialist.workload_score}%</p>
                     </div>
                   </div>
                 </div>
