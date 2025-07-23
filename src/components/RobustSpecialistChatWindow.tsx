@@ -188,6 +188,40 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, []);
 
+  // Set up real-time subscription for proposal status updates
+  useEffect(() => {
+    if (!session?.id) return;
+
+    const proposalChannel = supabase
+      .channel(`chat-proposals-${session.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'appointment_proposals',
+          filter: `chat_session_id=eq.${session.id}`
+        },
+        (payload) => {
+          console.log('Proposal status updated in chat:', payload);
+          const proposalId = payload.new?.id;
+          const newStatus = payload.new?.status;
+          
+          if (proposalId && newStatus) {
+            setProposalStatuses(prev => ({
+              ...prev,
+              [proposalId]: newStatus
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(proposalChannel);
+    };
+  }, [session?.id]);
+
   // Load session proposal
   const loadSessionProposal = useCallback(async () => {
     try {

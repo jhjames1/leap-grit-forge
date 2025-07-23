@@ -90,7 +90,7 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
     determineUserRole();
   }, [user, proposalData.specialist_id, proposalData.user_id]);
 
-  // Load proposal status
+  // Load proposal status and set up real-time updates
   useEffect(() => {
     const loadProposalStatus = async () => {
       try {
@@ -112,6 +112,32 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
     };
 
     loadProposalStatus();
+
+    // Set up real-time subscription for proposal status changes
+    const proposalChannel = supabase
+      .channel(`proposal-${proposalData.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'appointment_proposals',
+          filter: `id=eq.${proposalData.id}`
+        },
+        (payload) => {
+          console.log('Proposal status updated:', payload);
+          const newStatus = payload.new?.status;
+          if (newStatus) {
+            setProposalStatus(newStatus);
+            setResponded(newStatus !== 'pending');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(proposalChannel);
+    };
   }, [proposalData.id]);
 
   // Check if proposal has expired
