@@ -105,6 +105,32 @@ export const useRealtimeAdminAnalytics = () => {
           loadAnalytics();
         }
       )
+      // Listen to specialist status changes
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'specialist_status'
+        },
+        () => {
+          logger.debug('Specialist status change detected, refreshing analytics');
+          loadAnalytics();
+        }
+      )
+      // Listen to session ratings changes
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'peer_session_ratings'
+        },
+        () => {
+          logger.debug('Session rating change detected, refreshing analytics');
+          loadAnalytics();
+        }
+      )
       // Listen to gratitude entries (engagement)
       .on(
         'postgres_changes',

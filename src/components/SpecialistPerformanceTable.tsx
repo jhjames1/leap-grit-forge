@@ -1,0 +1,167 @@
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Star, MessageSquare, Clock, TrendingUp, AlertCircle } from 'lucide-react';
+import { SpecialistPerformance } from '@/services/adminAnalyticsService';
+
+interface SpecialistPerformanceTableProps {
+  specialists: SpecialistPerformance[];
+}
+
+export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanceTableProps) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'online': return 'bg-green-500';
+      case 'away': return 'bg-yellow-500';
+      case 'busy': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getPerformanceColor = (score: number) => {
+    if (score >= 85) return 'text-green-500';
+    if (score >= 70) return 'text-blue-500';
+    if (score >= 50) return 'text-yellow-500';
+    return 'text-red-500';
+  };
+
+  const getWorkloadColor = (score: number) => {
+    if (score >= 90) return 'text-red-500';
+    if (score >= 70) return 'text-yellow-500';
+    if (score >= 30) return 'text-blue-500';
+    return 'text-green-500';
+  };
+
+  const formatTime = (seconds: number) => {
+    if (seconds < 60) return `${Math.round(seconds)}s`;
+    if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+    return `${Math.round(seconds / 3600)}h`;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="w-5 h-5" />
+          Individual Specialist Performance
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Specialist</TableHead>
+                <TableHead className="text-center">Status</TableHead>
+                <TableHead className="text-center">Sessions</TableHead>
+                <TableHead className="text-center">Rating</TableHead>
+                <TableHead className="text-center">Response</TableHead>
+                <TableHead className="text-center">Workload</TableHead>
+                <TableHead className="text-center">Performance</TableHead>
+                <TableHead className="text-center">Last Active</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {specialists.map((specialist) => (
+                <TableRow key={specialist.specialistId}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{specialist.name}</div>
+                      <div className="text-sm text-muted-foreground">{specialist.email}</div>
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <div className={`w-2 h-2 rounded-full ${getStatusColor(specialist.status)}`}></div>
+                      <span className="text-sm capitalize">{specialist.status}</span>
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {specialist.activeSessions}/{specialist.completedSessions}
+                      </span>
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Star className="w-4 h-4 text-yellow-500" />
+                      <span className="text-sm">
+                        {specialist.averageRating > 0 ? specialist.averageRating.toFixed(1) : 'N/A'}
+                      </span>
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm">
+                        {formatTime(specialist.responseTime)}
+                      </span>
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell className="text-center">
+                    <Badge 
+                      variant="outline" 
+                      className={`${getWorkloadColor(specialist.workloadScore)} border-current`}
+                    >
+                      {specialist.workloadScore.toFixed(0)}%
+                    </Badge>
+                  </TableCell>
+                  
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <Badge 
+                        variant="outline" 
+                        className={`${getPerformanceColor(specialist.performanceScore)} border-current`}
+                      >
+                        {specialist.performanceScore.toFixed(0)}%
+                      </Badge>
+                      {specialist.performanceScore < 50 && (
+                        <AlertCircle className="w-4 h-4 text-red-500" />
+                      )}
+                    </div>
+                  </TableCell>
+                  
+                  <TableCell className="text-center">
+                    <span className="text-sm text-muted-foreground">
+                      {formatDate(specialist.lastActive)}
+                    </span>
+                  </TableCell>
+                  
+                  <TableCell className="text-center">
+                    <Button variant="ghost" size="sm">
+                      View Details
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          
+          {specialists.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No specialist data available
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

@@ -11,6 +11,8 @@ import { useRealtimeAdminAnalytics } from '@/hooks/useRealtimeAdminAnalytics';
 import { supabase } from '@/integrations/supabase/client';
 import SecurityAuditPanel from './SecurityAuditPanel';
 import { adminAnalytics, type UserAnalytics } from '@/services/adminAnalyticsService';
+import { SpecialistOverviewCards } from './SpecialistOverviewCards';
+import { SpecialistPerformanceTable } from './SpecialistPerformanceTable';
 import { 
   Users, 
   TrendingUp, 
@@ -211,6 +213,11 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
             <TabsTrigger value="specialists" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200 px-6 py-2 border data-[state=active]:border-primary">
               <UserCheck className="mr-2 h-4 w-4" />
               Specialists
+              {analytics?.specialistAnalytics?.alertFlags && analytics.specialistAnalytics.alertFlags.length > 0 && (
+                <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs">
+                  {analytics.specialistAnalytics.alertFlags.length}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="content" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200 px-6 py-2 border data-[state=active]:border-primary">
               <MessageSquare className="mr-2 h-4 w-4" />
@@ -426,7 +433,21 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
           </TabsContent>
 
           <TabsContent value="specialists">
-            <PeerSpecialistManagement />
+            <div className="space-y-6">
+              {/* Specialist Performance Overview */}
+              {analytics?.specialistAnalytics && (
+                <>
+                  <SpecialistOverviewCards specialistAnalytics={analytics.specialistAnalytics} />
+                  <SpecialistPerformanceTable specialists={analytics.specialistAnalytics.specialistPerformance} />
+                </>
+              )}
+              
+              {/* Original Specialist Management */}
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-4">Specialist Management</h3>
+                <PeerSpecialistManagement />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="content">
