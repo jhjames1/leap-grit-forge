@@ -24,7 +24,7 @@ const PeerSpecialistPortal = () => {
   const isCheckingRef = useRef(false);
   const mountedRef = useRef(true);
 
-  // Define checkSpecialistStatus with useCallback to prevent recreation
+  // ALL useCallback hooks must be defined at the top level, unconditionally
   const checkSpecialistStatus = useCallback(async () => {
     if (!user || isCheckingRef.current || !mountedRef.current) {
       if (!user) setIsLoading(false);
@@ -93,26 +93,6 @@ const PeerSpecialistPortal = () => {
     }
   }, [user?.id]);
 
-  useEffect(() => {
-    mountedRef.current = true;
-    
-    if (!loading && user && !hasChecked) {
-      logger.debug('User state ready, checking specialist status', { 
-        userId: user?.id, 
-        loading 
-      });
-      checkSpecialistStatus();
-    } else if (!loading && !user) {
-      // User is not authenticated, stop loading
-      setIsLoading(false);
-      setHasChecked(true);
-    }
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [user?.id, loading, hasChecked, checkSpecialistStatus]);
-
   const handleLogin = useCallback(() => {
     logger.debug('Login handler called');
     // Reset states and re-check
@@ -148,6 +128,45 @@ const PeerSpecialistPortal = () => {
         });
     }
   }, [user?.id]);
+
+  const handlePasswordChangeComplete = useCallback(async () => {
+    setMustChangePassword(false);
+    
+    // Log password change completion
+    if (user?.id && specialistId) {
+      await supabase
+        .from('user_activity_logs')
+        .insert({
+          user_id: user.id,
+          action: 'password_changed_first_login',
+          type: 'security',
+          details: JSON.stringify({
+            specialist_id: specialistId,
+            timestamp: new Date().toISOString()
+          })
+        });
+    }
+  }, [specialistId, user?.id]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    
+    if (!loading && user && !hasChecked) {
+      logger.debug('User state ready, checking specialist status', { 
+        userId: user?.id, 
+        loading 
+      });
+      checkSpecialistStatus();
+    } else if (!loading && !user) {
+      // User is not authenticated, stop loading
+      setIsLoading(false);
+      setHasChecked(true);
+    }
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [user?.id, loading, hasChecked, checkSpecialistStatus]);
 
   // Show error state if there's an error
   if (error) {
@@ -186,24 +205,6 @@ const PeerSpecialistPortal = () => {
       </ChatErrorBoundary>
     );
   }
-
-  // Handle password change requirement
-  const handlePasswordChangeComplete = useCallback(async () => {
-    setMustChangePassword(false);
-    
-    // Log password change completion
-    await supabase
-      .from('user_activity_logs')
-      .insert({
-        user_id: user.id,
-        action: 'password_changed_first_login',
-        type: 'security',
-        details: JSON.stringify({
-          specialist_id: specialistId,
-          timestamp: new Date().toISOString()
-        })
-      });
-  }, [specialistId, user?.id]);
 
   return (
     <ErrorBoundary>
