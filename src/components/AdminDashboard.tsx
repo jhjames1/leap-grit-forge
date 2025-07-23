@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useRealtimeAdminAnalytics } from '@/hooks/useRealtimeAdminAnalytics';
+import { supabase } from '@/integrations/supabase/client';
 import SecurityAuditPanel from './SecurityAuditPanel';
 import { adminAnalytics, type UserAnalytics } from '@/services/adminAnalyticsService';
 import { 
@@ -37,34 +39,76 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
   const { t } = useLanguage();
   const { signOut, user } = useAuth();
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
-  const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [liveSpecialistCount, setLiveSpecialistCount] = useState(0);
+  const [liveChatCount, setLiveChatCount] = useState(0);
+  
+  // Use the real-time analytics hook
+  const { analytics, isLoading, error, refreshAnalytics } = useRealtimeAdminAnalytics();
   
   // Get admin user's first name for welcome message
   const adminFirstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin';
 
+  // Load live counts for specialist and chat metrics
   useEffect(() => {
-    loadAnalytics();
+    const loadLiveCounts = async () => {
+      try {
+        // Get active specialist count
+        const { data: specialists, error: specialistError } = await supabase
+          .from('peer_specialists')
+          .select('id')
+          .eq('is_active', true)
+          .eq('is_verified', true);
+        
+        if (!specialistError && specialists) {
+          setLiveSpecialistCount(specialists.length);
+        }
+
+        // Get active chat count
+        const { data: chats, error: chatError } = await supabase
+          .from('chat_sessions')
+          .select('id')
+          .eq('status', 'active');
+        
+        if (!chatError && chats) {
+          setLiveChatCount(chats.length);
+        }
+      } catch (err) {
+        console.error('Error loading live counts:', err);
+      }
+    };
+
+    loadLiveCounts();
+    
+    // Set up real-time updates for live counts
+    const channel = supabase
+      .channel('admin-live-counts')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'peer_specialists'
+        },
+        () => loadLiveCounts()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_sessions'
+        },
+        () => loadLiveCounts()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const loadAnalytics = async () => {
-    setIsLoading(true);
-    try {
-      const data = await adminAnalytics.calculateUserAnalytics();
-      setAnalytics(data);
-    } catch (error) {
-      console.error('Error loading analytics:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const refreshData = () => {
-    loadAnalytics();
-    // Also refresh specialist presence data if on specialists tab
-    if (window.location.hash.includes('specialists')) {
-      // This will be handled by the specialist component's refresh
-    }
+    refreshAnalytics();
   };
 
   const handleSignOut = async () => {
@@ -151,10 +195,10 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
                 <p className="text-primary-foreground/80">Monitor and manage your LEAP community</p>
               </div>
               <div className="text-right">
-                <div className="text-sm text-primary-foreground/80">System Status</div>
+                <div className="text-sm text-primary-foreground/80">Live Updates</div>
                 <Badge variant="secondary" className="bg-white/20 text-white">
-                  <Shield className="w-3 h-3 mr-1" />
-                  Online
+                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                  Active
                 </Badge>
               </div>
             </div>
@@ -273,7 +317,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
                       <UserCheck className="text-accent-foreground w-5 h-5" />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold">12</div>
+                      <div className="text-2xl font-bold">{liveSpecialistCount}</div>
                       <div className="text-xs text-muted-foreground uppercase tracking-wide">Active Specialists</div>
                     </div>
                   </div>
@@ -287,7 +331,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
                       <MessageSquare className="text-accent-foreground w-5 h-5" />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold">24</div>
+                      <div className="text-2xl font-bold">{liveChatCount}</div>
                       <div className="text-xs text-muted-foreground uppercase tracking-wide">Active Chats</div>
                     </div>
                   </div>
