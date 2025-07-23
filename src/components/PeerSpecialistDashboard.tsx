@@ -9,16 +9,16 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { SpecialistStatusIndicator } from '@/components/SpecialistStatusIndicator';
+import SpecialistStatusIndicator from '@/components/SpecialistStatusIndicator';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { UserAuth } from '@/components/UserAuth';
+import UserAuth from '@/components/UserAuth';
 import { TestingModeControls } from '@/components/TestingModeControls';
 import { useProfile } from '@/hooks/useProfile';
-import { SpecialistChat } from '@/components/SpecialistChat';
+import SpecialistChat from '@/components/SpecialistChat';
 import ProposalManagement from '@/components/ProposalManagement';
 import SpecialistAnalytics from '@/components/SpecialistAnalytics';
 import SpecialistSettings from '@/components/SpecialistSettings';
-import SpecialistCalendar from '@/components/SpecialistCalendar';
+import SpecialistCalendar from '@/components/calendar/SpecialistCalendar';
 
 interface PeerSpecialistDashboardProps {
   specialistId: string | null;
@@ -105,7 +105,7 @@ const PeerSpecialistDashboard: React.FC<PeerSpecialistDashboardProps> = ({
             <TestingModeControls />
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <UserAuth />
+              <UserAuth onLogin={() => {}} />
             </div>
           </div>
         </div>
@@ -191,7 +191,12 @@ const PeerSpecialistDashboard: React.FC<PeerSpecialistDashboardProps> = ({
             <SpecialistAnalytics />
           </TabsContent>
           <TabsContent value="settings" className="space-y-1">
-            <SpecialistSettings />
+            <SpecialistSettings 
+              isOpen={true}
+              onClose={() => setActiveTab("dashboard")}
+              specialist={null}
+              onUpdateSpecialist={() => {}}
+            />
           </TabsContent>
         </Tabs>
       </div>
