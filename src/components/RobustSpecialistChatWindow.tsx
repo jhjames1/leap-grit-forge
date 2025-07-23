@@ -25,6 +25,8 @@ interface ChatSession {
   user_first_name?: string;
   user_last_name?: string;
   last_activity?: string;
+  created_at: string;
+  updated_at: string;
   end_reason?: string;
 }
 
@@ -204,15 +206,29 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, [session.id]);
 
-  // Enhanced session update handler
+  // Enhanced session update handler with timeout detection
   const handleSessionUpdate = useCallback((updatedSession: ChatSession) => {
     logger.debug('RobustSpecialistChatWindow: Session update received', {
       sessionId: updatedSession.id,
       oldStatus: session.status,
       newStatus: updatedSession.status,
       oldSpecialistId: session.specialist_id,
-      newSpecialistId: updatedSession.specialist_id
+      newSpecialistId: updatedSession.specialist_id,
+      endReason: updatedSession.end_reason
     });
+
+    // Check if this is a timeout event
+    const isTimeout = updatedSession.status === 'ended' && 
+      (updatedSession.end_reason === 'auto_timeout' || updatedSession.end_reason === 'inactivity_timeout');
+
+    if (isTimeout) {
+      // Show immediate timeout notification in the chat
+      toast({
+        title: "Session Timed Out",
+        description: "This chat session has been automatically ended due to inactivity. The window will close in a few seconds.",
+        variant: "destructive"
+      });
+    }
 
     setSession(prevSession => {
       const mergedSession = {
@@ -227,7 +243,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     if (onSessionUpdate) {
       onSessionUpdate(updatedSession);
     }
-  }, [session.status, session.specialist_id, onSessionUpdate]);
+  }, [session.status, session.specialist_id, onSessionUpdate, toast]);
 
   // Cleanup function for real-time subscription
   const cleanupRealtimeSubscription = useCallback(() => {

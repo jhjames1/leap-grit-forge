@@ -18,6 +18,7 @@ interface ChatSession {
   last_activity?: string;
   created_at: string;
   updated_at: string;
+  end_reason?: string;
 }
 
 interface UseSpecialistSessionsReturn {

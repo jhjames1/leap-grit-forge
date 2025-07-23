@@ -33,6 +33,7 @@ interface ChatSession {
   last_activity?: string;
   created_at: string;
   updated_at: string;
+  end_reason?: string;
 }
 
 const PeerSpecialistDashboard = () => {
@@ -160,9 +161,14 @@ const PeerSpecialistDashboard = () => {
     }
   }, [specialistId, loadTodayStats]);
 
-  // Enhanced session update handler
+  // Enhanced session update handler with improved timeout handling
   const handleSessionUpdate = useCallback((updatedSession: ChatSession) => {
-    logger.debug('Session update received:', updatedSession);
+    logger.debug('Session update received:', {
+      sessionId: updatedSession.id,
+      status: updatedSession.status,
+      endReason: updatedSession.end_reason,
+      isSelectedSession: selectedSessionRef.current?.id === updatedSession.id
+    });
 
     // Update selected session if it matches
     setSelectedSession(prevSelected => {
@@ -174,23 +180,69 @@ const PeerSpecialistDashboard = () => {
       return prevSelected;
     });
 
-    // Show appropriate toasts for status changes
+    // Handle different session status changes
     if (updatedSession.status === 'active') {
       toast({
         title: "Session Activated",
         description: `Session #${updatedSession.session_number} is now active.`
       });
     } else if (updatedSession.status === 'ended') {
-      // Close the chat window if it's the selected session and show popup
-      if (selectedSessionRef.current?.id === updatedSession.id) {
-        setSelectedSession(null);
-        setShowEndChatMessage(true);
+      const isSelectedSession = selectedSessionRef.current?.id === updatedSession.id;
+      const isTimeout = updatedSession.end_reason === 'auto_timeout' || updatedSession.end_reason === 'inactivity_timeout';
+      
+      if (isSelectedSession) {
+        if (isTimeout) {
+          // For timeout sessions, show specific notification and delay close
+          toast({
+            title: "Session Timed Out",
+            description: `Session #${updatedSession.session_number} has been automatically ended due to inactivity.`,
+            variant: "destructive"
+          });
+          
+          // Delay closing to allow specialist to see the notification
+          setTimeout(() => {
+            setSelectedSession(null);
+            setShowEndChatMessage(true);
+            
+            // Auto-hide popup after 4 seconds for timeout
+            setTimeout(() => {
+              setShowEndChatMessage(false);
+            }, 4000);
+          }, 2000); // 2 second delay before closing chat window
+        } else {
+          // For manual end, close immediately
+          setSelectedSession(null);
+          setShowEndChatMessage(true);
+          
+          toast({
+            title: "Session Ended",
+            description: `Session #${updatedSession.session_number} has been ended.`
+          });
 
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
-          setShowEndChatMessage(false);
-        }, 3000);
+          // Auto-hide after 3 seconds for manual end
+          setTimeout(() => {
+            setShowEndChatMessage(false);
+          }, 3000);
+        }
+      } else {
+        // Session ended but not currently selected - just show notification
+        if (isTimeout) {
+          toast({
+            title: "Session Timed Out",
+            description: `Session #${updatedSession.session_number} timed out due to inactivity.`,
+            variant: "destructive"
+          });
+        }
       }
+
+      // Refresh sessions list to remove ended session after a delay
+      setTimeout(() => {
+        logger.debug('Refreshing sessions after session end:', {
+          sessionId: updatedSession.id,
+          isTimeout
+        });
+        refreshSessions();
+      }, isTimeout ? 5000 : 3000); // Longer delay for timeout to allow user to see what happened
 
       // Refresh today's stats when a session ends
       loadTodayStats();
@@ -537,63 +589,95 @@ const PeerSpecialistDashboard = () => {
                       </div>
                     </Card>
                   ) : (
-                    sessions.map(session => (
-                      <Card
-                        key={session.id}
-                        className={`cursor-pointer transition-all hover:shadow-md ${
-                          selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''
-                        }`}
-                        onClick={() => setSelectedSession(session)}
-                      >
-                        <CardContent className="p-3">
-                          <div className="flex items-start justify-between mb-1">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Badge
-                                  variant={session.status === 'waiting' ? 'secondary' : session.status === 'active' ? 'default' : 'outline'}
-                                  className={session.status === 'waiting' ? 'bg-yellow-100 text-yellow-800' : session.status === 'active' ? 'bg-green-100 text-green-800' : ''}
-                                >
-                                  {session.status === 'waiting' ? 'Waiting' : session.status === 'active' ? 'Active' : 'Ended'}
-                                </Badge>
-                                <span className="text-sm font-medium">#{session.session_number}</span>
-                              </div>
-                              
-                              <p className="font-medium text-sm">
-                                {session.user_first_name && session.user_last_name
-                                  ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.`
-                                  : 'Anonymous User'}
-                              </p>
-                              
-                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {format(new Date(session.started_at), 'h:mm a')}
+                    sessions.map(session => {
+                      const isTimeout = session.end_reason === 'auto_timeout' || session.end_reason === 'inactivity_timeout';
+                      return (
+                        <Card
+                          key={session.id}
+                          className={`cursor-pointer transition-all hover:shadow-md ${
+                            selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''
+                          } ${session.status === 'ended' && isTimeout ? 'bg-destructive/5 border-destructive/20' : ''}`}
+                          onClick={() => setSelectedSession(session)}
+                        >
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between mb-1">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge
+                                    variant={
+                                      session.status === 'waiting' 
+                                        ? 'secondary' 
+                                        : session.status === 'active' 
+                                          ? 'default' 
+                                          : isTimeout 
+                                            ? 'destructive'
+                                            : 'outline'
+                                    }
+                                    className={
+                                      session.status === 'waiting' 
+                                        ? 'bg-yellow-100 text-yellow-800' 
+                                        : session.status === 'active' 
+                                          ? 'bg-green-100 text-green-800' 
+                                          : isTimeout
+                                            ? 'bg-red-100 text-red-800'
+                                            : ''
+                                    }
+                                  >
+                                    {session.status === 'waiting' 
+                                      ? 'Waiting' 
+                                      : session.status === 'active' 
+                                        ? 'Active' 
+                                        : isTimeout 
+                                          ? 'Timed Out'
+                                          : 'Ended'
+                                    }
+                                  </Badge>
+                                  <span className="text-sm font-medium">#{session.session_number}</span>
+                                  {isTimeout && (
+                                    <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                      Auto-ended
+                                    </Badge>
+                                  )}
                                 </div>
-                                {session.status === 'ended' && session.ended_at && (
+                                
+                                <p className="font-medium text-sm">
+                                  {session.user_first_name && session.user_last_name
+                                    ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.`
+                                    : 'Anonymous User'}
+                                </p>
+                                
+                                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                                   <div className="flex items-center gap-1">
-                                    <CheckCircle className="w-3 h-3" />
-                                    Ended {format(new Date(session.ended_at), 'h:mm a')}
+                                    <Clock className="w-3 h-3" />
+                                    {format(new Date(session.started_at), 'h:mm a')}
                                   </div>
-                                )}
+                                  {session.status === 'ended' && session.ended_at && (
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle className="w-3 h-3" />
+                                      Ended {format(new Date(session.ended_at), 'h:mm a')}
+                                      {isTimeout && <span className="text-orange-600 ml-1">(Timeout)</span>}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          {session.status === 'waiting' && (
-                            <Button
-                              size="sm"
-                              className="w-full mt-1 h-7 text-xs"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedSession(session);
-                              }}
-                            >
-                              Join Session
-                            </Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))
+                            
+                            {session.status === 'waiting' && (
+                              <Button
+                                size="sm"
+                                className="w-full mt-1 h-7 text-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedSession(session);
+                                }}
+                              >
+                                Join Session
+                              </Button>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })
                   )}
                 </div>
               </ScrollArea>
