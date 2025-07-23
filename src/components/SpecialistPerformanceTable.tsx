@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Star, MessageSquare, Clock, TrendingUp, AlertCircle } from 'lucide-react';
 import { SpecialistPerformance } from '@/services/adminAnalyticsService';
-import { SpecialistDetailModal } from './SpecialistDetailModal';
+import { SpecialistCoachingModal } from './SpecialistCoachingModal';
 import { useState } from 'react';
 
 interface SpecialistPerformanceTableProps {
@@ -165,7 +165,7 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
                       size="sm"
                       onClick={() => handleViewDetails(specialist)}
                     >
-                      View Details
+                      Coaching Tips
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -181,8 +181,21 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
         </div>
       </CardContent>
 
-      <SpecialistDetailModal
-        specialist={selectedSpecialist}
+      <SpecialistCoachingModal
+        specialist={selectedSpecialist ? {
+          id: selectedSpecialist.specialistId,
+          name: selectedSpecialist.name,
+          email: selectedSpecialist.email,
+          status: selectedSpecialist.status,
+          active_sessions: selectedSpecialist.activeSessions,
+          completed_sessions: selectedSpecialist.completedSessions,
+          total_sessions: selectedSpecialist.activeSessions + selectedSpecialist.completedSessions,
+          avg_rating: selectedSpecialist.averageRating,
+          avg_response_time_seconds: selectedSpecialist.responseTime,
+          workload_score: selectedSpecialist.workloadScore,
+          performance_score: selectedSpecialist.performanceScore,
+          last_active: selectedSpecialist.lastActive
+        } : null}
         open={isModalOpen}
         onClose={handleCloseModal}
       />
