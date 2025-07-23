@@ -38,6 +38,7 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
   
   const subscriptionRefs = useRef<string[]>([]);
   const mountedRef = useRef(true);
+  const endedSessionTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   // Function to load sessions from database
   const loadSessions = useCallback(async (): Promise<ChatSession[]> => {
@@ -210,6 +211,26 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
         };
       }
       
+      // Handle ended sessions - keep them visible for 15 seconds
+      if (sessionWithProfile.status === 'ended') {
+        // Clear any existing timer for this session
+        const existingTimer = endedSessionTimers.current.get(sessionWithProfile.id);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+        }
+        
+        // Set up timer to remove session after 15 seconds
+        const removeTimer = setTimeout(() => {
+          setSessions(prevSessions => {
+            logger.debug('🕒 Removing ended session after 15 seconds:', sessionWithProfile.id);
+            return prevSessions.filter(session => session.id !== sessionWithProfile.id);
+          });
+          endedSessionTimers.current.delete(sessionWithProfile.id);
+        }, 15000);
+        
+        endedSessionTimers.current.set(sessionWithProfile.id, removeTimer);
+      }
+      
       // Update sessions using functional update
       setSessions(prevSessions => {
         return prevSessions.map(session => {
@@ -218,9 +239,9 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
           }
           return session;
         }).filter(session => {
-          // Remove sessions that are no longer relevant to the main dashboard
-          if (session.status === 'ended') return false; // Ended sessions go to Chat History only
-          if (session.specialist_id && session.specialist_id !== specialistId) return false;
+          // Don't immediately remove ended sessions - let the timer handle it
+          // Remove sessions assigned to other specialists
+          if (session.specialist_id && session.specialist_id !== specialistId && session.status !== 'waiting') return false;
           return true;
         });
       });
@@ -274,7 +295,7 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
     (subscriptionRefs.current as any).statusInterval = statusInterval;
   }, [user, specialistId]);
 
-  // Clean up subscription
+  // Clean up subscription and timers
   const cleanupSubscription = useCallback(() => {
     if (subscriptionRefs.current.length > 0) {
       logger.debug('Cleaning up specialist sessions subscription');
@@ -290,6 +311,12 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
       
       subscriptionRefs.current = [];
     }
+    
+    // Clear all pending ended session timers
+    endedSessionTimers.current.forEach((timer) => {
+      clearTimeout(timer);
+    });
+    endedSessionTimers.current.clear();
   }, []);
 
   // Initialize and manage subscriptions with 15-second refresh
