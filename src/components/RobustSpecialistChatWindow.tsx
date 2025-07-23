@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Send, Calendar, Phone, Video, User, Shield, Clock, X, Trash2, AlertCircle, CheckCircle, RefreshCw, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Send, Calendar, Phone, Video, User, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
-import { useConnectionMonitor } from '@/hooks/useConnectionMonitor';
 import { supabase } from '@/integrations/supabase/client';
+import { useRobustRealtimeConnection } from '@/hooks/useRobustRealtimeConnection';
+import ConnectionStatusIndicator from './ConnectionStatusIndicator';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
 import SpecialistProposalStatus from './SpecialistProposalStatus';
 import ChatAppointmentScheduler from './ChatAppointmentScheduler';
@@ -76,18 +76,75 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const [specialistId, setSpecialistId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [subscriptionStatus, setSubscriptionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
   const [proposalStatuses, setProposalStatuses] = useState<Record<string, string>>({});
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const channelRef = useRef<any>(null);
-  const isInitializedRef = useRef(false);
-  const subscriptionRetryCount = useRef(0);
-  const maxRetries = 3;
 
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Handle real-time message updates
+  const handleNewMessage = useCallback((payload: any) => {
+    logger.debug('🔴 SPECIALIST: New message received via realtime:', payload.new);
+    const newMessage = payload.new as RealMessage;
+    
+    if (newMessage.session_id === session.id) {
+      setMessages(prev => {
+        const exists = prev.find(msg => msg.id === newMessage.id);
+        if (exists) return prev;
+        
+        return [...prev, newMessage].sort((a, b) => 
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      });
+      
+      // If this is a proposal message, load its status
+      if (newMessage.metadata?.action_type === 'appointment_proposal' || 
+          newMessage.metadata?.action_type === 'recurring_appointment_proposal') {
+        loadProposalStatuses([newMessage]);
+      }
+    }
+  }, [session.id]);
+
+  // Handle real-time session updates
+  const handleSessionUpdate = useCallback((payload: any) => {
+    logger.debug('🔴 SPECIALIST: Session update received via realtime:', payload.new);
+    const updatedSession = payload.new as ChatSession;
+    
+    if (updatedSession.id === session.id) {
+      // Check if this is a timeout event
+      const isTimeout = updatedSession.status === 'ended' && 
+        (updatedSession.end_reason === 'auto_timeout' || updatedSession.end_reason === 'inactivity_timeout');
+
+      if (isTimeout) {
+        toast({
+          title: "Session Timed Out",
+          description: "This chat session has been automatically ended due to inactivity. The window will close in a few seconds.",
+          variant: "destructive"
+        });
+      }
+
+      setSession(prevSession => ({
+        ...prevSession,
+        ...updatedSession,
+        user_first_name: updatedSession.user_first_name || prevSession.user_first_name,
+        user_last_name: updatedSession.user_last_name || prevSession.user_last_name
+      }));
+
+      if (onSessionUpdate) {
+        onSessionUpdate(updatedSession);
+      }
+    }
+  }, [session.id, onSessionUpdate, toast]);
+
+  // Use robust real-time connection
+  const { connectionStatus, forceReconnect, isConnected } = useRobustRealtimeConnection({
+    sessionId: session.id,
+    onMessage: handleNewMessage,
+    onSessionUpdate: handleSessionUpdate,
+    enabled: true
+  });
 
   // Get specialist ID on mount
   useEffect(() => {
@@ -188,40 +245,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, []);
 
-  // Set up real-time subscription for proposal status updates
-  useEffect(() => {
-    if (!session?.id) return;
-
-    const proposalChannel = supabase
-      .channel(`chat-proposals-${session.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'appointment_proposals',
-          filter: `chat_session_id=eq.${session.id}`
-        },
-        (payload) => {
-          console.log('Proposal status updated in chat:', payload);
-          const proposalId = payload.new?.id;
-          const newStatus = payload.new?.status;
-          
-          if (proposalId && newStatus) {
-            setProposalStatuses(prev => ({
-              ...prev,
-              [proposalId]: newStatus
-            }));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(proposalChannel);
-    };
-  }, [session?.id]);
-
   // Load session proposal
   const loadSessionProposal = useCallback(async () => {
     try {
@@ -240,115 +263,12 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, [session.id]);
 
-  // Enhanced session update handler with timeout detection
-  const handleSessionUpdate = useCallback((updatedSession: ChatSession) => {
-    logger.debug('RobustSpecialistChatWindow: Session update received', {
-      sessionId: updatedSession.id,
-      oldStatus: session.status,
-      newStatus: updatedSession.status,
-      oldSpecialistId: session.specialist_id,
-      newSpecialistId: updatedSession.specialist_id,
-      endReason: updatedSession.end_reason
-    });
-
-    // Check if this is a timeout event
-    const isTimeout = updatedSession.status === 'ended' && 
-      (updatedSession.end_reason === 'auto_timeout' || updatedSession.end_reason === 'inactivity_timeout');
-
-    if (isTimeout) {
-      // Show immediate timeout notification in the chat
-      toast({
-        title: "Session Timed Out",
-        description: "This chat session has been automatically ended due to inactivity. The window will close in a few seconds.",
-        variant: "destructive"
-      });
-    }
-
-    setSession(prevSession => {
-      const mergedSession = {
-        ...prevSession,
-        ...updatedSession,
-        user_first_name: updatedSession.user_first_name || prevSession.user_first_name,
-        user_last_name: updatedSession.user_last_name || prevSession.user_last_name
-      };
-      return mergedSession;
-    });
-
-    if (onSessionUpdate) {
-      onSessionUpdate(updatedSession);
-    }
-  }, [session.status, session.specialist_id, onSessionUpdate, toast]);
-
-  // Cleanup function for real-time subscription
-  const cleanupRealtimeSubscription = useCallback(() => {
-    if (channelRef.current) {
-      logger.debug('Cleaning up realtime subscription');
-      setSubscriptionStatus('disconnected');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-  }, []);
-
-  // FIXED: Simple subscription to prevent infinite recursion
-  const setupRealtimeSubscription = useCallback(() => {
-    // Don't setup if already exists or no session
-    if (channelRef.current || !session?.id) return;
-    
-    console.log('🔧 SIMPLE: Setting up subscription for session:', session.id);
-    setSubscriptionStatus('connecting');
-    
-    // Create simple channel with same name as peer client
-    const channel = supabase.channel(`chat-simple-${session.id}`);
-    
-    // Single event listener - no chaining
-    channel.on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'chat_messages'
-    }, payload => {
-      console.log('🎯 SIMPLE: Message received:', payload);
-      
-      const newMessage = payload.new as RealMessage;
-      if (newMessage.session_id === session.id) {
-        console.log('✅ SIMPLE: Adding message to UI:', newMessage.content);
-        setMessages(prev => {
-          const exists = prev.find(msg => msg.id === newMessage.id);
-          if (exists) return prev;
-          
-          return [...prev, newMessage].sort((a, b) => 
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          );
-        });
-        
-        // If this is a proposal message, load its status
-        if (newMessage.metadata?.action_type === 'appointment_proposal' || 
-            newMessage.metadata?.action_type === 'recurring_appointment_proposal') {
-          loadProposalStatuses([newMessage]);
-        }
-      }
-    });
-    
-    // Subscribe
-    channel.subscribe((status) => {
-      console.log('🔧 SIMPLE: Status:', status);
-      if (status === 'SUBSCRIBED') {
-        setSubscriptionStatus('connected');
-        console.log('✅ SIMPLE: Connected!');
-      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-        setSubscriptionStatus('disconnected');
-      }
-    });
-    
-    channelRef.current = channel;
-  }, [session?.id, loadProposalStatuses]);
-
   // Enhanced claim session with immediate state update
   const claimSession = useCallback(async () => {
     if (!user || !specialistId || session.status !== 'waiting') return;
     try {
       logger.debug('Claiming session:', session.id);
 
-      // Use the secure claim_chat_session function
       const { data, error } = await supabase.rpc('claim_chat_session', {
         p_session_id: session.id,
         p_specialist_user_id: user.id
@@ -387,7 +307,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, [user, specialistId, session, onSessionUpdate, toast]);
 
-  // CRITICAL FIX: Use the same atomic function as peer client
   const sendMessage = useCallback(async (content: string) => {
     if (!user || !specialistId) return;
 
@@ -399,7 +318,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     try {
       console.log('🚀 Specialist sending message:', content);
       
-      // Use the SAME atomic function as peer client
       const { data, error } = await supabase.rpc('send_message_atomic', {
         p_session_id: session.id,
         p_sender_id: user.id,
@@ -433,7 +351,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, [user, specialistId, session.id, session.status, claimSession, toast]);
 
-  // Handle sending a message
   const handleSendMessage = async () => {
     if (!messageInput.trim()) return;
     
@@ -443,7 +360,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     setMessageInput('');
   };
 
-  // Handle key press for Enter to send
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -451,7 +367,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   };
 
-  // Handle ending session with correct parameters
   const handleEndSession = async () => {
     if (!user || !specialistId) return;
     try {
@@ -496,43 +411,13 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   };
 
-  // Update session state when prop changes
+  // Initialize on mount
   useEffect(() => {
-    logger.debug('RobustSpecialistChatWindow: Session prop changed', {
-      oldId: session.id,
-      newId: initialSession.id,
-      oldStatus: session.status,
-      newStatus: initialSession.status
-    });
-    if (initialSession.id !== session.id || initialSession.status !== session.status || initialSession.specialist_id !== session.specialist_id) {
-      setSession(initialSession);
+    if (user) {
+      loadMessages();
+      loadSessionProposal();
     }
-  }, [initialSession, session.id, session.status, session.specialist_id]);
-
-  // Initialize on mount and setup real-time subscription
-  useEffect(() => {
-    console.log('🚀 SPECIALIST: useEffect triggered with user:', !!user, 'initialized:', isInitializedRef.current);
-    console.log('🚀 SPECIALIST: User object:', user);
-    console.log('🚀 SPECIALIST: Session ID:', session?.id);
-    if (!isInitializedRef.current && user) {
-      isInitializedRef.current = true;
-      console.log('🚀 SPECIALIST: Starting initialization...');
-      // Load messages first, then setup subscription
-      const initializeChat = async () => {
-        console.log('🚀 SPECIALIST: Loading messages...');
-        await loadMessages();
-        console.log('🚀 SPECIALIST: Loading proposals...');
-        await loadSessionProposal();
-        // Delay subscription setup slightly to ensure messages are loaded first
-        setTimeout(() => {
-          console.log('🚀 SPECIALIST: Setting up real-time subscription...');
-          setupRealtimeSubscription();
-        }, 100);
-      };
-      initializeChat();
-    }
-    return cleanupRealtimeSubscription;
-  }, [user]); // CRITICAL: Only depend on user, not the callback functions
+  }, [user, loadMessages, loadSessionProposal]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -549,6 +434,13 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, [session.status, specialistId, claimSession]);
 
+  // Update session state when prop changes
+  useEffect(() => {
+    if (initialSession.id !== session.id || initialSession.status !== session.status || initialSession.specialist_id !== session.specialist_id) {
+      setSession(initialSession);
+    }
+  }, [initialSession, session.id, session.status, session.specialist_id]);
+
   const getSessionAge = () => {
     const age = Date.now() - new Date(session.started_at).getTime();
     const minutes = Math.floor(age / (1000 * 60));
@@ -557,16 +449,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   
   const isSessionEnded = session.status === 'ended';
   const isInputEnabled = session && !isSessionEnded && (session.status === 'active' || session.status === 'waiting');
-  
-  console.log('Specialist input enabled check:', {
-    session: !!session,
-    isSessionEnded,
-    sessionStatus: session?.status,
-    subscriptionStatus,
-    isInputEnabled
-  });
 
-  // Helper function to determine if current user is the specialist who sent the proposal
   const isSpecialistProposal = (msg: RealMessage) => {
     if (!specialistId || !msg.metadata?.proposal_data) return false;
     return msg.metadata.proposal_data.specialist_id === specialistId;
@@ -575,7 +458,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   return (
     <Card className="h-[600px] flex flex-col bg-card border border-border shadow-sm">
       
-      {/* Enhanced Header with better session info display */}
+      {/* Enhanced Header with connection status */}
       <div className="bg-card border-b border-border p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
@@ -598,7 +481,11 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         
         <div className="flex items-center space-x-2">
           {/* Connection status indicator */}
-          <div className={`w-2 h-2 rounded-full ${subscriptionStatus === 'connected' ? 'bg-green-500' : subscriptionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' : 'bg-red-500'}`} title={`Connection: ${subscriptionStatus}`} />
+          <ConnectionStatusIndicator 
+            connectionStatus={connectionStatus}
+            onReconnect={forceReconnect}
+            compact={true}
+          />
           
           {!isSessionEnded && (
             <Button size="sm" variant="destructive" onClick={handleEndSession} disabled={loading}>
@@ -613,7 +500,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         </div>
       </div>
 
-      {/* Enhanced Status Messages */}
+      {/* Status Messages */}
       {isSessionEnded && (
         <div className="bg-muted/50 border-b border-border p-3">
           <p className="text-muted-foreground text-sm text-center">
@@ -635,11 +522,18 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
         </div>
       )}
 
-      {subscriptionStatus === 'disconnected' && !isSessionEnded && (
+      {!isConnected && !isSessionEnded && (
         <div className="bg-destructive/10 border-b border-destructive/20 p-3">
-          <p className="text-destructive text-sm text-center">
-            ⚠ Connection issue - Messages may be delayed
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-destructive text-sm">
+              ⚠ Connection issue - Messages may be delayed
+            </p>
+            <ConnectionStatusIndicator 
+              connectionStatus={connectionStatus}
+              onReconnect={forceReconnect}
+              compact={false}
+            />
+          </div>
         </div>
       )}
 
@@ -675,7 +569,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
                 </div>
               ) : (
                 <>
-                  {/* Regular Message Bubble */}
                   <div className={`max-w-[80%] rounded-2xl p-3 ${
                     msg.sender_type === 'specialist' 
                       ? 'bg-gray-100 text-gray-900' 
@@ -688,7 +581,6 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
                 </>
               )}
               
-              {/* Timestamp */}
               <div className="flex items-center gap-2 mt-1 px-1">
                 <p className="text-xs text-muted-foreground">
                   {format(new Date(msg.created_at), 'h:mm a')}
