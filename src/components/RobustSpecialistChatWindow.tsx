@@ -117,6 +117,56 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     enabled: true
   });
 
+  // Set up real-time subscription for appointment proposal status updates
+  useEffect(() => {
+    if (!session.id) return;
+
+    logger.debug('🔄 SPECIALIST: Setting up proposal status subscription for session:', session.id);
+    
+    const proposalChannel = supabase
+      .channel(`proposals-${session.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'appointment_proposals',
+          filter: `chat_session_id=eq.${session.id}`
+        },
+        (payload) => {
+          logger.debug('📝 SPECIALIST: Proposal status updated:', payload);
+          const proposalId = payload.new?.id;
+          const newStatus = payload.new?.status;
+          
+          if (proposalId && newStatus) {
+            setProposalStatuses(prev => ({
+              ...prev,
+              [proposalId]: newStatus
+            }));
+            
+            // Show toast notification for accepted/rejected proposals
+            if (newStatus === 'accepted') {
+              toast({
+                title: "Proposal Accepted! ✅",
+                description: "The client has accepted your appointment proposal."
+              });
+            } else if (newStatus === 'rejected') {
+              toast({
+                title: "Proposal Declined",
+                description: "The client has declined your appointment proposal.",
+                variant: "destructive"
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(proposalChannel);
+    };
+  }, [session.id, toast]);
+
   // Get specialist ID on mount
   useEffect(() => {
     const getSpecialistId = async () => {
