@@ -291,20 +291,30 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
     }
   }, []);
 
-  // Initialize and manage subscriptions
+  // Initialize and manage subscriptions with 15-second refresh
   useEffect(() => {
     mountedRef.current = true;
+    let pollInterval: NodeJS.Timeout;
     
     if (user && specialistId) {
       // Initial load
       refreshSessions();
       
-      // Set up real-time subscription
+      // Set up 15-second polling for reliable updates
+      pollInterval = setInterval(() => {
+        logger.debug('15-second refresh: Reloading sessions');
+        refreshSessions();
+      }, 15000);
+      
+      // Set up real-time subscription as additional layer
       setupRealtimeSubscription();
     }
     
     return () => {
       mountedRef.current = false;
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
       cleanupSubscription();
     };
   }, [user, specialistId, refreshSessions, setupRealtimeSubscription, cleanupSubscription]);

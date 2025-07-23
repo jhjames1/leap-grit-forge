@@ -29,42 +29,30 @@ serve(async (req) => {
       throw new Error('Proposal ID is required');
     }
 
-    // Get the accepted proposal with additional validation
+    // Get the accepted proposal
     const { data: proposal, error: proposalError } = await supabase
       .from('appointment_proposals')
-      .select(`
-        *,
-        appointment_types(name, default_duration),
-        peer_specialists!inner(id, user_id, first_name, last_name),
-        profiles!inner(first_name, last_name)
-      `)
+      .select('*')
       .eq('id', proposalId)
       .eq('status', 'accepted')
       .single();
 
     if (proposalError) {
       console.error('[create-appointments] Error fetching proposal:', proposalError);
-      throw new Error(`Failed to fetch proposal: ${proposalError.message}`);
+      throw proposalError;
     }
 
     if (!proposal) {
-      throw new Error('Accepted proposal not found or proposal not in accepted state');
+      throw new Error('Accepted proposal not found');
     }
 
-    console.log(`[create-appointments] Found proposal:`, {
-      id: proposal.id,
-      title: proposal.title,
-      specialist_id: proposal.specialist_id,
-      user_id: proposal.user_id,
-      status: proposal.status
-    });
+    console.log(`[create-appointments] Found proposal:`, proposal);
 
     const appointments = [];
     
     if (isRecurring) {
       // Calculate recurring appointment dates
       const startDate = new Date(`${proposal.start_date}T${proposal.start_time}`);
-      console.log(`[create-appointments] Creating ${proposal.occurrences} recurring appointments starting ${startDate}`);
       
       for (let i = 0; i < proposal.occurrences; i++) {
         const appointmentDate = new Date(startDate);
@@ -91,7 +79,7 @@ serve(async (req) => {
           appointment_date: appointmentDate,
           appointment_end: appointmentEnd,
           title: proposal.title,
-          description: proposal.description || `Recurring appointment: ${proposal.title} (Session ${i + 1}/${proposal.occurrences})`
+          description: proposal.description || `Recurring appointment: ${proposal.title}`
         });
       }
     } else {
@@ -110,7 +98,7 @@ serve(async (req) => {
 
     console.log(`[create-appointments] Creating ${appointments.length} appointments`);
 
-    // Create appointments in both tables with better error handling
+    // Create appointments in both tables
     const scheduledAppointments = [];
     const specialistAppointments = [];
 
@@ -141,8 +129,7 @@ serve(async (req) => {
       });
     }
 
-    // Insert into scheduled_appointments table with retry logic
-    console.log('[create-appointments] Inserting into scheduled_appointments table');
+    // Insert into scheduled_appointments table
     const { data: createdScheduledAppointments, error: scheduledError } = await supabase
       .from('scheduled_appointments')
       .insert(scheduledAppointments)
@@ -150,13 +137,10 @@ serve(async (req) => {
 
     if (scheduledError) {
       console.error('[create-appointments] Error creating scheduled appointments:', scheduledError);
-      throw new Error(`Failed to create scheduled appointments: ${scheduledError.message}`);
+      throw scheduledError;
     }
 
-    console.log(`[create-appointments] Created ${createdScheduledAppointments?.length || 0} scheduled appointments`);
-
     // Insert into specialist_appointments table
-    console.log('[create-appointments] Inserting into specialist_appointments table');
     const { data: createdSpecialistAppointments, error: specialistError } = await supabase
       .from('specialist_appointments')
       .insert(specialistAppointments)
@@ -164,58 +148,21 @@ serve(async (req) => {
 
     if (specialistError) {
       console.error('[create-appointments] Error creating specialist appointments:', specialistError);
-      
-      // If specialist appointments fail, try to clean up scheduled appointments
-      if (createdScheduledAppointments && createdScheduledAppointments.length > 0) {
-        console.log('[create-appointments] Cleaning up scheduled appointments due to specialist appointment failure');
-        await supabase
-          .from('scheduled_appointments')
-          .delete()
-          .in('id', createdScheduledAppointments.map(sa => sa.id));
-      }
-      
-      throw new Error(`Failed to create specialist appointments: ${specialistError.message}`);
+      throw specialistError;
     }
 
-    console.log(`[create-appointments] Created ${createdSpecialistAppointments?.length || 0} specialist appointments`);
+    console.log(`[create-appointments] Successfully created appointments:`, {
+      scheduled: createdScheduledAppointments,
+      specialist: createdSpecialistAppointments
+    });
 
-    // Log the successful appointment creation
-    await supabase
-      .from('user_activity_logs')
-      .insert({
-        user_id: proposal.user_id,
-        action: 'appointments_created',
-        type: 'appointment_management',
-        details: JSON.stringify({
-          proposal_id: proposalId,
-          appointment_count: appointments.length,
-          is_recurring: isRecurring,
-          specialist_id: proposal.specialist_id,
-          created_at: new Date().toISOString()
-        })
-      });
-
-    console.log(`[create-appointments] Successfully created appointments and logged activity`);
-
-    const response = {
-      success: true,
-      message: `Successfully created ${appointments.length} ${isRecurring ? 'recurring' : 'single'} appointment(s)`,
-      data: {
-        scheduledAppointments: createdScheduledAppointments,
-        specialistAppointments: createdSpecialistAppointments,
-        proposal: {
-          id: proposal.id,
-          title: proposal.title,
-          specialist_name: `${proposal.peer_specialists.first_name} ${proposal.peer_specialists.last_name}`,
-          client_name: `${proposal.profiles.first_name} ${proposal.profiles.last_name}`
-        }
-      }
-    };
-
-    console.log('[create-appointments] Returning success response');
-    
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({
+        success: true,
+        message: `Successfully created ${appointments.length} ${isRecurring ? 'recurring' : 'single'} appointment(s)`,
+        scheduledAppointments: createdScheduledAppointments,
+        specialistAppointments: createdSpecialistAppointments
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -224,30 +171,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[create-appointments] Error:', error);
-    
-    // Log the error for monitoring
-    try {
-      await supabase
-        .from('user_activity_logs')
-        .insert({
-          user_id: 'system',
-          action: 'appointment_creation_failed',
-          type: 'error',
-          details: JSON.stringify({
-            error: error.message,
-            stack: error.stack,
-            timestamp: new Date().toISOString()
-          })
-        });
-    } catch (logError) {
-      console.error('[create-appointments] Failed to log error:', logError);
-    }
-    
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
-        timestamp: new Date().toISOString()
+        error: error.message
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
