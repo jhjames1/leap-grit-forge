@@ -12,6 +12,7 @@ import ConnectionStatusIndicator from './ConnectionStatusIndicator';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
 import SpecialistProposalStatus from './SpecialistProposalStatus';
 import ChatAppointmentScheduler from './ChatAppointmentScheduler';
+import SessionInactivityWarning from './SessionInactivityWarning';
 import { format } from 'date-fns';
 
 interface ChatSession {
@@ -77,9 +78,11 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [proposalStatuses, setProposalStatuses] = useState<Record<string, string>>({});
+  const [inactivityWarning, setInactivityWarning] = useState<number>(0);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const inactivityTimerRef = useRef<NodeJS.Timeout>();
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -358,6 +361,9 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     
     await sendMessage(messageInput);
     setMessageInput('');
+    
+    // Reset inactivity warning when specialist sends message
+    setInactivityWarning(0);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -440,6 +446,54 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       setSession(initialSession);
     }
   }, [initialSession, session.id, session.status, session.specialist_id]);
+
+  // Inactivity warning for specialists
+  useEffect(() => {
+    if (!session || session.status !== 'active' || !session.last_activity) {
+      setInactivityWarning(0);
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = undefined;
+      }
+      return;
+    }
+
+    const checkInactivity = () => {
+      const lastActivity = new Date(session.last_activity!).getTime();
+      const now = Date.now();
+      const timeSinceActivity = now - lastActivity;
+      const timeUntilInactive = (5 * 60 * 1000) - timeSinceActivity; // 5 minutes in milliseconds
+
+      // Show warning when less than 60 seconds remain
+      if (timeUntilInactive <= 60000 && timeUntilInactive > 0) {
+        setInactivityWarning(Math.ceil(timeUntilInactive / 1000));
+      } else if (timeUntilInactive <= 0) {
+        // Session should be ended
+        handleEndSession();
+        setInactivityWarning(0);
+      } else {
+        setInactivityWarning(0);
+      }
+    };
+
+    checkInactivity();
+    const timer = setInterval(checkInactivity, 1000);
+
+    return () => clearInterval(timer);
+  }, [session, session?.last_activity]);
+
+  // Handle extending session for specialists
+  const handleExtendSession = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      // Send a system message to extend the session
+      await sendMessage('Session extended by specialist');
+      setInactivityWarning(0);
+    } catch (err) {
+      logger.error('Failed to extend session:', err);
+    }
+  }, [user, sendMessage]);
 
   const getSessionAge = () => {
     const age = Date.now() - new Date(session.started_at).getTime();
@@ -540,6 +594,17 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
       {error && (
         <div className="bg-red-500/10 border-b border-red-500/20 p-3">
           <p className="text-red-600 text-sm text-center">Error: {error}</p>
+        </div>
+      )}
+
+      {/* Inactivity Warning for Specialists */}
+      {inactivityWarning > 0 && (
+        <div className="border-b border-border p-4">
+          <SessionInactivityWarning 
+            secondsRemaining={inactivityWarning} 
+            onExtendSession={handleExtendSession} 
+            onEndSession={handleEndSession} 
+          />
         </div>
       )}
 
