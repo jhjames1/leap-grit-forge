@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,40 +12,37 @@ import SecurityAuditPanel from './SecurityAuditPanel';
 import { adminAnalytics, type UserAnalytics } from '@/services/adminAnalyticsService';
 import { SpecialistOverviewCards } from './SpecialistOverviewCards';
 import { SpecialistPerformanceTable } from './SpecialistPerformanceTable';
-import { 
-  Users, 
-  TrendingUp, 
-  AlertTriangle, 
-  BarChart3,
-  Calendar,
-  MessageSquare,
-  Target,
-  Activity,
-  Shield,
-  UserCheck,
-  LogOut,
-  Bot
-} from 'lucide-react';
+import { Users, TrendingUp, AlertTriangle, BarChart3, Calendar, MessageSquare, Target, Activity, Shield, UserCheck, LogOut, Bot } from 'lucide-react';
 import PeerSpecialistManagement from './PeerSpecialistManagement';
 import MotivationalContentManagement from './MotivationalContentManagement';
 import ForemanContentManagement from './ForemanContentManagement';
 import AdminManagement from './AdminManagement';
 import UserManagement from './UserManagement';
-
 interface AdminDashboardProps {
   onBack: () => void;
 }
-
-const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
-  const { t } = useLanguage();
-  const { signOut, user } = useAuth();
+const AdminDashboard = ({
+  onBack
+}: AdminDashboardProps) => {
+  const {
+    t
+  } = useLanguage();
+  const {
+    signOut,
+    user
+  } = useAuth();
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
   const [liveSpecialistCount, setLiveSpecialistCount] = useState(0);
   const [liveChatCount, setLiveChatCount] = useState(0);
-  
+
   // Use the real-time analytics hook
-  const { analytics, isLoading, error, refreshAnalytics } = useRealtimeAdminAnalytics();
-  
+  const {
+    analytics,
+    isLoading,
+    error,
+    refreshAnalytics
+  } = useRealtimeAdminAnalytics();
+
   // Get admin user's first name for welcome message
   const adminFirstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin';
 
@@ -55,22 +51,19 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
     const loadLiveCounts = async () => {
       try {
         // Get active specialist count
-        const { data: specialists, error: specialistError } = await supabase
-          .from('peer_specialists')
-          .select('id')
-          .eq('is_active', true)
-          .eq('is_verified', true);
-        
+        const {
+          data: specialists,
+          error: specialistError
+        } = await supabase.from('peer_specialists').select('id').eq('is_active', true).eq('is_verified', true);
         if (!specialistError && specialists) {
           setLiveSpecialistCount(specialists.length);
         }
 
         // Get active chat count
-        const { data: chats, error: chatError } = await supabase
-          .from('chat_sessions')
-          .select('id')
-          .eq('status', 'active');
-        
+        const {
+          data: chats,
+          error: chatError
+        } = await supabase.from('chat_sessions').select('id').eq('status', 'active');
         if (!chatError && chats) {
           setLiveChatCount(chats.length);
         }
@@ -78,72 +71,72 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
         console.error('Error loading live counts:', err);
       }
     };
-
     loadLiveCounts();
-    
-    // Set up real-time updates for live counts
-    const channel = supabase
-      .channel('admin-live-counts')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'peer_specialists'
-        },
-        () => loadLiveCounts()
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_sessions'
-        },
-        () => loadLiveCounts()
-      )
-      .subscribe();
 
+    // Set up real-time updates for live counts
+    const channel = supabase.channel('admin-live-counts').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'peer_specialists'
+    }, () => loadLiveCounts()).on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'chat_sessions'
+    }, () => loadLiveCounts()).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
-
   const refreshData = () => {
     refreshAnalytics();
   };
-
   const handleSignOut = async () => {
     await signOut();
   };
 
   // Format engagement trends for display
-  const engagementTrends = analytics ? [
-    { domain: t('admin.domains.peerSupport'), avg: analytics.domainEngagement.peerSupport, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
-    { domain: t('admin.domains.selfCare'), avg: analytics.domainEngagement.selfCare, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
-    { domain: t('admin.domains.structure'), avg: analytics.domainEngagement.structure, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
-    { domain: t('admin.domains.mood'), avg: analytics.domainEngagement.mood, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' },
-    { domain: t('admin.domains.cravingControl'), avg: analytics.domainEngagement.cravingControl, trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%' }
-  ] : [];
-
+  const engagementTrends = analytics ? [{
+    domain: t('admin.domains.peerSupport'),
+    avg: analytics.domainEngagement.peerSupport,
+    trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%'
+  }, {
+    domain: t('admin.domains.selfCare'),
+    avg: analytics.domainEngagement.selfCare,
+    trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%'
+  }, {
+    domain: t('admin.domains.structure'),
+    avg: analytics.domainEngagement.structure,
+    trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%'
+  }, {
+    domain: t('admin.domains.mood'),
+    avg: analytics.domainEngagement.mood,
+    trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%'
+  }, {
+    domain: t('admin.domains.cravingControl'),
+    avg: analytics.domainEngagement.cravingControl,
+    trend: analytics.engagementTrends.trend === 'up' ? '+' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : analytics.engagementTrends.trend === 'down' ? '-' + Math.abs(analytics.engagementTrends.thisWeek - analytics.engagementTrends.lastWeek) + '%' : '0%'
+  }] : [];
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-yellow-500';
-      default: return 'bg-green-500';
+      case 'high':
+        return 'bg-red-500';
+      case 'medium':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-green-500';
     }
   };
-
   const getRiskBadge = (risk: string) => {
     switch (risk) {
-      case 'high': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      default: return 'bg-green-500/20 text-green-400 border-green-500/30';
+      case 'high':
+        return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'medium':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      default:
+        return 'bg-green-500/20 text-green-400 border-green-500/30';
     }
   };
-
-  return (
-    <div className="min-h-screen w-full bg-background flex flex-col">
+  return <div className="min-h-screen w-full bg-background flex flex-col">
       {/* Header */}
       <div className="border-b bg-card">
         <div className="flex h-16 items-center justify-between px-6">
@@ -155,30 +148,15 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button 
-              onClick={refreshData}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              disabled={isLoading}
-            >
+            <Button onClick={refreshData} variant="outline" size="sm" className="gap-2" disabled={isLoading}>
               <Activity className="w-4 h-4" />
               {isLoading ? 'Loading...' : 'Refresh'}
             </Button>
-            <Button 
-              onClick={handleSignOut}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
+            <Button onClick={handleSignOut} variant="outline" size="sm" className="gap-2">
               <LogOut className="w-4 h-4" />
               Sign Out
             </Button>
-            <Button 
-              onClick={onBack}
-              variant="outline"
-              size="sm"
-            >
+            <Button onClick={onBack} variant="outline" size="sm">
               Back
             </Button>
           </div>
@@ -213,11 +191,9 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
             <TabsTrigger value="specialists" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200 px-6 py-2 border data-[state=active]:border-primary">
               <UserCheck className="mr-2 h-4 w-4" />
               Specialists
-              {analytics?.specialistAnalytics?.alertFlags && analytics.specialistAnalytics.alertFlags.length > 0 && (
-                <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs">
+              {analytics?.specialistAnalytics?.alertFlags && analytics.specialistAnalytics.alertFlags.length > 0 && <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs">
                   {analytics.specialistAnalytics.alertFlags.length}
-                </Badge>
-              )}
+                </Badge>}
             </TabsTrigger>
             <TabsTrigger value="content" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200 px-6 py-2 border data-[state=active]:border-primary">
               <MessageSquare className="mr-2 h-4 w-4" />
@@ -244,16 +220,9 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
           <TabsContent value="overview">
             {/* Time Filter */}
             <div className="flex space-x-2 mb-6">
-              {['week', 'month', 'quarter'].map((period) => (
-                <Button
-                  key={period}
-                  onClick={() => setSelectedTimeframe(period)}
-                  variant={selectedTimeframe === period ? 'default' : 'outline'}
-                  size="sm"
-                >
+              {['week', 'month', 'quarter'].map(period => <Button key={period} onClick={() => setSelectedTimeframe(period)} variant={selectedTimeframe === period ? 'default' : 'outline'} size="sm">
                   {period.charAt(0).toUpperCase() + period.slice(1)}
-                </Button>
-              ))}
+                </Button>)}
             </div>
 
             {/* Key Metrics - First Row */}
@@ -372,8 +341,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {engagementTrends.map((domain, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    {engagementTrends.map((domain, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                         <div className="flex items-center space-x-3">
                           <div className="w-3 h-3 bg-primary rounded-full"></div>
                           <span className="text-sm font-medium">{domain.domain}</span>
@@ -384,11 +352,8 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
                             {domain.trend}
                           </Badge>
                         </div>
-                      </div>
-                    ))}
-                    {analytics && analytics.totalEngagementActions === 0 && (
-                      <p className="text-muted-foreground text-center py-4 text-sm">No engagement data available yet.</p>
-                    )}
+                      </div>)}
+                    {analytics && analytics.totalEngagementActions === 0 && <p className="text-muted-foreground text-center py-4 text-sm">No engagement data available yet.</p>}
                   </div>
                 </CardContent>
               </Card>
@@ -403,8 +368,7 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {analytics?.userRiskData.map((user, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    {analytics?.userRiskData.map((user, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                         <div className="flex items-center space-x-3">
                           <div className={`w-3 h-3 ${getRiskColor(user.risk)} rounded-full`}></div>
                           <div>
@@ -421,11 +385,8 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
                             {user.risk.charAt(0).toUpperCase() + user.risk.slice(1)}
                           </Badge>
                         </div>
-                      </div>
-                    ))}
-                    {analytics && analytics.userRiskData.length === 0 && (
-                      <p className="text-muted-foreground text-center py-4 text-sm">No user data available yet.</p>
-                    )}
+                      </div>)}
+                    {analytics && analytics.userRiskData.length === 0 && <p className="text-muted-foreground text-center py-4 text-sm">No user data available yet.</p>}
                   </div>
                 </CardContent>
               </Card>
@@ -435,16 +396,14 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
           <TabsContent value="specialists">
             <div className="space-y-6">
               {/* Specialist Performance Overview */}
-              {analytics?.specialistAnalytics && (
-                <>
+              {analytics?.specialistAnalytics && <>
                   <SpecialistOverviewCards specialistAnalytics={analytics.specialistAnalytics} />
                   <SpecialistPerformanceTable specialists={analytics.specialistAnalytics.specialistPerformance} />
-                </>
-              )}
+                </>}
               
               {/* Original Specialist Management */}
               <div className="mt-8">
-                <h3 className="text-lg font-semibold mb-4">Specialist Management</h3>
+                
                 <PeerSpecialistManagement />
               </div>
             </div>
@@ -471,8 +430,6 @@ const AdminDashboard = ({ onBack }: AdminDashboardProps) => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminDashboard;

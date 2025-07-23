@@ -22,7 +22,6 @@ import PeerPerformanceDashboard from './PeerPerformanceDashboard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { UserPlus, Edit, Check, X, Users, AlertCircle, Search, Activity, Clock, MessageSquare, TrendingUp, TrendingDown, Wifi, WifiOff, Mail, Send, Trash2, Star, RefreshCw, Key, Copy, Calendar, Loader2, AlertTriangle, MoreHorizontal, RotateCcw } from 'lucide-react';
-
 interface PeerSpecialist {
   id: string;
   user_id: string;
@@ -46,7 +45,6 @@ interface PeerSpecialist {
   activation_method: string | null;
   manually_activated_by: string | null;
 }
-
 interface SpecialistFormData {
   email: string;
   first_name: string;
@@ -56,7 +54,6 @@ interface SpecialistFormData {
   years_experience: number;
   avatar_url: string;
 }
-
 interface SpecialistMetrics {
   chat_completion_rate: number;
   checkin_completion_rate: number;
@@ -67,7 +64,6 @@ interface SpecialistMetrics {
   total_checkins: number;
   total_ratings: number;
 }
-
 const PeerSpecialistManagement = () => {
   const {
     t
@@ -116,12 +112,10 @@ const PeerSpecialistManagement = () => {
     specialistName: ''
   });
   const [isResettingPassword, setIsResettingPassword] = useState<string | null>(null);
-
   useEffect(() => {
     fetchSpecialists();
     fetchRemovedSpecialists();
   }, []);
-
   const fetchCoachingTips = async (specialistId: string): Promise<string[]> => {
     try {
       const {
@@ -152,7 +146,6 @@ const PeerSpecialistManagement = () => {
       return ["Focus on maintaining consistent communication with your assigned users"];
     }
   };
-
   const fetchSpecialists = async () => {
     try {
       setLoading(true);
@@ -176,7 +169,6 @@ const PeerSpecialistManagement = () => {
       setLoading(false);
     }
   };
-
   const fetchRemovedSpecialists = async () => {
     try {
       console.log('Fetching removed specialists...');
@@ -197,7 +189,6 @@ const PeerSpecialistManagement = () => {
       console.error('Error fetching removed specialists:', error);
     }
   };
-
   const resetForm = () => {
     setFormData({
       email: '',
@@ -211,7 +202,6 @@ const PeerSpecialistManagement = () => {
     setEditingSpecialist(null);
     setNewSpecialty('');
   };
-
   const handleInviteSpecialist = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email || !formData.first_name || !formData.last_name) {
@@ -285,7 +275,6 @@ const PeerSpecialistManagement = () => {
       setIsInviting(false);
     }
   };
-
   const handleEditSpecialist = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSpecialist) return;
@@ -295,7 +284,9 @@ const PeerSpecialistManagement = () => {
       console.log('Current user email:', user?.email);
 
       // Check auth session status
-      const { data: session } = await supabase.auth.getSession();
+      const {
+        data: session
+      } = await supabase.auth.getSession();
       console.log('Current session:', session?.session?.user?.id, session?.session?.user?.email);
 
       // Test admin access first
@@ -319,9 +310,10 @@ const PeerSpecialistManagement = () => {
       }
 
       // Additional debug: Test direct auth context
-      const { data: debugAuth } = await supabase.rpc('debug_auth_context');
+      const {
+        data: debugAuth
+      } = await supabase.rpc('debug_auth_context');
       console.log('Auth context debug:', debugAuth);
-
       console.log('Updating specialist with data:', {
         id: editingSpecialist.id,
         email: formData.email,
@@ -364,7 +356,6 @@ const PeerSpecialistManagement = () => {
       });
     }
   };
-
   const handleEdit = (specialist: PeerSpecialist) => {
     setEditingSpecialist(specialist);
     setFormData({
@@ -378,7 +369,6 @@ const PeerSpecialistManagement = () => {
     });
     setIsDialogOpen(true);
   };
-
   const handleForceActivate = async (specialist: PeerSpecialist) => {
     if (!user?.id) {
       toast({
@@ -455,7 +445,6 @@ const PeerSpecialistManagement = () => {
       });
     }
   };
-
   const handleResetPassword = async (specialist: PeerSpecialist) => {
     if (!user?.id) {
       toast({
@@ -465,45 +454,42 @@ const PeerSpecialistManagement = () => {
       });
       return;
     }
-
     setIsResettingPassword(specialist.id);
-    
     try {
       const tempPassword = generateTempPassword();
 
       // Call the edge function to update the specialist's password
-      const { data: authUpdateResult, error: authError } = await supabase.functions.invoke('update-specialist-password', {
+      const {
+        data: authUpdateResult,
+        error: authError
+      } = await supabase.functions.invoke('update-specialist-password', {
         body: {
           userId: specialist.user_id,
           newPassword: tempPassword,
           adminId: user.id
         }
       });
-
       if (authError) {
         console.error('Error updating auth password:', authError);
         throw new Error(`Password update failed: ${authError.message}`);
       }
-
       if (!authUpdateResult?.success) {
         console.error('Auth password update failed:', authUpdateResult);
         throw new Error(authUpdateResult?.error || 'Password update failed');
       }
 
       // Update the specialist record to require password change
-      const { error: updateError } = await supabase
-        .from('peer_specialists')
-        .update({ 
-          must_change_password: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', specialist.id);
-
+      const {
+        error: updateError
+      } = await supabase.from('peer_specialists').update({
+        must_change_password: true,
+        updated_at: new Date().toISOString()
+      }).eq('id', specialist.id);
       if (updateError) {
         console.error('Error updating specialist record:', updateError);
         // Don't fail completely, password was already reset
         toast({
-          title: "Partial Success", 
+          title: "Partial Success",
           description: "Password reset but database update failed. Password change will still be required.",
           variant: "destructive"
         });
@@ -517,14 +503,11 @@ const PeerSpecialistManagement = () => {
         password: tempPassword,
         specialistName: `${specialist.first_name} ${specialist.last_name}`
       });
-
       toast({
         title: "Success",
         description: "Password reset successfully. Temporary credentials generated."
       });
-
       fetchSpecialists();
-
     } catch (error) {
       console.error('Error resetting password:', error);
       toast({
@@ -536,7 +519,6 @@ const PeerSpecialistManagement = () => {
       setIsResettingPassword(null);
     }
   };
-
   const generateTempPassword = (): string => {
     const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
     let password = '';
@@ -545,7 +527,6 @@ const PeerSpecialistManagement = () => {
     }
     return password;
   };
-
   const hashPassword = async (password: string): Promise<string> => {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -553,7 +534,6 @@ const PeerSpecialistManagement = () => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
-
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -569,7 +549,6 @@ const PeerSpecialistManagement = () => {
       });
     }
   };
-
   const getInvitationStatus = (specialist: PeerSpecialist) => {
     if (specialist.activated_at) {
       const activationMethod = specialist.activation_method || 'email';
@@ -602,7 +581,6 @@ const PeerSpecialistManagement = () => {
       text: 'Not Sent'
     };
   };
-
   const handleDeactivateSpecialist = async (specialistId: string) => {
     setDeletingSpecialistId(specialistId);
     try {
@@ -635,7 +613,6 @@ const PeerSpecialistManagement = () => {
       setDeletingSpecialistId(null);
     }
   };
-
   const addSpecialty = () => {
     if (newSpecialty.trim() && !formData.specialties.includes(newSpecialty.trim())) {
       setFormData({
@@ -645,14 +622,12 @@ const PeerSpecialistManagement = () => {
       setNewSpecialty('');
     }
   };
-
   const removeSpecialty = (specialty: string) => {
     setFormData({
       ...formData,
       specialties: formData.specialties.filter(s => s !== specialty)
     });
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -660,7 +635,6 @@ const PeerSpecialistManagement = () => {
       day: 'numeric'
     });
   };
-
   const getOnlineStatus = (specialistId: string) => {
     const status = specialistStatuses[specialistId];
     if (!status) return {
@@ -690,123 +664,23 @@ const PeerSpecialistManagement = () => {
         };
     }
   };
-
   if (loading) {
     return <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>;
   }
-
   const handleDashboardRefresh = () => {
     setDashboardRefreshTrigger(prev => prev + 1);
     refreshData();
   };
+  return <div className="space-y-6">
+      
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Peer Support Specialist Management</h2>
-        <div className="flex items-center gap-2">
-          
-          <Button onClick={refreshData} variant="outline" disabled={presenceLoading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${presenceLoading ? 'animate-spin' : ''}`} />
-            {presenceLoading ? 'Refreshing...' : 'Refresh'}
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <div className="bg-primary/10 p-2 rounded-full">
-                <Users className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{specialists.length}</div>
-                <div className="text-sm text-muted-foreground">Total Specialists</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <div className="bg-green-500/10 p-2 rounded-full">
-                <Wifi className="h-4 w-4 text-green-500" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">
-                  {specialists.filter(s => specialistStatuses[s.id]?.status === 'online').length}
-                </div>
-                <div className="text-sm text-muted-foreground">Online Now</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <div className="bg-yellow-500/10 p-2 rounded-full">
-                <Activity className="h-4 w-4 text-yellow-500" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">
-                  {specialists.filter(s => s.is_verified).length}
-                </div>
-                <div className="text-sm text-muted-foreground">Verified</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <div className="bg-blue-500/10 p-2 rounded-full">
-                <MessageSquare className="h-4 w-4 text-blue-500" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">
-                  {analytics?.reduce((sum, a) => sum + a.active_sessions, 0) || 0}
-                </div>
-                <div className="text-sm text-muted-foreground">Active Sessions</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Group Performance Metrics
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Select value={groupMetricsTimePeriod} onValueChange={(value: 'week' | 'month' | 'quarter' | 'year') => setGroupMetricsTimePeriod(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
-                  <SelectItem value="quarter">Quarter</SelectItem>
-                  <SelectItem value="year">Year</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={handleDashboardRefresh} variant="outline" size="sm" disabled={presenceLoading}>
-                <RefreshCw className={`h-4 w-4 ${presenceLoading ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <PeerPerformanceDashboard key={dashboardRefreshTrigger} onRefresh={refreshData} />
-        </CardContent>
+        
+        
       </Card>
 
       <Tabs value={activeTab} onValueChange={value => setActiveTab(value as 'active' | 'removed')}>
@@ -982,35 +856,21 @@ const PeerSpecialistManagement = () => {
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleResetPassword(specialist)} 
-                              className="cursor-pointer"
-                              disabled={isResettingPassword === specialist.id}
-                            >
-                              {isResettingPassword === specialist.id ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : (
-                                <RotateCcw className="mr-2 h-4 w-4" />
-                              )}
+                            <DropdownMenuItem onClick={() => handleResetPassword(specialist)} className="cursor-pointer" disabled={isResettingPassword === specialist.id}>
+                              {isResettingPassword === specialist.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-2 h-4 w-4" />}
                               Reset Password
                             </DropdownMenuItem>
-                            {!specialist.is_verified && (
-                              <DropdownMenuItem onClick={() => handleForceActivate(specialist)} className="cursor-pointer text-green-600">
+                            {!specialist.is_verified && <DropdownMenuItem onClick={() => handleForceActivate(specialist)} className="cursor-pointer text-green-600">
                                 <Key className="mr-2 h-4 w-4" />
                                 Force Activate
-                              </DropdownMenuItem>
-                            )}
+                              </DropdownMenuItem>}
                           </DropdownMenuContent>
                         </DropdownMenu>
                         
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="sm" disabled={deletingSpecialistId === specialist.id}>
-                              {deletingSpecialistId === specialist.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4 mr-1" />
-                              )}
+                              {deletingSpecialistId === specialist.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
                               Deactivate
                             </Button>
                           </AlertDialogTrigger>
@@ -1074,7 +934,10 @@ const PeerSpecialistManagement = () => {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={credentialsDialog.isOpen} onOpenChange={open => setCredentialsDialog(prev => ({ ...prev, isOpen: open }))}>
+      <Dialog open={credentialsDialog.isOpen} onOpenChange={open => setCredentialsDialog(prev => ({
+      ...prev,
+      isOpen: open
+    }))}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Temporary Login Credentials</DialogTitle>
@@ -1120,8 +983,6 @@ const PeerSpecialistManagement = () => {
         </DialogContent>
       </Dialog>
 
-    </div>
-  );
+    </div>;
 };
-
 export default PeerSpecialistManagement;
