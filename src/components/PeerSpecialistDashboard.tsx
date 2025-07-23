@@ -16,6 +16,7 @@ import PeerPerformanceDashboard from './PeerPerformanceDashboard';
 import SpecialistActivityLog from './SpecialistActivityLog';
 import SpecialistStatusIndicator from './SpecialistStatusIndicator';
 import ChatHistory from './ChatHistory';
+import { useProposalNotifications } from '@/hooks/useProposalNotifications';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { format } from 'date-fns';
@@ -53,6 +54,9 @@ const PeerSpecialistDashboard = () => {
 
   // Use the new specialist sessions hook
   const { sessions, isLoading, error, realtimeStatus, refreshSessions } = useSpecialistSessions(specialistId);
+  
+  // Use proposal notifications to trigger session refresh when proposals are accepted
+  const { hasNewResponses, clearNewResponses } = useProposalNotifications(specialistId || '');
 
   // Keep refs synchronized with state
   const selectedSessionRef = useRef<ChatSession | null>(null);
@@ -160,6 +164,15 @@ const PeerSpecialistDashboard = () => {
       loadTodayStats();
     }
   }, [specialistId, loadTodayStats]);
+
+  // Refresh sessions when proposal responses are received
+  useEffect(() => {
+    if (hasNewResponses) {
+      logger.debug('Proposal response received, refreshing sessions');
+      refreshSessions();
+      clearNewResponses();
+    }
+  }, [hasNewResponses, refreshSessions, clearNewResponses]);
 
   // Enhanced session update handler with improved timeout handling
   const handleSessionUpdate = useCallback((updatedSession: ChatSession) => {
