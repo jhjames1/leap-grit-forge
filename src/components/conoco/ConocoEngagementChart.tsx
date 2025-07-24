@@ -45,7 +45,7 @@ export function ConocoEngagementChart({ dateRange, department }: ConocoEngagemen
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis 
                 dataKey="date" 
-                tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                tickFormatter={(value) => format(new Date(value), 'MM/dd')}
                 className="text-muted-foreground"
               />
               <YAxis className="text-muted-foreground" />

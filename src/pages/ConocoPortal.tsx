@@ -71,14 +71,16 @@ export default function ConocoPortal() {
       {/* Top Navigation */}
       <header className="border-b border-gray-200 bg-white shadow-sm">
         <div className="h-16 flex items-center justify-between px-6">
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-start">
             <img 
               src="/lovable-uploads/6f20bf7a-2728-4c31-b889-6754478892ba.png" 
               alt="ConocoPhillips" 
               className="h-6 w-auto mb-1"
             />
-            <h1 className="font-oswald font-semibold text-sm text-gray-800">LEAP Dashboard</h1>
-            <p className="text-xs text-gray-500">powered by Thriving United</p>
+            <div className="flex items-center gap-2">
+              <h1 className="font-oswald font-semibold text-sm text-gray-800">LEAP Dashboard</h1>
+              <p className="text-xs text-gray-500">powered by Thriving United</p>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
