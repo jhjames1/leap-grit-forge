@@ -15,8 +15,8 @@ export function AppHeader({ onLogout, showAuth = true }: AppHeaderProps) {
       {/* Logo */}
       <div className="flex items-center">
         <img 
-          src="/lovable-uploads/119b2322-45f6-44de-b789-4c906de98f49.png" 
-          alt="LEAP Logo" 
+          src="/lovable-uploads/4017abb1-14be-4f51-a170-8b7c6729a89d.png" 
+          alt="ConocoPhillips Logo" 
           className="h-12 w-auto"
         />
       </div>
