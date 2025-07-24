@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { SpecialistPerformance } from '@/services/adminAnalyticsService';
 import { SpecialistCoachingModal } from './SpecialistCoachingModal';
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SpecialistPerformanceTableProps {
   specialists: SpecialistPerformance[];
@@ -27,18 +28,63 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
   };
 
   const handleEditSpecialist = (specialist: SpecialistPerformance) => {
-    // TODO: Implement edit specialist functionality
-    console.log('Edit specialist:', specialist);
+    // Navigate to specialist edit form or open modal
+    const editUrl = `/admin#edit-specialist-${specialist.specialistId}`;
+    window.history.pushState(null, '', editUrl);
+    // You could also open a modal or navigate to a dedicated edit page
   };
 
-  const handleResetPassword = (specialist: SpecialistPerformance) => {
-    // TODO: Implement reset password functionality
-    console.log('Reset password for specialist:', specialist);
+  const handleResetPassword = async (specialist: SpecialistPerformance) => {
+    try {
+      const confirmed = window.confirm(`Reset password for ${specialist.name}? They will receive an email with a new temporary password.`);
+      if (!confirmed) return;
+
+      // Call the admin function to reset password
+      const { data, error } = await supabase.functions.invoke('update-specialist-password', {
+        body: { 
+          specialistId: specialist.specialistId,
+          action: 'reset'
+        }
+      });
+
+      if (error) throw error;
+
+      const result = data as { success?: boolean; error?: string };
+      if (result?.success) {
+        alert(`Password reset email sent to ${specialist.email}`);
+      } else {
+        throw new Error(result?.error || 'Failed to reset password');
+      }
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      alert('Failed to reset password. Please try again.');
+    }
   };
 
-  const handleDeactivateSpecialist = (specialist: SpecialistPerformance) => {
-    // TODO: Implement deactivate specialist functionality
-    console.log('Deactivate specialist:', specialist);
+  const handleDeactivateSpecialist = async (specialist: SpecialistPerformance) => {
+    try {
+      const confirmed = window.confirm(`Deactivate ${specialist.name}? This will disable their access to the platform.`);
+      if (!confirmed) return;
+
+      // Call the soft delete function
+      const { data, error } = await supabase.rpc('soft_delete_specialist', {
+        specialist_id: specialist.specialistId
+      });
+
+      if (error) throw error;
+
+      const result = data as { success?: boolean; error?: string };
+      if (result?.success) {
+        alert(`${specialist.name} has been deactivated successfully.`);
+        // Refresh the page or trigger a data refresh
+        window.location.reload();
+      } else {
+        throw new Error(result?.error || 'Failed to deactivate specialist');
+      }
+    } catch (error) {
+      console.error('Error deactivating specialist:', error);
+      alert('Failed to deactivate specialist. Please try again.');
+    }
   };
   const getStatusColor = (status: string) => {
     switch (status) {
