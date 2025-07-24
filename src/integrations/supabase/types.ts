@@ -1230,6 +1230,136 @@ export type Database = {
         }
         Relationships: []
       }
+      training_progress: {
+        Row: {
+          attempt_number: number
+          completed_at: string | null
+          created_at: string
+          feedback: Json | null
+          id: string
+          scenario_id: string
+          score: number | null
+          specialist_id: string
+          started_at: string | null
+          status: string
+          time_spent_minutes: number | null
+          updated_at: string
+        }
+        Insert: {
+          attempt_number?: number
+          completed_at?: string | null
+          created_at?: string
+          feedback?: Json | null
+          id?: string
+          scenario_id: string
+          score?: number | null
+          specialist_id: string
+          started_at?: string | null
+          status?: string
+          time_spent_minutes?: number | null
+          updated_at?: string
+        }
+        Update: {
+          attempt_number?: number
+          completed_at?: string | null
+          created_at?: string
+          feedback?: Json | null
+          id?: string
+          scenario_id?: string
+          score?: number | null
+          specialist_id?: string
+          started_at?: string | null
+          status?: string
+          time_spent_minutes?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_progress_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "training_scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_scenarios: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          difficulty_level: number
+          estimated_duration_minutes: number | null
+          id: string
+          is_active: boolean
+          learning_objectives: string[] | null
+          prerequisites: string[] | null
+          scenario_data: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description: string
+          difficulty_level?: number
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean
+          learning_objectives?: string[] | null
+          prerequisites?: string[] | null
+          scenario_data?: Json
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          difficulty_level?: number
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean
+          learning_objectives?: string[] | null
+          prerequisites?: string[] | null
+          scenario_data?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      training_session_logs: {
+        Row: {
+          action_data: Json
+          action_type: string
+          id: string
+          progress_id: string
+          timestamp: string
+        }
+        Insert: {
+          action_data?: Json
+          action_type: string
+          id?: string
+          progress_id: string
+          timestamp?: string
+        }
+        Update: {
+          action_data?: Json
+          action_type?: string
+          id?: string
+          progress_id?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_session_logs_progress_id_fkey"
+            columns: ["progress_id"]
+            isOneToOne: false
+            referencedRelation: "training_progress"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_activity_logs: {
         Row: {
           action: string
@@ -1712,6 +1842,10 @@ export type Database = {
       }
       get_session_with_messages: {
         Args: { p_session_id: string; p_user_id: string }
+        Returns: Json
+      }
+      get_specialist_training_summary: {
+        Args: { p_specialist_id: string }
         Returns: Json
       }
       get_users_for_admin: {
