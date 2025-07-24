@@ -189,7 +189,6 @@ export const SpecialistOverviewCards = ({
                 <div className="flex items-center space-x-4">
                   <div>
                     <h3 className="font-semibold">{specialist.name}</h3>
-                    <p className="text-sm text-muted-foreground">{specialist.email}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant={specialist.isVerified ? "default" : "secondary"}>
                         {specialist.isVerified ? "Verified" : "Pending"}
