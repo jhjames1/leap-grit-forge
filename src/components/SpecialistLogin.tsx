@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Users, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface SpecialistLoginProps {
   onLogin: () => void;
@@ -20,7 +19,6 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,11 +54,6 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
         await supabase.auth.signOut();
         throw new Error('Access denied. Verified peer specialist account required.');
       }
-
-      toast({
-        title: "Welcome back!",
-        description: "Successfully logged in to your specialist portal"
-      });
 
       onLogin();
     } catch (error: any) {
