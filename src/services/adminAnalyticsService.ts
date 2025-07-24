@@ -270,6 +270,14 @@ export class AdminAnalyticsService {
 
   async calculateUserAnalytics(): Promise<UserAnalytics> {
     try {
+      // Get peer_client user IDs first
+      const { data: peerClients } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('user_type', 'peer_client');
+      
+      const peerClientIds = peerClients?.map(p => p.user_id) || [];
+      
       // Get user analytics from Supabase
       const [
         totalUsersResult,
@@ -278,8 +286,11 @@ export class AdminAnalyticsService {
         activityLogsResult,
         dailyStatsResult
       ] = await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('user_activity_logs').select('user_id', { count: 'exact', head: true }).gte('timestamp', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('user_type', 'peer_client'),
+        supabase.from('user_activity_logs')
+          .select('user_id', { count: 'exact', head: true })
+          .gte('timestamp', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+          .in('user_id', peerClientIds),
         supabase.from('user_toolbox_stats').select('*'),
         supabase.from('user_activity_logs').select('*').gte('timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
         supabase.from('user_daily_stats').select('*').gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
