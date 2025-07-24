@@ -82,7 +82,7 @@ export default function ConocoPortal() {
                   alt="ConocoPhillips" 
                   className="h-8 w-auto"
                 />
-                <h1 className="font-oswald font-semibold text-lg text-gray-800">EAP Dashboard</h1>
+                <h1 className="font-oswald font-semibold text-lg text-gray-800">LEAP Dashboard</h1>
               </div>
             </div>
 

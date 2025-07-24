@@ -38,7 +38,7 @@ export function ConocoSidebar({ activeSection, onSectionChange }: ConocoSidebarP
     <Sidebar collapsible="icon" className="bg-white border-gray-200 shadow-sm">
       <SidebarContent className="bg-white">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-red-600 font-oswald font-bold">EAP Dashboard</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-red-600 font-oswald font-bold">LEAP Dashboard</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
