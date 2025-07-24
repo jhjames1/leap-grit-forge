@@ -68,12 +68,12 @@ export default function ConocoPortal() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-midnight">
+      <div className="min-h-screen flex w-full bg-gray-50">
         <ConocoSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
         
         <div className="flex-1 flex flex-col">
           {/* Top Navigation */}
-          <header className="h-16 border-b border-steel-dark bg-steel-darker flex items-center justify-between px-6">
+          <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-6 shadow-sm">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
               <div className="flex items-center gap-3">
@@ -82,54 +82,54 @@ export default function ConocoPortal() {
                   alt="ConocoPhillips" 
                   className="h-8 w-auto"
                 />
-                <h1 className="font-oswald font-semibold text-lg text-white">EAP Dashboard</h1>
+                <h1 className="font-oswald font-semibold text-lg text-gray-800">EAP Dashboard</h1>
               </div>
             </div>
 
             <div className="flex items-center gap-4">
               {/* Date Range Picker */}
               <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
-                <SelectTrigger className="w-40 bg-steel-dark border-steel text-white">
+                <SelectTrigger className="w-40 bg-white border-gray-300 text-gray-800">
                   <Calendar className="h-4 w-4 mr-2" />
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-steel-dark border-steel">
-                  <SelectItem value="7" className="text-white hover:bg-steel">Last 7 days</SelectItem>
-                  <SelectItem value="30" className="text-white hover:bg-steel">Last 30 days</SelectItem>
-                  <SelectItem value="90" className="text-white hover:bg-steel">Last 90 days</SelectItem>
-                  <SelectItem value="custom" className="text-white hover:bg-steel">Custom range</SelectItem>
+                <SelectContent className="bg-white border-gray-300">
+                  <SelectItem value="7" className="text-gray-800 hover:bg-gray-100">Last 7 days</SelectItem>
+                  <SelectItem value="30" className="text-gray-800 hover:bg-gray-100">Last 30 days</SelectItem>
+                  <SelectItem value="90" className="text-gray-800 hover:bg-gray-100">Last 90 days</SelectItem>
+                  <SelectItem value="custom" className="text-gray-800 hover:bg-gray-100">Custom range</SelectItem>
                 </SelectContent>
               </Select>
 
               {/* Department Dropdown */}
               <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                <SelectTrigger className="w-40 bg-steel-dark border-steel text-white">
+                <SelectTrigger className="w-40 bg-white border-gray-300 text-gray-800">
                   <SelectValue placeholder="All Departments" />
                 </SelectTrigger>
-                <SelectContent className="bg-steel-dark border-steel">
-                  <SelectItem value="all" className="text-white hover:bg-steel">All Departments</SelectItem>
-                  <SelectItem value="hr" className="text-white hover:bg-steel">Human Resources</SelectItem>
-                  <SelectItem value="engineering" className="text-white hover:bg-steel">Engineering</SelectItem>
-                  <SelectItem value="sales" className="text-white hover:bg-steel">Sales</SelectItem>
-                  <SelectItem value="marketing" className="text-white hover:bg-steel">Marketing</SelectItem>
+                <SelectContent className="bg-white border-gray-300">
+                  <SelectItem value="all" className="text-gray-800 hover:bg-gray-100">All Departments</SelectItem>
+                  <SelectItem value="hr" className="text-gray-800 hover:bg-gray-100">Human Resources</SelectItem>
+                  <SelectItem value="engineering" className="text-gray-800 hover:bg-gray-100">Engineering</SelectItem>
+                  <SelectItem value="sales" className="text-gray-800 hover:bg-gray-100">Sales</SelectItem>
+                  <SelectItem value="marketing" className="text-gray-800 hover:bg-gray-100">Marketing</SelectItem>
                 </SelectContent>
               </Select>
 
               {/* Export Button */}
-              <Button onClick={handleExport} variant="outline" size="sm" className="border-steel text-steel-light hover:bg-steel/10">
+              <Button onClick={handleExport} variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-100">
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
 
               {/* Logout Button */}
-              <Button onClick={handleLogout} variant="outline" size="sm" className="border-construction text-construction hover:bg-construction/10">
+              <Button onClick={handleLogout} variant="outline" size="sm" className="border-red-500 text-red-600 hover:bg-red-50">
                 Logout
               </Button>
             </div>
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-6 overflow-auto bg-midnight">
+          <main className="flex-1 p-6 overflow-auto bg-gray-50">
             {activeSection === 'overview' && (
               <div className="space-y-6">
                 {/* Stats Grid */}
@@ -172,7 +172,7 @@ export default function ConocoPortal() {
 
             {activeSection === 'engagement' && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-white font-oswald">Engagement Analytics</h2>
+                <h2 className="text-2xl font-bold text-gray-800 font-oswald">Engagement Analytics</h2>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <ConocoEngagementChart 
                     dateRange={selectedDateRange}
@@ -188,7 +188,7 @@ export default function ConocoPortal() {
 
             {activeSection === 'wellbeing' && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-white font-oswald">Well-Being Trends</h2>
+                <h2 className="text-2xl font-bold text-gray-800 font-oswald">Well-Being Trends</h2>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <ConocoSentimentTrend 
                     dateRange={selectedDateRange}
@@ -204,7 +204,7 @@ export default function ConocoPortal() {
 
             {activeSection === 'program' && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-white font-oswald">Program Health</h2>
+                <h2 className="text-2xl font-bold text-gray-800 font-oswald">Program Health</h2>
                 <ConocoDashboardStats 
                   dateRange={selectedDateRange}
                   department={selectedDepartment}
@@ -214,20 +214,20 @@ export default function ConocoPortal() {
 
             {activeSection === 'alerts' && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-white font-oswald">Alerts & Notifications</h2>
+                <h2 className="text-2xl font-bold text-gray-800 font-oswald">Alerts & Notifications</h2>
                 <ConocoAlertsPanel />
               </div>
             )}
 
             {activeSection === 'settings' && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-white font-oswald">Dashboard Settings</h2>
-                <Card className="bg-steel-darker border-steel-dark">
+                <h2 className="text-2xl font-bold text-gray-800 font-oswald">Dashboard Settings</h2>
+                <Card className="bg-white border-gray-200 shadow-sm">
                   <CardHeader>
-                    <CardTitle className="text-white font-oswald">Configuration</CardTitle>
+                    <CardTitle className="text-gray-800 font-oswald">Configuration</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-steel-light">Dashboard settings will be available here.</p>
+                    <p className="text-gray-600">Dashboard settings will be available here.</p>
                   </CardContent>
                 </Card>
               </div>

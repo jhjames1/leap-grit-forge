@@ -34,9 +34,9 @@ export function ConocoEngagementChart({ dateRange, department }: ConocoEngagemen
   }, [dateRange]);
 
   return (
-    <Card className="bg-steel-darker border-steel-dark">
+    <Card className="bg-white border-gray-200 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-white font-oswald">Engagement Over Time</CardTitle>
+        <CardTitle className="text-gray-800 font-oswald">Engagement Over Time</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-80">
