@@ -51,12 +51,10 @@ const AdminDashboard = ({
     // TODO: Implement edit specialist functionality
     console.log('Edit specialist functionality');
   };
-
   const handleResetPassword = () => {
     // TODO: Implement reset password functionality
     console.log('Reset password functionality');
   };
-
   const handleDeactivateSpecialist = () => {
     // TODO: Implement deactivate specialist functionality
     console.log('Deactivate specialist functionality');
@@ -413,21 +411,13 @@ const AdminDashboard = ({
             <div className="space-y-6">
               {/* Specialist Performance Overview */}
               {analytics?.specialistAnalytics && <>
-                  <SpecialistOverviewCards 
-                    specialistAnalytics={analytics.specialistAnalytics}
-                    onEditSpecialist={handleEditSpecialist}
-                    onResetPassword={handleResetPassword}
-                    onDeactivateSpecialist={handleDeactivateSpecialist}
-                  />
+                  <SpecialistOverviewCards specialistAnalytics={analytics.specialistAnalytics} onEditSpecialist={handleEditSpecialist} onResetPassword={handleResetPassword} onDeactivateSpecialist={handleDeactivateSpecialist} />
                   
                   {/* Invite Specialist Button */}
                   <div className="flex justify-end">
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button>
-                          <UserPlus className="mr-2 h-4 w-4" />
-                          Invite Specialist
-                        </Button>
+                        
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
