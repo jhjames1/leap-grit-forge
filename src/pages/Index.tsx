@@ -17,9 +17,6 @@ import { useUserData } from '@/hooks/useUserData';
 import { useAuth } from '@/hooks/useAuth';
 import { useBadgeNotifications } from '@/hooks/useBadgeNotifications';
 import { BadgeCelebrationModal } from '@/components/BadgeCelebrationModal';
-import { AppHeader } from '@/components/AppHeader';
-import { AdminLoginForm } from '@/components/AdminLoginForm';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
 
 const Index = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -30,7 +27,6 @@ const Index = () => {
   const { user, loading, signOut, isAuthenticated, isNewSignUp } = useAuth();
   const { updateUserData } = useUserData();
   const { newBadges, showCelebration, markBadgesAsSeen } = useBadgeNotifications();
-  const { isAuthenticated: isAdminAuthenticated, loading: adminLoading, login: adminLogin, logout: adminLogout } = useAdminAuth();
 
   useEffect(() => {
     if (!loading) {
@@ -133,11 +129,6 @@ const Index = () => {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
-  // Show admin login if not authenticated as admin
-  if (!adminLoading && !isAdminAuthenticated) {
-    return <AdminLoginForm onLogin={adminLogin} />;
-  }
-
   if (!isAuthenticated) {
     console.log('Showing auth form');
     return <AuthForm onAuthSuccess={handleAuthSuccess} />;
@@ -176,7 +167,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader onLogout={adminLogout} />
       <OfflineIndicator />
       <div className="relative">
         {renderActivePage()}
