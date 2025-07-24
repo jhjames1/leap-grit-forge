@@ -95,20 +95,6 @@ export default function ConocoPortal() {
             </SelectContent>
           </Select>
 
-          {/* Department Dropdown */}
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-            <SelectTrigger className="w-40 bg-white border-gray-300 text-gray-800">
-              <SelectValue placeholder="All Departments" />
-            </SelectTrigger>
-            <SelectContent className="bg-white border-gray-300">
-              <SelectItem value="all" className="text-gray-800 hover:bg-gray-100">All Departments</SelectItem>
-              <SelectItem value="hr" className="text-gray-800 hover:bg-gray-100">Human Resources</SelectItem>
-              <SelectItem value="engineering" className="text-gray-800 hover:bg-gray-100">Engineering</SelectItem>
-              <SelectItem value="sales" className="text-gray-800 hover:bg-gray-100">Sales</SelectItem>
-              <SelectItem value="marketing" className="text-gray-800 hover:bg-gray-100">Marketing</SelectItem>
-            </SelectContent>
-          </Select>
-
           {/* Export Button */}
           <Button onClick={handleExport} variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-100">
             <Download className="h-4 w-4 mr-2" />
