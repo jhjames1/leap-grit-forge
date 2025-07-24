@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { format, subDays, eachDayOfInterval } from 'date-fns';
 
 interface ConocoEngagementChartProps {
   dateRange: string;
@@ -8,23 +9,29 @@ interface ConocoEngagementChartProps {
 }
 
 export function ConocoEngagementChart({ dateRange, department }: ConocoEngagementChartProps) {
-  // Mock data - replace with actual API calls
-  const data = [
-    { date: '2024-01-01', sessions: 45, users: 32 },
-    { date: '2024-01-02', sessions: 52, users: 38 },
-    { date: '2024-01-03', sessions: 48, users: 35 },
-    { date: '2024-01-04', sessions: 61, users: 42 },
-    { date: '2024-01-05', sessions: 55, users: 40 },
-    { date: '2024-01-06', sessions: 67, users: 48 },
-    { date: '2024-01-07', sessions: 58, users: 43 },
-    { date: '2024-01-08', sessions: 72, users: 51 },
-    { date: '2024-01-09', sessions: 65, users: 46 },
-    { date: '2024-01-10', sessions: 79, users: 55 },
-    { date: '2024-01-11', sessions: 68, users: 49 },
-    { date: '2024-01-12', sessions: 75, users: 52 },
-    { date: '2024-01-13', sessions: 82, users: 58 },
-    { date: '2024-01-14', sessions: 71, users: 50 },
-  ];
+  // Generate dynamic data based on date range
+  const data = useMemo(() => {
+    const today = new Date();
+    const daysBack = parseInt(dateRange);
+    const startDate = subDays(today, daysBack - 1);
+    
+    const dateRange_array = eachDayOfInterval({
+      start: startDate,
+      end: today
+    });
+
+    return dateRange_array.map((date, index) => {
+      // Generate realistic mock data that varies by day
+      const baseSession = 45 + Math.floor(Math.sin(index * 0.5) * 15) + Math.floor(Math.random() * 20);
+      const baseUsers = Math.floor(baseSession * (0.6 + Math.random() * 0.3));
+      
+      return {
+        date: format(date, 'yyyy-MM-dd'),
+        sessions: baseSession,
+        users: baseUsers
+      };
+    });
+  }, [dateRange]);
 
   return (
     <Card className="bg-steel-darker border-steel-dark">
