@@ -10,11 +10,11 @@ interface ConocoFeatureUsageProps {
 export function ConocoFeatureUsage({ dateRange, department }: ConocoFeatureUsageProps) {
   // Mock data - replace with actual API calls
   const data = [
-    { name: 'Chat Sessions', value: 35, color: 'hsl(var(--chart-1))' },
-    { name: 'Crisis Support', value: 25, color: 'hsl(var(--chart-2))' },
-    { name: 'Resource Library', value: 20, color: 'hsl(var(--chart-3))' },
-    { name: 'Wellness Tools', value: 15, color: 'hsl(var(--chart-4))' },
-    { name: 'Assessments', value: 5, color: 'hsl(var(--chart-5))' },
+    { name: 'Chat Sessions', value: 35, color: '#3B82F6' }, // Blue
+    { name: 'Crisis Support', value: 25, color: '#EF4444' }, // Red
+    { name: 'Resource Library', value: 20, color: '#10B981' }, // Green
+    { name: 'Wellness Tools', value: 15, color: '#F59E0B' }, // Orange
+    { name: 'Assessments', value: 5, color: '#8B5CF6' }, // Purple
   ];
 
   return (
