@@ -42,16 +42,17 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="mb-8">
+        <img 
+          src="/lovable-uploads/6f20bf7a-2728-4c31-b889-6754478892ba.png" 
+          alt="ConocoPhillips" 
+          className="h-16 w-auto mx-auto"
+        />
+      </div>
+      
       <Card className="bg-black/25 border-steel-dark p-8 max-w-sm w-full">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <img 
-              src="/lovable-uploads/00b955be-09d2-4d74-9aa0-10685a4b9b4d.png" 
-              alt="ConocoPhillips" 
-              className="h-12 w-auto"
-            />
-          </div>
           <h2 className="font-oswald font-bold text-white text-2xl mb-2">Conoco Phillips</h2>
           <p className="text-steel-light text-sm">LEAP Dashboard Access</p>
         </div>
