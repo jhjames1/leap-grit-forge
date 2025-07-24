@@ -288,7 +288,7 @@ export class AdminAnalyticsService {
       ] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('user_type', 'peer_client'),
         supabase.from('user_activity_logs')
-          .select('user_id', { count: 'exact', head: true })
+          .select('user_id')
           .gte('timestamp', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
           .in('user_id', peerClientIds),
         supabase.from('user_toolbox_stats').select('*'),
@@ -297,7 +297,9 @@ export class AdminAnalyticsService {
       ]);
 
       const totalUsers = totalUsersResult.count || 0;
-      const activeUsers = activeUsersResult.count || 0;
+      // Count unique users from the activity data
+      const uniqueActiveUserIds = new Set((activeUsersResult.data || []).map(log => log.user_id));
+      const activeUsers = uniqueActiveUserIds.size;
       const toolboxStats = toolboxStatsResult.data || [];
       const activityLogs = activityLogsResult.data || [];
       const dailyStats = dailyStatsResult.data || [];
