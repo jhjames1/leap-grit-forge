@@ -186,18 +186,6 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
                         <DropdownMenuItem onClick={() => handleViewDetails(specialist)}>
                           Coaching Tips
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditSpecialist(specialist)}>
-                          Edit Specialist
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleResetPassword(specialist)}>
-                          Reset Password
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleDeactivateSpecialist(specialist)}
-                          className="text-destructive"
-                        >
-                          Deactivate
-                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

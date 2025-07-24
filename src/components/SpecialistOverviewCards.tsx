@@ -1,13 +1,22 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserCheck, Users, Star, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { UserCheck, Users, Star, Clock, AlertTriangle, TrendingUp, Edit, RotateCcw, UserX } from 'lucide-react';
 import { SpecialistAnalytics } from '@/services/adminAnalyticsService';
 
 interface SpecialistOverviewCardsProps {
   specialistAnalytics: SpecialistAnalytics;
+  onEditSpecialist?: () => void;
+  onResetPassword?: () => void;
+  onDeactivateSpecialist?: () => void;
 }
 
-export const SpecialistOverviewCards = ({ specialistAnalytics }: SpecialistOverviewCardsProps) => {
+export const SpecialistOverviewCards = ({ 
+  specialistAnalytics, 
+  onEditSpecialist, 
+  onResetPassword, 
+  onDeactivateSpecialist 
+}: SpecialistOverviewCardsProps) => {
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${Math.round(seconds)}s`;
     if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
@@ -43,7 +52,7 @@ export const SpecialistOverviewCards = ({ specialistAnalytics }: SpecialistOverv
       {/* Active Specialists */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 mb-3">
             <div className="bg-green-500 p-3 rounded-full">
               <UserCheck className="text-white w-5 h-5" />
             </div>
@@ -58,6 +67,35 @@ export const SpecialistOverviewCards = ({ specialistAnalytics }: SpecialistOverv
                   : 0}% availability
               </div>
             </div>
+          </div>
+          <div className="flex gap-1">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs px-2 flex-1"
+              onClick={onEditSpecialist}
+            >
+              <Edit className="w-3 h-3 mr-1" />
+              Edit
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-xs px-2 flex-1"
+              onClick={onResetPassword}
+            >
+              <RotateCcw className="w-3 h-3 mr-1" />
+              Reset
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm"
+              className="text-xs px-2 flex-1"
+              onClick={onDeactivateSpecialist}
+            >
+              <UserX className="w-3 h-3 mr-1" />
+              Deactivate
+            </Button>
           </div>
         </CardContent>
       </Card>

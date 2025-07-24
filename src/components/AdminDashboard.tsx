@@ -46,6 +46,22 @@ const AdminDashboard = ({
   // Get admin user's first name for welcome message
   const adminFirstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin';
 
+  // Action handlers for specialist management
+  const handleEditSpecialist = () => {
+    // TODO: Implement edit specialist functionality
+    console.log('Edit specialist functionality');
+  };
+
+  const handleResetPassword = () => {
+    // TODO: Implement reset password functionality
+    console.log('Reset password functionality');
+  };
+
+  const handleDeactivateSpecialist = () => {
+    // TODO: Implement deactivate specialist functionality
+    console.log('Deactivate specialist functionality');
+  };
+
   // Load live counts for specialist and chat metrics
   useEffect(() => {
     const loadLiveCounts = async () => {
@@ -397,7 +413,12 @@ const AdminDashboard = ({
             <div className="space-y-6">
               {/* Specialist Performance Overview */}
               {analytics?.specialistAnalytics && <>
-                  <SpecialistOverviewCards specialistAnalytics={analytics.specialistAnalytics} />
+                  <SpecialistOverviewCards 
+                    specialistAnalytics={analytics.specialistAnalytics}
+                    onEditSpecialist={handleEditSpecialist}
+                    onResetPassword={handleResetPassword}
+                    onDeactivateSpecialist={handleDeactivateSpecialist}
+                  />
                   
                   {/* Invite Specialist Button */}
                   <div className="flex justify-end">
