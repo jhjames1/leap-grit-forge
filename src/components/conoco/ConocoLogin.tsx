@@ -43,13 +43,17 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="bg-midnight border-steel-dark p-8 max-w-sm w-full">
+      <Card className="bg-black/25 border-steel-dark p-8 max-w-sm w-full">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 mx-auto bg-construction/20 rounded-full flex items-center justify-center mb-4">
-            <Building2 className="text-construction" size={32} />
+          <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <img 
+              src="/lovable-uploads/00b955be-09d2-4d74-9aa0-10685a4b9b4d.png" 
+              alt="ConocoPhillips" 
+              className="h-12 w-auto"
+            />
           </div>
-          <h2 className="font-oswald font-bold text-white text-2xl mb-2">Conoco Portal</h2>
-          <p className="text-steel-light text-sm">Company EAP Dashboard Access</p>
+          <h2 className="font-oswald font-bold text-white text-2xl mb-2">Conoco Phillips</h2>
+          <p className="text-steel-light text-sm">LEAP Dashboard Access</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
