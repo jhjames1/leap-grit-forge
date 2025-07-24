@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import AdminPortal from "./pages/AdminPortal";
 import PeerSpecialistPortal from "./pages/PeerSpecialistPortal";
+import ConocoPortal from "./pages/ConocoPortal";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PasswordReset } from "./components/PasswordReset";
@@ -45,6 +46,7 @@ function App() {
                   } 
                 />
                 <Route path="/reset-password" element={<PasswordReset />} />
+                <Route path="/conoco" element={<ConocoPortal />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
