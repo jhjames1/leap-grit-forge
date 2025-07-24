@@ -78,6 +78,7 @@ export default function ConocoPortal() {
               className="h-6 w-auto mb-1"
             />
             <h1 className="font-oswald font-semibold text-sm text-gray-800">LEAP Dashboard</h1>
+            <p className="text-xs text-gray-500">powered by Thriving United</p>
           </div>
 
           <div className="flex items-center gap-4">
@@ -108,11 +109,6 @@ export default function ConocoPortal() {
         </div>
         </div>
       </header>
-
-      {/* Powered by text */}
-      <div className="bg-white px-6 py-2 border-b border-gray-100">
-        <p className="text-xs text-gray-500">powered by Thriving United</p>
-      </div>
 
       {/* Navigation and Content */}
       <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
