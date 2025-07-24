@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPlus, Edit, Check, X, Users, AlertCircle, Search, Activity, Clock, MessageSquare, TrendingUp, TrendingDown, Wifi, WifiOff, Mail, Send, Trash2, Star, RefreshCw, Key, Copy, Calendar, Loader2, AlertTriangle, MoreHorizontal, RotateCcw, UserCheck } from 'lucide-react';
+import { UserPlus, Edit, Check, X, Users, AlertCircle, Search, Activity, Clock, MessageSquare, TrendingUp, TrendingDown, Wifi, WifiOff, Mail, Send, Trash2, Star, RefreshCw, Key, Copy, Calendar, Loader2, AlertTriangle, MoreHorizontal, RotateCcw, UserCheck, UserX } from 'lucide-react';
 
 interface PeerSpecialist {
   id: string;
@@ -444,10 +444,18 @@ const PeerSpecialistManagement = () => {
         </TabsList>
 
         <TabsContent value="active" className="space-y-6 mt-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold">Active Specialists</h3>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Invite Specialist
+              </Button>
+            </DialogTrigger>
+          </div>
+
           <Card>
-            <CardHeader>
-              <CardTitle>Active Specialists</CardTitle>
-            </CardHeader>
+            <CardContent className="p-0">
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -599,8 +607,7 @@ const PeerSpecialistManagement = () => {
               </DialogContent>
             </Dialog>
 
-            <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-4 p-6">
                 {specialists.map((specialist) => (
                   <div key={specialist.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
@@ -640,10 +647,29 @@ const PeerSpecialistManagement = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
+                        className="text-xs px-2"
                         onClick={() => handleEdit(specialist)}
                       >
-                        <Edit className="mr-2 h-4 w-4" />
+                        <Edit className="w-3 h-3 mr-1" />
                         Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-xs px-2"
+                        onClick={() => handleResetPassword(specialist.id)}
+                      >
+                        <RotateCcw className="w-3 h-3 mr-1" />
+                        Reset
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        className="text-xs px-2"
+                        onClick={() => handleSoftDeleteSpecialist(specialist.id)}
+                      >
+                        <UserX className="w-3 h-3 mr-1" />
+                        Deactivate
                       </Button>
                     </div>
                   </div>
