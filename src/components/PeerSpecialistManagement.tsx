@@ -446,6 +446,9 @@ const PeerSpecialistManagement = () => {
         <TabsContent value="active" className="space-y-6 mt-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold">Active Specialists</h3>
+          </div>
+          
+          <div className="flex justify-end mb-6">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={resetForm}>
@@ -616,59 +619,59 @@ const PeerSpecialistManagement = () => {
                           className="w-10 h-10 rounded-full object-cover"
                         />
                       )}
-                      <div>
-                        <h3 className="font-semibold">
-                          {specialist.first_name} {specialist.last_name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">{specialist.email}</p>
-                        {specialist.phone_number && (
-                          <p className="text-sm text-muted-foreground">{specialist.phone_number}</p>
-                        )}
-                        {specialist.specialties && specialist.specialties.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {specialist.specialties.map((specialty, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {specialty}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={specialist.is_verified ? "default" : "secondary"}>
-                        {specialist.is_verified ? "Verified" : "Pending"}
-                      </Badge>
-                      <Badge variant={specialist.is_active ? "default" : "destructive"}>
-                        {specialist.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs px-2"
-                        onClick={() => handleEdit(specialist)}
-                      >
-                        <Edit className="w-3 h-3 mr-1" />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs px-2"
-                        onClick={() => handleResetPassword(specialist.id)}
-                      >
-                        <RotateCcw className="w-3 h-3 mr-1" />
-                        Reset
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        className="text-xs px-2"
-                        onClick={() => handleSoftDeleteSpecialist(specialist.id)}
-                      >
-                        <UserX className="w-3 h-3 mr-1" />
-                        Deactivate
-                      </Button>
+                       <div>
+                         <h3 className="font-semibold">
+                           {specialist.first_name} {specialist.last_name}
+                         </h3>
+                         <p className="text-sm text-muted-foreground">{specialist.email}</p>
+                         <div className="flex items-center gap-2 mt-1">
+                           <Badge variant={specialist.is_verified ? "default" : "secondary"}>
+                             {specialist.is_verified ? "Verified" : "Pending"}
+                           </Badge>
+                           <Badge variant={specialist.is_active ? "default" : "destructive"}>
+                             {specialist.is_active ? "Active" : "Inactive"}
+                           </Badge>
+                         </div>
+                         {specialist.phone_number && (
+                           <p className="text-sm text-muted-foreground">{specialist.phone_number}</p>
+                         )}
+                         {specialist.specialties && specialist.specialties.length > 0 && (
+                           <div className="flex flex-wrap gap-1 mt-1">
+                             {specialist.specialties.map((specialty, index) => (
+                               <Badge key={index} variant="outline" className="text-xs">
+                                 {specialty}
+                               </Badge>
+                             ))}
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <DropdownMenu>
+                         <DropdownMenuTrigger asChild>
+                           <Button variant="ghost" size="sm">
+                             <MoreHorizontal className="h-4 w-4" />
+                           </Button>
+                         </DropdownMenuTrigger>
+                         <DropdownMenuContent align="end" className="w-48">
+                           <DropdownMenuItem onClick={() => handleEdit(specialist)}>
+                             <Edit className="mr-2 h-4 w-4" />
+                             Edit Specialist
+                           </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => handleResetPassword(specialist.id)}>
+                             <RotateCcw className="mr-2 h-4 w-4" />
+                             Reset Password
+                           </DropdownMenuItem>
+                           <DropdownMenuSeparator />
+                           <DropdownMenuItem 
+                             onClick={() => handleSoftDeleteSpecialist(specialist.id)}
+                             className="text-destructive"
+                           >
+                             <UserX className="mr-2 h-4 w-4" />
+                             Deactivate
+                           </DropdownMenuItem>
+                         </DropdownMenuContent>
+                       </DropdownMenu>
                     </div>
                   </div>
                 ))}
