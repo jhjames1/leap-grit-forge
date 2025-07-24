@@ -6,6 +6,8 @@ export interface SpecialistPerformance {
   name: string;
   email: string;
   status: 'online' | 'away' | 'offline' | 'busy';
+  isActive: boolean;
+  isVerified: boolean;
   activeSessions: number;
   completedSessions: number;
   averageRating: number;
@@ -160,6 +162,8 @@ export class AdminAnalyticsService {
           name: `${specialist.first_name} ${specialist.last_name}`,
           email: specialist.email || '',
           status: (status?.status as 'online' | 'away' | 'offline' | 'busy') || 'offline',
+          isActive: specialist.is_active,
+          isVerified: specialist.is_verified,
           activeSessions,
           completedSessions,
           averageRating,
