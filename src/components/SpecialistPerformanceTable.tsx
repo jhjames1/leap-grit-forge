@@ -24,6 +24,21 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
     setIsModalOpen(false);
     setSelectedSpecialist(null);
   };
+
+  const handleEditSpecialist = (specialist: SpecialistPerformance) => {
+    // TODO: Implement edit specialist functionality
+    console.log('Edit specialist:', specialist);
+  };
+
+  const handleResetPassword = (specialist: SpecialistPerformance) => {
+    // TODO: Implement reset password functionality
+    console.log('Reset password for specialist:', specialist);
+  };
+
+  const handleDeactivateSpecialist = (specialist: SpecialistPerformance) => {
+    // TODO: Implement deactivate specialist functionality
+    console.log('Deactivate specialist:', specialist);
+  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online': return 'bg-green-500';
@@ -83,7 +98,7 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
                 <TableHead className="text-center">Workload</TableHead>
                 <TableHead className="text-center">Performance</TableHead>
                 <TableHead className="text-center">Last Active</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
+                <TableHead className="text-center min-w-[300px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -160,13 +175,40 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
                   </TableCell>
                   
                   <TableCell className="text-center">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleViewDetails(specialist)}
-                    >
-                      Coaching Tips
-                    </Button>
+                    <div className="flex items-center justify-center gap-1 flex-wrap">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-xs px-2"
+                        onClick={() => handleViewDetails(specialist)}
+                      >
+                        Tips
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-xs px-2"
+                        onClick={() => handleEditSpecialist(specialist)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-xs px-2"
+                        onClick={() => handleResetPassword(specialist)}
+                      >
+                        Reset
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        className="text-xs px-2"
+                        onClick={() => handleDeactivateSpecialist(specialist)}
+                      >
+                        Deactivate
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

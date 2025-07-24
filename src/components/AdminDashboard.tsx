@@ -8,11 +8,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeAdminAnalytics } from '@/hooks/useRealtimeAdminAnalytics';
 import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import SecurityAuditPanel from './SecurityAuditPanel';
-import { adminAnalytics, type UserAnalytics } from '@/services/adminAnalyticsService';
 import { SpecialistOverviewCards } from './SpecialistOverviewCards';
 import { SpecialistPerformanceTable } from './SpecialistPerformanceTable';
-import { Users, TrendingUp, AlertTriangle, BarChart3, Calendar, MessageSquare, Target, Activity, Shield, UserCheck, LogOut, Bot } from 'lucide-react';
+import { Users, TrendingUp, AlertTriangle, BarChart3, Calendar, MessageSquare, Target, Activity, Shield, UserCheck, LogOut, Bot, UserPlus } from 'lucide-react';
 import PeerSpecialistManagement from './PeerSpecialistManagement';
 import MotivationalContentManagement from './MotivationalContentManagement';
 import ForemanContentManagement from './ForemanContentManagement';
@@ -398,6 +398,27 @@ const AdminDashboard = ({
               {/* Specialist Performance Overview */}
               {analytics?.specialistAnalytics && <>
                   <SpecialistOverviewCards specialistAnalytics={analytics.specialistAnalytics} />
+                  
+                  {/* Invite Specialist Button */}
+                  <div className="flex justify-end">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Invite Specialist
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Invite New Specialist</DialogTitle>
+                        </DialogHeader>
+                        <p className="text-sm text-muted-foreground">
+                          Please use the specialist management section below to invite new specialists.
+                        </p>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  
                   <SpecialistPerformanceTable specialists={analytics.specialistAnalytics.specialistPerformance} />
                 </>}
               
