@@ -71,13 +71,13 @@ export default function ConocoPortal() {
       {/* Top Navigation */}
       <header className="border-b border-gray-200 bg-white shadow-sm">
         <div className="h-16 flex items-center justify-between px-6">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center">
             <img 
               src="/lovable-uploads/6f20bf7a-2728-4c31-b889-6754478892ba.png" 
               alt="ConocoPhillips" 
-              className="h-8 w-auto"
+              className="h-6 w-auto mb-1"
             />
-            <h1 className="font-oswald font-semibold text-lg text-gray-800">LEAP Dashboard</h1>
+            <h1 className="font-oswald font-semibold text-sm text-gray-800">LEAP Dashboard</h1>
           </div>
 
           <div className="flex items-center gap-4">
@@ -125,7 +125,7 @@ export default function ConocoPortal() {
 
       {/* Powered by text */}
       <div className="bg-white px-6 py-2 border-b border-gray-100">
-        <p className="text-xs text-gray-500">LEAP is powered by Thriving United</p>
+        <p className="text-xs text-gray-500">powered by Thriving United</p>
       </div>
 
       {/* Navigation and Content */}
