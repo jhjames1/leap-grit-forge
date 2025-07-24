@@ -447,165 +447,6 @@ const PeerSpecialistManagement = () => {
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold">Active Specialists</h3>
           </div>
-          
-          <div className="flex justify-end mb-6">
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm}>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Invite Specialist
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingSpecialist ? 'Edit Specialist' : 'Invite New Specialist'}
-                  </DialogTitle>
-                </DialogHeader>
-                <form onSubmit={editingSpecialist ? handleEditSpecialist : handleInviteSpecialist} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={e => setFormData({
-                          ...formData,
-                          email: e.target.value
-                        })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone_number || ''}
-                        onChange={e => setFormData({
-                          ...formData,
-                          phone_number: e.target.value
-                        })}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name *</Label>
-                      <Input
-                        id="firstName"
-                        value={formData.first_name}
-                        onChange={e => setFormData({
-                          ...formData,
-                          first_name: e.target.value
-                        })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name *</Label>
-                      <Input
-                        id="lastName"
-                        value={formData.last_name}
-                        onChange={e => setFormData({
-                          ...formData,
-                          last_name: e.target.value
-                        })}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      value={formData.bio}
-                      onChange={e => setFormData({
-                        ...formData,
-                        bio: e.target.value
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="experience">Years of Experience</Label>
-                    <Input
-                      id="experience"
-                      type="number"
-                      value={formData.years_experience}
-                      onChange={e => setFormData({
-                        ...formData,
-                        years_experience: parseInt(e.target.value) || 0
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="avatar">Avatar URL</Label>
-                    <Input
-                      id="avatar"
-                      type="url"
-                      value={formData.avatar_url || ''}
-                      onChange={e => setFormData({
-                        ...formData,
-                        avatar_url: e.target.value
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Specialties</Label>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Input
-                        placeholder="Add specialty"
-                        value={newSpecialty}
-                        onChange={e => setNewSpecialty(e.target.value)}
-                        onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
-                      />
-                      <Button type="button" onClick={addSpecialty} size="sm">
-                        Add
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.specialties.map((specialty, index) => (
-                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                          {specialty}
-                          <button
-                            type="button"
-                            onClick={() => removeSpecialty(specialty)}
-                            className="ml-1 hover:text-destructive"
-                          >
-                            ×
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setIsDialogOpen(false);
-                        resetForm();
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={isInviting}>
-                      {isInviting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        editingSpecialist ? 'Update Specialist' : 'Send Invitation'
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-
           <Card>
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -656,6 +497,162 @@ const PeerSpecialistManagement = () => {
               </div>
             </CardContent>
           </Card>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm} id="invite-specialist">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Invite Specialist
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingSpecialist ? 'Edit Specialist' : 'Invite New Specialist'}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={editingSpecialist ? handleEditSpecialist : handleInviteSpecialist} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="email">Email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={e => setFormData({
+                        ...formData,
+                        email: e.target.value
+                      })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone_number || ''}
+                      onChange={e => setFormData({
+                        ...formData,
+                        phone_number: e.target.value
+                      })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input
+                      id="firstName"
+                      value={formData.first_name}
+                      onChange={e => setFormData({
+                        ...formData,
+                        first_name: e.target.value
+                      })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Input
+                      id="lastName"
+                      value={formData.last_name}
+                      onChange={e => setFormData({
+                        ...formData,
+                        last_name: e.target.value
+                      })}
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={formData.bio}
+                    onChange={e => setFormData({
+                      ...formData,
+                      bio: e.target.value
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="experience">Years of Experience</Label>
+                  <Input
+                    id="experience"
+                    type="number"
+                    value={formData.years_experience}
+                    onChange={e => setFormData({
+                      ...formData,
+                      years_experience: parseInt(e.target.value) || 0
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="avatar">Avatar URL</Label>
+                  <Input
+                    id="avatar"
+                    type="url"
+                    value={formData.avatar_url || ''}
+                    onChange={e => setFormData({
+                      ...formData,
+                      avatar_url: e.target.value
+                    })}
+                  />
+                </div>
+                <div>
+                  <Label>Specialties</Label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Input
+                      placeholder="Add specialty"
+                      value={newSpecialty}
+                      onChange={e => setNewSpecialty(e.target.value)}
+                      onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
+                    />
+                    <Button type="button" onClick={addSpecialty} size="sm">
+                      Add
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.specialties.map((specialty, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                        {specialty}
+                        <button
+                          type="button"
+                          onClick={() => removeSpecialty(specialty)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsDialogOpen(false);
+                      resetForm();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isInviting}>
+                    {isInviting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      editingSpecialist ? 'Update Specialist' : 'Send Invitation'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="removed" className="space-y-6 mt-6">

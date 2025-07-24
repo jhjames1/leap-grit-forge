@@ -414,10 +414,13 @@ const AdminDashboard = ({
                   <SpecialistOverviewCards specialistAnalytics={analytics.specialistAnalytics} onEditSpecialist={handleEditSpecialist} onResetPassword={handleResetPassword} onDeactivateSpecialist={handleDeactivateSpecialist} />
                   
                   {/* Invite Specialist Button */}
-                  <div className="flex justify-end">
+                  <div className="flex justify-end mb-6">
                     <Dialog>
                       <DialogTrigger asChild>
-                        
+                        <Button onClick={() => window.location.hash = '#invite-specialist'}>
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Invite Specialist
+                        </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
