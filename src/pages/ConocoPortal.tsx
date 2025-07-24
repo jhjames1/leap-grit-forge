@@ -77,10 +77,12 @@ export default function ConocoPortal() {
             <div className="flex items-center gap-4">
               <SidebarTrigger />
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-construction rounded-md flex items-center justify-center">
-                  <span className="text-midnight font-bold text-sm">L</span>
-                </div>
-                <h1 className="font-oswald font-semibold text-lg text-white">LEAP EAP Dashboard</h1>
+                <img 
+                  src="/lovable-uploads/1a5c833d-7af4-41e8-b399-dbcb55e86c30.png" 
+                  alt="ConocoPhillips" 
+                  className="h-8 w-auto"
+                />
+                <h1 className="font-oswald font-semibold text-lg text-white">EAP Dashboard</h1>
               </div>
             </div>
 

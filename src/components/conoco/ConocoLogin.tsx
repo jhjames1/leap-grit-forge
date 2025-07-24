@@ -26,7 +26,7 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
     
     try {
       // Simple username/password check
-      if (credentials.username === 'admin' && credentials.password === 'admin') {
+      if (credentials.username === 'admin' && credentials.password === 'adminadmin') {
         // Store auth state in localStorage
         localStorage.setItem('conoco-auth', 'true');
         onLogin();
@@ -129,7 +129,7 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
             For authorized company administrators only.
           </p>
           <p className="text-steel-light text-xs mt-1">
-            Demo credentials: admin / admin
+            Demo credentials: admin / adminadmin
           </p>
         </div>
       </Card>
