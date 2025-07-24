@@ -16,15 +16,20 @@ interface LanguageProviderProps {
 }
 
 export function LanguageProvider({ children }: LanguageProviderProps) {
-  const [language, setLanguageState] = useState<Language>(() => {
+  // Initialize with a safe default to avoid null reference errors
+  const [language, setLanguageState] = useState<Language>('en');
+
+  // Initialize language from localStorage after component mounts
+  useEffect(() => {
     try {
       const stored = localStorage.getItem('leap-language');
-      return (stored as Language) || 'en';
+      if (stored && (stored === 'en' || stored === 'es')) {
+        setLanguageState(stored as Language);
+      }
     } catch (error) {
       console.warn('Failed to access localStorage, defaulting to English');
-      return 'en';
     }
-  });
+  }, []);
 
   const setLanguage = (newLanguage: Language) => {
     setLanguageState(newLanguage);
