@@ -47,7 +47,9 @@ export function ConocoFeatureUsage({ dateRange, department }: ConocoFeatureUsage
                   borderRadius: '6px'
                 }}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ color: '#000000' }}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
