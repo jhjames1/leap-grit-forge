@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Star, MessageSquare, Clock, TrendingUp, AlertCircle } from 'lucide-react';
+import { Star, MessageSquare, Clock, TrendingUp, AlertCircle, MoreHorizontal } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SpecialistPerformance } from '@/services/adminAnalyticsService';
 import { SpecialistCoachingModal } from './SpecialistCoachingModal';
 import { useState } from 'react';
@@ -98,7 +99,7 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
                 <TableHead className="text-center">Workload</TableHead>
                 <TableHead className="text-center">Performance</TableHead>
                 <TableHead className="text-center">Last Active</TableHead>
-                <TableHead className="text-center min-w-[300px]">Actions</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -175,40 +176,30 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
                   </TableCell>
                   
                   <TableCell className="text-center">
-                    <div className="flex items-center justify-center gap-1 flex-wrap">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="text-xs px-2"
-                        onClick={() => handleViewDetails(specialist)}
-                      >
-                        Tips
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs px-2"
-                        onClick={() => handleEditSpecialist(specialist)}
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs px-2"
-                        onClick={() => handleResetPassword(specialist)}
-                      >
-                        Reset
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        className="text-xs px-2"
-                        onClick={() => handleDeactivateSpecialist(specialist)}
-                      >
-                        Deactivate
-                      </Button>
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleViewDetails(specialist)}>
+                          Coaching Tips
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditSpecialist(specialist)}>
+                          Edit Specialist
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleResetPassword(specialist)}>
+                          Reset Password
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeactivateSpecialist(specialist)}
+                          className="text-destructive"
+                        >
+                          Deactivate
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
