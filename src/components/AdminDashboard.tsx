@@ -12,12 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import SecurityAuditPanel from './SecurityAuditPanel';
 import { SpecialistOverviewCards } from './SpecialistOverviewCards';
 import { SpecialistPerformanceTable } from './SpecialistPerformanceTable';
+import { SpecialistToolbar } from './SpecialistToolbar';
 import { Users, TrendingUp, AlertTriangle, BarChart3, Calendar, MessageSquare, Target, Activity, Shield, UserCheck, LogOut, Bot, UserPlus } from 'lucide-react';
 import PeerSpecialistManagement from './PeerSpecialistManagement';
 import MotivationalContentManagement from './MotivationalContentManagement';
 import ForemanContentManagement from './ForemanContentManagement';
 import AdminManagement from './AdminManagement';
 import UserManagement from './UserManagement';
+import { exportSpecialistData } from '@/utils/exportUtils';
 interface AdminDashboardProps {
   onBack: () => void;
 }
@@ -34,6 +36,10 @@ const AdminDashboard = ({
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
   const [liveSpecialistCount, setLiveSpecialistCount] = useState(0);
   const [liveChatCount, setLiveChatCount] = useState(0);
+  
+  // Specialist management state
+  const [specialistSearchTerm, setSpecialistSearchTerm] = useState('');
+  const [specialistFilterStatus, setSpecialistFilterStatus] = useState('all');
 
   // Use the real-time analytics hook
   const {
@@ -107,6 +113,45 @@ const AdminDashboard = ({
   const handleSignOut = async () => {
     await signOut();
   };
+
+  // Specialist management handlers
+  const handleSpecialistSearch = (value: string) => {
+    setSpecialistSearchTerm(value);
+  };
+
+  const handleSpecialistFilter = (value: string) => {
+    setSpecialistFilterStatus(value);
+  };
+
+  const handleExportSpecialistData = () => {
+    if (analytics?.specialistAnalytics?.specialistPerformance) {
+      exportSpecialistData(analytics.specialistAnalytics.specialistPerformance);
+    }
+  };
+
+  const handleInviteSpecialist = () => {
+    // This functionality is already implemented in PeerSpecialistManagement
+    // We can trigger it or navigate to that section
+    console.log('Invite specialist functionality');
+  };
+
+  // Filter specialists based on search and filter criteria
+  const filteredSpecialists = analytics?.specialistAnalytics?.specialistPerformance?.filter(specialist => {
+    const matchesSearch = specialist.name.toLowerCase().includes(specialistSearchTerm.toLowerCase()) ||
+                         specialist.email.toLowerCase().includes(specialistSearchTerm.toLowerCase());
+    
+    const matchesFilter = (() => {
+      switch (specialistFilterStatus) {
+        case 'active': return specialist.isActive;
+        case 'inactive': return !specialist.isActive;
+        case 'verified': return specialist.isVerified;
+        case 'unverified': return !specialist.isVerified;
+        default: return true;
+      }
+    })();
+    
+    return matchesSearch && matchesFilter;
+  }) || [];
 
   // Format engagement trends for display
   const engagementTrends = analytics ? [{
@@ -413,27 +458,20 @@ const AdminDashboard = ({
               {analytics?.specialistAnalytics && <>
                   <SpecialistOverviewCards specialistAnalytics={analytics.specialistAnalytics} onEditSpecialist={handleEditSpecialist} onResetPassword={handleResetPassword} onDeactivateSpecialist={handleDeactivateSpecialist} />
                   
-                  {/* Invite Specialist Button */}
-                  <div className="flex justify-end mb-6">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button onClick={() => window.location.hash = '#invite-specialist'}>
-                          <UserPlus className="mr-2 h-4 w-4" />
-                          Invite Specialist
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Invite New Specialist</DialogTitle>
-                        </DialogHeader>
-                        <p className="text-sm text-muted-foreground">
-                          Please use the specialist management section below to invite new specialists.
-                        </p>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
+                  {/* Specialist Toolbar */}
+                  <SpecialistToolbar
+                    specialists={analytics.specialistAnalytics.specialistPerformance}
+                    searchTerm={specialistSearchTerm}
+                    onSearchChange={handleSpecialistSearch}
+                    filterStatus={specialistFilterStatus}
+                    onFilterChange={handleSpecialistFilter}
+                    onExportData={handleExportSpecialistData}
+                    onInviteSpecialist={handleInviteSpecialist}
+                    onRefresh={refreshData}
+                    isLoading={isLoading}
+                  />
                   
-                  <SpecialistPerformanceTable specialists={analytics.specialistAnalytics.specialistPerformance} />
+                  <SpecialistPerformanceTable specialists={filteredSpecialists} />
                 </>}
               
               {/* Original Specialist Management */}
