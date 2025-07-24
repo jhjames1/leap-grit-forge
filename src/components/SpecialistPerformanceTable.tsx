@@ -108,7 +108,14 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
                   <TableCell>
                     <div>
                       <div className="font-medium">{specialist.name}</div>
-                      <div className="text-sm text-muted-foreground">{specialist.email}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant={specialist.isVerified ? "default" : "secondary"}>
+                          {specialist.isVerified ? "Verified" : "Pending"}
+                        </Badge>
+                        <Badge variant={specialist.isActive ? "default" : "destructive"}>
+                          {specialist.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
                     </div>
                   </TableCell>
                   
