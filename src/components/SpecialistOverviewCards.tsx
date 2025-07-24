@@ -182,29 +182,7 @@ export const SpecialistOverviewCards = ({
 
       {/* Individual Specialist Cards */}
       <Card>
-        <CardContent className="p-6">
-          
-          <div className="space-y-4">
-            {specialistAnalytics.specialistPerformance.map(specialist => <div key={specialist.specialistId} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div>
-                    <h3 className="font-semibold">{specialist.name}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant={specialist.isVerified ? "default" : "secondary"}>
-                        {specialist.isVerified ? "Verified" : "Pending"}
-                      </Badge>
-                      <Badge variant={specialist.isActive ? "default" : "destructive"}>
-                        {specialist.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>)}
-            {specialistAnalytics.specialistPerformance.length === 0 && <div className="text-center py-8 text-muted-foreground">
-                No specialist data available
-              </div>}
-          </div>
-        </CardContent>
+        
       </Card>
     </div>;
 };
