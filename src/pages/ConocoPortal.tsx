@@ -123,6 +123,11 @@ export default function ConocoPortal() {
         </div>
       </header>
 
+      {/* Powered by text */}
+      <div className="bg-white px-6 py-2 border-b border-gray-100">
+        <p className="text-xs text-gray-500">LEAP is powered by Thriving United</p>
+      </div>
+
       {/* Navigation and Content */}
       <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
         {/* Navigation Tabs */}
