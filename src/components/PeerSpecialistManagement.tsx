@@ -446,18 +446,13 @@ const PeerSpecialistManagement = () => {
         <TabsContent value="active" className="space-y-6 mt-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold">Active Specialists</h3>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm}>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Invite Specialist
-              </Button>
-            </DialogTrigger>
-          </div>
-
-          <Card>
-            <CardContent className="p-0">
-
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm}>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Invite Specialist
+                </Button>
+              </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>
@@ -606,9 +601,12 @@ const PeerSpecialistManagement = () => {
                 </form>
               </DialogContent>
             </Dialog>
+          </div>
 
-              <div className="space-y-4 p-6">
-                {specialists.map((specialist) => (
+          <Card>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {activeSpecialists.map((specialist) => (
                   <div key={specialist.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
                       {specialist.avatar_url && (
@@ -674,7 +672,7 @@ const PeerSpecialistManagement = () => {
                     </div>
                   </div>
                 ))}
-                {specialists.length === 0 && (
+                {activeSpecialists.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     No active specialists found
                   </div>
