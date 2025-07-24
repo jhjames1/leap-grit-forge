@@ -1,4 +1,3 @@
-// Temporary fallback while toast system is disabled
-import { useFallbackToast, fallbackToast } from "@/utils/fallbackToast";
+import { useToast, toast } from "@/hooks/use-toast";
 
-export { useFallbackToast as useToast, fallbackToast as toast };
+export { useToast, toast };
