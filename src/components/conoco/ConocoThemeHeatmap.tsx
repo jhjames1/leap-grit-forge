@@ -29,16 +29,16 @@ export function ConocoThemeHeatmap({ dateRange, department }: ConocoThemeHeatmap
   };
 
   return (
-    <Card>
+    <Card className="bg-steel-darker border-steel-dark">
       <CardHeader>
-        <CardTitle>Theme Intensity Heatmap</CardTitle>
+        <CardTitle className="text-white font-oswald">Theme Intensity Heatmap</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-9 gap-2 text-xs">
             <div></div>
             {weeks.map(week => (
-              <div key={week} className="text-center font-medium text-muted-foreground">
+              <div key={week} className="text-center font-medium text-steel-light font-oswald">
                 {week}
               </div>
             ))}
@@ -46,7 +46,7 @@ export function ConocoThemeHeatmap({ dateRange, department }: ConocoThemeHeatmap
           
           {themes.map(theme => (
             <div key={theme} className="grid grid-cols-9 gap-2 items-center">
-              <div className="text-xs font-medium text-muted-foreground truncate">
+              <div className="text-xs font-medium text-steel-light truncate font-oswald">
                 {theme}
               </div>
               {weeks.map(week => {
@@ -63,18 +63,18 @@ export function ConocoThemeHeatmap({ dateRange, department }: ConocoThemeHeatmap
           ))}
           
           <div className="flex items-center gap-4 pt-4">
-            <span className="text-xs font-medium text-muted-foreground">Intensity:</span>
+            <span className="text-xs font-medium text-steel-light font-oswald">Intensity:</span>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-green-200 rounded"></div>
-              <span className="text-xs text-muted-foreground">Low</span>
+              <span className="text-xs text-steel-light">Low</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-yellow-400 rounded"></div>
-              <span className="text-xs text-muted-foreground">Medium</span>
+              <span className="text-xs text-steel-light">Medium</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-red-500 rounded"></div>
-              <span className="text-xs text-muted-foreground">High</span>
+              <span className="text-xs text-steel-light">High</span>
             </div>
           </div>
         </div>

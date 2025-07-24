@@ -18,9 +18,9 @@ export function ConocoFeatureUsage({ dateRange, department }: ConocoFeatureUsage
   ];
 
   return (
-    <Card>
+    <Card className="bg-steel-darker border-steel-dark">
       <CardHeader>
-        <CardTitle>Feature Usage Breakdown</CardTitle>
+        <CardTitle className="text-white font-oswald">Feature Usage Breakdown</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-80">
