@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeAdminAnalytics } from '@/hooks/useRealtimeAdminAnalytics';
+import { useRealtimeDomainEngagement } from '@/hooks/useRealtimeDomainEngagement';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import SecurityAuditPanel from './SecurityAuditPanel';
@@ -48,6 +49,13 @@ const AdminDashboard = ({
     error,
     refreshAnalytics
   } = useRealtimeAdminAnalytics();
+
+  // Use real-time domain engagement
+  const {
+    domainData,
+    userRiskData,
+    isLoading: domainLoading
+  } = useRealtimeDomainEngagement();
 
   // Get admin user's first name for welcome message
   const adminFirstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin';
@@ -390,62 +398,133 @@ const AdminDashboard = ({
 
             {/* Two Column Layout */}
             <div className="grid md:grid-cols-2 gap-6">
-              {/* Domain Engagement */}
+              {/* Real-time Domain Engagement */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="w-5 h-5" />
                     Domain Engagement
+                    <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+                      <div className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
+                      LIVE
+                    </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {engagementTrends.map((domain, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    {domainData ? [
+                      { name: 'Peer Support', value: domainData.peerSupport, icon: '👥' },
+                      { name: 'Self Care', value: domainData.selfCare, icon: '🧘' },
+                      { name: 'Structure', value: domainData.structure, icon: '📅' },
+                      { name: 'Mood', value: domainData.mood, icon: '😊' },
+                      { name: 'Craving Control', value: domainData.cravingControl, icon: '🎯' }
+                    ].map((domain, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                         <div className="flex items-center space-x-3">
-                          <div className="w-3 h-3 bg-primary rounded-full"></div>
-                          <span className="text-sm font-medium">{domain.domain}</span>
+                          <div className="text-lg">{domain.icon}</div>
+                          <span className="text-sm font-medium">{domain.name}</span>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <span className="text-muted-foreground text-sm">{domain.avg}%</span>
-                          <Badge variant={domain.trend.startsWith('+') ? 'default' : 'destructive'}>
-                            {domain.trend}
+                          <span className="text-lg font-bold">{domain.value}</span>
+                          <Badge variant="outline">
+                            actions
                           </Badge>
                         </div>
-                      </div>)}
-                    {analytics && analytics.totalEngagementActions === 0 && <p className="text-muted-foreground text-center py-4 text-sm">No engagement data available yet.</p>}
+                      </div>
+                    )) : domainLoading ? (
+                      <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                        <p className="text-muted-foreground text-sm mt-2">Loading real-time data...</p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4 text-sm">No engagement data available yet.</p>
+                    )}
+                    
+                    {domainData && (
+                      <div className="mt-4 p-3 bg-primary/10 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Total Actions Today</span>
+                          <span className="text-lg font-bold text-primary">{domainData.totalActions}</span>
+                        </div>
+                        {domainData.lastActivity && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Last activity: {new Date(domainData.lastActivity).toLocaleTimeString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* User Risk Assessment */}
+              {/* Real-time User Risk Assessment */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Target className="w-5 h-5" />
                     User Risk Assessment
+                    <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+                      <div className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
+                      LIVE
+                    </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {analytics?.userRiskData.map((user, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    {userRiskData.length > 0 ? userRiskData.slice(0, 5).map((user, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                         <div className="flex items-center space-x-3">
                           <div className={`w-3 h-3 ${getRiskColor(user.risk)} rounded-full`}></div>
                           <div>
-                            <span className="text-sm font-medium">{user.userId}</span>
-                            <p className="text-xs text-muted-foreground">{user.lastActivity}</p>
+                            <span className="text-sm font-medium">User {user.userId.slice(-6)}</span>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(user.lastActivity).toLocaleDateString()}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-3">
                           <div className="text-right">
-                            <div className="text-lg font-bold">{user.recoveryStrength}%</div>
-                            <div className="text-xs text-muted-foreground">Strength</div>
+                            <div className="text-lg font-bold">{Math.round(user.recoveryStrength)}%</div>
+                            <div className="text-xs text-muted-foreground">{user.activityCount} actions</div>
                           </div>
                           <Badge className={getRiskBadge(user.risk)}>
                             {user.risk.charAt(0).toUpperCase() + user.risk.slice(1)}
                           </Badge>
                         </div>
-                      </div>)}
-                    {analytics && analytics.userRiskData.length === 0 && <p className="text-muted-foreground text-center py-4 text-sm">No user data available yet.</p>}
+                      </div>
+                    )) : domainLoading ? (
+                      <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                        <p className="text-muted-foreground text-sm mt-2">Analyzing user risk...</p>
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4 text-sm">No user data available yet.</p>
+                    )}
+                    
+                    {userRiskData.length > 0 && (
+                      <div className="mt-4 p-3 bg-primary/10 rounded-lg">
+                        <div className="grid grid-cols-3 gap-3 text-center">
+                          <div>
+                            <div className="text-lg font-bold text-red-500">
+                              {userRiskData.filter(u => u.risk === 'high').length}
+                            </div>
+                            <div className="text-xs text-muted-foreground">High Risk</div>
+                          </div>
+                          <div>
+                            <div className="text-lg font-bold text-yellow-500">
+                              {userRiskData.filter(u => u.risk === 'medium').length}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Medium Risk</div>
+                          </div>
+                          <div>
+                            <div className="text-lg font-bold text-green-500">
+                              {userRiskData.filter(u => u.risk === 'low').length}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Low Risk</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
