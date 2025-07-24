@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface NotificationState {
   pendingCount: number;
@@ -13,7 +12,6 @@ export function useProposalNotifications(specialistId: string) {
     pendingCount: 0,
     hasNewResponses: false
   });
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!specialistId) return;
@@ -78,14 +76,6 @@ export function useProposalNotifications(specialistId: string) {
                   icon: '/favicon.ico'
                 });
               }
-
-              toast({
-                title: newStatus === 'accepted' ? "Proposal Accepted! 🎉" : "Proposal Response",
-                description: newStatus === 'accepted' 
-                  ? "The appointment has been scheduled and added to your calendar!"
-                  : `A user has ${newStatus} your appointment proposal`,
-                variant: newStatus === 'accepted' ? 'default' : 'destructive'
-              });
             }
           }
           
@@ -129,7 +119,7 @@ export function useProposalNotifications(specialistId: string) {
       supabase.removeChannel(proposalChannel);
       supabase.removeChannel(appointmentChannel);
     };
-  }, [specialistId, toast]);
+  }, [specialistId]);
 
   const clearNewResponses = () => {
     setNotifications(prev => ({
