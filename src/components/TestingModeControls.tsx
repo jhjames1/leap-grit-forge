@@ -129,6 +129,33 @@ export function TestingModeControls({
     }
   };
 
+  const handleTrainingScenarioStart = (scenario: TrainingScenario, progressId: string) => {
+    setActiveTrainingScenario({ scenario, progressId });
+    setActiveTab('training-active');
+  };
+
+  const handleTrainingComplete = async (results: any) => {
+    if (activeTrainingScenario && specialistId) {
+      try {
+        await completeScenario(
+          activeTrainingScenario.progressId, 
+          results.score || 0,
+          results.feedback || {},
+          results.timeSpentMinutes || 0
+        );
+      } catch (error) {
+        console.error('Failed to complete training scenario:', error);
+      }
+    }
+    setActiveTrainingScenario(null);
+    setActiveTab('training');
+  };
+
+  const handleTrainingExit = () => {
+    setActiveTrainingScenario(null);
+    setActiveTab('training');
+  };
+
   if (!testingMode.isEnabled()) {
     return (
       <Card className="border-dashed border-muted mb-4">
