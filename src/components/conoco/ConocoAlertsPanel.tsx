@@ -71,9 +71,9 @@ export function ConocoAlertsPanel() {
   };
 
   return (
-    <Card className="bg-steel-darker border-steel-dark">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-white font-oswald">Active Alerts</CardTitle>
+        <CardTitle>Active Alerts</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -85,8 +85,8 @@ export function ConocoAlertsPanel() {
                 key={alert.id}
                 className={`p-4 rounded-lg border ${
                   alert.acknowledged 
-                    ? 'bg-steel/30 border-steel' 
-                    : 'bg-steel-dark border-steel'
+                    ? 'bg-muted/50 border-muted' 
+                    : 'bg-card border-border'
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -100,7 +100,7 @@ export function ConocoAlertsPanel() {
                     />
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-white font-oswald">{alert.title}</h4>
+                        <h4 className="font-medium">{alert.title}</h4>
                         <Badge variant={getSeverityColor(alert.severity)}>
                           {alert.severity}
                         </Badge>
@@ -111,10 +111,10 @@ export function ConocoAlertsPanel() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-steel-light">
+                      <p className="text-sm text-muted-foreground">
                         {alert.description}
                       </p>
-                      <p className="text-xs text-steel-light">
+                      <p className="text-xs text-muted-foreground">
                         {alert.timestamp}
                       </p>
                     </div>
@@ -125,7 +125,6 @@ export function ConocoAlertsPanel() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleAcknowledge(alert.id)}
-                      className="border-construction text-construction hover:bg-construction/10"
                     >
                       Acknowledge
                     </Button>

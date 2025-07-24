@@ -45,9 +45,9 @@ export function ConocoDashboardStats({ dateRange, department }: ConocoDashboardS
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {stats.map((stat, index) => (
-        <Card key={index} className="bg-steel-darker border-steel-dark">
+        <Card key={index}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-steel-light font-oswald">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               {stat.title}
             </CardTitle>
             <stat.icon className={`h-4 w-4 ${stat.color}`} />
@@ -55,21 +55,21 @@ export function ConocoDashboardStats({ dateRange, department }: ConocoDashboardS
           <CardContent>
             <div className="flex items-baseline justify-between">
               <div>
-                <div className="text-2xl font-bold text-white font-oswald">
+                <div className="text-2xl font-bold">
                   {stat.value}
                   {stat.total && (
-                    <span className="text-sm text-steel-light ml-1">
+                    <span className="text-sm text-muted-foreground ml-1">
                       / {stat.total}
                     </span>
                   )}
                 </div>
                 {stat.percentage && (
-                  <div className="text-xs text-steel-light">
+                  <div className="text-xs text-muted-foreground">
                     {stat.percentage}% utilization
                   </div>
                 )}
               </div>
-              <div className="text-xs text-construction font-medium font-oswald">
+              <div className="text-xs text-green-600 font-medium">
                 {stat.trend}
               </div>
             </div>

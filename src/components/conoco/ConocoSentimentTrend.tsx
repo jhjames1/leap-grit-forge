@@ -21,9 +21,9 @@ export function ConocoSentimentTrend({ dateRange, department }: ConocoSentimentT
   ];
 
   return (
-    <Card className="bg-steel-darker border-steel-dark">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-white font-oswald">Sentiment Trend</CardTitle>
+        <CardTitle>Sentiment Trend</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-80">

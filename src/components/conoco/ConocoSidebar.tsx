@@ -35,10 +35,10 @@ const menuItems = [
 
 export function ConocoSidebar({ activeSection, onSectionChange }: ConocoSidebarProps) {
   return (
-    <Sidebar collapsible="icon" className="bg-steel-darker border-steel-dark">
-      <SidebarContent className="bg-steel-darker">
+    <Sidebar collapsible="icon">
+      <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-construction font-oswald font-bold">EAP Dashboard</SidebarGroupLabel>
+          <SidebarGroupLabel>EAP Dashboard</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -46,9 +46,7 @@ export function ConocoSidebar({ activeSection, onSectionChange }: ConocoSidebarP
                   <SidebarMenuButton
                     onClick={() => onSectionChange(item.id)}
                     isActive={activeSection === item.id}
-                    className={`w-full justify-start text-steel-light hover:text-white hover:bg-steel/20 ${
-                      activeSection === item.id ? 'bg-construction text-midnight font-semibold' : ''
-                    }`}
+                    className="w-full justify-start"
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.label}</span>
