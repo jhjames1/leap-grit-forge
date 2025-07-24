@@ -34,7 +34,8 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <LanguageProvider>
-            <SafeToastProvider>
+        {/* Temporarily disable toast providers to fix React hook errors */}
+        {/* <SafeToastProvider> */}
               <BrowserRouter>
                 <Routes>
                   <Route path="/" element={<Index />} />
@@ -53,7 +54,7 @@ function App() {
               </BrowserRouter>
               <Toaster />
               <Sonner />
-            </SafeToastProvider>
+            {/* </SafeToastProvider> */}
           </LanguageProvider>
         </ThemeProvider>
       </QueryClientProvider>

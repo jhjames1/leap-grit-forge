@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
   const [loading, setLoading] = useState(true);
