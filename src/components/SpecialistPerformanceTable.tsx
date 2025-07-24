@@ -2,8 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Star, MessageSquare, Clock, TrendingUp, AlertCircle, MoreHorizontal } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Star, MessageSquare, Clock, TrendingUp, AlertCircle, MoreHorizontal, Edit, RotateCcw, UserX } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { SpecialistPerformance } from '@/services/adminAnalyticsService';
 import { SpecialistCoachingModal } from './SpecialistCoachingModal';
 import { useState } from 'react';
@@ -185,6 +185,19 @@ export const SpecialistPerformanceTable = ({ specialists }: SpecialistPerformanc
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleViewDetails(specialist)}>
                           Coaching Tips
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleEditSpecialist(specialist)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleResetPassword(specialist)}>
+                          <RotateCcw className="mr-2 h-4 w-4" />
+                          Reset Password
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDeactivateSpecialist(specialist)} className="text-destructive">
+                          <UserX className="mr-2 h-4 w-4" />
+                          Deactivate
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

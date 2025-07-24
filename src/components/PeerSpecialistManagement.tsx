@@ -646,33 +646,6 @@ const PeerSpecialistManagement = () => {
                          )}
                        </div>
                      </div>
-                     <div className="flex items-center gap-2">
-                       <DropdownMenu>
-                         <DropdownMenuTrigger asChild>
-                           <Button variant="ghost" size="sm">
-                             <MoreHorizontal className="h-4 w-4" />
-                           </Button>
-                         </DropdownMenuTrigger>
-                         <DropdownMenuContent align="end" className="w-48">
-                           <DropdownMenuItem onClick={() => handleEdit(specialist)}>
-                             <Edit className="mr-2 h-4 w-4" />
-                             Edit Specialist
-                           </DropdownMenuItem>
-                           <DropdownMenuItem onClick={() => handleResetPassword(specialist.id)}>
-                             <RotateCcw className="mr-2 h-4 w-4" />
-                             Reset Password
-                           </DropdownMenuItem>
-                           <DropdownMenuSeparator />
-                           <DropdownMenuItem 
-                             onClick={() => handleSoftDeleteSpecialist(specialist.id)}
-                             className="text-destructive"
-                           >
-                             <UserX className="mr-2 h-4 w-4" />
-                             Deactivate
-                           </DropdownMenuItem>
-                         </DropdownMenuContent>
-                       </DropdownMenu>
-                    </div>
                   </div>
                 ))}
                 {activeSpecialists.length === 0 && (
