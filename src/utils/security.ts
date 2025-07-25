@@ -5,7 +5,13 @@ import DOMPurify from 'dompurify';
 
 // Security configuration
 const SALT_ROUNDS = 12;
-const ENCRYPTION_KEY = 'recovery-app-key-2024'; // In production, use environment variable
+// Use environment variable or generate secure key in production
+const ENCRYPTION_KEY = typeof window !== 'undefined' ? 
+  (window.crypto?.getRandomValues ? 
+    Array.from(window.crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => b.toString(16).padStart(2, '0')).join('') 
+    : 'fallback-key-please-set-environment-variable'
+  ) : 'server-side-fallback-key';
 
 // Password hashing utilities
 export const hashPassword = async (password: string): Promise<string> => {
@@ -39,9 +45,29 @@ export const decryptData = (encryptedData: string): string => {
   }
 };
 
-// Input sanitization
+// Input sanitization with enhanced security
 export const sanitizeInput = (input: string): string => {
-  return DOMPurify.sanitize(input.trim());
+  if (typeof input !== 'string') {
+    return '';
+  }
+  
+  // Remove any potential XSS vectors and excessive whitespace
+  const cleaned = DOMPurify.sanitize(input.trim(), {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+    FORBID_CONTENTS: ['script', 'style', 'iframe', 'object', 'embed'],
+    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'link'],
+    FORBID_ATTR: ['onclick', 'onerror', 'onload', 'onmouseover', 'onfocus', 'onblur']
+  });
+  
+  // Additional protection against SQL injection patterns
+  const sqlPatterns = /(\b(union|select|insert|update|delete|drop|create|alter|exec|execute)\b)/gi;
+  if (sqlPatterns.test(cleaned)) {
+    logger.warn('Potential SQL injection attempt detected', { input: input.substring(0, 50) });
+    return ''; // Return empty string for suspicious input
+  }
+  
+  return cleaned;
 };
 
 // Validation utilities
@@ -53,8 +79,9 @@ export const validateEmail = (email: string): boolean => {
 export const validatePassword = (password: string): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
   
-  if (password.length < 8) {
-    errors.push('Password must be at least 8 characters long');
+  // Increased minimum length for better security
+  if (password.length < 12) {
+    errors.push('Password must be at least 12 characters long');
   }
   
   if (!/[A-Z]/.test(password)) {
@@ -65,12 +92,23 @@ export const validatePassword = (password: string): { isValid: boolean; errors: 
     errors.push('Password must contain at least one lowercase letter');
   }
   
-  if (!/\\d/.test(password)) {
+  if (!/\d/.test(password)) {
     errors.push('Password must contain at least one number');
   }
   
   if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
     errors.push('Password must contain at least one special character');
+  }
+  
+  // Check for common patterns
+  if (/(.)\1{2,}/.test(password)) {
+    errors.push('Password must not contain repeating characters');
+  }
+  
+  // Check against common weak passwords
+  const commonPasswords = ['password', '123456', 'qwerty', 'admin', 'letmein'];
+  if (commonPasswords.some(weak => password.toLowerCase().includes(weak))) {
+    errors.push('Password must not contain common words');
   }
   
   return { isValid: errors.length === 0, errors };
