@@ -10,6 +10,7 @@ import AdminPortal from "./pages/AdminPortal";
 import PeerSpecialistPortal from "./pages/PeerSpecialistPortal";
 import SpecialistManual from "./pages/SpecialistManual";
 import ConocoPortal from "./pages/ConocoPortal";
+import InteractiveDemo from "./pages/InteractiveDemo";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PasswordReset } from "./components/PasswordReset";
@@ -53,6 +54,7 @@ function App() {
                 <Route path="/specialist-manual" element={<SpecialistManual />} />
                 <Route path="/reset-password" element={<PasswordReset />} />
                 <Route path="/conoco" element={<ConocoPortal />} />
+                <Route path="/demo" element={<InteractiveDemo />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

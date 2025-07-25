@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Play } from 'lucide-react';
 
 interface AuthFormProps {
   onAuthSuccess: () => void;
@@ -117,7 +117,8 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+      <div className="w-full max-w-md space-y-6">
+        <Card className="w-full">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Welcome to LEAP</CardTitle>
           <CardDescription>
@@ -231,6 +232,22 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Demo Access */}
+      <div className="text-center">
+        <p className="text-sm text-muted-foreground mb-3">
+          Want to see LEAP in action?
+        </p>
+        <Button 
+          variant="outline" 
+          onClick={() => window.location.href = '/demo'}
+          className="flex items-center gap-2 mx-auto"
+        >
+          <Play size={16} />
+          Try Interactive Demo
+        </Button>
+      </div>
+      </div>
 
       {/* Forgot Password Dialog */}
       <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
