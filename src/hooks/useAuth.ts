@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 
@@ -12,6 +12,19 @@ interface AuthContextType {
 }
 
 export function useAuth(): AuthContextType {
+  // Add safety check for React context
+  if (typeof React === 'undefined' || !React.useState) {
+    console.error('React is not properly loaded');
+    return {
+      user: null,
+      session: null,
+      loading: false,
+      isAuthenticated: false,
+      isNewSignUp: false,
+      signOut: async () => {}
+    };
+  }
+
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);

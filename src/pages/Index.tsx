@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import SplashScreen from '@/components/SplashScreen';
 import { AuthForm } from '@/components/AuthForm';
 import OnboardingFlow from '@/components/OnboardingFlow';
@@ -19,6 +19,12 @@ import { useBadgeNotifications } from '@/hooks/useBadgeNotifications';
 import { BadgeCelebrationModal } from '@/components/BadgeCelebrationModal';
 
 const Index = () => {
+  // Add safety check to prevent hooks errors
+  if (typeof React === 'undefined' || !React.useState) {
+    console.error('React context is not available');
+    return <div>Loading...</div>;
+  }
+
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
