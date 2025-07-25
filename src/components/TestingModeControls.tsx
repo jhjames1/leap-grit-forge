@@ -11,7 +11,7 @@ import { AlertCircle, Settings, Zap, RotateCcw, BookOpen, Play } from 'lucide-re
 import { testingMode, TestingModeConfig } from '@/utils/testingMode';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useUserData } from '@/hooks/useUserData';
-import { TrainingScenarioSelector } from './TrainingScenarioSelector';
+import PeerSpecialistTrainingModules from './training/PeerSpecialistTrainingModules';
 import { MockChatTrainingEnvironment } from './MockChatTrainingEnvironment';
 import { TrainingScenario, useTrainingScenarios } from '@/hooks/useTrainingScenarios';
 
@@ -343,15 +343,12 @@ export function TestingModeControls({
 
             <TabsContent value="training" className="mt-4">
               {specialistId ? (
-                <TrainingScenarioSelector
-                  specialistId={specialistId}
-                  onScenarioStart={handleTrainingScenarioStart}
-                />
+                <PeerSpecialistTrainingModules specialistId={specialistId} />
               ) : (
                 <Alert>
                   <BookOpen className="h-4 w-4" />
                   <AlertDescription>
-                    Training scenarios are available for specialists only. Please log in as a specialist to access training features.
+                    Training modules are available for specialists only. Please log in as a specialist to access training features.
                   </AlertDescription>
                 </Alert>
               )}
