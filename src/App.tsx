@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "next-themes";
-import { useSpecialistStatusScheduler } from "@/hooks/useSpecialistStatusScheduler";
 
 import Index from "./pages/Index";
 import AdminPortal from "./pages/AdminPortal";
@@ -31,9 +30,6 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  // Initialize specialist status scheduler for automatic calendar-based status updates
-  useSpecialistStatusScheduler();
-  
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
