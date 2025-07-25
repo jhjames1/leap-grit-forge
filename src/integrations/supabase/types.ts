@@ -1911,6 +1911,10 @@ export type Database = {
         Args: { p_specialist_id: string; p_working_hours: Json }
         Returns: undefined
       }
+      update_specialist_status_from_calendar_schedule: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user"
