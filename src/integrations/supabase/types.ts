@@ -627,6 +627,7 @@ export type Database = {
           last_name: string
           manually_activated_by: string | null
           must_change_password: boolean | null
+          phone_number: string | null
           specialties: string[] | null
           temporary_password_hash: string | null
           updated_at: string
@@ -652,6 +653,7 @@ export type Database = {
           last_name: string
           manually_activated_by?: string | null
           must_change_password?: boolean | null
+          phone_number?: string | null
           specialties?: string[] | null
           temporary_password_hash?: string | null
           updated_at?: string
@@ -677,6 +679,7 @@ export type Database = {
           last_name?: string
           manually_activated_by?: string | null
           must_change_password?: boolean | null
+          phone_number?: string | null
           specialties?: string[] | null
           temporary_password_hash?: string | null
           updated_at?: string
@@ -684,6 +687,69 @@ export type Database = {
           years_experience?: number | null
         }
         Relationships: []
+      }
+      phone_call_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          initiated_at: string | null
+          metadata: Json | null
+          request_token: string
+          responded_at: string | null
+          session_id: string
+          specialist_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          initiated_at?: string | null
+          metadata?: Json | null
+          request_token?: string
+          responded_at?: string | null
+          session_id: string
+          specialist_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          initiated_at?: string | null
+          metadata?: Json | null
+          request_token?: string
+          responded_at?: string | null
+          session_id?: string
+          specialist_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_call_requests_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "phone_call_requests_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "peer_specialists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

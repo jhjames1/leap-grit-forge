@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
 import ChatAppointmentScheduler from './ChatAppointmentScheduler';
+import PhoneCallRequestModal from './PhoneCallRequestModal';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
@@ -77,6 +78,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
   const [message, setMessage] = useState('');
   const [showScheduler, setShowScheduler] = useState(false);
   const [sessionProposal, setSessionProposal] = useState<AppointmentProposal | null>(null);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
@@ -732,6 +734,16 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
             <Button 
               size="sm" 
               variant="outline"
+              onClick={() => setShowPhoneModal(true)}
+              className="text-construction border-construction/20 hover:bg-construction/10"
+              disabled={currentSession.status === 'ended'}
+            >
+              <Phone size={16} className="mr-1" />
+              Phone Call
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
               onClick={() => setShowScheduler(true)}
               className="text-primary border-primary/20 hover:bg-primary/10"
               disabled={currentSession.status === 'ended'}
@@ -963,6 +975,17 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
         userId={currentSession.user_id}
         chatSessionId={currentSession.id}
         onScheduled={handleSchedulerSuccess}
+      />
+
+      {/* Phone Call Request Modal */}
+      <PhoneCallRequestModal
+        isOpen={showPhoneModal}
+        onClose={() => setShowPhoneModal(false)}
+        sessionId={currentSession.id}
+        userId={currentSession.user_id}
+        specialistId={currentSession.specialist_id || ''}
+        userFirstName={currentSession.user_first_name}
+        userLastName={currentSession.user_last_name}
       />
     </div>
   );

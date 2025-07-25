@@ -3,10 +3,11 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Send, Calendar, ArrowLeft, User, Shield, RefreshCw, Plus, Clock, AlertTriangle, RotateCcw, Wifi, WifiOff } from 'lucide-react';
+import { Send, Calendar, ArrowLeft, User, Shield, RefreshCw, Plus, Clock, AlertTriangle, RotateCcw, Wifi, WifiOff, Phone } from 'lucide-react';
 import PeerSelection from './PeerSelection';
 import AppointmentProposalHandler from './AppointmentProposalHandler';
 import SessionInactivityWarning from './SessionInactivityWarning';
+import PhoneCallHandler from './PhoneCallHandler';
 import { PeerSpecialist } from '@/hooks/usePeerSpecialists';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useAuth } from '@/hooks/useAuth';
@@ -287,6 +288,13 @@ const PeerChat = ({
           </div>
         </div>}
 
+      {/* Phone Call Handler */}
+      {session && session.status === 'active' && (
+        <div className="px-4">
+          <PhoneCallHandler sessionId={session.id} />
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Debug info in development */}
@@ -300,18 +308,35 @@ const PeerChat = ({
             {session?.last_activity && <div>Inactive: {sessionCleanup.getTimeUntilInactive(session)}s</div>}
           </div>}
         
-        {Array.isArray(messages) && messages.length > 0 ? messages.map(msg => <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'user' ? 'items-end' : msg.message_type === 'system' ? 'items-center' : 'items-start'}`}>
-              <div className={`max-w-[80%] ${msg.sender_type === 'user' ? 'bg-primary text-primary-foreground' : msg.message_type === 'system' ? 'bg-muted/50 text-muted-foreground border border-border' : 'bg-card border border-border text-card-foreground'} rounded-2xl p-4`}>
-                <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
-                <div className="flex items-center justify-between">
-                  <p className={`text-xs ${msg.sender_type === 'user' ? 'text-primary-foreground/70' : msg.message_type === 'system' ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
+        {Array.isArray(messages) && messages.length > 0 ? messages.map(msg => <div key={msg.id} className={`flex flex-col ${msg.sender_type === 'user' ? 'items-end' : msg.message_type === 'system' || msg.message_type === 'phone_call_request' ? 'items-center' : 'items-start'}`}>
+              {/* Special handling for phone call request messages */}
+              {msg.message_type === 'phone_call_request' ? (
+                <div className="max-w-[90%] bg-construction/10 border-2 border-construction/30 rounded-xl p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Phone className="text-construction" size={18} />
+                    <p className="text-construction font-oswald font-semibold">Phone Call Request</p>
+                  </div>
+                  <p className="text-steel-light text-sm mb-2">{msg.content}</p>
+                  <p className="text-xs text-steel-light/70">
                     {new Date(msg.created_at).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </p>
                 </div>
-              </div>
+              ) : (
+                <div className={`max-w-[80%] ${msg.sender_type === 'user' ? 'bg-primary text-primary-foreground' : msg.message_type === 'system' ? 'bg-muted/50 text-muted-foreground border border-border' : 'bg-card border border-border text-card-foreground'} rounded-2xl p-4`}>
+                  <p className="text-sm leading-relaxed mb-1">{msg.content}</p>
+                  <div className="flex items-center justify-between">
+                    <p className={`text-xs ${msg.sender_type === 'user' ? 'text-primary-foreground/70' : msg.message_type === 'system' ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
+                      {new Date(msg.created_at).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+                    </p>
+                  </div>
+                </div>
+              )}
               
               {/* Appointment proposal handler - only for system messages with proposal metadata */}
               {msg.message_type === 'system' && (msg.metadata?.action_type === 'appointment_proposal' || msg.metadata?.action_type === 'recurring_appointment_proposal') && (

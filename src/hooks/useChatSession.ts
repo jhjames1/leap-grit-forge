@@ -8,7 +8,7 @@ export interface ChatMessage {
   id: string;
   sender_id: string;
   sender_type: 'user' | 'specialist';
-  message_type: 'text' | 'quick_action' | 'system';
+  message_type: 'text' | 'quick_action' | 'system' | 'phone_call_request';
   content: string;
   metadata?: any;
   is_read: boolean;
@@ -267,7 +267,7 @@ export function useChatSession(specialistId?: string) {
     sender_type = 'user'
   }: {
     content: string;
-    message_type?: 'text' | 'quick_action' | 'system';
+    message_type?: 'text' | 'quick_action' | 'system' | 'phone_call_request';
     metadata?: any;
     sender_type?: 'user' | 'specialist';
   }, sessionId?: string) => {
