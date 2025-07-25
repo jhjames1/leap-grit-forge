@@ -6,8 +6,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Circle, Clock, AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { Circle, Clock, AlertCircle, Wifi, WifiOff, RotateCcw, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,6 +23,8 @@ const SpecialistStatusIndicator = ({
 }: SpecialistStatusIndicatorProps) => {
   const [status, setStatus] = useState<'online' | 'offline' | 'busy'>(initialStatus);
   const [isManualOverride, setIsManualOverride] = useState(false);
+  const [manualResetTimer, setManualResetTimer] = useState<number | null>(null);
+  const [lastCalendarCheck, setLastCalendarCheck] = useState<Date | null>(null);
   const { toast } = useToast();
 
   // Status configuration
@@ -86,12 +89,38 @@ const SpecialistStatusIndicator = ({
     }
   }, [specialistId, toast]);
 
+  // Reset to calendar-based status
+  const resetToCalendar = useCallback(async () => {
+    try {
+      setIsManualOverride(false);
+      if (manualResetTimer) {
+        clearTimeout(manualResetTimer);
+        setManualResetTimer(null);
+      }
+      
+      await checkCalendarStatus(true); // Force calendar check
+      
+      toast({
+        title: "Status Reset",
+        description: "Status reset to calendar-based availability",
+      });
+    } catch (error) {
+      console.error('Failed to reset status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset status",
+        variant: "destructive"
+      });
+    }
+  }, [manualResetTimer, toast]);
+
   // Check calendar for automatic status updates
-  const checkCalendarStatus = useCallback(async () => {
-    if (isManualOverride) return; // Don't auto-update if manually set
+  const checkCalendarStatus = useCallback(async (forceCheck = false) => {
+    if (isManualOverride && !forceCheck) return; // Don't auto-update if manually set
     
     try {
       const now = new Date();
+      setLastCalendarCheck(now);
       
       // Check if specialist has an active appointment right now
       const { data: currentAppointment } = await supabase
@@ -161,18 +190,32 @@ const SpecialistStatusIndicator = ({
   // Manual status change
   const handleManualStatusChange = (newStatus: 'online' | 'offline' | 'busy') => {
     updateStatus(newStatus, true);
+    
+    // Set 30-minute timer for auto-reset
+    if (manualResetTimer) {
+      clearTimeout(manualResetTimer);
+    }
+    
+    const timer = window.setTimeout(() => {
+      setIsManualOverride(false);
+      checkCalendarStatus(true);
+      toast({
+        title: "Status Auto-Reset",
+        description: "Manual status override expired, returning to calendar-based status",
+      });
+    }, 30 * 60 * 1000); // 30 minutes
+    
+    setManualResetTimer(timer);
   };
 
-  // Reset manual override after some time
+  // Cleanup timer on unmount
   useEffect(() => {
-    if (isManualOverride) {
-      const timer = setTimeout(() => {
-        setIsManualOverride(false);
-      }, 30 * 60 * 1000); // Reset after 30 minutes
-
-      return () => clearTimeout(timer);
-    }
-  }, [isManualOverride]);
+    return () => {
+      if (manualResetTimer) {
+        clearTimeout(manualResetTimer);
+      }
+    };
+  }, [manualResetTimer]);
 
   // Check calendar status periodically
   useEffect(() => {
@@ -212,6 +255,15 @@ const SpecialistStatusIndicator = ({
   const config = statusConfig[status];
   const IconComponent = config.icon;
 
+  // Get readable time for last calendar check
+  const getTimeSinceLastCheck = () => {
+    if (!lastCalendarCheck) return 'Never';
+    const minutes = Math.floor((Date.now() - lastCalendarCheck.getTime()) / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes === 1) return '1 minute ago';
+    return `${minutes} minutes ago`;
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -223,9 +275,28 @@ const SpecialistStatusIndicator = ({
               Manual
             </Badge>
           )}
+          {!isManualOverride && (
+            <Calendar className="w-3 h-3 text-muted-foreground" />
+          )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-56">
+        {/* Status info header */}
+        <div className="px-2 py-2 text-xs text-muted-foreground border-b">
+          {isManualOverride ? (
+            <div className="flex items-center gap-1">
+              <Circle className="w-3 h-3 fill-orange-500 text-orange-500" />
+              Manual override active
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              Calendar-based • Updated {getTimeSinceLastCheck()}
+            </div>
+          )}
+        </div>
+
+        {/* Manual status options */}
         <DropdownMenuItem onClick={() => handleManualStatusChange('online')}>
           <Circle className="w-4 h-4 text-green-500 mr-2" />
           <div>
@@ -245,6 +316,17 @@ const SpecialistStatusIndicator = ({
           <div>
             <div className="font-medium">Offline</div>
             <div className="text-xs text-muted-foreground">Not available</div>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        {/* Reset options */}
+        <DropdownMenuItem onClick={resetToCalendar}>
+          <RotateCcw className="w-4 h-4 text-blue-500 mr-2" />
+          <div>
+            <div className="font-medium">Reset to Calendar</div>
+            <div className="text-xs text-muted-foreground">Clear manual override</div>
           </div>
         </DropdownMenuItem>
       </DropdownMenuContent>
