@@ -6,47 +6,18 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from '@/components/ui/command';
-import { 
-  BookOpen, 
-  Monitor, 
-  MessageSquare, 
-  Calendar, 
-  GraduationCap, 
-  BarChart3, 
-  Settings, 
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Users,
-  Phone,
-  Video,
-  FileText,
-  Download,
-  Search,
-  Home,
-  LogIn,
-  Shield,
-  Eye,
-  Star,
-  TrendingUp,
-  Bell,
-  HelpCircle
-} from 'lucide-react';
-
+import { BookOpen, Monitor, MessageSquare, Calendar, GraduationCap, BarChart3, Settings, AlertCircle, CheckCircle, Clock, Users, Phone, Video, FileText, Download, Search, Home, LogIn, Shield, Eye, Star, TrendingUp, Bell, HelpCircle } from 'lucide-react';
 const PeerSpecialistManual = () => {
   const [activeSection, setActiveSection] = useState('overview');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
   const handlePrint = () => {
     window.print();
   };
-
   const handleDownloadPDF = () => {
     // Create a new window with print-optimized content
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-
     const printContent = `
       <!DOCTYPE html>
       <html>
@@ -314,92 +285,178 @@ const PeerSpecialistManual = () => {
         </body>
       </html>
     `;
-
     printWindow.document.write(printContent);
     printWindow.document.close();
-    
+
     // Wait for content to load, then trigger print
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
     }, 500);
   };
-
-  const sections = [
-    { id: 'overview', title: 'Overview', icon: BookOpen },
-    { id: 'authentication', title: 'Authentication', icon: LogIn },
-    { id: 'dashboard', title: 'Dashboard', icon: Monitor },
-    { id: 'chat-sessions', title: 'Chat Sessions', icon: MessageSquare },
-    { id: 'calendar', title: 'Calendar', icon: Calendar },
-    { id: 'training', title: 'Training', icon: GraduationCap },
-    { id: 'performance', title: 'Performance', icon: BarChart3 },
-    { id: 'communication', title: 'Communication', icon: Phone },
-    { id: 'settings', title: 'Settings', icon: Settings },
-    { id: 'troubleshooting', title: 'Troubleshooting', icon: AlertCircle },
-    { id: 'best-practices', title: 'Best Practices', icon: Star },
-    { id: 'faq', title: 'FAQ', icon: HelpCircle }
-  ];
+  const sections = [{
+    id: 'overview',
+    title: 'Overview',
+    icon: BookOpen
+  }, {
+    id: 'authentication',
+    title: 'Authentication',
+    icon: LogIn
+  }, {
+    id: 'dashboard',
+    title: 'Dashboard',
+    icon: Monitor
+  }, {
+    id: 'chat-sessions',
+    title: 'Chat Sessions',
+    icon: MessageSquare
+  }, {
+    id: 'calendar',
+    title: 'Calendar',
+    icon: Calendar
+  }, {
+    id: 'training',
+    title: 'Training',
+    icon: GraduationCap
+  }, {
+    id: 'performance',
+    title: 'Performance',
+    icon: BarChart3
+  }, {
+    id: 'communication',
+    title: 'Communication',
+    icon: Phone
+  }, {
+    id: 'settings',
+    title: 'Settings',
+    icon: Settings
+  }, {
+    id: 'troubleshooting',
+    title: 'Troubleshooting',
+    icon: AlertCircle
+  }, {
+    id: 'best-practices',
+    title: 'Best Practices',
+    icon: Star
+  }, {
+    id: 'faq',
+    title: 'FAQ',
+    icon: HelpCircle
+  }];
 
   // Search content index
   const searchableContent = useMemo(() => [
-    // Quick Actions
-    { id: 'how-start-chat', title: 'How do I start a new chat session?', section: 'chat-sessions', type: 'quick-action' },
-    { id: 'how-schedule-appointment', title: 'How do I schedule an appointment?', section: 'calendar', type: 'quick-action' },
-    { id: 'how-set-availability', title: 'How do I set my availability?', section: 'calendar', type: 'quick-action' },
-    { id: 'how-end-session', title: 'How do I end a chat session?', section: 'chat-sessions', type: 'quick-action' },
-    { id: 'how-block-time', title: 'How do I block time in my calendar?', section: 'calendar', type: 'quick-action' },
-    { id: 'how-view-metrics', title: 'How do I view my performance metrics?', section: 'performance', type: 'quick-action' },
-    { id: 'how-reset-password', title: 'How do I reset my password?', section: 'authentication', type: 'quick-action' },
-    { id: 'how-update-profile', title: 'How do I update my profile?', section: 'settings', type: 'quick-action' },
-    { id: 'how-initiate-phone-call', title: 'How do I initiate a phone call with a user?', section: 'communication', type: 'quick-action' },
-    { id: 'how-phone-call-requests-work', title: 'How do phone call requests work?', section: 'communication', type: 'quick-action' },
-    
-    // FAQ Items
-    { id: 'connection-issues', title: 'What should I do if I have connection issues?', section: 'troubleshooting', type: 'faq' },
-    { id: 'session-timeout', title: 'Why did my session timeout?', section: 'troubleshooting', type: 'faq' },
-    { id: 'notification-not-working', title: 'My notifications are not working', section: 'troubleshooting', type: 'faq' },
-    { id: 'calendar-sync', title: 'How does calendar synchronization work?', section: 'calendar', type: 'faq' },
-    { id: 'training-requirements', title: 'What training is required?', section: 'training', type: 'faq' },
-    { id: 'performance-targets', title: 'What are the performance targets?', section: 'performance', type: 'faq' },
-    
-    // Section content
-    ...sections.map(section => ({ 
-      id: section.id, 
-      title: section.title, 
-      section: section.id, 
-      type: 'section' 
-    }))
-  ], [sections]);
-
+  // Quick Actions
+  {
+    id: 'how-start-chat',
+    title: 'How do I start a new chat session?',
+    section: 'chat-sessions',
+    type: 'quick-action'
+  }, {
+    id: 'how-schedule-appointment',
+    title: 'How do I schedule an appointment?',
+    section: 'calendar',
+    type: 'quick-action'
+  }, {
+    id: 'how-set-availability',
+    title: 'How do I set my availability?',
+    section: 'calendar',
+    type: 'quick-action'
+  }, {
+    id: 'how-end-session',
+    title: 'How do I end a chat session?',
+    section: 'chat-sessions',
+    type: 'quick-action'
+  }, {
+    id: 'how-block-time',
+    title: 'How do I block time in my calendar?',
+    section: 'calendar',
+    type: 'quick-action'
+  }, {
+    id: 'how-view-metrics',
+    title: 'How do I view my performance metrics?',
+    section: 'performance',
+    type: 'quick-action'
+  }, {
+    id: 'how-reset-password',
+    title: 'How do I reset my password?',
+    section: 'authentication',
+    type: 'quick-action'
+  }, {
+    id: 'how-update-profile',
+    title: 'How do I update my profile?',
+    section: 'settings',
+    type: 'quick-action'
+  }, {
+    id: 'how-initiate-phone-call',
+    title: 'How do I initiate a phone call with a user?',
+    section: 'communication',
+    type: 'quick-action'
+  }, {
+    id: 'how-phone-call-requests-work',
+    title: 'How do phone call requests work?',
+    section: 'communication',
+    type: 'quick-action'
+  },
+  // FAQ Items
+  {
+    id: 'connection-issues',
+    title: 'What should I do if I have connection issues?',
+    section: 'troubleshooting',
+    type: 'faq'
+  }, {
+    id: 'session-timeout',
+    title: 'Why did my session timeout?',
+    section: 'troubleshooting',
+    type: 'faq'
+  }, {
+    id: 'notification-not-working',
+    title: 'My notifications are not working',
+    section: 'troubleshooting',
+    type: 'faq'
+  }, {
+    id: 'calendar-sync',
+    title: 'How does calendar synchronization work?',
+    section: 'calendar',
+    type: 'faq'
+  }, {
+    id: 'training-requirements',
+    title: 'What training is required?',
+    section: 'training',
+    type: 'faq'
+  }, {
+    id: 'performance-targets',
+    title: 'What are the performance targets?',
+    section: 'performance',
+    type: 'faq'
+  },
+  // Section content
+  ...sections.map(section => ({
+    id: section.id,
+    title: section.title,
+    section: section.id,
+    type: 'section'
+  }))], [sections]);
   const filteredContent = useMemo(() => {
     if (!searchQuery) return searchableContent;
-    return searchableContent.filter(item =>
-      item.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    return searchableContent.filter(item => item.title.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [searchQuery, searchableContent]);
-
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setSearchOpen((open) => !open);
+        setSearchOpen(open => !open);
       }
     };
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
   }, []);
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-4">
-            Peer Specialist Training Manual
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Complete guide to using the LEAP Specialist Portal
-          </p>
+          <h1 className="text-4xl font-bold text-primary mb-4">Peer Support Specialist Training Manual</h1>
+          <p className="text-xl text-muted-foreground">Complete guide to using the LEAP Peer Support Specialist Portal</p>
           <div className="flex gap-4 mt-4">
             <Button variant="outline" size="sm" onClick={() => setSearchOpen(true)}>
               <Search className="w-4 h-4 mr-2" />
@@ -423,50 +480,35 @@ const PeerSpecialistManual = () => {
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup heading="Quick Actions">
-              {filteredContent.filter(item => item.type === 'quick-action').map((item) => (
-                <CommandItem
-                  key={item.id}
-                  onSelect={() => {
-                    setActiveSection(item.section);
-                    setSearchOpen(false);
-                  }}
-                >
+              {filteredContent.filter(item => item.type === 'quick-action').map(item => <CommandItem key={item.id} onSelect={() => {
+              setActiveSection(item.section);
+              setSearchOpen(false);
+            }}>
                   <HelpCircle className="mr-2 h-4 w-4" />
                   <span>{item.title}</span>
-                </CommandItem>
-              ))}
+                </CommandItem>)}
             </CommandGroup>
             <CommandSeparator />
             <CommandGroup heading="Frequently Asked Questions">
-              {filteredContent.filter(item => item.type === 'faq').map((item) => (
-                <CommandItem
-                  key={item.id}
-                  onSelect={() => {
-                    setActiveSection(item.section);
-                    setSearchOpen(false);
-                  }}
-                >
+              {filteredContent.filter(item => item.type === 'faq').map(item => <CommandItem key={item.id} onSelect={() => {
+              setActiveSection(item.section);
+              setSearchOpen(false);
+            }}>
                   <HelpCircle className="mr-2 h-4 w-4" />
                   <span>{item.title}</span>
-                </CommandItem>
-              ))}
+                </CommandItem>)}
             </CommandGroup>
             <CommandSeparator />
             <CommandGroup heading="Manual Sections">
-              {filteredContent.filter(item => item.type === 'section').map((item) => (
-                <CommandItem
-                  key={item.id}
-                  onSelect={() => {
-                    setActiveSection(item.section);
-                    setSearchOpen(false);
-                  }}
-                >
-                  {sections.find(s => s.id === item.section)?.icon && 
-                    React.createElement(sections.find(s => s.id === item.section)!.icon, { className: "mr-2 h-4 w-4" })
-                  }
+              {filteredContent.filter(item => item.type === 'section').map(item => <CommandItem key={item.id} onSelect={() => {
+              setActiveSection(item.section);
+              setSearchOpen(false);
+            }}>
+                  {sections.find(s => s.id === item.section)?.icon && React.createElement(sections.find(s => s.id === item.section)!.icon, {
+                className: "mr-2 h-4 w-4"
+              })}
                   <span>{item.title}</span>
-                </CommandItem>
-              ))}
+                </CommandItem>)}
             </CommandGroup>
           </CommandList>
         </CommandDialog>
@@ -478,33 +520,19 @@ const PeerSpecialistManual = () => {
               <CardHeader>
                 <CardTitle className="text-lg">Table of Contents</CardTitle>
                 <CardDescription>
-                  <Input
-                    placeholder="Search sections..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="mt-2"
-                  />
+                  <Input placeholder="Search sections..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="mt-2" />
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <ScrollArea className="h-[600px]">
                   <div className="space-y-1 p-4">
-                    {sections.filter(section => 
-                      section.title.toLowerCase().includes(searchQuery.toLowerCase())
-                    ).map((section) => {
-                      const Icon = section.icon;
-                      return (
-                        <Button
-                          key={section.id}
-                          variant={activeSection === section.id ? "default" : "ghost"}
-                          className="w-full justify-start text-left"
-                          onClick={() => setActiveSection(section.id)}
-                        >
+                    {sections.filter(section => section.title.toLowerCase().includes(searchQuery.toLowerCase())).map(section => {
+                    const Icon = section.icon;
+                    return <Button key={section.id} variant={activeSection === section.id ? "default" : "ghost"} className="w-full justify-start text-left" onClick={() => setActiveSection(section.id)}>
                           <Icon className="w-4 h-4 mr-2" />
                           {section.title}
-                        </Button>
-                      );
-                    })}
+                        </Button>;
+                  })}
                   </div>
                 </ScrollArea>
               </CardContent>
@@ -530,29 +558,22 @@ const PeerSpecialistManual = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
 
 // Overview Section Component
-const OverviewSection = () => (
-  <Card>
+const OverviewSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <BookOpen className="w-5 h-5" />
         System Overview
       </CardTitle>
-      <CardDescription>
-        Welcome to the LEAP Peer Specialist Portal
-      </CardDescription>
+      <CardDescription>Welcome to the LEAP Peer Support Specialist Portal</CardDescription>
     </CardHeader>
     <CardContent className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-3">What is the Specialist Portal?</h3>
-        <p className="text-muted-foreground mb-4">
-          The LEAP Specialist Portal is a comprehensive platform designed to help peer specialists 
-          provide effective support through chat sessions, appointment scheduling, and continuous training.
-        </p>
+        <p className="text-muted-foreground mb-4">The LEAP Peer Support Specialist Portal (PSSP) is a comprehensive platform designed to help peer support specialists provide effective support through chat sessions, appointment scheduling, and continuous training.</p>
       </div>
 
       <div>
@@ -633,12 +654,10 @@ const OverviewSection = () => (
         </p>
       </div>
     </CardContent>
-  </Card>
-);
+  </Card>;
 
 // Authentication Section Component
-const AuthenticationSection = () => (
-  <Card>
+const AuthenticationSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <LogIn className="w-5 h-5" />
@@ -724,12 +743,10 @@ const AuthenticationSection = () => (
         </p>
       </div>
     </CardContent>
-  </Card>
-);
+  </Card>;
 
 // Dashboard Section Component
-const DashboardSection = () => (
-  <Card>
+const DashboardSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <Monitor className="w-5 h-5" />
@@ -836,12 +853,10 @@ const DashboardSection = () => (
         </p>
       </div>
     </CardContent>
-  </Card>
-);
+  </Card>;
 
 // Chat Sessions Section Component
-const ChatSessionsSection = () => (
-  <Card>
+const ChatSessionsSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <MessageSquare className="w-5 h-5" />
@@ -985,12 +1000,10 @@ const ChatSessionsSection = () => (
         </div>
       </div>
     </CardContent>
-  </Card>
-);
+  </Card>;
 
 // Calendar Section Component
-const CalendarSection = () => (
-  <Card>
+const CalendarSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <Calendar className="w-5 h-5" />
@@ -1107,11 +1120,8 @@ const CalendarSection = () => (
         </p>
       </div>
     </CardContent>
-  </Card>
-);
-
-const TrainingSection = () => (
-  <Card>
+  </Card>;
+const TrainingSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <GraduationCap className="w-5 h-5" />
@@ -1174,7 +1184,9 @@ const TrainingSection = () => (
               <span className="text-sm font-medium">75% Complete</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full" style={{width: '75%'}}></div>
+              <div className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full" style={{
+              width: '75%'
+            }}></div>
             </div>
           </div>
           
@@ -1240,11 +1252,8 @@ const TrainingSection = () => (
         </p>
       </div>
     </CardContent>
-  </Card>
-);
-
-const PerformanceSection = () => (
-  <Card>
+  </Card>;
+const PerformanceSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <BarChart3 className="w-5 h-5" />
@@ -1397,11 +1406,8 @@ const PerformanceSection = () => (
         </ul>
       </div>
     </CardContent>
-  </Card>
-);
-
-const CommunicationSection = () => (
-  <Card>
+  </Card>;
+const CommunicationSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <Phone className="w-5 h-5" />
@@ -1627,11 +1633,8 @@ const CommunicationSection = () => (
         </ul>
       </div>
     </CardContent>
-  </Card>
-);
-
-const SettingsSection = () => (
-  <Card>
+  </Card>;
+const SettingsSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <Settings className="w-5 h-5" />
@@ -1809,11 +1812,8 @@ const SettingsSection = () => (
         <Button variant="outline">Reset to Defaults</Button>
       </div>
     </CardContent>
-  </Card>
-);
-
-const TroubleshootingSection = () => (
-  <Card>
+  </Card>;
+const TroubleshootingSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <AlertCircle className="w-5 h-5" />
@@ -2016,11 +2016,8 @@ const TroubleshootingSection = () => (
         </p>
       </div>
     </CardContent>
-  </Card>
-);
-
-const BestPracticesSection = () => (
-  <Card>
+  </Card>;
+const BestPracticesSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <Star className="w-5 h-5" />
@@ -2269,12 +2266,10 @@ const BestPracticesSection = () => (
         </p>
       </div>
     </CardContent>
-  </Card>
-);
+  </Card>;
 
 // FAQ Section Component
-const FAQSection = () => (
-  <Card>
+const FAQSection = () => <Card>
     <CardHeader>
       <CardTitle className="flex items-center gap-2">
         <HelpCircle className="w-5 h-5" />
@@ -2509,7 +2504,5 @@ const FAQSection = () => (
         </div>
       </div>
     </CardContent>
-  </Card>
-);
-
+  </Card>;
 export default PeerSpecialistManual;
