@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RefreshCw, MessageSquare, BarChart3, UserCircle, Activity, Clock, CheckCircle, User, History, TrendingUp, LogOut, GraduationCap, Calendar } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import RobustSpecialistChatWindow from './RobustSpecialistChatWindow';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
 import SpecialistPerformanceMetrics from './SpecialistPerformanceMetrics';
@@ -18,6 +18,7 @@ import SpecialistActivityLog from './SpecialistActivityLog';
 import SpecialistStatusIndicator from './SpecialistStatusIndicator';
 import ChatHistory from './ChatHistory';
 import SpecialistTrainingDashboard from './SpecialistTrainingDashboard';
+import { SpecialistSidebar } from './SpecialistSidebar';
 import { useProposalNotifications } from '@/hooks/useProposalNotifications';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
@@ -45,6 +46,7 @@ const PeerSpecialistDashboard = () => {
   
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [specialistId, setSpecialistId] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState('sessions');
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -415,397 +417,352 @@ const PeerSpecialistDashboard = () => {
   }, [error, toast]);
 
   return (
-    <div className="min-h-screen w-full bg-background flex flex-col">
-      {/* Header */}
-      <div className="border-b bg-card">
-        <div className="flex h-16 items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-foreground">Peer Support Dashboard</h1>
-            {specialistId && <SpecialistStatusIndicator specialistId={specialistId} />}
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {/* Chat History Button */}
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowChatHistory(true)}>
-              <History className="w-4 h-4" />
-              Chat History
-            </Button>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <SpecialistSidebar
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+          onLogout={handleLogout}
+          onOpenChatHistory={() => setShowChatHistory(true)}
+          onOpenPerformance={() => setShowPerformanceModal(true)}
+          onOpenActivity={() => setShowActivityModal(true)}
+          onOpenSettings={() => setShowSettingsModal(true)}
+          activeSessions={activeSessions}
+          waitingSessions={waitingSessions}
+        />
 
-            {/* Performance Modal */}
-            <Dialog open={showPerformanceModal} onOpenChange={setShowPerformanceModal}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  Performance
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Performance Metrics</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-6">
-                  {specialistId && <SpecialistPerformanceMetrics specialistId={specialistId} />}
-                  <PeerPerformanceDashboard onRefresh={handleRefresh} />
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Activity Modal */}
-            <Dialog open={showActivityModal} onOpenChange={setShowActivityModal}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Activity className="w-4 h-4" />
-                  Activity
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Activity Log</DialogTitle>
-                </DialogHeader>
-                {specialistId && <SpecialistActivityLog isOpen={true} onClose={() => setShowActivityModal(false)} specialistId={specialistId} />}
-              </DialogContent>
-            </Dialog>
-
-            {/* Profile Modal */}
-            <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <UserCircle className="w-4 h-4" />
-                  Profile
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Specialist Profile</DialogTitle>
-                </DialogHeader>
-                {specialistId && <SpecialistSettings isOpen={true} onClose={() => setShowSettingsModal(false)} specialist={{ id: specialistId } as any} onUpdateSpecialist={() => {}} />}
-              </DialogContent>
-            </Dialog>
-
-            <Button onClick={handleRefresh} disabled={isLoading} variant="outline" size="sm" className="gap-2">
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-
-            {/* Logout Button */}
-            <Button onClick={handleLogout} variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content - Flexible scrollable layout */}
-      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-        {/* Welcome Message */}
-        {specialistProfile && (
-          <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <User className="h-8 w-8 text-primary" />
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Welcome, {specialistProfile.first_name} {specialistProfile.last_name}
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {getMotivationalMessage()}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Metric Cards Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Active Chats Card */}
-          <Card className={getActiveChatsCardClass()}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Active Chats</p>
-                  <p className="text-2xl font-bold text-chat-active-foreground">{activeSessions}</p>
-                </div>
-                <MessageSquare className="h-8 w-8 text-chat-active-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Waiting Chats Card */}
-          <Card className={getWaitingChatsCardClass()}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Waiting Chats</p>
-                  <p className="text-2xl font-bold text-chat-waiting-foreground">{waitingSessions}</p>
-                  {hasUrgentWaitingSessions() && (
-                    <p className="text-xs text-chat-urgent-foreground font-medium mt-1">
-                      Longest wait: {Math.floor(getWaitTimeSeconds(getLongestWaitingSession()!) / 60)}m {getWaitTimeSeconds(getLongestWaitingSession()!) % 60}s
-                    </p>
-                  )}
-                </div>
-                <Clock className={`h-8 w-8 ${hasUrgentWaitingSessions() ? 'text-chat-urgent-foreground' : 'text-chat-waiting-foreground'}`} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Completed Today Card */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Completed Today</p>
-                  <p className="text-2xl font-bold text-blue-600">{completedToday}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Average Response Time Card */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Ave. Response Time Today</p>
-                  <p className="text-2xl font-bold text-purple-600">{formatResponseTime(avgResponseTime)}</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Tabbed Interface */}
-        <Tabs defaultValue="chat" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="chat" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Chat Sessions
-            </TabsTrigger>
-            <TabsTrigger value="training" className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4" />
-              Training
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Calendar
-            </TabsTrigger>
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Overview
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="chat" className="space-y-4">
-            {/* Chat Sessions and Active Chat Session side by side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Left Column - Chat Sessions */}
-              <Card className="min-h-[600px]">
-                <CardHeader className="p-4 border-b">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Chat Sessions</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={realtimeStatus === 'connected' ? 'default' : 'secondary'} className={realtimeStatus === 'connected' ? 'bg-green-600' : ''}>
-                        {realtimeStatus === 'connected' ? 'Connected' : realtimeStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
-                      </Badge>
-                      {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0 flex-1">
-                  <ScrollArea className="h-[550px]">
-                    <div className="p-3 space-y-2">
-                      {sessions.length === 0 ? (
-                        <Card className="p-4">
-                          <div className="text-center text-muted-foreground">
-                            <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
-                            <p className="text-xs">No active sessions</p>
-                            <p className="text-xs mt-1">Waiting sessions will appear here</p>
-                          </div>
-                        </Card>
-                      ) : (
-                        sessions.map(session => {
-                          const isTimeout = session.end_reason === 'auto_timeout' || session.end_reason === 'inactivity_timeout';
-                          return (
-                            <Card
-                              key={session.id}
-                              className={`cursor-pointer transition-all hover:shadow-md ${
-                                selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''
-                              } ${session.status === 'ended' && isTimeout ? 'bg-destructive/5 border-destructive/20' : ''}`}
-                              onClick={() => setSelectedSession(session)}
-                            >
-                              <CardContent className="p-3">
-                                <div className="flex items-start justify-between mb-1">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Badge
-                                        variant={
-                                          session.status === 'waiting' 
-                                            ? 'secondary' 
-                                            : session.status === 'active' 
-                                              ? 'default' 
-                                              : isTimeout 
-                                                ? 'destructive'
-                                                : 'outline'
-                                        }
-                                        className={
-                                          session.status === 'waiting' 
-                                            ? 'bg-yellow-100 text-yellow-800' 
-                                            : session.status === 'active' 
-                                              ? 'bg-green-100 text-green-800' 
-                                              : isTimeout
-                                                ? 'bg-red-100 text-red-800'
-                                                : ''
-                                        }
-                                      >
-                                        {session.status === 'waiting' 
-                                          ? 'Waiting' 
-                                          : session.status === 'active' 
-                                            ? 'Active' 
-                                            : isTimeout 
-                                              ? 'Timed Out'
-                                              : 'Ended'
-                                        }
-                                      </Badge>
-                                      <span className="text-sm font-medium">#{session.session_number}</span>
-                                      {isTimeout && (
-                                        <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                                          Auto-ended
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    
-                                    <p className="font-medium text-sm">
-                                      {session.user_first_name && session.user_last_name
-                                        ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.`
-                                        : 'Anonymous User'}
-                                    </p>
-                                    
-                                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                      <div className="flex items-center gap-1">
-                                        <Clock className="w-3 h-3" />
-                                        {format(new Date(session.started_at), 'h:mm a')}
-                                      </div>
-                                      {session.status === 'ended' && session.ended_at && (
-                                        <div className="flex items-center gap-1">
-                                          <CheckCircle className="w-3 h-3" />
-                                          Ended {format(new Date(session.ended_at), 'h:mm a')}
-                                          {isTimeout && <span className="text-orange-600 ml-1">(Timeout)</span>}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                {session.status === 'waiting' && (
-                                  <Button
-                                    size="sm"
-                                    className="w-full mt-1 h-7 text-xs"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedSession(session);
-                                    }}
-                                  >
-                                    Join Session
-                                  </Button>
-                                )}
-                              </CardContent>
-                            </Card>
-                          );
-                        })
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-
-              {/* Right Column - Active Chat Session */}
-              <Card className="min-h-[600px]">
-                <CardHeader className="p-4 border-b">
-                  <CardTitle className="text-lg">Active Chat Session</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0 flex-1">
-                  {selectedSession ? (
-                    <RobustSpecialistChatWindow
-                      session={selectedSession}
-                      onClose={() => setSelectedSession(null)}
-                      onSessionUpdate={handleSessionUpdate}
-                    />
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center h-[550px] bg-muted/20">
-                      <div className="text-center text-muted-foreground">
-                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <h3 className="text-base font-medium mb-1">No Session Selected</h3>
-                        <p className="text-sm">Select a session to start chatting</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+        <div className="flex-1 flex flex-col min-h-screen">
+          {/* Header */}
+          <div className="border-b bg-card h-16 flex items-center px-6">
+            <SidebarTrigger className="mr-4" />
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold text-foreground">
+                {activeSection === 'sessions' && 'Chat Sessions'}
+                {activeSection === 'calendar' && 'Calendar'}
+                {activeSection === 'training' && 'Training Dashboard'}
+              </h1>
+              {specialistId && <SpecialistStatusIndicator specialistId={specialistId} />}
             </div>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="training" className="space-y-4">
-            {specialistId && <SpecialistTrainingDashboard specialistId={specialistId} />}
-          </TabsContent>
+          {/* Main Content */}
+          <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+            {activeSection === 'sessions' && (
+              <>
+                {/* Welcome Message */}
+                {specialistProfile && (
+                  <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <User className="h-8 w-8 text-primary" />
+                        <div>
+                          <h2 className="text-lg font-semibold text-foreground">
+                            Welcome, {specialistProfile.first_name} {specialistProfile.last_name}
+                          </h2>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {getMotivationalMessage()}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
-          <TabsContent value="calendar" className="space-y-4">
-            <Card className="w-full">
-              <CardHeader className="p-4 border-b">
-                <CardTitle className="text-lg">Schedule & Calendar</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4">
-                {specialistId && <EnhancedSpecialistCalendar specialistId={specialistId} />}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                {/* Metric Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Active Chats Card */}
+                  <Card className={getActiveChatsCardClass()}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Active Chats</p>
+                          <p className="text-2xl font-bold text-chat-active-foreground">{activeSessions}</p>
+                        </div>
+                        <MessageSquare className="h-8 w-8 text-chat-active-foreground" />
+                      </div>
+                    </CardContent>
+                  </Card>
 
-          <TabsContent value="overview" className="space-y-4">
+                  {/* Waiting Chats Card */}
+                  <Card className={getWaitingChatsCardClass()}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Waiting Chats</p>
+                          <p className="text-2xl font-bold text-chat-waiting-foreground">{waitingSessions}</p>
+                          {hasUrgentWaitingSessions() && (
+                            <p className="text-xs text-chat-urgent-foreground font-medium mt-1">
+                              Longest wait: {Math.floor(getWaitTimeSeconds(getLongestWaitingSession()!) / 60)}m {getWaitTimeSeconds(getLongestWaitingSession()!) % 60}s
+                            </p>
+                          )}
+                        </div>
+                        <Clock className={`h-8 w-8 ${hasUrgentWaitingSessions() ? 'text-chat-urgent-foreground' : 'text-chat-waiting-foreground'}`} />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Completed Today Card */}
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Completed Today</p>
+                          <p className="text-2xl font-bold text-blue-600">{completedToday}</p>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-blue-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Average Response Time Card */}
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Ave. Response Time Today</p>
+                          <p className="text-2xl font-bold text-purple-600">{formatResponseTime(avgResponseTime)}</p>
+                        </div>
+                        <TrendingUp className="h-8 w-8 text-purple-600" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Chat Sessions Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Left Column - Chat Sessions */}
+                  <Card className="min-h-[600px]">
+                    <CardHeader className="p-4 border-b">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">Chat Sessions</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={realtimeStatus === 'connected' ? 'default' : 'secondary'} className={realtimeStatus === 'connected' ? 'bg-green-600' : ''}>
+                            {realtimeStatus === 'connected' ? 'Connected' : realtimeStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
+                          </Badge>
+                          {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-0 flex-1">
+                      <ScrollArea className="h-[550px]">
+                        <div className="p-3 space-y-2">
+                          {sessions.length === 0 ? (
+                            <Card className="p-4">
+                              <div className="text-center text-muted-foreground">
+                                <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                                <p className="text-xs">No active sessions</p>
+                                <p className="text-xs mt-1">Waiting sessions will appear here</p>
+                              </div>
+                            </Card>
+                          ) : (
+                            sessions.map(session => {
+                              const isTimeout = session.end_reason === 'auto_timeout' || session.end_reason === 'inactivity_timeout';
+                              return (
+                                <Card
+                                  key={session.id}
+                                  className={`cursor-pointer transition-all hover:shadow-md ${
+                                    selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''
+                                  } ${session.status === 'ended' && isTimeout ? 'bg-destructive/5 border-destructive/20' : ''}`}
+                                  onClick={() => setSelectedSession(session)}
+                                >
+                                  <CardContent className="p-3">
+                                    <div className="flex items-start justify-between mb-1">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <Badge
+                                            variant={
+                                              session.status === 'waiting' 
+                                                ? 'secondary' 
+                                                : session.status === 'active' 
+                                                  ? 'default' 
+                                                  : isTimeout 
+                                                    ? 'destructive'
+                                                    : 'outline'
+                                            }
+                                            className={
+                                              session.status === 'waiting' 
+                                                ? 'bg-yellow-100 text-yellow-800' 
+                                                : session.status === 'active' 
+                                                  ? 'bg-green-100 text-green-800' 
+                                                  : isTimeout
+                                                    ? 'bg-red-100 text-red-800'
+                                                    : ''
+                                            }
+                                          >
+                                            {session.status === 'waiting' 
+                                              ? 'Waiting' 
+                                              : session.status === 'active' 
+                                                ? 'Active' 
+                                                : isTimeout 
+                                                  ? 'Timed Out'
+                                                  : 'Ended'
+                                            }
+                                          </Badge>
+                                          <span className="text-sm font-medium">#{session.session_number}</span>
+                                          {isTimeout && (
+                                            <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                              Auto-ended
+                                            </Badge>
+                                          )}
+                                        </div>
+                                        
+                                        <p className="font-medium text-sm">
+                                          {session.user_first_name && session.user_last_name
+                                            ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.`
+                                            : 'Anonymous User'}
+                                        </p>
+                                        
+                                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                          <div className="flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {format(new Date(session.started_at), 'h:mm a')}
+                                          </div>
+                                          {session.status === 'ended' && session.ended_at && (
+                                            <div className="flex items-center gap-1">
+                                              <CheckCircle className="w-3 h-3" />
+                                              Ended {format(new Date(session.ended_at), 'h:mm a')}
+                                              {isTimeout && <span className="text-orange-600 ml-1">(Timeout)</span>}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    {session.status === 'waiting' && (
+                                      <Button
+                                        size="sm"
+                                        className="w-full mt-1 h-7 text-xs"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedSession(session);
+                                        }}
+                                      >
+                                        Join Session
+                                      </Button>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              );
+                            })
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+
+                  {/* Right Column - Active Chat Session */}
+                  <Card className="min-h-[600px]">
+                    <CardHeader className="p-4 border-b">
+                      <CardTitle className="text-lg">Active Chat Session</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0 flex-1">
+                      {selectedSession ? (
+                        <RobustSpecialistChatWindow
+                          session={selectedSession}
+                          onClose={() => setSelectedSession(null)}
+                          onSessionUpdate={handleSessionUpdate}
+                        />
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center h-[550px] bg-muted/20">
+                          <div className="text-center text-muted-foreground">
+                            <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                            <h3 className="text-base font-medium mb-1">No Session Selected</h3>
+                            <p className="text-sm">Select a session to start chatting</p>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            )}
+
+            {activeSection === 'calendar' && (
+              <Card className="w-full">
+                <CardHeader className="p-4 border-b">
+                  <CardTitle className="text-lg">Schedule & Calendar</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  {specialistId && <EnhancedSpecialistCalendar specialistId={specialistId} />}
+                </CardContent>
+              </Card>
+            )}
+
+            {activeSection === 'training' && specialistId && (
+              <SpecialistTrainingDashboard specialistId={specialistId} />
+            )}
+          </div>
+        </div>
+
+        {/* Performance Modal */}
+        <Dialog open={showPerformanceModal} onOpenChange={setShowPerformanceModal}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Performance Metrics</DialogTitle>
+            </DialogHeader>
             <div className="space-y-6">
               {specialistId && <SpecialistPerformanceMetrics specialistId={specialistId} />}
               <PeerPerformanceDashboard onRefresh={handleRefresh} />
             </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+          </DialogContent>
+        </Dialog>
 
-      {/* Chat History Modal */}
-      {specialistId && (
-        <ChatHistory
-          isOpen={showChatHistory}
-          onClose={() => setShowChatHistory(false)}
-          specialistId={specialistId}
-        />
-      )}
+        {/* Activity Modal */}
+        <Dialog open={showActivityModal} onOpenChange={setShowActivityModal}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Activity Log</DialogTitle>
+            </DialogHeader>
+            {specialistId && <SpecialistActivityLog isOpen={true} onClose={() => setShowActivityModal(false)} specialistId={specialistId} />}
+          </DialogContent>
+        </Dialog>
 
-      {/* End Chat Message Popup */}
-      {showEndChatMessage && (
-        <div className="fixed top-4 right-4 z-50">
-          <Card className="bg-card border shadow-lg max-w-sm">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground mb-1">Chat Ended</p>
-                  <p className="text-xs text-muted-foreground">
-                    This chat has ended and has been moved to the chat history.
-                  </p>
+        {/* Settings Modal */}
+        <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Specialist Profile</DialogTitle>
+            </DialogHeader>
+            {specialistId && <SpecialistSettings isOpen={true} onClose={() => setShowSettingsModal(false)} specialist={{ id: specialistId } as any} onUpdateSpecialist={() => {}} />}
+          </DialogContent>
+        </Dialog>
+
+        {/* Chat History Modal */}
+        {specialistId && (
+          <ChatHistory
+            isOpen={showChatHistory}
+            onClose={() => setShowChatHistory(false)}
+            specialistId={specialistId}
+          />
+        )}
+
+        {/* End Chat Message Popup */}
+        {showEndChatMessage && (
+          <div className="fixed top-4 right-4 z-50">
+            <Card className="bg-card border shadow-lg max-w-sm">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground mb-1">Chat Ended</p>
+                    <p className="text-xs text-muted-foreground">
+                      This chat has ended and has been moved to the chat history.
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 ml-2"
+                    onClick={() => setShowEndChatMessage(false)}
+                  >
+                    ×
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 ml-2"
-                  onClick={() => setShowEndChatMessage(false)}
-                >
-                  ×
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    </SidebarProvider>
   );
 };
 
