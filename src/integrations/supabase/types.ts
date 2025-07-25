@@ -1076,6 +1076,39 @@ export type Database = {
           },
         ]
       }
+      specialist_module_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          module_id: string
+          score: number | null
+          specialist_id: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          module_id: string
+          score?: number | null
+          specialist_id: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean
+          module_id?: string
+          score?: number | null
+          specialist_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       specialist_motivational_content: {
         Row: {
           author: string | null

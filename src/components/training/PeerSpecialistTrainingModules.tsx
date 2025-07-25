@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Clock, Lock } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTrainingScenarios } from '@/hooks/useTrainingScenarios';
+import { useModuleProgress } from '@/hooks/useModuleProgress';
 import { toast } from '@/hooks/use-toast';
 
 import InteractiveTrainingModule from './InteractiveTrainingModule';
@@ -24,6 +25,7 @@ const PeerSpecialistTrainingModules: React.FC<PeerSpecialistTrainingModulesProps
 }) => {
   const { language } = useLanguage();
   const { progress, completeScenario, startScenario } = useTrainingScenarios(specialistId);
+  const { moduleMetrics, completeModule } = useModuleProgress(specialistId);
   const [activeModule, setActiveModule] = useState<string | null>(null);
 
   const modules = [
@@ -34,31 +36,27 @@ const PeerSpecialistTrainingModules: React.FC<PeerSpecialistTrainingModulesProps
     createSelfHelpMutualSupportModule(language)
   ];
 
-  const getModuleProgress = (moduleId: string) => {
-    return progress?.find(p => p.scenario_id === moduleId);
+  const getModuleProgressFromMetrics = (moduleId: string) => {
+    return moduleMetrics?.moduleProgress.find(p => p.moduleId === moduleId);
   };
 
   const isModuleUnlocked = (moduleIndex: number) => {
     if (moduleIndex === 0) return true;
     
     const previousModule = modules[moduleIndex - 1];
-    const previousProgress = getModuleProgress(previousModule.id);
+    const previousProgress = getModuleProgressFromMetrics(previousModule.id);
     
-    return previousProgress?.status === 'completed';
+    return previousProgress?.isCompleted || false;
   };
 
   const handleModuleStart = async (moduleId: string) => {
-    const success = await startScenario(moduleId);
-    if (success) {
-      setActiveModule(moduleId);
-    }
+    // Simply set the active module - no need to track scenarios for modules
+    setActiveModule(moduleId);
   };
 
   const handleModuleComplete = async (moduleId: string, score: number, timeSpent: number, reflection: string) => {
-    const moduleProgress = getModuleProgress(moduleId);
-    if (moduleProgress) {
-      await completeScenario(moduleProgress.id, score, { reflection }, timeSpent);
-    }
+    // Use the module completion system instead of scenario system
+    await completeModule(moduleId, score);
     
     toast({
       title: 'Module Completed!',
@@ -82,8 +80,8 @@ const PeerSpecialistTrainingModules: React.FC<PeerSpecialistTrainingModulesProps
     );
   }
 
-  const completedCount = modules.filter(m => getModuleProgress(m.id)?.status === 'completed').length;
-  const progressPercentage = (completedCount / modules.length) * 100;
+  const completedCount = moduleMetrics?.completedModules || 0;
+  const progressPercentage = moduleMetrics?.completionRate || 0;
 
   return (
     <div className="space-y-6">
@@ -100,9 +98,9 @@ const PeerSpecialistTrainingModules: React.FC<PeerSpecialistTrainingModulesProps
 
       <div className="grid gap-6">
         {modules.map((module, index) => {
-          const moduleProgress = getModuleProgress(module.id);
-          const isCompleted = moduleProgress?.status === 'completed';
-          const isInProgress = moduleProgress?.status === 'in_progress';
+          const moduleProgress = getModuleProgressFromMetrics(module.id);
+          const isCompleted = moduleProgress?.isCompleted || false;
+          const isInProgress = false; // Modules are either completed or not started
           const isUnlocked = isModuleUnlocked(index);
 
           return (

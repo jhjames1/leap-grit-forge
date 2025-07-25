@@ -45,36 +45,42 @@ export const useModuleProgress = (specialistId?: string) => {
     if (!specialistId) return;
 
     try {
-      // Query training_progress table for module completions
-      // We'll use the training system to track module completions
+      // Query the new specialist_module_progress table for module completions
       const { data, error } = await supabase
-        .from('training_progress')
+        .from('specialist_module_progress')
         .select('*')
-        .eq('specialist_id', specialistId)
-        .eq('status', 'completed');
+        .eq('specialist_id', specialistId);
 
       if (error) throw error;
 
-      // For now, we'll simulate module completion tracking
-      // In a real implementation, you would have a modules table or use metadata
-      // to track which specific modules are completed
+      // Create a set of completed module IDs
+      const completedModuleIds = new Set<string>();
+      const moduleScores = new Map<string, number>();
+      const moduleCompletionDates = new Map<string, string>();
       
-      // Create a simple progress tracking based on completion count
-      const completedCount = Math.min((data || []).length, CORE_MODULES.length);
-      
-      // Update module progress with simulated completion status
-      const updatedProgress = CORE_MODULES.map((module, index) => {
-        const isCompleted = index < completedCount;
+      // Process the data to identify completed modules
+      (data || []).forEach(item => {
+        if (item.is_completed) {
+          completedModuleIds.add(item.module_id);
+          if (item.score) moduleScores.set(item.module_id, item.score);
+          if (item.completed_at) moduleCompletionDates.set(item.module_id, item.completed_at);
+        }
+      });
+
+      // Update module progress with completion status
+      const updatedProgress = CORE_MODULES.map(module => {
+        const isCompleted = completedModuleIds.has(module.id);
         
         return {
           moduleId: module.id,
           moduleName: module.name,
           isCompleted,
-          completedAt: isCompleted ? new Date().toISOString() : undefined,
-          score: isCompleted ? 100 : undefined
+          completedAt: isCompleted ? moduleCompletionDates.get(module.id) : undefined,
+          score: isCompleted ? moduleScores.get(module.id) : undefined
         };
       });
 
+      const completedCount = completedModuleIds.size;
       const completionRate = (completedCount / CORE_MODULES.length) * 100;
 
       setModuleMetrics({
@@ -90,13 +96,25 @@ export const useModuleProgress = (specialistId?: string) => {
     }
   }, [specialistId]);
 
-  // Function to mark a module as completed (simplified version using training_progress)
+  // Function to mark a module as completed
   const completeModule = useCallback(async (moduleId: string, score?: number) => {
     if (!specialistId) return false;
 
     try {
-      // For now, we'll refresh the data since module completion
-      // will be tracked through the actual training modules
+      // Insert or update module completion record
+      const { error } = await supabase
+        .from('specialist_module_progress')
+        .upsert({
+          specialist_id: specialistId,
+          module_id: moduleId,
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+          score: score || null
+        });
+
+      if (error) throw error;
+
+      // Refresh module progress
       await fetchModuleProgress();
       return true;
     } catch (err) {
@@ -120,7 +138,7 @@ export const useModuleProgress = (specialistId?: string) => {
     }
   }, [specialistId, fetchModuleProgress]);
 
-  // Set up real-time subscription for training progress changes
+  // Set up real-time subscription for module progress changes
   useEffect(() => {
     if (!specialistId) return;
 
@@ -131,11 +149,11 @@ export const useModuleProgress = (specialistId?: string) => {
         {
           event: '*',
           schema: 'public',
-          table: 'training_progress',
+          table: 'specialist_module_progress',
           filter: `specialist_id=eq.${specialistId}`
         },
         (payload) => {
-          console.log('Training progress changed (module check):', payload);
+          console.log('Module progress changed:', payload);
           fetchModuleProgress();
         }
       )
