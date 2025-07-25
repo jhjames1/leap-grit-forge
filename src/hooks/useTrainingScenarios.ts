@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface TrainingScenario {
   id: string;
@@ -61,6 +62,7 @@ export const useTrainingScenarios = (specialistId?: string) => {
   const [summary, setSummary] = useState<TrainingSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [realtimeChannel, setRealtimeChannel] = useState<RealtimeChannel | null>(null);
 
   // Fetch available training scenarios
   const fetchScenarios = async () => {
@@ -88,8 +90,8 @@ export const useTrainingScenarios = (specialistId?: string) => {
     }
   };
 
-  // Fetch specialist's training progress
-  const fetchProgress = async () => {
+  // Fetch specialist's training progress with useCallback for memoization
+  const fetchProgress = useCallback(async () => {
     if (!specialistId) return;
 
     try {
@@ -122,10 +124,10 @@ export const useTrainingScenarios = (specialistId?: string) => {
       console.error('Error fetching training progress:', err);
       setError('Failed to load training progress');
     }
-  };
+  }, [specialistId]);
 
-  // Fetch training summary
-  const fetchSummary = async () => {
+  // Fetch training summary with useCallback for memoization
+  const fetchSummary = useCallback(async () => {
     if (!specialistId) return;
 
     try {
@@ -139,7 +141,7 @@ export const useTrainingScenarios = (specialistId?: string) => {
       console.error('Error fetching training summary:', err);
       setError('Failed to load training summary');
     }
-  };
+  }, [specialistId]);
 
   // Start a training scenario
   const startScenario = async (scenarioId: string): Promise<boolean> => {
@@ -284,7 +286,39 @@ export const useTrainingScenarios = (specialistId?: string) => {
     };
 
     loadData();
-  }, [specialistId]);
+  }, [specialistId, fetchProgress, fetchSummary]);
+
+  // Set up real-time subscription for training progress changes
+  useEffect(() => {
+    if (!specialistId) return;
+
+    const channel = supabase
+      .channel('training-progress-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'training_progress',
+          filter: `specialist_id=eq.${specialistId}`
+        },
+        (payload) => {
+          console.log('Training progress changed:', payload);
+          // Refresh data when training progress changes
+          fetchProgress();
+          fetchSummary();
+        }
+      )
+      .subscribe();
+
+    setRealtimeChannel(channel);
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [specialistId, fetchProgress, fetchSummary]);
 
   return {
     scenarios,

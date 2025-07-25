@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Trophy, Clock, Target, BookOpen, Play, Shield, AlertTriangle, Users, Heart, Compass } from 'lucide-react';
 import { useTrainingScenarios } from '@/hooks/useTrainingScenarios';
+import { useModuleProgress } from '@/hooks/useModuleProgress';
 import { MockChatTrainingEnvironment } from './MockChatTrainingEnvironment';
 import PeerSpecialistTrainingModules from './training/PeerSpecialistTrainingModules';
 
@@ -21,7 +22,8 @@ interface ActiveTraining {
 const SpecialistTrainingDashboard = ({ specialistId }: SpecialistTrainingDashboardProps) => {
   const [activeTraining, setActiveTraining] = useState<ActiveTraining | null>(null);
   const [activeTab, setActiveTab] = useState('modules');
-  const { scenarios, progress, summary, loading, error } = useTrainingScenarios(specialistId);
+  const { scenarios, progress, summary, loading: scenariosLoading, error: scenariosError } = useTrainingScenarios(specialistId);
+  const { moduleMetrics, loading: moduleLoading, error: moduleError } = useModuleProgress(specialistId);
 
   const handleTrainingStart = (scenario: any, progressId?: string) => {
     setActiveTraining({ 
@@ -49,6 +51,9 @@ const SpecialistTrainingDashboard = ({ specialistId }: SpecialistTrainingDashboa
       />
     );
   }
+
+  const loading = scenariosLoading || moduleLoading;
+  const error = scenariosError || moduleError;
 
   if (loading) {
     return (
@@ -80,15 +85,15 @@ const SpecialistTrainingDashboard = ({ specialistId }: SpecialistTrainingDashboa
     );
   }
 
-  // Calculate combined metrics from both module training and scenario training
-  const moduleCompletedCount = 5; // We have 5 core modules - this would be dynamic in real implementation
+  // Calculate combined metrics from both module training and scenario training using real-time data
+  const moduleCompletedCount = moduleMetrics?.completedModules || 0;
   const scenarioCompletedCount = progress?.filter(p => p.status === 'completed').length || 0;
   const scenarioInProgressCount = progress?.filter(p => p.status === 'in_progress').length || 0;
   const totalScenarios = scenarios?.length || 0;
   
   const completedCount = moduleCompletedCount + scenarioCompletedCount;
   const inProgressCount = scenarioInProgressCount;
-  const totalTrainingItems = 5 + totalScenarios; // 5 modules + scenarios
+  const totalTrainingItems = (moduleMetrics?.totalModules || 5) + totalScenarios;
   const completionRate = totalTrainingItems > 0 ? (completedCount / totalTrainingItems) * 100 : 0;
 
   return (
@@ -354,8 +359,8 @@ const SpecialistTrainingDashboard = ({ specialistId }: SpecialistTrainingDashboa
                   <div>
                     <h4 className="font-medium">Core Foundation</h4>
                     <p className="text-sm text-muted-foreground">Complete all 5 core training modules</p>
-                    <Badge variant="outline">
-                      Progress: 0/5
+                    <Badge variant={moduleCompletedCount >= 5 ? 'default' : 'outline'}>
+                      {moduleCompletedCount >= 5 ? 'Unlocked' : `Progress: ${moduleCompletedCount}/5`}
                     </Badge>
                   </div>
                 </div>
