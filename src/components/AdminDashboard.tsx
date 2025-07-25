@@ -37,6 +37,8 @@ const AdminDashboard = ({
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
   const [liveSpecialistCount, setLiveSpecialistCount] = useState(0);
   const [liveChatCount, setLiveChatCount] = useState(0);
+  const [onlineSpecialists, setOnlineSpecialists] = useState<any[]>([]);
+  const [specialistStatuses, setSpecialistStatuses] = useState<Record<string, string>>({});
   
   // Specialist management state
   const [specialistSearchTerm, setSpecialistSearchTerm] = useState('');
@@ -74,17 +76,42 @@ const AdminDashboard = ({
     console.log('Deactivate specialist functionality');
   };
 
-  // Load live counts for specialist and chat metrics
+  // Load live counts and specialist statuses
   useEffect(() => {
     const loadLiveCounts = async () => {
       try {
-        // Get active specialist count
+        // Get active specialist count and details with status
         const {
           data: specialists,
           error: specialistError
-        } = await supabase.from('peer_specialists').select('id').eq('is_active', true).eq('is_verified', true);
+        } = await supabase
+          .from('peer_specialists')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            avatar_url,
+            specialist_status!inner (
+              status,
+              status_message,
+              last_seen
+            )
+          `)
+          .eq('is_active', true)
+          .eq('is_verified', true);
+          
         if (!specialistError && specialists) {
           setLiveSpecialistCount(specialists.length);
+          
+          // Filter online specialists and create status map
+          const online = specialists.filter(s => s.specialist_status?.status === 'online');
+          setOnlineSpecialists(online);
+          
+          const statusMap: Record<string, string> = {};
+          specialists.forEach(s => {
+            statusMap[s.id] = s.specialist_status?.status || 'offline';
+          });
+          setSpecialistStatuses(statusMap);
         }
 
         // Get active chat count
@@ -101,16 +128,26 @@ const AdminDashboard = ({
     };
     loadLiveCounts();
 
-    // Set up real-time updates for live counts
-    const channel = supabase.channel('admin-live-counts').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'peer_specialists'
-    }, () => loadLiveCounts()).on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'chat_sessions'
-    }, () => loadLiveCounts()).subscribe();
+    // Set up real-time updates for specialist status
+    const channel = supabase
+      .channel('admin-specialist-status')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'specialist_status'
+      }, () => loadLiveCounts())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'peer_specialists'
+      }, () => loadLiveCounts())
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'chat_sessions'
+      }, () => loadLiveCounts())
+      .subscribe();
+      
     return () => {
       supabase.removeChannel(channel);
     };
@@ -380,10 +417,30 @@ const AdminDashboard = ({
                           <UserCheck className="text-accent-foreground w-5 h-5" />
                         </div>
                         <div>
-                          <div className="text-2xl font-bold">{liveSpecialistCount}</div>
-                          <div className="text-xs text-muted-foreground uppercase tracking-wide">Active Specialists</div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-2xl font-bold">{onlineSpecialists.length}</div>
+                            <div className="text-sm text-muted-foreground">/ {liveSpecialistCount}</div>
+                          </div>
+                          <div className="text-xs text-muted-foreground uppercase tracking-wide">Online Specialists</div>
                         </div>
                       </div>
+                      {onlineSpecialists.length > 0 && (
+                        <div className="mt-3 space-y-1">
+                          {onlineSpecialists.slice(0, 3).map((specialist) => (
+                            <div key={specialist.id} className="flex items-center gap-2 text-sm">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-muted-foreground">
+                                {specialist.first_name} {specialist.last_name}
+                              </span>
+                            </div>
+                          ))}
+                          {onlineSpecialists.length > 3 && (
+                            <div className="text-xs text-muted-foreground">
+                              +{onlineSpecialists.length - 3} more online
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
 
