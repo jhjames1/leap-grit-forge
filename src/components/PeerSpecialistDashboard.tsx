@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { RefreshCw, MessageSquare, BarChart3, UserCircle, Activity, Clock, CheckCircle, User, History, TrendingUp, LogOut } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RefreshCw, MessageSquare, BarChart3, UserCircle, Activity, Clock, CheckCircle, User, History, TrendingUp, LogOut, GraduationCap, Calendar } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import RobustSpecialistChatWindow from './RobustSpecialistChatWindow';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
@@ -16,6 +17,7 @@ import PeerPerformanceDashboard from './PeerPerformanceDashboard';
 import SpecialistActivityLog from './SpecialistActivityLog';
 import SpecialistStatusIndicator from './SpecialistStatusIndicator';
 import ChatHistory from './ChatHistory';
+import SpecialistTrainingDashboard from './SpecialistTrainingDashboard';
 import { useProposalNotifications } from '@/hooks/useProposalNotifications';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
@@ -575,162 +577,198 @@ const PeerSpecialistDashboard = () => {
           </Card>
         </div>
 
-        {/* Chat Sessions and Active Chat Session side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Left Column - Chat Sessions */}
-          <Card className="min-h-[600px]">
-            <CardHeader className="p-4 border-b">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Chat Sessions</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Badge variant={realtimeStatus === 'connected' ? 'default' : 'secondary'} className={realtimeStatus === 'connected' ? 'bg-green-600' : ''}>
-                    {realtimeStatus === 'connected' ? 'Connected' : realtimeStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
-                  </Badge>
-                  {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0 flex-1">
-              <ScrollArea className="h-[550px]">
-                <div className="p-3 space-y-2">
-                  {sessions.length === 0 ? (
-                    <Card className="p-4">
-                      <div className="text-center text-muted-foreground">
-                        <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
-                        <p className="text-xs">No active sessions</p>
-                        <p className="text-xs mt-1">Waiting sessions will appear here</p>
-                      </div>
-                    </Card>
-                  ) : (
-                    sessions.map(session => {
-                      const isTimeout = session.end_reason === 'auto_timeout' || session.end_reason === 'inactivity_timeout';
-                      return (
-                        <Card
-                          key={session.id}
-                          className={`cursor-pointer transition-all hover:shadow-md ${
-                            selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''
-                          } ${session.status === 'ended' && isTimeout ? 'bg-destructive/5 border-destructive/20' : ''}`}
-                          onClick={() => setSelectedSession(session)}
-                        >
-                          <CardContent className="p-3">
-                            <div className="flex items-start justify-between mb-1">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <Badge
-                                    variant={
-                                      session.status === 'waiting' 
-                                        ? 'secondary' 
-                                        : session.status === 'active' 
-                                          ? 'default' 
-                                          : isTimeout 
-                                            ? 'destructive'
-                                            : 'outline'
-                                    }
-                                    className={
-                                      session.status === 'waiting' 
-                                        ? 'bg-yellow-100 text-yellow-800' 
-                                        : session.status === 'active' 
-                                          ? 'bg-green-100 text-green-800' 
-                                          : isTimeout
-                                            ? 'bg-red-100 text-red-800'
-                                            : ''
-                                    }
-                                  >
-                                    {session.status === 'waiting' 
-                                      ? 'Waiting' 
-                                      : session.status === 'active' 
-                                        ? 'Active' 
-                                        : isTimeout 
-                                          ? 'Timed Out'
-                                          : 'Ended'
-                                    }
-                                  </Badge>
-                                  <span className="text-sm font-medium">#{session.session_number}</span>
-                                  {isTimeout && (
-                                    <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                                      Auto-ended
-                                    </Badge>
-                                  )}
-                                </div>
-                                
-                                <p className="font-medium text-sm">
-                                  {session.user_first_name && session.user_last_name
-                                    ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.`
-                                    : 'Anonymous User'}
-                                </p>
-                                
-                                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {format(new Date(session.started_at), 'h:mm a')}
-                                  </div>
-                                  {session.status === 'ended' && session.ended_at && (
-                                    <div className="flex items-center gap-1">
-                                      <CheckCircle className="w-3 h-3" />
-                                      Ended {format(new Date(session.ended_at), 'h:mm a')}
-                                      {isTimeout && <span className="text-orange-600 ml-1">(Timeout)</span>}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {session.status === 'waiting' && (
-                              <Button
-                                size="sm"
-                                className="w-full mt-1 h-7 text-xs"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedSession(session);
-                                }}
-                              >
-                                Join Session
-                              </Button>
-                            )}
-                          </CardContent>
-                        </Card>
-                      );
-                    })
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+        {/* Main Tabbed Interface */}
+        <Tabs defaultValue="chat" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Chat Sessions
+            </TabsTrigger>
+            <TabsTrigger value="training" className="flex items-center gap-2">
+              <GraduationCap className="h-4 w-4" />
+              Training
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Calendar
+            </TabsTrigger>
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Right Column - Active Chat Session */}
-          <Card className="min-h-[600px]">
-            <CardHeader className="p-4 border-b">
-              <CardTitle className="text-lg">Active Chat Session</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 flex-1">
-              {selectedSession ? (
-                <RobustSpecialistChatWindow
-                  session={selectedSession}
-                  onClose={() => setSelectedSession(null)}
-                  onSessionUpdate={handleSessionUpdate}
-                />
-              ) : (
-                <div className="flex-1 flex items-center justify-center h-[550px] bg-muted/20">
-                  <div className="text-center text-muted-foreground">
-                    <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <h3 className="text-base font-medium mb-1">No Session Selected</h3>
-                    <p className="text-sm">Select a session to start chatting</p>
+          <TabsContent value="chat" className="space-y-4">
+            {/* Chat Sessions and Active Chat Session side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Left Column - Chat Sessions */}
+              <Card className="min-h-[600px]">
+                <CardHeader className="p-4 border-b">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Chat Sessions</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={realtimeStatus === 'connected' ? 'default' : 'secondary'} className={realtimeStatus === 'connected' ? 'bg-green-600' : ''}>
+                        {realtimeStatus === 'connected' ? 'Connected' : realtimeStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
+                      </Badge>
+                      {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
+                    </div>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                </CardHeader>
+                <CardContent className="p-0 flex-1">
+                  <ScrollArea className="h-[550px]">
+                    <div className="p-3 space-y-2">
+                      {sessions.length === 0 ? (
+                        <Card className="p-4">
+                          <div className="text-center text-muted-foreground">
+                            <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                            <p className="text-xs">No active sessions</p>
+                            <p className="text-xs mt-1">Waiting sessions will appear here</p>
+                          </div>
+                        </Card>
+                      ) : (
+                        sessions.map(session => {
+                          const isTimeout = session.end_reason === 'auto_timeout' || session.end_reason === 'inactivity_timeout';
+                          return (
+                            <Card
+                              key={session.id}
+                              className={`cursor-pointer transition-all hover:shadow-md ${
+                                selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''
+                              } ${session.status === 'ended' && isTimeout ? 'bg-destructive/5 border-destructive/20' : ''}`}
+                              onClick={() => setSelectedSession(session)}
+                            >
+                              <CardContent className="p-3">
+                                <div className="flex items-start justify-between mb-1">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Badge
+                                        variant={
+                                          session.status === 'waiting' 
+                                            ? 'secondary' 
+                                            : session.status === 'active' 
+                                              ? 'default' 
+                                              : isTimeout 
+                                                ? 'destructive'
+                                                : 'outline'
+                                        }
+                                        className={
+                                          session.status === 'waiting' 
+                                            ? 'bg-yellow-100 text-yellow-800' 
+                                            : session.status === 'active' 
+                                              ? 'bg-green-100 text-green-800' 
+                                              : isTimeout
+                                                ? 'bg-red-100 text-red-800'
+                                                : ''
+                                        }
+                                      >
+                                        {session.status === 'waiting' 
+                                          ? 'Waiting' 
+                                          : session.status === 'active' 
+                                            ? 'Active' 
+                                            : isTimeout 
+                                              ? 'Timed Out'
+                                              : 'Ended'
+                                        }
+                                      </Badge>
+                                      <span className="text-sm font-medium">#{session.session_number}</span>
+                                      {isTimeout && (
+                                        <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                          Auto-ended
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    
+                                    <p className="font-medium text-sm">
+                                      {session.user_first_name && session.user_last_name
+                                        ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.`
+                                        : 'Anonymous User'}
+                                    </p>
+                                    
+                                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                      <div className="flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {format(new Date(session.started_at), 'h:mm a')}
+                                      </div>
+                                      {session.status === 'ended' && session.ended_at && (
+                                        <div className="flex items-center gap-1">
+                                          <CheckCircle className="w-3 h-3" />
+                                          Ended {format(new Date(session.ended_at), 'h:mm a')}
+                                          {isTimeout && <span className="text-orange-600 ml-1">(Timeout)</span>}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {session.status === 'waiting' && (
+                                  <Button
+                                    size="sm"
+                                    className="w-full mt-1 h-7 text-xs"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedSession(session);
+                                    }}
+                                  >
+                                    Join Session
+                                  </Button>
+                                )}
+                              </CardContent>
+                            </Card>
+                          );
+                        })
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
 
-        {/* Calendar Section - Full Width */}
-        <Card className="w-full">
-          <CardHeader className="p-4 border-b">
-            <CardTitle className="text-lg">Schedule & Calendar</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4">
-            {specialistId && <EnhancedSpecialistCalendar specialistId={specialistId} />}
-          </CardContent>
-        </Card>
+              {/* Right Column - Active Chat Session */}
+              <Card className="min-h-[600px]">
+                <CardHeader className="p-4 border-b">
+                  <CardTitle className="text-lg">Active Chat Session</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 flex-1">
+                  {selectedSession ? (
+                    <RobustSpecialistChatWindow
+                      session={selectedSession}
+                      onClose={() => setSelectedSession(null)}
+                      onSessionUpdate={handleSessionUpdate}
+                    />
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center h-[550px] bg-muted/20">
+                      <div className="text-center text-muted-foreground">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <h3 className="text-base font-medium mb-1">No Session Selected</h3>
+                        <p className="text-sm">Select a session to start chatting</p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="training" className="space-y-4">
+            {specialistId && <SpecialistTrainingDashboard specialistId={specialistId} />}
+          </TabsContent>
+
+          <TabsContent value="calendar" className="space-y-4">
+            <Card className="w-full">
+              <CardHeader className="p-4 border-b">
+                <CardTitle className="text-lg">Schedule & Calendar</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4">
+                {specialistId && <EnhancedSpecialistCalendar specialistId={specialistId} />}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="overview" className="space-y-4">
+            <div className="space-y-6">
+              {specialistId && <SpecialistPerformanceMetrics specialistId={specialistId} />}
+              <PeerPerformanceDashboard onRefresh={handleRefresh} />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Chat History Modal */}

@@ -194,7 +194,7 @@ export function TestingModeControls({
           </Button>
         </div>
         <CardDescription className="text-xs">
-          Development testing controls and training scenarios
+          Development testing controls and training scenarios (training also available in specialist dashboard)
         </CardDescription>
       </CardHeader>
 
