@@ -7,7 +7,8 @@ import {
   Settings,
   LogOut,
   Activity,
-  History
+  History,
+  BookOpen
 } from 'lucide-react';
 import {
   Sidebar,
@@ -127,6 +128,15 @@ export function SpecialistSidebar({
                 >
                   <Settings className="h-4 w-4" />
                   <span>Settings</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => window.open('/specialist-manual', '_blank')}
+                  className="w-full justify-start text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  <span>User Manual</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
