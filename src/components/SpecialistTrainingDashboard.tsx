@@ -20,7 +20,7 @@ interface ActiveTraining {
 
 const SpecialistTrainingDashboard = ({ specialistId }: SpecialistTrainingDashboardProps) => {
   const [activeTraining, setActiveTraining] = useState<ActiveTraining | null>(null);
-  const { scenarios, progress, summary, loading } = useTrainingScenarios(specialistId);
+  const { scenarios, progress, summary, loading, error } = useTrainingScenarios(specialistId);
 
   const handleTrainingStart = (scenario: any, progressId?: string) => {
     setActiveTraining({ 
@@ -63,6 +63,19 @@ const SpecialistTrainingDashboard = ({ specialistId }: SpecialistTrainingDashboa
           ))}
         </div>
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center text-destructive">
+            <p className="font-medium">Failed to load training data</p>
+            <p className="text-sm text-muted-foreground mt-2">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
