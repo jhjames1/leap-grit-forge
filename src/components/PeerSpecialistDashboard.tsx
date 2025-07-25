@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { RefreshCw, MessageSquare, BarChart3, UserCircle, Activity, Clock, CheckCircle, User, History, TrendingUp, LogOut, GraduationCap, Calendar } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import RobustSpecialistChatWindow from './RobustSpecialistChatWindow';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
 import SpecialistPerformanceMetrics from './SpecialistPerformanceMetrics';
@@ -417,8 +418,9 @@ const PeerSpecialistDashboard = () => {
   }, [error, toast]);
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+    <TooltipProvider>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
         <SpecialistSidebar
           activeSection={activeSection}
           onSectionChange={setActiveSection}
@@ -468,64 +470,92 @@ const PeerSpecialistDashboard = () => {
                   </Card>
                 )}
 
-                {/* Metric Cards */}
+                 {/* Metric Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Active Chats Card */}
-                  <Card className={getActiveChatsCardClass()}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Active Chats</p>
-                          <p className="text-2xl font-bold text-chat-active-foreground">{activeSessions}</p>
-                        </div>
-                        <MessageSquare className="h-8 w-8 text-chat-active-foreground" />
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Card className={getActiveChatsCardClass()}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Active Chats</p>
+                              <p className="text-2xl font-bold text-chat-active-foreground">{activeSessions}</p>
+                            </div>
+                            <MessageSquare className="h-8 w-8 text-chat-active-foreground" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Number of chat sessions you are currently handling</p>
+                    </TooltipContent>
+                  </Tooltip>
 
                   {/* Waiting Chats Card */}
-                  <Card className={getWaitingChatsCardClass()}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Waiting Chats</p>
-                          <p className="text-2xl font-bold text-chat-waiting-foreground">{waitingSessions}</p>
-                          {hasUrgentWaitingSessions() && (
-                            <p className="text-xs text-chat-urgent-foreground font-medium mt-1">
-                              Longest wait: {Math.floor(getWaitTimeSeconds(getLongestWaitingSession()!) / 60)}m {getWaitTimeSeconds(getLongestWaitingSession()!) % 60}s
-                            </p>
-                          )}
-                        </div>
-                        <Clock className={`h-8 w-8 ${hasUrgentWaitingSessions() ? 'text-chat-urgent-foreground' : 'text-chat-waiting-foreground'}`} />
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Card className={getWaitingChatsCardClass()}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Waiting Chats</p>
+                              <p className="text-2xl font-bold text-chat-waiting-foreground">{waitingSessions}</p>
+                              {hasUrgentWaitingSessions() && (
+                                <p className="text-xs text-chat-urgent-foreground font-medium mt-1">
+                                  Longest wait: {Math.floor(getWaitTimeSeconds(getLongestWaitingSession()!) / 60)}m {getWaitTimeSeconds(getLongestWaitingSession()!) % 60}s
+                                </p>
+                              )}
+                            </div>
+                            <Clock className={`h-8 w-8 ${hasUrgentWaitingSessions() ? 'text-chat-urgent-foreground' : 'text-chat-waiting-foreground'}`} />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Users waiting for support. Long waits (45+ seconds) are highlighted in red.</p>
+                    </TooltipContent>
+                  </Tooltip>
 
                   {/* Completed Today Card */}
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Completed Today</p>
-                          <p className="text-2xl font-bold text-blue-600">{completedToday}</p>
-                        </div>
-                        <CheckCircle className="h-8 w-8 text-blue-600" />
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Completed Today</p>
+                              <p className="text-2xl font-bold text-blue-600">{completedToday}</p>
+                            </div>
+                            <CheckCircle className="h-8 w-8 text-blue-600" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Total number of chat sessions completed today</p>
+                    </TooltipContent>
+                  </Tooltip>
 
                   {/* Average Response Time Card */}
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">Ave. Response Time Today</p>
-                          <p className="text-2xl font-bold text-purple-600">{formatResponseTime(avgResponseTime)}</p>
-                        </div>
-                        <TrendingUp className="h-8 w-8 text-purple-600" />
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Ave. Response Time Today</p>
+                              <p className="text-2xl font-bold text-purple-600">{formatResponseTime(avgResponseTime)}</p>
+                            </div>
+                            <TrendingUp className="h-8 w-8 text-purple-600" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Average time to respond to user messages today</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
 
                 {/* Chat Sessions Section */}
@@ -568,36 +598,48 @@ const PeerSpecialistDashboard = () => {
                                   <CardContent className="p-3">
                                     <div className="flex items-start justify-between mb-1">
                                       <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <Badge
-                                            variant={
-                                              session.status === 'waiting' 
-                                                ? 'secondary' 
-                                                : session.status === 'active' 
-                                                  ? 'default' 
-                                                  : isTimeout 
-                                                    ? 'destructive'
-                                                    : 'outline'
-                                            }
-                                            className={
-                                              session.status === 'waiting' 
-                                                ? 'bg-yellow-100 text-yellow-800' 
-                                                : session.status === 'active' 
-                                                  ? 'bg-green-100 text-green-800' 
-                                                  : isTimeout
-                                                    ? 'bg-red-100 text-red-800'
-                                                    : ''
-                                            }
-                                          >
-                                            {session.status === 'waiting' 
-                                              ? 'Waiting' 
-                                              : session.status === 'active' 
-                                                ? 'Active' 
-                                                : isTimeout 
-                                                  ? 'Timed Out'
-                                                  : 'Ended'
-                                            }
-                                          </Badge>
+                                         <div className="flex items-center gap-2 mb-1">
+                                           <Tooltip>
+                                             <TooltipTrigger asChild>
+                                               <Badge
+                                                 variant={
+                                                   session.status === 'waiting' 
+                                                     ? 'secondary' 
+                                                     : session.status === 'active' 
+                                                       ? 'default' 
+                                                       : isTimeout 
+                                                         ? 'destructive'
+                                                         : 'outline'
+                                                 }
+                                                 className={
+                                                   session.status === 'waiting' 
+                                                     ? 'bg-yellow-100 text-yellow-800' 
+                                                     : session.status === 'active' 
+                                                       ? 'bg-green-100 text-green-800' 
+                                                       : isTimeout
+                                                         ? 'bg-red-100 text-red-800'
+                                                         : ''
+                                                 }
+                                               >
+                                                 {session.status === 'waiting' 
+                                                   ? 'Waiting' 
+                                                   : session.status === 'active' 
+                                                     ? 'Active' 
+                                                     : isTimeout 
+                                                       ? 'Timed Out'
+                                                       : 'Ended'
+                                                 }
+                                               </Badge>
+                                             </TooltipTrigger>
+                                             <TooltipContent>
+                                               <p>
+                                                 {session.status === 'waiting' && 'User is waiting for a specialist to join'}
+                                                 {session.status === 'active' && 'You are currently chatting with this user'}
+                                                 {session.status === 'ended' && isTimeout && 'Session ended automatically due to inactivity'}
+                                                 {session.status === 'ended' && !isTimeout && 'Session was manually ended'}
+                                               </p>
+                                             </TooltipContent>
+                                           </Tooltip>
                                           <span className="text-sm font-medium">#{session.session_number}</span>
                                           {isTimeout && (
                                             <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
@@ -761,8 +803,9 @@ const PeerSpecialistDashboard = () => {
             </Card>
           </div>
         )}
-      </div>
-    </SidebarProvider>
+        </div>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 };
 
