@@ -19,12 +19,14 @@ import {
 } from 'lucide-react';
 import { testingMode } from '@/utils/testingMode';
 import DemoUserChat from '@/components/DemoUserChat';
+import DemoTrainingSimulation from '@/components/DemoTrainingSimulation';
 
 const InteractiveDemo = () => {
   const [currentSection, setCurrentSection] = useState<'landing' | 'user-journey' | 'specialist-portal' | 'corporate-benefits'>('landing');
   const [userProgress, setUserProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDemoChat, setShowDemoChat] = useState(false);
+  const [showTrainingSimulation, setShowTrainingSimulation] = useState(false);
 
   useEffect(() => {
     // Enable testing mode for demo
@@ -394,7 +396,11 @@ const InteractiveDemo = () => {
             <p className="text-muted-foreground mb-4">
               Interactive training scenarios prepare specialists for various situations.
             </p>
-            <Button variant="outline" className="w-full">
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setShowTrainingSimulation(true)}
+            >
               Launch Training Simulation
             </Button>
           </CardContent>
@@ -614,6 +620,12 @@ const InteractiveDemo = () => {
         {currentSection === 'user-journey' && renderUserJourney()}
         {currentSection === 'specialist-portal' && renderSpecialistPortal()}
         {currentSection === 'corporate-benefits' && renderCorporateBenefits()}
+
+        {/* Training Simulation Modal */}
+        <DemoTrainingSimulation 
+          isVisible={showTrainingSimulation}
+          onClose={() => setShowTrainingSimulation(false)}
+        />
       </div>
     </div>
   );
