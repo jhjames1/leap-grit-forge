@@ -64,6 +64,8 @@ const PeerSpecialistManual = () => {
     { id: 'how-view-metrics', title: 'How do I view my performance metrics?', section: 'performance', type: 'quick-action' },
     { id: 'how-reset-password', title: 'How do I reset my password?', section: 'authentication', type: 'quick-action' },
     { id: 'how-update-profile', title: 'How do I update my profile?', section: 'settings', type: 'quick-action' },
+    { id: 'how-initiate-phone-call', title: 'How do I initiate a phone call with a user?', section: 'communication', type: 'quick-action' },
+    { id: 'how-phone-call-requests-work', title: 'How do phone call requests work?', section: 'communication', type: 'quick-action' },
     
     // FAQ Items
     { id: 'connection-issues', title: 'What should I do if I have connection issues?', section: 'troubleshooting', type: 'faq' },
@@ -1157,14 +1159,14 @@ const CommunicationSection = () => (
           <div className="border rounded-lg p-4">
             <div className="flex items-center gap-3 mb-3">
               <Phone className="w-6 h-6 text-purple-500" />
-              <h4 className="font-medium">Voice Calls</h4>
+              <h4 className="font-medium">Phone Prompt Feature</h4>
             </div>
             <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Traditional phone support</li>
-              <li>• Crisis intervention line</li>
-              <li>• Conference calling</li>
-              <li>• Call recording available</li>
-              <li>• International support</li>
+              <li>• Secure phone call requests from chat</li>
+              <li>• Token-based call routing</li>
+              <li>• 5-minute user response window</li>
+              <li>• Privacy-protected phone numbers</li>
+              <li>• Automated request logging</li>
             </ul>
           </div>
           
@@ -1220,6 +1222,65 @@ const CommunicationSection = () => (
               <li>• Keep personal information private</li>
               <li>• Follow ethical guidelines</li>
               <li>• Know when to escalate</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Phone Prompt Feature</h3>
+        <div className="space-y-4">
+          <p className="text-muted-foreground">
+            The phone prompt feature allows you to initiate secure voice calls with users directly from the chat interface when deeper conversation is needed.
+          </p>
+          
+          <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg">
+            <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-3">
+              <Phone className="w-4 h-4 inline mr-1" />
+              How to Use Phone Prompts
+            </h4>
+            <ol className="text-sm text-purple-800 dark:text-purple-200 space-y-2">
+              <li><strong>1.</strong> During an active chat session, click the phone icon in the chat interface</li>
+              <li><strong>2.</strong> System validates that both you and the user have phone numbers configured</li>
+              <li><strong>3.</strong> User receives a notification with 5 minutes to accept or decline the call</li>
+              <li><strong>4.</strong> If accepted, both parties are connected via secure token-based routing</li>
+              <li><strong>5.</strong> All phone requests are automatically logged for supervision</li>
+            </ol>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="border rounded-lg p-4">
+              <h4 className="font-medium mb-2">When to Use Phone Calls</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Crisis situations requiring immediate voice support</li>
+                <li>• Complex emotional processing</li>
+                <li>• Building rapport when chat feels insufficient</li>
+                <li>• User specifically requests phone conversation</li>
+                <li>• Technical issues with chat interface</li>
+              </ul>
+            </div>
+            
+            <div className="border rounded-lg p-4">
+              <h4 className="font-medium mb-2">Privacy & Security</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Phone numbers are never exposed to either party</li>
+                <li>• Calls use secure token-based routing</li>
+                <li>• All requests logged with timestamps</li>
+                <li>• Standard confidentiality protocols apply</li>
+                <li>• Automatic request cleanup after 24 hours</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-l-4 border-yellow-500 pl-4">
+            <h4 className="font-medium text-yellow-800 dark:text-yellow-200">
+              Important Notes
+            </h4>
+            <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1 mt-2">
+              <li>• Users have 5 minutes to respond to phone call requests</li>
+              <li>• Declined or expired requests are automatically documented</li>
+              <li>• Phone calls should complement, not replace, chat support</li>
+              <li>• Follow your organization's phone call protocols and guidelines</li>
             </ul>
           </div>
         </div>
@@ -2072,6 +2133,28 @@ const FAQSection = () => (
             <p className="text-sm text-muted-foreground">
               A: The system prevents double-booking automatically. If conflicts arise, you can reschedule 
               appointments, block time for administrative tasks, or adjust your availability in the calendar settings.
+            </p>
+          </div>
+          
+          <div className="border rounded-lg p-4">
+            <h4 className="font-medium text-purple-700 dark:text-purple-300 mb-2">
+              Q: How do phone call requests work?
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              A: Click the phone icon during a chat session to send a secure call request. Users have 5 minutes 
+              to accept or decline. Calls are routed securely without exposing phone numbers. All requests are 
+              automatically logged for supervision.
+            </p>
+          </div>
+          
+          <div className="border rounded-lg p-4">
+            <h4 className="font-medium text-purple-700 dark:text-purple-300 mb-2">
+              Q: What happens when I request a phone call?
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              A: The system validates both parties have phone numbers, sends a notification to the user, 
+              and waits for their response. If accepted, you'll both receive calls that connect you securely. 
+              If declined or expired, it's documented in the session notes.
             </p>
           </div>
         </div>
