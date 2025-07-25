@@ -38,6 +38,293 @@ const PeerSpecialistManual = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadPDF = () => {
+    // Create a new window with print-optimized content
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>LEAP Specialist Training Manual</title>
+          <meta charset="utf-8">
+          <style>
+            @page { 
+              margin: 1in; 
+              @bottom-center { 
+                content: "Page " counter(page) " of " counter(pages); 
+              }
+            }
+            body { 
+              font-family: system-ui, -apple-system, sans-serif; 
+              line-height: 1.6; 
+              color: #333; 
+              max-width: none; 
+            }
+            h1, h2, h3, h4 { 
+              color: #2563eb; 
+              page-break-after: avoid; 
+            }
+            h1 { 
+              font-size: 24px; 
+              border-bottom: 2px solid #2563eb; 
+              padding-bottom: 8px; 
+            }
+            h2 { 
+              font-size: 20px; 
+              margin-top: 24px; 
+            }
+            h3 { 
+              font-size: 16px; 
+              margin-top: 20px; 
+            }
+            .section { 
+              page-break-before: always; 
+              margin-bottom: 24px; 
+            }
+            .section:first-child { 
+              page-break-before: avoid; 
+            }
+            ul, ol { 
+              margin: 12px 0; 
+              padding-left: 24px; 
+            }
+            .highlight-box { 
+              border: 1px solid #e5e7eb; 
+              border-radius: 4px; 
+              padding: 16px; 
+              margin: 16px 0; 
+              background: #f9fafb; 
+            }
+            .warning { 
+              border-left: 4px solid #f59e0b; 
+              background: #fffbeb; 
+            }
+            .info { 
+              border-left: 4px solid #3b82f6; 
+              background: #eff6ff; 
+            }
+            .success { 
+              border-left: 4px solid #10b981; 
+              background: #ecfdf5; 
+            }
+            .toc { 
+              page-break-after: always; 
+            }
+            .toc ul { 
+              list-style: none; 
+              padding-left: 0; 
+            }
+            .toc li { 
+              margin: 8px 0; 
+              padding: 4px 0; 
+            }
+            .footer { 
+              margin-top: 40px; 
+              padding-top: 20px; 
+              border-top: 1px solid #e5e7eb; 
+              font-size: 12px; 
+              color: #6b7280; 
+            }
+          </style>
+        </head>
+        <body>
+          <h1>LEAP Peer Specialist Training Manual</h1>
+          <p><em>Complete guide to using the LEAP Specialist Portal</em></p>
+          
+          <div class="toc">
+            <h2>Table of Contents</h2>
+            <ul>
+              <li>1. Overview</li>
+              <li>2. Authentication & Access</li>
+              <li>3. Dashboard</li>
+              <li>4. Chat Sessions</li>
+              <li>5. Calendar & Scheduling</li>
+              <li>6. Training & Development</li>
+              <li>7. Performance Metrics</li>
+              <li>8. Communication Tools</li>
+              <li>9. Settings & Preferences</li>
+              <li>10. Troubleshooting</li>
+              <li>11. Best Practices</li>
+              <li>12. Frequently Asked Questions</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h2>1. Overview</h2>
+            <h3>What is the Specialist Portal?</h3>
+            <p>The LEAP Specialist Portal is a comprehensive platform designed to help peer specialists provide effective support through chat sessions, appointment scheduling, and continuous training.</p>
+            
+            <h3>Key Features</h3>
+            <ul>
+              <li><strong>Real-time Chat:</strong> Instant messaging with users seeking support</li>
+              <li><strong>Appointment Scheduling:</strong> Schedule and manage ongoing appointments</li>
+              <li><strong>Training Modules:</strong> Continuous learning and skill development</li>
+              <li><strong>Performance Analytics:</strong> Track your impact and improvement</li>
+            </ul>
+
+            <h3>Getting Started Checklist</h3>
+            <ul>
+              <li>Complete account verification</li>
+              <li>Set up your profile and availability</li>
+              <li>Complete required training modules</li>
+              <li>Familiarize yourself with the chat interface</li>
+              <li>Review best practices and guidelines</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h2>2. Authentication & Access</h2>
+            <h3>Accessing the Portal</h3>
+            <div class="highlight-box info">
+              <h4>Portal URL</h4>
+              <code>https://your-domain.com/specialist</code>
+            </div>
+
+            <h3>Login Process</h3>
+            <ol>
+              <li>Navigate to the specialist portal URL</li>
+              <li>Enter your email address and password</li>
+              <li>Complete verification if required</li>
+              <li>Wait for account verification check</li>
+              <li>Access the dashboard upon successful login</li>
+            </ol>
+
+            <h3>Password Requirements</h3>
+            <ul>
+              <li>Minimum 8 characters long</li>
+              <li>Include uppercase and lowercase letters</li>
+              <li>Include at least one number</li>
+              <li>Include at least one special character</li>
+            </ul>
+
+            <div class="highlight-box warning">
+              <h4>Security Notice</h4>
+              <p>Never share your login credentials. Contact support immediately if you suspect unauthorized access to your account.</p>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>3. Communication Tools</h2>
+            <h3>Phone Prompt Feature</h3>
+            <p>The phone prompt feature allows you to initiate secure voice calls with users directly from the chat interface when deeper conversation is needed.</p>
+
+            <h3>How to Use Phone Prompts</h3>
+            <ol>
+              <li>During an active chat session, click the phone icon in the chat interface</li>
+              <li>System validates that both you and the user have phone numbers configured</li>
+              <li>User receives a notification with 5 minutes to accept or decline the call</li>
+              <li>If accepted, both parties are connected via secure token-based routing</li>
+              <li>All phone requests are automatically logged for supervision</li>
+            </ol>
+
+            <h3>When to Use Phone Calls</h3>
+            <ul>
+              <li>Crisis situations requiring immediate voice support</li>
+              <li>Complex emotional processing</li>
+              <li>Building rapport when chat feels insufficient</li>
+              <li>User specifically requests phone conversation</li>
+              <li>Technical issues with chat interface</li>
+            </ul>
+
+            <h3>Privacy & Security</h3>
+            <ul>
+              <li>Phone numbers are never exposed to either party</li>
+              <li>Calls use secure token-based routing</li>
+              <li>All requests logged with timestamps</li>
+              <li>Standard confidentiality protocols apply</li>
+              <li>Automatic request cleanup after 24 hours</li>
+            </ul>
+
+            <div class="highlight-box warning">
+              <h4>Important Notes</h4>
+              <ul>
+                <li>Users have 5 minutes to respond to phone call requests</li>
+                <li>Declined or expired requests are automatically documented</li>
+                <li>Phone calls should complement, not replace, chat support</li>
+                <li>Follow your organization's phone call protocols and guidelines</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>4. Best Practices</h2>
+            <h3>Core Peer Support Principles</h3>
+            <ul>
+              <li><strong>Shared Experience:</strong> Draw from your own recovery journey</li>
+              <li><strong>Hope and Recovery:</strong> Believe in others' potential for growth</li>
+              <li><strong>Self-Determination:</strong> Support individual choice and autonomy</li>
+              <li><strong>Strengths-Based:</strong> Focus on abilities rather than deficits</li>
+            </ul>
+
+            <h3>Communication Guidelines</h3>
+            <ul>
+              <li>Use person-first language</li>
+              <li>Practice active listening</li>
+              <li>Maintain appropriate boundaries</li>
+              <li>Respect confidentiality at all times</li>
+            </ul>
+
+            <h3>Crisis Response</h3>
+            <div class="highlight-box warning">
+              <h4>Emergency Protocols</h4>
+              <ul>
+                <li>Assess immediate safety concerns</li>
+                <li>Contact supervisor or emergency services if needed</li>
+                <li>Document all crisis interventions</li>
+                <li>Follow up according to organization protocols</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>5. Frequently Asked Questions</h2>
+            
+            <h3>Getting Started</h3>
+            <p><strong>Q: How do I access the specialist portal?</strong><br>
+            A: Navigate to your organization's specialist portal URL and log in with your verified credentials.</p>
+
+            <p><strong>Q: How do phone call requests work?</strong><br>
+            A: Click the phone icon during a chat session to send a secure call request. Users have 5 minutes to accept or decline. Calls are routed securely without exposing phone numbers.</p>
+
+            <p><strong>Q: What happens when I request a phone call?</strong><br>
+            A: The system validates both parties have phone numbers, sends a notification to the user, and waits for their response. If accepted, you'll both receive calls that connect you securely.</p>
+
+            <h3>Technical Issues</h3>
+            <p><strong>Q: What should I do if I have connection issues?</strong><br>
+            A: Check your internet connection, refresh the browser, and ensure WebSocket support is enabled. Contact technical support if issues persist.</p>
+
+            <p><strong>Q: Why did my session timeout?</strong><br>
+            A: Sessions timeout after periods of inactivity for security reasons. You'll receive warnings before timeout occurs.</p>
+
+            <h3>Professional Support</h3>
+            <p><strong>Q: When should I contact my supervisor?</strong><br>
+            A: Contact your supervisor for crisis situations, ethical concerns, complex cases requiring consultation, or when you need additional support or guidance.</p>
+          </div>
+
+          <div class="footer">
+            <p>LEAP Specialist Training Manual - Generated on ${new Date().toLocaleDateString()}</p>
+            <p>For technical support: support@leap-platform.com | Phone: 1-800-LEAP-HELP</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Wait for content to load, then trigger print
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  };
+
   const sections = [
     { id: 'overview', title: 'Overview', icon: BookOpen },
     { id: 'authentication', title: 'Authentication', icon: LogIn },
@@ -119,11 +406,11 @@ const PeerSpecialistManual = () => {
               Search Manual
               <CommandShortcut>⌘K</CommandShortcut>
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleDownloadPDF}>
               <Download className="w-4 h-4 mr-2" />
               Download PDF
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handlePrint}>
               <FileText className="w-4 h-4 mr-2" />
               Print Version
             </Button>
