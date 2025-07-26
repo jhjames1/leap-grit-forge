@@ -108,7 +108,7 @@ const InteractiveDemo = () => {
           <span className="font-fjalla font-extrabold italic text-primary"> DEMO</span>
         </h1>
         <p className="text-xl text-muted-foreground mb-6 max-w-2xl mx-auto">
-          Experience how LEAP transforms workplace mental health through peer support
+          Experience how LEAP transforms workplace wellness through peer support
         </p>
         <div className="flex justify-center gap-4">
           <Button 
@@ -531,7 +531,7 @@ const InteractiveDemo = () => {
             <div className="text-center">
               <div className="text-3xl font-bold text-primary">60%</div>
               <div className="text-sm text-muted-foreground">Reduction in Claims</div>
-              <div className="text-xs text-muted-foreground mt-1">Mental health related</div>
+              <div className="text-xs text-muted-foreground mt-1">Wellness related</div>
             </div>
           </div>
         </CardContent>
