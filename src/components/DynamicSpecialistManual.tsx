@@ -5,12 +5,42 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RealScreenshotGallery } from '@/components/RealScreenshotGallery';
-import { AlertCircle, BookOpen, Download, FileText, Search, Camera } from 'lucide-react';
+import { AlertCircle, BookOpen, Download, FileText, Search, Camera, Loader2 } from 'lucide-react';
 import { useManualContent } from '@/hooks/useManualContent';
+import { PDFGenerator } from '@/utils/pdfGenerator';
+import { useToast } from '@/hooks/use-toast';
 
 const DynamicSpecialistManual = () => {
   const { sections, content, loading, error } = useManualContent();
   const [activeSection, setActiveSection] = useState('overview');
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const { toast } = useToast();
+
+  const handleDownloadPDF = async () => {
+    try {
+      setIsGeneratingPDF(true);
+      toast({
+        title: "Generating PDF",
+        description: "Creating comprehensive manual with screenshots...",
+      });
+
+      await PDFGenerator.generateManualPDF(sections, content, true);
+      
+      toast({
+        title: "PDF Ready",
+        description: "Your manual PDF is ready for download",
+      });
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      toast({
+        title: "PDF Generation Failed",
+        description: "Unable to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -61,9 +91,18 @@ const DynamicSpecialistManual = () => {
               <Search className="w-4 h-4 mr-2" />
               Search Manual
             </Button>
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Download PDF
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPDF}
+            >
+              {isGeneratingPDF ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
             </Button>
             <Button variant="outline" size="sm">
               <FileText className="w-4 h-4 mr-2" />
