@@ -72,6 +72,7 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
 
   useEffect(() => {
     if (specialist) {
+      console.log('Loading specialist data in settings:', specialist);
       setFormData({
         first_name: specialist.first_name || '',
         last_name: specialist.last_name || '',
@@ -200,10 +201,16 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
   const handleSave = async () => {
     if (!user || !specialist) return;
 
+    console.log('Saving specialist settings:', {
+      formData,
+      notificationSettings,
+      specialistId: specialist.id
+    });
+
     setLoading(true);
     try {
       // Update specialist profile
-      const { error: profileError } = await supabase
+      const { data: updatedProfile, error: profileError } = await supabase
         .from('peer_specialists')
         .update({
           first_name: formData.first_name,
@@ -212,12 +219,15 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
           specialties: formData.specialties,
           updated_at: new Date().toISOString()
         })
-        .eq('id', specialist.id);
+        .eq('id', specialist.id)
+        .select()
+        .single();
 
       if (profileError) throw profileError;
+      console.log('Profile updated successfully:', updatedProfile);
 
       // Update specialist status with proper upsert
-      const { error: statusError } = await supabase
+      const { data: updatedStatus, error: statusError } = await supabase
         .from('specialist_status')
         .upsert({
           specialist_id: specialist.id,
@@ -226,9 +236,12 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'specialist_id'
-        });
+        })
+        .select()
+        .single();
 
       if (statusError) throw statusError;
+      console.log('Status updated successfully:', updatedStatus);
 
       // Update notification settings with proper upsert and conflict handling
       const { data: existingSettings, error: fetchError } = await supabase
@@ -280,22 +293,45 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
         if (insertError) throw insertError;
       }
 
-      // Update local state
+      // Update local state with the actual database response
       const updatedSpecialist = {
         ...specialist,
-        ...formData,
-        status: {
-          status: formData.status,
-          status_message: formData.status_message,
-          last_active: new Date().toISOString()
-        }
+        ...updatedProfile,
+        status: updatedStatus
       };
+      
+      console.log('Calling onUpdateSpecialist with:', updatedSpecialist);
       onUpdateSpecialist(updatedSpecialist);
 
       toast({
         title: "Settings Updated",
         description: "Your profile, status, and notification settings have been saved successfully."
       });
+
+      // Log the successful save operation
+      await supabase
+        .from('user_activity_logs')
+        .insert({
+          user_id: user.id,
+          action: 'settings_updated',
+          type: 'profile_management',
+          details: JSON.stringify({
+            timestamp: new Date().toISOString(),
+            changes: {
+              profile: {
+                first_name: formData.first_name,
+                last_name: formData.last_name,
+                bio: formData.bio,
+                specialties: formData.specialties
+              },
+              status: {
+                status: formData.status,
+                status_message: formData.status_message
+              },
+              notifications: notificationSettings
+            }
+          })
+        });
 
     } catch (error) {
       console.error('Error updating settings:', error);

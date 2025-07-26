@@ -150,12 +150,42 @@ const PeerSpecialistDashboard = () => {
       try {
         const { data, error } = await supabase
           .from('peer_specialists')
-          .select('id, first_name, last_name, specialties, years_experience')
+          .select(`
+            id, 
+            first_name, 
+            last_name, 
+            bio,
+            specialties, 
+            years_experience,
+            avatar_url,
+            is_active,
+            is_verified
+          `)
           .eq('user_id', user.id)
           .single();
         if (error) throw error;
+        
+        // Also fetch current status
+        const { data: statusData } = await supabase
+          .from('specialist_status')
+          .select('status, status_message, last_seen, updated_at')
+          .eq('specialist_id', data.id)
+          .single();
+        
+        const fullProfile = {
+          ...data,
+          status: statusData || {
+            status: 'offline',
+            status_message: '',
+            last_seen: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        };
+        
         setSpecialistId(data.id);
-        setSpecialistProfile(data);
+        setSpecialistProfile(fullProfile);
+        
+        logger.debug('Loaded specialist profile with status:', fullProfile);
       } catch (err) {
         logger.error('Failed to get specialist profile:', err);
       }
@@ -760,14 +790,23 @@ const PeerSpecialistDashboard = () => {
         </Dialog>
 
         {/* Settings Modal */}
-        <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Specialist Profile</DialogTitle>
-            </DialogHeader>
-            {specialistId && <SpecialistSettings isOpen={true} onClose={() => setShowSettingsModal(false)} specialist={{ id: specialistId } as any} onUpdateSpecialist={() => {}} />}
-          </DialogContent>
-        </Dialog>
+        {specialistProfile && (
+          <SpecialistSettings 
+            isOpen={showSettingsModal} 
+            onClose={() => setShowSettingsModal(false)} 
+            specialist={specialistProfile} 
+            onUpdateSpecialist={(updatedSpecialist) => {
+              logger.debug('Specialist profile updated in settings:', updatedSpecialist);
+              setSpecialistProfile(updatedSpecialist);
+              // Refresh data to ensure UI is synchronized
+              loadTodayStats();
+              toast({
+                title: "Profile Updated",
+                description: "Your specialist profile has been updated successfully."
+              });
+            }}
+          />
+        )}
 
         {/* Chat History Modal */}
         {specialistId && (
