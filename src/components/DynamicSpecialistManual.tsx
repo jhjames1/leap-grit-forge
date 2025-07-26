@@ -4,10 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ScreenshotGallery } from '@/components/ui/screenshot-gallery';
+import { RealScreenshotGallery } from '@/components/RealScreenshotGallery';
 import { AlertCircle, BookOpen, Download, FileText, Search, Camera } from 'lucide-react';
 import { useManualContent } from '@/hooks/useManualContent';
-import { specialistManualScreenshots } from '@/data/specialistManualScreenshots';
 
 const DynamicSpecialistManual = () => {
   const { sections, content, loading, error } = useManualContent();
@@ -160,10 +159,8 @@ const DynamicSpecialistManual = () => {
                         <div className="text-sm text-muted-foreground mb-4">
                           Visual guides and screenshots to help you navigate the specialist portal effectively.
                         </div>
-                        <ScreenshotGallery 
-                          screenshots={specialistManualScreenshots.filter(s => 
-                            s.section === activeSection || activeSection === 'overview'
-                          )}
+                        <RealScreenshotGallery 
+                          section={activeSection === 'overview' ? undefined : activeSection}
                           columns={2}
                           maxHeight="550px"
                           showCategories={true}

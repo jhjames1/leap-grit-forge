@@ -84,13 +84,36 @@ export class ScreenshotCaptureService {
 
       const { data, error } = await supabase
         .from('app_screenshots')
-        .insert([screenshot])
+        .insert([{
+          title,
+          description,
+          route,
+          image_url: imageUrl,
+          category,
+          device_type: screenshot.deviceType,
+          section,
+          tags,
+          captured_at: screenshot.capturedAt,
+          is_active: true
+        }])
         .select()
         .single();
 
       if (error) throw error;
 
-      return data;
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        route: data.route,
+        imageUrl: data.image_url,
+        category: data.category,
+        deviceType: data.device_type,
+        section: data.section,
+        tags: data.tags || [],
+        capturedAt: data.captured_at,
+        isActive: data.is_active
+      } as AppScreenshot;
     } catch (error) {
       console.error('Failed to capture screenshot:', error);
       throw error;
@@ -128,8 +151,8 @@ export class ScreenshotCaptureService {
     let query = supabase
       .from('app_screenshots')
       .select('*')
-      .eq('isActive', true)
-      .order('capturedAt', { ascending: false });
+      .eq('is_active', true)
+      .order('captured_at', { ascending: false });
 
     if (section) {
       query = query.eq('section', section);
@@ -138,13 +161,26 @@ export class ScreenshotCaptureService {
     const { data, error } = await query;
     if (error) throw error;
     
-    return data || [];
+    // Transform database format to interface format
+    return (data || []).map(item => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      route: item.route,
+      imageUrl: item.image_url,
+      category: item.category,
+      deviceType: item.device_type as 'desktop' | 'mobile' | 'tablet',
+      section: item.section,
+      tags: item.tags || [],
+      capturedAt: item.captured_at,
+      isActive: item.is_active
+    }));
   }
 
   static async deleteScreenshot(id: string): Promise<void> {
     const { error } = await supabase
       .from('app_screenshots')
-      .update({ isActive: false })
+      .update({ is_active: false })
       .eq('id', id);
 
     if (error) throw error;

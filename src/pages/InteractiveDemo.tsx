@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScreenshotGallery } from '@/components/ui/screenshot-gallery';
+import { RealScreenshotGallery } from '@/components/RealScreenshotGallery';
 import { 
   Play, 
   Users, 
@@ -23,6 +23,7 @@ import { testingMode } from '@/utils/testingMode';
 import DemoUserChat from '@/components/DemoUserChat';
 import DemoTrainingSimulation from '@/components/DemoTrainingSimulation';
 import { demoScreenshots } from '@/data/demoScreenshots';
+import { ScreenshotManager } from '@/components/ScreenshotManager';
 
 const InteractiveDemo = () => {
   const [currentSection, setCurrentSection] = useState<'landing' | 'user-journey' | 'specialist-portal' | 'corporate-benefits'>('landing');
@@ -30,6 +31,7 @@ const InteractiveDemo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDemoChat, setShowDemoChat] = useState(false);
   const [showTrainingSimulation, setShowTrainingSimulation] = useState(false);
+  const [showScreenshotManager, setShowScreenshotManager] = useState(false);
 
   useEffect(() => {
     // Enable testing mode for demo
@@ -119,7 +121,21 @@ const InteractiveDemo = () => {
           >
             View Corporate Benefits
           </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowScreenshotManager(true)}
+            className="flex items-center gap-2"
+          >
+            <Camera size={16} />
+            Manage Screenshots
+          </Button>
         </div>
+        
+        <ScreenshotManager 
+          isOpen={showScreenshotManager}
+          onClose={() => setShowScreenshotManager(false)}
+        />
       </div>
 
       {/* Key Statistics */}
@@ -321,8 +337,8 @@ const InteractiveDemo = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScreenshotGallery 
-            screenshots={demoScreenshots.filter(s => s.section === 'user-journey')}
+          <RealScreenshotGallery 
+            section="user-journey"
             columns={2}
             maxHeight="500px"
           />
@@ -461,8 +477,8 @@ const InteractiveDemo = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScreenshotGallery 
-            screenshots={demoScreenshots.filter(s => s.section === 'specialist-portal')}
+          <RealScreenshotGallery 
+            section="specialist-portal"
             columns={2}
             maxHeight="500px"
           />
@@ -623,8 +639,8 @@ const InteractiveDemo = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScreenshotGallery 
-            screenshots={demoScreenshots.filter(s => s.section === 'corporate-benefits')}
+          <RealScreenshotGallery 
+            section="corporate-benefits"
             columns={2}
             maxHeight="400px"
           />

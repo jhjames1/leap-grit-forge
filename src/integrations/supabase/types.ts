@@ -83,6 +83,54 @@ export type Database = {
         }
         Relationships: []
       }
+      app_screenshots: {
+        Row: {
+          captured_at: string
+          category: string
+          created_at: string
+          description: string | null
+          device_type: string
+          id: string
+          image_url: string
+          is_active: boolean
+          route: string
+          section: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          captured_at?: string
+          category: string
+          created_at?: string
+          description?: string | null
+          device_type: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          route: string
+          section: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          captured_at?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          device_type?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          route?: string
+          section?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       appointment_proposals: {
         Row: {
           appointment_type_id: string
