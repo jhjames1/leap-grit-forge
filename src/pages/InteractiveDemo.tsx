@@ -127,6 +127,20 @@ const InteractiveDemo = () => {
         </div>
       </div>
 
+      {/* Platform Overview */}
+      <Card className="bg-gradient-to-r from-primary/5 to-secondary/5 border-primary/20">
+        <CardContent className="p-8">
+          <p className="text-lg leading-relaxed text-foreground">
+            The LEAP Platform is a comprehensive digital wellness solution designed specifically for workplace recovery and peer support. 
+            It connects employees struggling with addiction, mental health challenges, or life transitions to trained peer specialists 
+            through secure chat and scheduled appointments. The platform features AI-guided personalized recovery journeys, real-time 
+            specialist analytics, corporate wellness dashboards, and robust training modules for peer specialists. With enterprise-grade 
+            security, HIPAA compliance, and complete anonymity protection, LEAP empowers organizations to provide culturally competent, 
+            measurable wellness support that reduces costs while improving employee outcomes and workplace safety.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Key Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
