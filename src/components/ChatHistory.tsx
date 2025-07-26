@@ -220,10 +220,11 @@ const ChatHistory = ({ isOpen, onClose, specialistId }: ChatHistoryProps) => {
             </div>
 
             {/* Session Details */}
-            <div className="w-1/2 flex flex-col">
+            <div className="w-1/2 flex flex-col overflow-hidden">
               {selectedSession ? (
-                <div className="p-4 flex-1">
-                  <div className="mb-4">
+                <div className="flex flex-col h-full overflow-hidden">
+                  {/* Session Info Header - Fixed height */}
+                  <div className="p-4 border-b flex-shrink-0">
                     <h3 className="text-lg font-semibold mb-2">
                       Session #{selectedSession.session_number}
                     </h3>
@@ -264,39 +265,43 @@ const ChatHistory = ({ isOpen, onClose, specialistId }: ChatHistoryProps) => {
                     </div>
                   </div>
                   
-                  {/* Messages */}
-                  <div className="flex-1 overflow-hidden">
-                    <h4 className="font-medium mb-3 text-sm">Message History ({messages.length} messages)</h4>
-                    {loadingMessages ? (
-                      <div className="text-center text-muted-foreground py-4">
-                        Loading messages...
-                      </div>
-                    ) : messages.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-4">
-                        <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No messages found</p>
-                      </div>
-                    ) : (
-                      <ScrollArea className="h-full">
-                        <div className="space-y-3 pr-2">
-                          {messages.map((message) => (
-                            <div key={message.id} className="text-sm">
-                              <div className="flex items-start gap-2">
-                                <Badge variant={message.sender_type === 'specialist' ? 'default' : 'secondary'} className="text-xs">
-                                  {message.sender_type === 'specialist' ? 'You' : 'User'}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {format(new Date(message.created_at), 'HH:mm')}
-                                </span>
-                              </div>
-                              <div className="mt-1 p-2 rounded bg-muted/50 text-sm">
-                                {message.content}
-                              </div>
-                            </div>
-                          ))}
+                  {/* Messages - Scrollable area */}
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="p-4 pb-2 flex-shrink-0">
+                      <h4 className="font-medium text-sm">Message History ({messages.length} messages)</h4>
+                    </div>
+                    <div className="flex-1 overflow-hidden px-4 pb-4">
+                      {loadingMessages ? (
+                        <div className="text-center text-muted-foreground py-4">
+                          Loading messages...
                         </div>
-                      </ScrollArea>
-                    )}
+                      ) : messages.length === 0 ? (
+                        <div className="text-center text-muted-foreground py-4">
+                          <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No messages found</p>
+                        </div>
+                      ) : (
+                        <ScrollArea className="h-full">
+                          <div className="space-y-3 pr-2">
+                            {messages.map((message) => (
+                              <div key={message.id} className="text-sm">
+                                <div className="flex items-start gap-2">
+                                  <Badge variant={message.sender_type === 'specialist' ? 'default' : 'secondary'} className="text-xs">
+                                    {message.sender_type === 'specialist' ? 'You' : 'User'}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {format(new Date(message.created_at), 'HH:mm')}
+                                  </span>
+                                </div>
+                                <div className="mt-1 p-2 rounded bg-muted/50 text-sm">
+                                  {message.content}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (
