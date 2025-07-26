@@ -4,8 +4,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, BookOpen, Download, FileText, Search } from 'lucide-react';
+import { ScreenshotGallery } from '@/components/ui/screenshot-gallery';
+import { AlertCircle, BookOpen, Download, FileText, Search, Camera } from 'lucide-react';
 import { useManualContent } from '@/hooks/useManualContent';
+import { specialistManualScreenshots } from '@/data/specialistManualScreenshots';
 
 const DynamicSpecialistManual = () => {
   const { sections, content, loading, error } = useManualContent();
@@ -114,29 +116,63 @@ const DynamicSpecialistManual = () => {
                 )}
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[600px] pr-4">
-                  {sectionContent.length > 0 ? (
-                    <div className="space-y-6">
-                      {sectionContent.map((item) => (
-                        <div key={item.id} className="prose max-w-none">
-                          <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
-                          <div 
-                            className="text-muted-foreground"
-                            dangerouslySetInnerHTML={{ __html: item.content }}
-                          />
+                <Tabs defaultValue="content" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="content" className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4" />
+                      Content
+                    </TabsTrigger>
+                    <TabsTrigger value="screenshots" className="flex items-center gap-2">
+                      <Camera className="w-4 h-4" />
+                      Screenshots
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="content" className="mt-4">
+                    <ScrollArea className="h-[600px] pr-4">
+                      {sectionContent.length > 0 ? (
+                        <div className="space-y-6">
+                          {sectionContent.map((item) => (
+                            <div key={item.id} className="prose max-w-none">
+                              <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+                              <div 
+                                className="text-muted-foreground"
+                                dangerouslySetInnerHTML={{ __html: item.content }}
+                              />
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Content Coming Soon</h3>
-                      <p className="text-muted-foreground">
-                        This section is being automatically updated. Content will appear here once available.
-                      </p>
-                    </div>
-                  )}
-                </ScrollArea>
+                      ) : (
+                        <div className="text-center py-12">
+                          <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold mb-2">Content Coming Soon</h3>
+                          <p className="text-muted-foreground">
+                            This section is being automatically updated. Content will appear here once available.
+                          </p>
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </TabsContent>
+                  
+                  <TabsContent value="screenshots" className="mt-4">
+                    <ScrollArea className="h-[600px] pr-4">
+                      <div className="space-y-4">
+                        <div className="text-sm text-muted-foreground mb-4">
+                          Visual guides and screenshots to help you navigate the specialist portal effectively.
+                        </div>
+                        <ScreenshotGallery 
+                          screenshots={specialistManualScreenshots.filter(s => 
+                            s.section === activeSection || activeSection === 'overview'
+                          )}
+                          columns={2}
+                          maxHeight="550px"
+                          showCategories={true}
+                          showDeviceIcons={true}
+                        />
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>

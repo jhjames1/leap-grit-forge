@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ScreenshotGallery } from '@/components/ui/screenshot-gallery';
 import { 
   Play, 
   Users, 
@@ -15,11 +16,13 @@ import {
   ChevronRight,
   CheckCircle2,
   Star,
-  ArrowRight
+  ArrowRight,
+  Camera
 } from 'lucide-react';
 import { testingMode } from '@/utils/testingMode';
 import DemoUserChat from '@/components/DemoUserChat';
 import DemoTrainingSimulation from '@/components/DemoTrainingSimulation';
+import { demoScreenshots } from '@/data/demoScreenshots';
 
 const InteractiveDemo = () => {
   const [currentSection, setCurrentSection] = useState<'landing' | 'user-journey' | 'specialist-portal' | 'corporate-benefits'>('landing');
@@ -309,6 +312,23 @@ const InteractiveDemo = () => {
         </Card>
       </div>
 
+      {/* User Journey Screenshots */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Camera className="w-5 h-5" />
+            User Experience Screenshots
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScreenshotGallery 
+            screenshots={demoScreenshots.filter(s => s.section === 'user-journey')}
+            columns={2}
+            maxHeight="500px"
+          />
+        </CardContent>
+      </Card>
+
       <div className="text-center">
         <Button 
           onClick={() => setCurrentSection('specialist-portal')}
@@ -431,6 +451,23 @@ const InteractiveDemo = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Specialist Portal Screenshots */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Camera className="w-5 h-5" />
+            Specialist Portal Screenshots
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScreenshotGallery 
+            screenshots={demoScreenshots.filter(s => s.section === 'specialist-portal')}
+            columns={2}
+            maxHeight="500px"
+          />
+        </CardContent>
+      </Card>
 
       <div className="text-center">
         <Button 
@@ -574,6 +611,23 @@ const InteractiveDemo = () => {
               Download ROI Report
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Corporate Screenshots */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Camera className="w-5 h-5" />
+            Corporate Dashboard Screenshots
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScreenshotGallery 
+            screenshots={demoScreenshots.filter(s => s.section === 'corporate-benefits')}
+            columns={2}
+            maxHeight="400px"
+          />
         </CardContent>
       </Card>
     </div>
