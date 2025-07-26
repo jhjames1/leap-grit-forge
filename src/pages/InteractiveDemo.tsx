@@ -24,8 +24,10 @@ import DemoUserChat from '@/components/DemoUserChat';
 import DemoTrainingSimulation from '@/components/DemoTrainingSimulation';
 import { demoScreenshots } from '@/data/demoScreenshots';
 import { ScreenshotManager } from '@/components/ScreenshotManager';
+import SplashScreen from '@/components/SplashScreen';
 
 const InteractiveDemo = () => {
+  const [showSplash, setShowSplash] = useState(true);
   const [currentSection, setCurrentSection] = useState<'landing' | 'user-journey' | 'specialist-portal' | 'corporate-benefits'>('landing');
   const [userProgress, setUserProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -648,6 +650,10 @@ const InteractiveDemo = () => {
       </Card>
     </div>
   );
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
