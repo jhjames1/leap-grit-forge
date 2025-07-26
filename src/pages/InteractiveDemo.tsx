@@ -29,7 +29,7 @@ import { DemoConocoPortal } from '@/components/DemoConocoPortal';
 
 const InteractiveDemo = () => {
   const [showSplash, setShowSplash] = useState(true);
-  const [currentSection, setCurrentSection] = useState<'landing' | 'user-journey' | 'specialist-portal' | 'corporate-benefits' | 'white-label-demo'>('landing');
+  const [currentSection, setCurrentSection] = useState<'landing' | 'user-journey' | 'specialist-portal' | 'white-label-demo'>('landing');
   const [userProgress, setUserProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDemoChat, setShowDemoChat] = useState(false);
@@ -120,9 +120,9 @@ const InteractiveDemo = () => {
           <Button 
             variant="outline" 
             size="lg"
-            onClick={() => setCurrentSection('corporate-benefits')}
+            onClick={() => setCurrentSection('white-label-demo')}
           >
-            View Corporate Benefits
+            View White Label Demo
           </Button>
         </div>
       </div>
@@ -436,151 +436,16 @@ const InteractiveDemo = () => {
 
       <div className="text-center">
         <Button 
-          onClick={() => setCurrentSection('corporate-benefits')}
+          onClick={() => setCurrentSection('white-label-demo')}
           className="flex items-center gap-2"
         >
-          View Corporate Benefits
+          View White Label Demo
           <ArrowRight size={16} />
         </Button>
       </div>
     </div>
   );
 
-  const renderCorporateBenefits = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Corporate Benefits & ROI</h2>
-        <Button variant="outline" onClick={() => setCurrentSection('landing')}>
-          Back to Overview
-        </Button>
-      </div>
-
-      {/* ROI Calculator */}
-      <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
-        <CardHeader>
-          <CardTitle>ROI Calculator</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">$2.8M</div>
-              <div className="text-sm text-muted-foreground">Annual Savings</div>
-              <div className="text-xs text-muted-foreground mt-1">Based on 1000 employees</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">340%</div>
-              <div className="text-sm text-muted-foreground">ROI</div>
-              <div className="text-xs text-muted-foreground mt-1">First year implementation</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">60%</div>
-              <div className="text-sm text-muted-foreground">Reduction in Claims</div>
-              <div className="text-xs text-muted-foreground mt-1">Wellness related</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Implementation Benefits */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Immediate Benefits</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              <li className="flex items-center gap-3">
-                <CheckCircle2 className="text-green-500" size={16} />
-                <span>24/7 employee support coverage</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <CheckCircle2 className="text-green-500" size={16} />
-                <span>Reduced crisis intervention costs</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <CheckCircle2 className="text-green-500" size={16} />
-                <span>Improved workplace safety metrics</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <CheckCircle2 className="text-green-500" size={16} />
-                <span>Enhanced employee retention</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Long-term Impact</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
-              <li className="flex items-center gap-3">
-                <TrendingUp className="text-blue-500" size={16} />
-                <span>Sustainable culture change</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <TrendingUp className="text-blue-500" size={16} />
-                <span>Reduced absenteeism by 35%</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <TrendingUp className="text-blue-500" size={16} />
-                <span>Improved productivity metrics</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <TrendingUp className="text-blue-500" size={16} />
-                <span>Lower insurance premiums</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Implementation Timeline */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Implementation Timeline</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Badge>Week 1-2</Badge>
-              <span>Initial setup and specialist recruitment</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <Badge>Week 3-4</Badge>
-              <span>Training program and system integration</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <Badge>Week 5-6</Badge>
-              <span>Pilot program with select departments</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <Badge className="bg-green-500">Week 7+</Badge>
-              <span>Full organizational rollout</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Call to Action */}
-      <Card className="bg-primary text-primary-foreground">
-        <CardContent className="p-6 text-center">
-          <h3 className="text-xl font-bold mb-4">Ready to Transform Your Workplace?</h3>
-          <p className="mb-6">Schedule a consultation to discuss implementation for your organization</p>
-          <div className="flex justify-center gap-4">
-            <Button variant="secondary" size="lg">
-              Schedule Consultation
-            </Button>
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
-              Download ROI Report
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-    </div>
-  );
 
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
@@ -614,13 +479,6 @@ const InteractiveDemo = () => {
             </button>
             <ChevronRight size={16} />
             <button 
-              onClick={() => setCurrentSection('corporate-benefits')}
-              className={`hover:text-foreground ${currentSection === 'corporate-benefits' ? 'text-foreground font-semibold' : ''}`}
-            >
-              Corporate Benefits
-            </button>
-            <ChevronRight size={16} />
-            <button 
               onClick={() => setCurrentSection('white-label-demo')}
               className={`hover:text-foreground ${currentSection === 'white-label-demo' ? 'text-foreground font-semibold' : ''}`}
             >
@@ -633,7 +491,6 @@ const InteractiveDemo = () => {
         {currentSection === 'landing' && renderLandingSection()}
         {currentSection === 'user-journey' && renderUserJourney()}
         {currentSection === 'specialist-portal' && renderSpecialistPortal()}
-        {currentSection === 'corporate-benefits' && renderCorporateBenefits()}
         {currentSection === 'white-label-demo' && (
           <DemoConocoPortal onBack={() => setCurrentSection('landing')} />
         )}
