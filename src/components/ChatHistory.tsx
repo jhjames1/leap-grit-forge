@@ -37,6 +37,8 @@ const ChatHistory = ({ isOpen, onClose, specialistId }: ChatHistoryProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const { toast } = useToast();
 
   const loadChatHistory = async () => {
@@ -123,8 +125,10 @@ const ChatHistory = ({ isOpen, onClose, specialistId }: ChatHistoryProps) => {
 
   const handleSessionClick = async (session: ChatSession) => {
     setSelectedSession(session);
-    const messages = await loadSessionMessages(session.id);
-    // You could store messages in state or show them in a separate view
+    setLoadingMessages(true);
+    const sessionMessages = await loadSessionMessages(session.id);
+    setMessages(sessionMessages);
+    setLoadingMessages(false);
   };
 
   return (
@@ -260,10 +264,39 @@ const ChatHistory = ({ isOpen, onClose, specialistId }: ChatHistoryProps) => {
                     </div>
                   </div>
                   
-                  <div className="text-center text-muted-foreground py-8">
-                    <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Message history details</p>
-                    <p className="text-xs mt-1">Feature coming soon</p>
+                  {/* Messages */}
+                  <div className="flex-1 overflow-hidden">
+                    <h4 className="font-medium mb-3 text-sm">Message History ({messages.length} messages)</h4>
+                    {loadingMessages ? (
+                      <div className="text-center text-muted-foreground py-4">
+                        Loading messages...
+                      </div>
+                    ) : messages.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-4">
+                        <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No messages found</p>
+                      </div>
+                    ) : (
+                      <ScrollArea className="h-full">
+                        <div className="space-y-3 pr-2">
+                          {messages.map((message) => (
+                            <div key={message.id} className="text-sm">
+                              <div className="flex items-start gap-2">
+                                <Badge variant={message.sender_type === 'specialist' ? 'default' : 'secondary'} className="text-xs">
+                                  {message.sender_type === 'specialist' ? 'You' : 'User'}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(message.created_at), 'HH:mm')}
+                                </span>
+                              </div>
+                              <div className="mt-1 p-2 rounded bg-muted/50 text-sm">
+                                {message.content}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
                   </div>
                 </div>
               ) : (
