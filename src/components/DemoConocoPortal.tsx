@@ -180,7 +180,7 @@ export function DemoConocoPortal({ onBack }: DemoConocoPortalProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <img 
-                src="/lovable-uploads/conoco-logo.png" 
+                src="/lovable-uploads/6f20bf7a-2728-4c31-b889-6754478892ba.png" 
                 alt="ConocoPhillips" 
                 className="h-8"
                 onError={(e) => {
