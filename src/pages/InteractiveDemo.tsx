@@ -25,10 +25,11 @@ import DemoTrainingSimulation from '@/components/DemoTrainingSimulation';
 import { demoScreenshots } from '@/data/demoScreenshots';
 import { ScreenshotManager } from '@/components/ScreenshotManager';
 import SplashScreen from '@/components/SplashScreen';
+import { DemoConocoPortal } from '@/components/DemoConocoPortal';
 
 const InteractiveDemo = () => {
   const [showSplash, setShowSplash] = useState(true);
-  const [currentSection, setCurrentSection] = useState<'landing' | 'user-journey' | 'specialist-portal' | 'corporate-benefits'>('landing');
+  const [currentSection, setCurrentSection] = useState<'landing' | 'user-journey' | 'specialist-portal' | 'corporate-benefits' | 'white-label-demo'>('landing');
   const [userProgress, setUserProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDemoChat, setShowDemoChat] = useState(false);
@@ -688,6 +689,13 @@ const InteractiveDemo = () => {
             >
               Corporate Benefits
             </button>
+            <ChevronRight size={16} />
+            <button 
+              onClick={() => setCurrentSection('white-label-demo')}
+              className={`hover:text-foreground ${currentSection === 'white-label-demo' ? 'text-foreground font-semibold' : ''}`}
+            >
+              White Label Demo
+            </button>
           </nav>
         </div>
 
@@ -696,6 +704,9 @@ const InteractiveDemo = () => {
         {currentSection === 'user-journey' && renderUserJourney()}
         {currentSection === 'specialist-portal' && renderSpecialistPortal()}
         {currentSection === 'corporate-benefits' && renderCorporateBenefits()}
+        {currentSection === 'white-label-demo' && (
+          <DemoConocoPortal onBack={() => setCurrentSection('landing')} />
+        )}
 
         {/* Training Simulation Modal */}
         <DemoTrainingSimulation 
