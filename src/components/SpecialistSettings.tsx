@@ -216,7 +216,7 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
 
       if (profileError) throw profileError;
 
-      // Update specialist status
+      // Update specialist status with proper upsert
       const { error: statusError } = await supabase
         .from('specialist_status')
         .upsert({
@@ -224,25 +224,61 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
           status: formData.status,
           status_message: formData.status_message,
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'specialist_id'
         });
 
       if (statusError) throw statusError;
 
-      // Update notification settings
-      const { error: notificationError } = await supabase
+      // Update notification settings with proper upsert and conflict handling
+      const { data: existingSettings, error: fetchError } = await supabase
         .from('specialist_calendar_settings')
-        .upsert({
-          specialist_id: specialist.id,
-          notification_preferences: {
-            app: true,
-            email: true,
-            sms: false,
-            audioNotifications: notificationSettings.audioNotifications,
-            audioNotificationVolume: notificationSettings.audioNotificationVolume
-          }
-        });
+        .select('*')
+        .eq('specialist_id', specialist.id)
+        .maybeSingle();
 
-      if (notificationError) throw notificationError;
+      if (fetchError) throw fetchError;
+
+      const updatedNotificationPrefs = {
+        ...((existingSettings?.notification_preferences as any) || {}),
+        audioNotifications: notificationSettings.audioNotifications,
+        audioNotificationVolume: notificationSettings.audioNotificationVolume,
+        app: true,
+        email: true,
+        sms: false
+      };
+
+      if (existingSettings) {
+        // Update existing settings
+        const { error: updateError } = await supabase
+          .from('specialist_calendar_settings')
+          .update({
+            notification_preferences: updatedNotificationPrefs,
+            updated_at: new Date().toISOString()
+          })
+          .eq('specialist_id', specialist.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Insert new settings
+        const { error: insertError } = await supabase
+          .from('specialist_calendar_settings')
+          .insert({
+            specialist_id: specialist.id,
+            notification_preferences: updatedNotificationPrefs,
+            working_hours: {
+              monday: { enabled: true, start: '09:00', end: '17:00' },
+              tuesday: { enabled: true, start: '09:00', end: '17:00' },
+              wednesday: { enabled: true, start: '09:00', end: '17:00' },
+              thursday: { enabled: true, start: '09:00', end: '17:00' },
+              friday: { enabled: true, start: '09:00', end: '17:00' },
+              saturday: { enabled: false, start: '09:00', end: '17:00' },
+              sunday: { enabled: false, start: '09:00', end: '17:00' }
+            }
+          });
+
+        if (insertError) throw insertError;
+      }
 
       // Update local state
       const updatedSpecialist = {
@@ -258,14 +294,14 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
 
       toast({
         title: "Settings Updated",
-        description: "Your profile and status have been updated successfully."
+        description: "Your profile, status, and notification settings have been saved successfully."
       });
 
     } catch (error) {
       console.error('Error updating settings:', error);
       toast({
         title: "Error",
-        description: "Failed to update settings. Please try again.",
+        description: `Failed to update settings: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
     } finally {
