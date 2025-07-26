@@ -426,6 +426,122 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_change_tracking: {
+        Row: {
+          affected_sections: string[] | null
+          auto_updated: boolean | null
+          change_description: string | null
+          change_type: string
+          created_at: string | null
+          file_path: string
+          id: string
+          requires_review: boolean | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+        }
+        Insert: {
+          affected_sections?: string[] | null
+          auto_updated?: boolean | null
+          change_description?: string | null
+          change_type: string
+          created_at?: string | null
+          file_path: string
+          id?: string
+          requires_review?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+        }
+        Update: {
+          affected_sections?: string[] | null
+          auto_updated?: boolean | null
+          change_description?: string | null
+          change_type?: string
+          created_at?: string | null
+          file_path?: string
+          id?: string
+          requires_review?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+        }
+        Relationships: []
+      }
+      manual_content: {
+        Row: {
+          content: string
+          content_type: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          order_index: number
+          section_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          content_type?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          order_index: number
+          section_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          content_type?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          order_index?: number
+          section_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_content_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "manual_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manual_sections: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          order_index: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          order_index: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          order_index?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       peer_checkins: {
         Row: {
           completed_at: string | null
