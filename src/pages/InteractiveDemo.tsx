@@ -198,28 +198,6 @@ const InteractiveDemo = () => {
         ))}
       </div>
 
-      {/* Testimonials */}
-      <div className="bg-muted/50 rounded-lg p-6">
-        <h3 className="text-xl font-bold mb-6 text-center">What Our Corporate Partners Say</h3>
-        <div className="grid md:grid-cols-2 gap-6">
-          {testimonials.map((testimonial, index) => (
-            <Card key={index} className="bg-background">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-1 mb-3">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="fill-yellow-400 text-yellow-400" size={16} />
-                  ))}
-                </div>
-                <p className="text-muted-foreground mb-4 italic">"{testimonial.quote}"</p>
-                <div>
-                  <div className="font-semibold">{testimonial.name}</div>
-                  <div className="text-sm text-muted-foreground">{testimonial.company}</div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
     </div>
   );
 
