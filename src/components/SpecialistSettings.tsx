@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -18,11 +19,13 @@ import {
   X,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  Volume2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { audioNotification } from '@/utils/audioNotification';
 
 interface SpecialistSettingsProps {
   isOpen: boolean;
@@ -53,6 +56,11 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
     status_message: ''
   });
 
+  const [notificationSettings, setNotificationSettings] = useState({
+    audioNotifications: false,
+    audioNotificationVolume: 0.3
+  });
+
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -72,8 +80,35 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
         status: specialist.status?.status || 'offline',
         status_message: specialist.status?.status_message || ''
       });
+      
+      // Load notification settings
+      loadNotificationSettings();
     }
   }, [specialist]);
+
+  const loadNotificationSettings = async () => {
+    if (!specialist?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('specialist_calendar_settings')
+        .select('notification_preferences')
+        .eq('specialist_id', specialist.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      
+      if (data?.notification_preferences) {
+        const prefs = data.notification_preferences as any;
+        setNotificationSettings({
+          audioNotifications: prefs.audioNotifications || false,
+          audioNotificationVolume: prefs.audioNotificationVolume || 0.3
+        });
+      }
+    } catch (error) {
+      console.error('Error loading notification settings:', error);
+    }
+  };
 
   const validatePassword = (password: string) => {
     if (password.length < 8) return 'Password must be at least 8 characters long';
@@ -193,6 +228,22 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
 
       if (statusError) throw statusError;
 
+      // Update notification settings
+      const { error: notificationError } = await supabase
+        .from('specialist_calendar_settings')
+        .upsert({
+          specialist_id: specialist.id,
+          notification_preferences: {
+            app: true,
+            email: true,
+            sms: false,
+            audioNotifications: notificationSettings.audioNotifications,
+            audioNotificationVolume: notificationSettings.audioNotificationVolume
+          }
+        });
+
+      if (notificationError) throw notificationError;
+
       // Update local state
       const updatedSpecialist = {
         ...specialist,
@@ -219,6 +270,22 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const testAudioNotification = () => {
+    try {
+      audioNotification.playTwoToneNotification();
+      toast({
+        title: "Audio Test",
+        description: "Test notification played successfully!"
+      });
+    } catch (error) {
+      toast({
+        title: "Audio Test Failed",
+        description: "Could not play audio. Please check your browser settings.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -458,6 +525,57 @@ const SpecialistSettings: React.FC<SpecialistSettingsProps> = ({
                 </div>
               </Card>
             )}
+          </div>
+
+          {/* Audio Notifications */}
+          <div className="space-y-4">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Volume2 size={18} />
+              Audio Notifications
+            </h3>
+            
+            <Card className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="audio-notifications">Enable Audio Notifications</Label>
+                  <p className="text-sm text-muted-foreground">Play sound when new chat sessions arrive</p>
+                </div>
+                <Switch
+                  id="audio-notifications"
+                  checked={notificationSettings.audioNotifications}
+                  onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, audioNotifications: checked }))}
+                />
+              </div>
+              
+              {notificationSettings.audioNotifications && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Notification Volume</Label>
+                    <div className="px-2">
+                      <Slider
+                        value={[notificationSettings.audioNotificationVolume]}
+                        onValueChange={(value) => setNotificationSettings(prev => ({ ...prev, audioNotificationVolume: value[0] }))}
+                        max={1}
+                        min={0}
+                        step={0.1}
+                        className="w-full"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Volume: {Math.round(notificationSettings.audioNotificationVolume * 100)}%
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={testAudioNotification}
+                  >
+                    Test Audio Notification
+                  </Button>
+                </>
+              )}
+            </Card>
           </div>
 
           {/* Specialties */}

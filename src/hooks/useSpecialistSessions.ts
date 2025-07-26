@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
 import { realtimeService, RealtimeEventHandler } from '@/services/realtimeService';
+import { useAudioNotifications } from '@/hooks/useAudioNotifications';
 
 interface ChatSession {
   id: string;
@@ -31,6 +32,7 @@ interface UseSpecialistSessionsReturn {
 
 export const useSpecialistSessions = (specialistId: string | null): UseSpecialistSessionsReturn => {
   const { user } = useAuth();
+  const { playNewSessionNotification } = useAudioNotifications(specialistId);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -158,6 +160,8 @@ export const useSpecialistSessions = (specialistId: string | null): UseSpecialis
           const exists = prevSessions.find(s => s.id === newSession.id);
           if (!exists) {
             logger.debug('🟢 SPECIALIST: Adding new waiting session to list:', sessionWithProfile.id);
+            // Play audio notification for new waiting session
+            playNewSessionNotification();
             return [sessionWithProfile, ...prevSessions];
           }
           return prevSessions;
