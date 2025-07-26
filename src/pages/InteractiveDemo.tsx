@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RealScreenshotGallery } from '@/components/RealScreenshotGallery';
+
 import { 
   Play, 
   Users, 
@@ -24,8 +24,6 @@ import {
 import { testingMode } from '@/utils/testingMode';
 import DemoUserChat from '@/components/DemoUserChat';
 import DemoTrainingSimulation from '@/components/DemoTrainingSimulation';
-import { demoScreenshots } from '@/data/demoScreenshots';
-import { ScreenshotManager } from '@/components/ScreenshotManager';
 import SplashScreen from '@/components/SplashScreen';
 import { DemoConocoPortal } from '@/components/DemoConocoPortal';
 
@@ -36,7 +34,7 @@ const InteractiveDemo = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDemoChat, setShowDemoChat] = useState(false);
   const [showTrainingSimulation, setShowTrainingSimulation] = useState(false);
-  const [showScreenshotManager, setShowScreenshotManager] = useState(false);
+  
 
   useEffect(() => {
     // Enable testing mode for demo
@@ -126,21 +124,7 @@ const InteractiveDemo = () => {
           >
             View Corporate Benefits
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setShowScreenshotManager(true)}
-            className="flex items-center gap-2"
-          >
-            <Camera size={16} />
-            Manage Screenshots
-          </Button>
         </div>
-        
-        <ScreenshotManager 
-          isOpen={showScreenshotManager}
-          onClose={() => setShowScreenshotManager(false)}
-        />
       </div>
 
       {/* Key Statistics */}
@@ -311,22 +295,6 @@ const InteractiveDemo = () => {
         </Card>
       </div>
 
-      {/* User Journey Screenshots */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Camera className="w-5 h-5" />
-            User Experience Screenshots
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RealScreenshotGallery 
-            section="user-journey"
-            columns={2}
-            maxHeight="500px"
-          />
-        </CardContent>
-      </Card>
 
       <div className="text-center">
         <Button 
@@ -451,22 +419,6 @@ const InteractiveDemo = () => {
         </Card>
       </div>
 
-      {/* Specialist Portal Screenshots */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Camera className="w-5 h-5" />
-            Specialist Portal Screenshots
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RealScreenshotGallery 
-            section="specialist-portal"
-            columns={2}
-            maxHeight="500px"
-          />
-        </CardContent>
-      </Card>
 
       <div className="text-center">
         <Button 
@@ -613,22 +565,6 @@ const InteractiveDemo = () => {
         </CardContent>
       </Card>
 
-      {/* Corporate Screenshots */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Camera className="w-5 h-5" />
-            Corporate Dashboard Screenshots
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RealScreenshotGallery 
-            section="corporate-benefits"
-            columns={2}
-            maxHeight="400px"
-          />
-        </CardContent>
-      </Card>
     </div>
   );
 
