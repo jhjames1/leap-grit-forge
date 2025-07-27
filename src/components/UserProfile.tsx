@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, Edit, Bell, Calendar, Phone, BookOpen, LogOut, Shield, UserCheck, Check, Trash2, MoreVertical } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -382,19 +383,102 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
               </h1>
               <p className="text-muted-foreground font-oswald">{t('profile.subtitle')}</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentView('notification-center')}
-              className="relative"
-            >
-              <Bell className="w-4 h-4" />
-              {unreadCount > 0 && (
-                <Badge variant="destructive" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs min-w-5 h-5 flex items-center justify-center">
-                  {unreadCount}
-                </Badge>
-              )}
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="relative"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <Badge variant="destructive" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs min-w-5 h-5 flex items-center justify-center">
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <div className="flex items-center justify-between">
+                    <DialogTitle>{t('notifications.title') || 'Notifications'}</DialogTitle>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical size={16} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem 
+                          onClick={markAllAsRead}
+                          disabled={unreadCount === 0}
+                        >
+                          <Check className="mr-2 h-4 w-4" />
+                          {t('notifications.markAllRead') || 'Mark all as read'}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={clearAll}
+                          disabled={notifications.length === 0}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {t('notifications.clearAll') || 'Clear all'}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </DialogHeader>
+                
+                <div className="max-h-96 overflow-y-auto space-y-3">
+                  {notificationsLoading ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      {t('common.loading') || 'Loading...'}
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Bell className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                      <p>{t('notifications.empty') || 'No notifications yet'}</p>
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`p-3 rounded-lg border transition-colors ${
+                          notification.is_read 
+                            ? 'bg-muted/30 border-border' 
+                            : 'bg-primary/5 border-primary/20'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3 flex-1">
+                            <span className="text-lg">{getNotificationIcon(notification.notification_type)}</span>
+                            <div className="flex-1 min-w-0">
+                              <h3 className={`font-medium ${notification.is_read ? 'text-muted-foreground' : 'text-foreground'}`}>
+                                {notification.title}
+                              </h3>
+                              <p className={`text-sm mt-1 ${notification.is_read ? 'text-muted-foreground/70' : 'text-muted-foreground'}`}>
+                                {notification.body}
+                              </p>
+                              <p className="text-xs text-muted-foreground/50 mt-2">
+                                {formatTimeAgo(notification.created_at)}
+                              </p>
+                            </div>
+                          </div>
+                          {!notification.is_read && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => markAsRead(notification.id)}
+                            >
+                              {t('notifications.markRead') || 'Mark read'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
