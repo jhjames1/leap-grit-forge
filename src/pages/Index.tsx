@@ -149,7 +149,7 @@ const Index = () => {
   const renderActivePage = () => {
     switch (currentPage) {
       case 'home':
-        return <DashboardHome onNavigate={handleNavigation} />;
+        return <DashboardHome activeTab={activeTab} onTabChange={setActiveTab} />;
       case 'journey':
         return <RecoveryJourney onNavigateToHome={handleBackToHome} />;
       case 'toolbox':
@@ -165,7 +165,7 @@ const Index = () => {
       case 'foreman':
         return <ForemanChat onBack={handleBackToHome} onNavigate={handleNavigation} />;
       default:
-        return <DashboardHome onNavigate={handleNavigation} />;
+        return <DashboardHome activeTab={activeTab} onTabChange={setActiveTab} />;
     }
   };
 

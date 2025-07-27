@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { SafeToastProvider } from './components/SafeToastProvider';
 import { AppUpdateNotification } from './components/AppUpdateNotification';
-import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 import { AppHeader } from './components/AppHeader';
 import Index from './pages/Index';
 import AdminPortal from './pages/AdminPortal';
@@ -15,7 +15,7 @@ import SpecialistManual from './pages/SpecialistManual';
 import InteractiveDemo from './pages/InteractiveDemo';
 import NotFound from './pages/NotFound';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { OfflineIndicator } from './components/OfflineIndicator';
+import OfflineIndicator from './components/OfflineIndicator';
 import { ThemeToggle } from './components/ThemeToggle';
 import './App.css';
 

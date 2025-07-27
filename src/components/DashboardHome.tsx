@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Target, Wrench, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface DashboardHomeProps {
   activeTab: string;
@@ -10,7 +10,7 @@ interface DashboardHomeProps {
 
 const DashboardHome = ({ activeTab, onTabChange }: DashboardHomeProps) => {
   const { t } = useLanguage();
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const [currentDay, setCurrentDay] = useState(1);
   const [currentStreak, setCurrentStreak] = useState(7);
   const [strength, setStrength] = useState(82);
@@ -35,7 +35,7 @@ const DashboardHome = ({ activeTab, onTabChange }: DashboardHomeProps) => {
       {/* Header and Welcome Section */}
       <div className="px-4 py-6">
         <h1 className="text-2xl font-oswald font-bold text-construction">
-          {t('home.welcome')}, {currentUser?.firstName || t('home.defaultWelcome')}
+          {t('home.welcome')}, {currentUser?.user_metadata?.first_name || t('home.defaultWelcome')}
         </h1>
         <p className="text-steel-light mt-2">
           {t('home.journeyContinues')}
