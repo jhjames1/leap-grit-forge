@@ -400,8 +400,8 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
               </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <div className="flex items-center justify-between">
-                    <DialogTitle>{t('notifications.title') || 'Notifications'}</DialogTitle>
+                  <div className="flex items-center justify-between pr-8">
+                    <DialogTitle>{t('notifications.notification') || 'Notifications'}</DialogTitle>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
