@@ -34,15 +34,11 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const { notifications, unreadCount, loading: notificationsLoading, markAsRead, markAllAsRead, clearAll } = useNotifications();
 
   // Play notification sound when new unread notifications arrive
-  const [previousUnreadCount, setPreviousUnreadCount] = useState(0);
-  
   useEffect(() => {
-    // Only play sound if unread count increases (new notifications)
-    if (unreadCount > previousUnreadCount && previousUnreadCount >= 0) {
+    if (unreadCount > 0) {
       audioNotification.playTwoToneNotification();
     }
-    setPreviousUnreadCount(unreadCount);
-  }, [unreadCount, previousUnreadCount]);
+  }, [unreadCount]);
 
   const handleSignOut = async () => {
     await signOut();
