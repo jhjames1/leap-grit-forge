@@ -11,6 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { supabase } from '@/integrations/supabase/client';
+import { audioNotification } from '@/utils/audioNotification';
 import { trackingManager } from '@/utils/trackingManager';
 import EditProfile from './EditProfile';
 import NotificationSettings from './NotificationSettings';
@@ -31,6 +32,13 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const { userData } = useUserData();
   const { signOut, user: authUser } = useAuth();
   const { notifications, unreadCount, loading: notificationsLoading, markAsRead, markAllAsRead, clearAll } = useNotifications();
+
+  // Play notification sound when new unread notifications arrive
+  useEffect(() => {
+    if (unreadCount > 0) {
+      audioNotification.playTwoToneNotification();
+    }
+  }, [unreadCount]);
 
   const handleSignOut = async () => {
     await signOut();
