@@ -413,15 +413,15 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
                           onClick={markAllAsRead}
                           disabled={unreadCount === 0}
                         >
-                          <Check className="mr-2 h-4 w-4" />
-                          {t('notifications.markAllRead') || 'Mark all as read'}
+                           <Check className="mr-2 h-4 w-4" />
+                           Mark All As Read
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={clearAll}
                           disabled={notifications.length === 0}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          {t('notifications.clearAll') || 'Clear all'}
+                           <Trash2 className="mr-2 h-4 w-4" />
+                           Clear All
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
