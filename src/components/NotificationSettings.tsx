@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Bell, Clock, Flame, MessageSquare, Calendar, Smartphone, TestTube } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Flame, MessageSquare, Calendar, TestTube } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { pushNotificationService } from '@/services/pushNotificationService';
 import { toast } from '@/hooks/use-toast';
@@ -19,7 +19,6 @@ interface NotificationPreferences {
   streakAlerts: boolean;
   weeklyCheckIn: boolean;
   pushNotifications: boolean;
-  smsNotifications: boolean;
 }
 
 const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
@@ -29,8 +28,7 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
     motivationTime: '08:00',
     streakAlerts: true,
     weeklyCheckIn: true,
-    pushNotifications: true,
-    smsNotifications: false
+    pushNotifications: true
   });
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -259,21 +257,6 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
                 </div>
               )}
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-primary p-2 rounded-sm">
-                    <Smartphone className="text-primary-foreground" size={16} />
-                  </div>
-                  <div>
-                    <Label className="text-card-foreground font-medium">{t('notifications.smsNotifications')}</Label>
-                    <p className="text-muted-foreground text-sm">{t('notifications.smsNotificationsDesc')}</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={preferences.smsNotifications}
-                  onCheckedChange={(checked) => updatePreference('smsNotifications', checked)}
-                />
-              </div>
             </div>
           </Card>
 
