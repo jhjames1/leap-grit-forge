@@ -16,6 +16,7 @@ import EditProfile from './EditProfile';
 import NotificationSettings from './NotificationSettings';
 import { SavedWisdom } from './SavedWisdom';
 import { getEarnedBadges } from '@/utils/badgeUtils';
+import { DemoNotificationGenerator } from './DemoNotificationGenerator';
 
 interface UserProfileProps {
   onNavigate?: (page: string) => void;
@@ -634,6 +635,9 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           )}
         </div>
       </Card>
+
+      {/* Demo Notification Generator - Development Tool */}
+      <DemoNotificationGenerator />
 
       </div>
     </div>
