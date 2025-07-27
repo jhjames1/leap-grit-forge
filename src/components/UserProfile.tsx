@@ -401,7 +401,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <div className="flex items-center justify-between pr-8">
-                    <DialogTitle>{t('notifications.notification') || 'Notifications'}</DialogTitle>
+                    <DialogTitle>Notifications</DialogTitle>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
@@ -436,7 +436,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
                   ) : notifications.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <Bell className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                      <p>{t('notifications.empty') || 'No notifications yet'}</p>
+                       <p>No notifications yet</p>
                     </div>
                   ) : (
                     notifications.map((notification) => (
