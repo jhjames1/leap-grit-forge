@@ -110,17 +110,29 @@ export const useNotifications = () => {
   const clearAll = async () => {
     if (!user) return;
 
+    console.log('Clearing all notifications for user:', user.id);
+    console.log('Current notifications before clear:', notifications.length);
+
     try {
       const { error } = await supabase
         .from('notifications' as any)
         .delete()
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error clearing notifications:', error);
+        throw error;
+      }
 
+      console.log('Successfully deleted notifications from database');
+      
+      // Update local state immediately
       setNotifications([]);
       setUnreadCount(0);
+      
+      console.log('Local state updated - notifications cleared');
     } catch (error) {
+      console.error('Error clearing notifications:', error);
       logger.error('Error clearing notifications:', error);
     }
   };
@@ -128,6 +140,8 @@ export const useNotifications = () => {
   // Set up real-time subscription for new notifications
   useEffect(() => {
     if (!user) return;
+
+    console.log('Setting up real-time notification subscription for user:', user.id);
 
     const channel = supabase
       .channel('user-notifications')
@@ -140,14 +154,56 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
+          console.log('New notification received via real-time:', payload.new);
           const newNotification = payload.new as Notification;
           setNotifications(prev => [newNotification, ...prev]);
           setUnreadCount(prev => prev + 1);
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Notification deleted via real-time:', payload.old);
+          const deletedNotification = payload.old as Notification;
+          setNotifications(prev => prev.filter(n => n.id !== deletedNotification.id));
+          if (!deletedNotification.is_read) {
+            setUnreadCount(prev => Math.max(0, prev - 1));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Notification updated via real-time:', payload.new);
+          const updatedNotification = payload.new as Notification;
+          setNotifications(prev => 
+            prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
+          );
+          
+          // Recalculate unread count based on current notifications
+          setNotifications(currentNotifications => {
+            const newUnreadCount = currentNotifications.filter(n => !n.is_read).length;
+            setUnreadCount(newUnreadCount);
+            return currentNotifications;
+          });
+        }
+      )
       .subscribe();
 
     return () => {
+      console.log('Cleaning up notification subscription');
       supabase.removeChannel(channel);
     };
   }, [user]);
