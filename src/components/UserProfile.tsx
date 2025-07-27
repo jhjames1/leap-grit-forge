@@ -285,9 +285,9 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
               onClick={() => setCurrentView('profile')}
               className="text-steel-light hover:text-white"
             >
-              ← {t('common.back') || 'Back'}
+              ← Back
             </button>
-            <h1 className="text-xl font-bold text-white">{t('notifications.title') || 'Notifications'}</h1>
+            <h1 className="text-xl font-bold text-white">Notifications</h1>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="p-2 text-steel-light hover:text-white">
@@ -301,7 +301,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
                   disabled={unreadCount === 0}
                 >
                   <Check className="mr-2 h-4 w-4" />
-                  {t('notifications.markAllRead') || 'Mark all as read'}
+                  Mark all as read
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={clearAll}
@@ -309,7 +309,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
                   disabled={notifications.length === 0}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  {t('notifications.clearAll') || 'Clear all'}
+                  Clear all
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -318,12 +318,12 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           <div className="space-y-3">
             {notificationsLoading ? (
               <div className="text-center py-8 text-steel-light">
-                {t('common.loading') || 'Loading...'}
+                Loading...
               </div>
             ) : notifications.length === 0 ? (
               <div className="text-center py-8 text-steel-light">
                 <Bell className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                <p>{t('notifications.empty') || 'No notifications yet'}</p>
+                <p>No notifications yet</p>
               </div>
             ) : (
               notifications.map((notification) => (
@@ -355,7 +355,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
                         onClick={() => markAsRead(notification.id)}
                         className="ml-2 px-2 py-1 text-xs bg-construction text-black rounded hover:bg-construction/80"
                       >
-                        {t('notifications.markRead') || 'Mark read'}
+                        Mark read
                       </button>
                     )}
                   </div>
@@ -380,9 +380,9 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-                <span className="font-oswald font-extralight tracking-tight">{t('profile.title').split(' ')[0]}</span><span className="font-fjalla font-extrabold italic">{t('profile.title').split(' ')[1]}</span>
+                <span className="font-oswald font-extralight tracking-tight">MY</span><span className="font-fjalla font-extrabold italic">PROFILE</span>
               </h1>
-              <p className="text-muted-foreground font-oswald">{t('profile.subtitle')}</p>
+              <p className="text-muted-foreground font-oswald">Your personal recovery dashboard</p>
             </div>
             <Dialog>
               <DialogTrigger asChild>
@@ -432,7 +432,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
                 <div className="max-h-96 overflow-y-auto space-y-3">
                   {notificationsLoading ? (
                     <div className="text-center py-8 text-muted-foreground">
-                      {t('common.loading') || 'Loading...'}
+                      Loading...
                     </div>
                   ) : notifications.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
@@ -470,7 +470,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
                               variant="outline"
                               onClick={() => markAsRead(notification.id)}
                             >
-                              {t('notifications.markRead') || 'Mark read'}
+                              Mark read
                             </Button>
                           )}
                         </div>
@@ -503,14 +503,14 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           </div>
           <div className="flex-1">
             <h2 className="font-fjalla font-bold text-card-foreground text-xl">{authUser?.user_metadata?.first_name || user.name}</h2>
-            <p className="text-muted-foreground font-source">{t('profile.memberSince', { date: user.joinDate })}</p>
+            <p className="text-muted-foreground font-source">Member since {user.joinDate}</p>
             {phoneNumber && (
               <div className="flex items-center space-x-2 mt-1">
                 <Phone size={14} className="text-muted-foreground" />
                 <p className="text-muted-foreground text-sm font-source">{phoneNumber}</p>
               </div>
             )}
-            <p className="text-muted-foreground text-sm font-source">{t('profile.lastLogin', { date: formatDate(lastLogin) })}</p>
+            <p className="text-muted-foreground text-sm font-source">Last login: {formatDate(lastLogin)}</p>
           </div>
         </div>
         
@@ -526,15 +526,15 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
 
         <div className="space-y-2 pt-4 border-t border-border">
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground text-sm font-source">{t('profile.weeklyProgress')}</span>
-            <span className="text-primary font-fjalla font-medium">{weeklyProgressPercentage}% ({weekCompletedDays}/7 {t('profile.days')})</span>
+            <span className="text-muted-foreground text-sm font-source">Weekly Progress</span>
+            <span className="text-primary font-fjalla font-medium">{weeklyProgressPercentage}% ({weekCompletedDays}/7 days)</span>
           </div>
         </div>
       </Card>
 
       {/* Favorite Tools */}
       <Card className="bg-card mb-6 p-6 border-0 shadow-none">
-        <h3 className="font-fjalla font-bold text-card-foreground mb-4">{t('profile.favorites')}</h3>
+        <h3 className="font-fjalla font-bold text-card-foreground mb-4">Favorite Tools</h3>
         <div className="flex flex-wrap gap-2">
           {user.favoriteTools.map((tool, index) => (
             <Badge key={index} className="bg-primary text-primary-foreground text-xs font-source">
@@ -546,7 +546,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
 
       {/* Badges & Achievements */}
       <Card className="bg-card mb-6 p-6 border-0 shadow-none">
-        <h3 className="font-fjalla font-bold text-card-foreground mb-4">{t('profile.achievements')}</h3>
+        <h3 className="font-fjalla font-bold text-card-foreground mb-4">Badges & Achievements</h3>
         {earnedBadges.length > 0 ? (
           <div className="grid grid-cols-1 gap-4">
             {earnedBadges.map((badge, index) => (
@@ -575,7 +575,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
 
       {/* Settings */}
       <Card className="bg-card p-6 border-0 shadow-none">
-        <h3 className="font-fjalla font-bold text-card-foreground mb-4">{t('profile.settings')}</h3>
+        <h3 className="font-fjalla font-bold text-card-foreground mb-4">Settings</h3>
         <div className="space-y-3">
           
           <Button 
@@ -584,7 +584,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
             className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
           >
             <Edit size={16} className="mr-2" />
-            {t('profile.editProfile')}
+            Edit Profile
           </Button>
           <Button 
             onClick={() => setCurrentView('notifications')}
@@ -592,7 +592,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
             className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
           >
             <Bell size={16} className="mr-2" />
-            {t('profile.notificationSettings')}
+            Notification Settings
           </Button>
           <Button 
             onClick={() => setCurrentView('saved-wisdom')}
@@ -600,14 +600,14 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
             className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
           >
             <BookOpen size={16} className="mr-2" />
-            {t('toolbox.savedWisdom.title')}
+            Saved Wisdom
           </Button>
           <Button 
             variant="outline" 
             className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
           >
             <Calendar size={16} className="mr-2" />
-            {t('profile.weeklyCheckIn')}
+            Weekly Check-In
           </Button>
           
           {/* Admin Portal Access */}
