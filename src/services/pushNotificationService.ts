@@ -179,7 +179,7 @@ export class PushNotificationService {
     };
 
     const { error } = await supabase
-      .from('push_subscriptions')
+      .from('push_subscriptions' as any)
       .upsert(subscriptionData, { onConflict: 'user_id' });
 
     if (error) {
@@ -199,7 +199,7 @@ export class PushNotificationService {
     }
 
     const { error } = await supabase
-      .from('push_subscriptions')
+      .from('push_subscriptions' as any)
       .delete()
       .eq('user_id', user.id);
 
