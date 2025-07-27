@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Edit, Bell, Calendar, Phone, BookOpen, LogOut, Shield, UserCheck } from 'lucide-react';
+import { User, Edit, Bell, Calendar, Phone, BookOpen, LogOut, Shield, UserCheck, Check, Trash2, MoreVertical } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useUserData } from '@/hooks/useUserData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
 import { supabase } from '@/integrations/supabase/client';
 import { trackingManager } from '@/utils/trackingManager';
 import EditProfile from './EditProfile';
@@ -20,12 +22,13 @@ interface UserProfileProps {
 
 const UserProfile = ({ onNavigate }: UserProfileProps) => {
   const { t, language } = useLanguage();
-  const [currentView, setCurrentView] = useState<'profile' | 'edit' | 'notifications' | 'saved-wisdom'>('profile');
+  const [currentView, setCurrentView] = useState<'profile' | 'edit' | 'notifications' | 'saved-wisdom' | 'notification-center'>('profile');
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSpecialist, setIsSpecialist] = useState(false);
   const { userData } = useUserData();
   const { signOut, user: authUser } = useAuth();
+  const { notifications, unreadCount, loading: notificationsLoading, markAsRead, markAllAsRead, clearAll } = useNotifications();
 
   const handleSignOut = async () => {
     await signOut();
@@ -200,6 +203,38 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
   // Use shared badge utility
   const earnedBadges = getEarnedBadges(userData, t, liveRecoveryStreak);
 
+  const getNotificationIcon = (type: string): string => {
+    switch (type) {
+      case 'appointment_confirmed':
+      case 'appointment_scheduled':
+        return '📅';
+      case 'appointment_cancelled':
+        return '❌';
+      case 'new_message':
+        return '💬';
+      case 'badge_earned':
+        return '🏆';
+      case 'reminder':
+        return '⏰';
+      case 'weekly_progress':
+        return '📊';
+      default:
+        return '🔔';
+    }
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return t('notifications.justNow') || 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
+    return `${Math.floor(diffInMinutes / 1440)}d`;
+  };
+
+
   const profileStats = [
     { 
       label: "Streak", 
@@ -237,6 +272,98 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
 
   if (currentView === 'notifications') {
     return <NotificationSettings onBack={() => setCurrentView('profile')} />;
+  }
+
+  if (currentView === 'notification-center') {
+    return (
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={() => setCurrentView('profile')}
+              className="text-steel-light hover:text-white"
+            >
+              ← {t('common.back') || 'Back'}
+            </button>
+            <h1 className="text-xl font-bold text-white">{t('notifications.title') || 'Notifications'}</h1>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 text-steel-light hover:text-white">
+                  <MoreVertical size={20} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-midnight border-steel-dark">
+                <DropdownMenuItem 
+                  onClick={markAllAsRead}
+                  className="text-white hover:bg-steel-dark"
+                  disabled={unreadCount === 0}
+                >
+                  <Check className="mr-2 h-4 w-4" />
+                  {t('notifications.markAllRead') || 'Mark all as read'}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={clearAll}
+                  className="text-white hover:bg-steel-dark"
+                  disabled={notifications.length === 0}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t('notifications.clearAll') || 'Clear all'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          <div className="space-y-3">
+            {notificationsLoading ? (
+              <div className="text-center py-8 text-steel-light">
+                {t('common.loading') || 'Loading...'}
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="text-center py-8 text-steel-light">
+                <Bell className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                <p>{t('notifications.empty') || 'No notifications yet'}</p>
+              </div>
+            ) : (
+              notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`p-4 rounded-lg border transition-colors ${
+                    notification.is_read 
+                      ? 'bg-card border-steel-dark' 
+                      : 'bg-construction/5 border-construction/20'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3 flex-1">
+                      <span className="text-lg">{getNotificationIcon(notification.notification_type)}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`font-medium ${notification.is_read ? 'text-steel-light' : 'text-white'}`}>
+                          {notification.title}
+                        </h3>
+                        <p className={`text-sm mt-1 ${notification.is_read ? 'text-steel-light/70' : 'text-steel-light'}`}>
+                          {notification.body}
+                        </p>
+                        <p className="text-xs text-steel-light/50 mt-2">
+                          {formatTimeAgo(notification.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                    {!notification.is_read && (
+                      <button
+                        onClick={() => markAsRead(notification.id)}
+                        className="ml-2 px-2 py-1 text-xs bg-construction text-black rounded hover:bg-construction/80"
+                      >
+                        {t('notifications.markRead') || 'Mark read'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (currentView === 'saved-wisdom') {
@@ -348,6 +475,23 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
       <Card className="bg-card p-6 border-0 shadow-none">
         <h3 className="font-fjalla font-bold text-card-foreground mb-4">{t('profile.settings')}</h3>
         <div className="space-y-3">
+          <Button 
+            onClick={() => setCurrentView('notification-center')}
+            variant="outline" 
+            className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source relative"
+          >
+            <Bell size={16} className="mr-2" />
+            {t('notifications.title') || 'Notifications'}
+            {unreadCount > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+              >
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Badge>
+            )}
+          </Button>
+          
           <Button 
             onClick={() => setCurrentView('edit')}
             variant="outline" 
