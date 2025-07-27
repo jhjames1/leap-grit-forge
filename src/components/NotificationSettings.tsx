@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Bell, Clock, Flame, MessageSquare, Calendar, Smartphone } from 'lucide-react';
+import { ArrowLeft, Bell, Clock, Flame, MessageSquare, Calendar, Smartphone, TestTube } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { pushNotificationService } from '@/services/pushNotificationService';
+import { toast } from '@/hooks/use-toast';
 
 interface NotificationSettingsProps {
   onBack: () => void;
@@ -30,6 +32,8 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
     pushNotifications: true,
     smsNotifications: false
   });
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Load existing preferences from localStorage
@@ -37,12 +41,64 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
     if (saved) {
       setPreferences(JSON.parse(saved));
     }
+
+    // Check current push subscription status
+    checkSubscriptionStatus();
   }, []);
 
-  const updatePreference = (key: keyof NotificationPreferences, value: boolean | string) => {
+  const checkSubscriptionStatus = async () => {
+    const subscribed = await pushNotificationService.isSubscribed();
+    setIsSubscribed(subscribed);
+  };
+
+  const updatePreference = async (key: keyof NotificationPreferences, value: boolean | string) => {
     const updated = { ...preferences, [key]: value };
     setPreferences(updated);
     localStorage.setItem('notificationPreferences', JSON.stringify(updated));
+
+    // Handle push notification subscription changes
+    if (key === 'pushNotifications') {
+      setIsLoading(true);
+      try {
+        if (value) {
+          const success = await pushNotificationService.subscribe();
+          if (success) {
+            setIsSubscribed(true);
+          } else {
+            // Revert the preference if subscription failed
+            updated.pushNotifications = false;
+            setPreferences(updated);
+            localStorage.setItem('notificationPreferences', JSON.stringify(updated));
+          }
+        } else {
+          await pushNotificationService.unsubscribe();
+          setIsSubscribed(false);
+        }
+      } catch (error) {
+        console.error('Failed to update push notification preference:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to update notification settings',
+          variant: 'destructive'
+        });
+      }
+      setIsLoading(false);
+    }
+  };
+
+  const handleTestNotification = async () => {
+    if (!isSubscribed) {
+      toast({
+        title: 'Not Subscribed',
+        description: 'Please enable push notifications first',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    await pushNotificationService.sendTestNotification();
+    setIsLoading(false);
   };
 
   const timeOptions = [
@@ -173,14 +229,35 @@ const NotificationSettings = ({ onBack }: NotificationSettingsProps) => {
                   </div>
                   <div>
                     <Label className="text-card-foreground font-medium">{t('notifications.pushNotifications')}</Label>
-                    <p className="text-muted-foreground text-sm">{t('notifications.pushNotificationsDesc')}</p>
+                    <p className="text-muted-foreground text-sm">
+                      Web push notifications work on any device where you use this app
+                    </p>
+                    {isSubscribed && (
+                      <p className="text-primary text-xs mt-1">✓ Active on this device</p>
+                    )}
                   </div>
                 </div>
                 <Switch
-                  checked={preferences.pushNotifications}
+                  checked={preferences.pushNotifications && isSubscribed}
                   onCheckedChange={(checked) => updatePreference('pushNotifications', checked)}
+                  disabled={isLoading}
                 />
               </div>
+
+              {preferences.pushNotifications && isSubscribed && (
+                <div className="ml-11 mt-3">
+                  <Button
+                    onClick={handleTestNotification}
+                    variant="outline"
+                    size="sm"
+                    disabled={isLoading}
+                    className="flex items-center space-x-2"
+                  >
+                    <TestTube size={14} />
+                    <span>Send Test Notification</span>
+                  </Button>
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
