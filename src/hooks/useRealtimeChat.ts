@@ -3,11 +3,13 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { realtimeService } from '@/services/realtimeService';
 import { useConnectionMonitor } from '@/hooks/useConnectionMonitor';
 import { logger } from '@/utils/logger';
+import { notificationService } from '@/services/notificationService';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface ChatMessage {
   id: string;
   sender_id: string;
-  sender_type: 'user' | 'specialist';
+  sender_type: 'user' | 'specialist' | 'system';
   message_type: 'text' | 'quick_action' | 'system';
   content: string;
   metadata?: any;
@@ -36,6 +38,7 @@ export const useRealtimeChat = ({ sessionId, onMessage, onSessionUpdate }: UseRe
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessageAt, setLastMessageAt] = useState<Date | null>(null);
   const { connectionStatus } = useConnectionMonitor();
+  const { user } = useAuth();
   
   const subscriptionIds = useRef<string[]>([]);
   const messageHandler = useRef(onMessage);
@@ -51,7 +54,7 @@ export const useRealtimeChat = ({ sessionId, onMessage, onSessionUpdate }: UseRe
   }, [onSessionUpdate]);
 
   // Message event handler
-  const handleNewMessage = useCallback((payload: any) => {
+  const handleNewMessage = useCallback(async (payload: any) => {
     logger.debug('🔴 PEER CLIENT: New message received via realtime:', payload.new);
     const newMessage = payload.new as ChatMessage;
     
@@ -59,10 +62,29 @@ export const useRealtimeChat = ({ sessionId, onMessage, onSessionUpdate }: UseRe
       setLastMessageAt(new Date());
       logger.debug('🔴 PEER CLIENT: Calling message handler for session:', sessionId);
       messageHandler.current?.(newMessage);
+      
+      // Send notification if the message is from a different user (not from current user)
+      if (user && newMessage.sender_id !== user.id && newMessage.sender_type !== 'system') {
+        const senderType = newMessage.sender_type === 'specialist' ? 'Specialist' : 'User';
+        
+        // Don't send notifications to yourself
+        notificationService.sendNotification({
+          title: `New Message from ${senderType}`,
+          body: newMessage.content.length > 50 
+            ? newMessage.content.substring(0, 50) + '...' 
+            : newMessage.content,
+          data: { 
+            type: 'chat_message', 
+            sessionId: newMessage.session_id,
+            messageId: newMessage.id,
+            senderType: newMessage.sender_type
+          }
+        }).catch(error => console.error('Failed to send chat notification:', error));
+      }
     } else {
       logger.debug('🔴 PEER CLIENT: Message for different session, ignoring:', newMessage.session_id);
     }
-  }, [sessionId]);
+  }, [sessionId, user]);
 
   // Session event handler
   const handleSessionUpdate = useCallback((payload: any) => {

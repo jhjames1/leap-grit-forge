@@ -7,7 +7,7 @@ import { sessionCleanup } from '@/utils/sessionCleanup';
 export interface ChatMessage {
   id: string;
   sender_id: string;
-  sender_type: 'user' | 'specialist';
+  sender_type: 'user' | 'specialist' | 'system';
   message_type: 'text' | 'quick_action' | 'system' | 'phone_call_request';
   content: string;
   metadata?: any;

@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { notificationService } from '@/services/notificationService';
 
 interface NotificationState {
   pendingCount: number;
@@ -54,7 +55,7 @@ export function useProposalNotifications(specialistId: string) {
           table: 'appointment_proposals',
           filter: `specialist_id=eq.${specialistId}`
         },
-        (payload) => {
+        async (payload) => {
           console.log('Proposal notification:', payload);
           
           if (payload.eventType === 'UPDATE') {
@@ -69,13 +70,16 @@ export function useProposalNotifications(specialistId: string) {
                 pendingCount: Math.max(0, prev.pendingCount - 1)
               }));
 
-              // Show browser notification if permission granted
-              if (Notification.permission === 'granted') {
-                new Notification('Proposal Response', {
-                  body: `A user has ${newStatus} your appointment proposal`,
-                  icon: '/favicon.ico'
-                });
-              }
+              // Send notification using unified service
+              notificationService.sendNotification({
+                title: 'Proposal Response',
+                body: `A user has ${newStatus} your appointment proposal`,
+                data: { 
+                  type: 'proposal_response', 
+                  proposalId: payload.new.id,
+                  status: newStatus 
+                }
+              }).catch(error => console.error('Failed to send notification:', error));
             }
           }
           
@@ -96,24 +100,24 @@ export function useProposalNotifications(specialistId: string) {
           table: 'specialist_appointments',
           filter: `specialist_id=eq.${specialistId}`
         },
-        (payload) => {
+        async (payload) => {
           console.log('New appointment created:', payload);
           
-          // Show notification for new appointment
-          if (Notification.permission === 'granted') {
-            new Notification('New Appointment Scheduled', {
-              body: 'A new appointment has been added to your calendar',
-              icon: '/favicon.ico'
-            });
-          }
+          // Send notification using unified service
+          notificationService.sendNotification({
+            title: 'New Appointment Scheduled',
+            body: 'A new appointment has been added to your calendar',
+            data: { 
+              type: 'appointment_created', 
+              appointmentId: payload.new.id 
+            }
+          }).catch(error => console.error('Failed to send notification:', error));
         }
       )
       .subscribe();
 
-    // Request notification permission
-    if (Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
+    // Request notification permission on first load
+    notificationService.requestPermissions();
 
     return () => {
       supabase.removeChannel(proposalChannel);
