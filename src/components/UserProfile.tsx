@@ -398,7 +398,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
                   )}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-md [&>button]:left-1/2 [&>button]:-translate-x-1/2">
                 <DialogHeader>
                   <div className="flex items-center justify-between pr-8">
                     <DialogTitle>Notifications</DialogTitle>
