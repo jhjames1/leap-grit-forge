@@ -10,8 +10,7 @@ import {
   TrendingUp,
   Bot,
   Radar,
-  FileText,
-  Trophy
+  FileText
 } from 'lucide-react';
 
 import BreathingExercise from '@/components/BreathingExercise';
@@ -20,7 +19,6 @@ import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
 import TriggerIdentifier from '@/components/TriggerIdentifier';
 import ThoughtPatternSorter from '@/components/ThoughtPatternSorter';
 import RecoveryPlanViewer from '@/components/RecoveryPlanViewer';
-import { CraveRunner } from '@/components/CraveRunner';
 import { useUserData } from '@/hooks/useUserData';
 import { useAIJourney } from '@/hooks/useAIJourney';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -38,7 +36,6 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const [showTriggerIdentifier, setShowTriggerIdentifier] = useState(false);
   const [showThoughtPatternSorter, setShowThoughtPatternSorter] = useState(false);
   const [showRecoveryPlan, setShowRecoveryPlan] = useState(false);
-  const [showCraveRunner, setShowCraveRunner] = useState(false);
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const { userData, logActivity, updateToolboxStats } = useUserData();
@@ -244,15 +241,6 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       badge: recoveryPlan ? 'Ready' : 'Locked',
       badgeColor: recoveryPlan ? 'bg-emerald-600' : 'bg-muted-foreground',
       disabled: !recoveryPlan
-    },
-    {
-      id: 'crave-runner',
-      title: 'Crave Runner',
-      description: 'Practice urge surfing with this 90-second mindfulness game',
-      icon: Trophy,
-      color: 'bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700',
-      badge: 'Game',
-      badgeColor: 'bg-purple-600'
     }
   ];
 
@@ -285,9 +273,6 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
           setShowRecoveryPlan(true);
           logActivity('Opened Recovery Plan', 'Viewed personalized recovery plan');
         }
-        break;
-      case 'crave-runner':
-        setShowCraveRunner(true);
         break;
       default:
         logger.debug('Tool opened', { toolId });
@@ -362,21 +347,6 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
 
   const handleThoughtPatternSorterClose = () => {
     setShowThoughtPatternSorter(false);
-    // Don't log completion if closed without finishing
-  };
-
-  const handleCraveRunnerComplete = () => {
-    setShowCraveRunner(false);
-    // Game handles its own completion logging
-    if (userData) {
-      updateToolboxStats({
-        totalSessions: userData.toolboxStats.totalSessions + 1
-      });
-    }
-  };
-
-  const handleCraveRunnerClose = () => {
-    setShowCraveRunner(false);
     // Don't log completion if closed without finishing
   };
 
@@ -534,13 +504,6 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
       {showRecoveryPlan && (
         <RecoveryPlanViewer 
           onClose={() => setShowRecoveryPlan(false)}
-        />
-      )}
-
-      {showCraveRunner && (
-        <CraveRunner 
-          onClose={handleCraveRunnerComplete}
-          onCancel={handleCraveRunnerClose}
         />
       )}
     </div>

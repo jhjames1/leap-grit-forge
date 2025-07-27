@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Language = 'en' | 'es';
 
@@ -12,7 +12,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 interface LanguageProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export function LanguageProvider({ children }: LanguageProviderProps) {

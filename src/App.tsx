@@ -6,7 +6,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import { SafeToastProvider } from './components/SafeToastProvider';
 import { AppUpdateNotification } from './components/AppUpdateNotification';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
-
+import { AppHeader } from './components/AppHeader';
 import Index from './pages/Index';
 import AdminPortal from './pages/AdminPortal';
 import PeerSpecialistPortal from './pages/PeerSpecialistPortal';
@@ -49,7 +49,8 @@ function App() {
           <SafeToastProvider>
             <Router>
               <div className="min-h-screen bg-midnight">
-                <div>
+                <AppHeader />
+                <div className="pt-16"> {/* Add padding for fixed header */}
                   <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
                     <Routes>
                       <Route path="/" element={<Index />} />
