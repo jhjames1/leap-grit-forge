@@ -114,15 +114,16 @@ const PeerSpecialistManual = () => {
               <li>1. Overview</li>
               <li>2. Authentication & Access</li>
               <li>3. Dashboard</li>
-              <li>4. Chat Sessions</li>
-              <li>5. Calendar & Scheduling</li>
-              <li>6. Training & Development</li>
-              <li>7. Performance Metrics</li>
-              <li>8. Communication Tools</li>
-              <li>9. Settings & Preferences</li>
-              <li>10. Troubleshooting</li>
-              <li>11. Best Practices</li>
-              <li>12. Frequently Asked Questions</li>
+              <li>4. Notifications</li>
+              <li>5. Chat Sessions</li>
+              <li>6. Calendar & Scheduling</li>
+              <li>7. Training & Development</li>
+              <li>8. Performance Metrics</li>
+              <li>9. Communication Tools</li>
+              <li>10. Settings & Preferences</li>
+              <li>11. Troubleshooting</li>
+              <li>12. Best Practices</li>
+              <li>13. Frequently Asked Questions</li>
             </ul>
           </div>
 
@@ -181,7 +182,47 @@ const PeerSpecialistManual = () => {
           </div>
 
           <div class="section">
-            <h2>3. Communication Tools</h2>
+            <h2>4. Notifications</h2>
+            <h3>Notification Center</h3>
+            <p>The notification system keeps you informed about important events, new sessions, and system updates through visual indicators and real-time alerts.</p>
+            
+            <h3>Notification Bell Icon</h3>
+            <ul>
+              <li>Located in the top-right corner of the header</li>
+              <li>Red badge shows the number of unread notifications</li>
+              <li>Click to open the notification panel</li>
+              <li>Badge disappears when all notifications are read</li>
+            </ul>
+
+            <h3>Notification Types</h3>
+            <ul>
+              <li><strong>Session Notifications:</strong> New chat sessions, status changes, user messages</li>
+              <li><strong>Appointment Notifications:</strong> Upcoming appointments, schedule changes, confirmations</li>
+              <li><strong>Training Notifications:</strong> Module assignments, completion reminders, new training</li>
+              <li><strong>System Notifications:</strong> Maintenance alerts, security updates, announcements</li>
+            </ul>
+
+            <h3>Managing Notifications</h3>
+            <ul>
+              <li>View all notifications in chronological order</li>
+              <li>Unread notifications are highlighted</li>
+              <li>Click individual notifications to mark as read</li>
+              <li>"Mark all as read" and "Clear all" options available</li>
+              <li>Real-time updates without page refresh</li>
+            </ul>
+
+            <h3>Push Notifications</h3>
+            <ol>
+              <li>Navigate to Settings → Notifications</li>
+              <li>Click "Enable Push Notifications"</li>
+              <li>Allow permission when prompted by your browser</li>
+              <li>Verify setup with a test notification</li>
+              <li>Customize notification preferences as needed</li>
+            </ol>
+          </div>
+
+          <div class="section">
+            <h2>9. Communication Tools</h2>
             <h3>Phone Prompt Feature</h3>
             <p>The phone prompt feature allows you to initiate secure voice calls with users directly from the chat interface when deeper conversation is needed.</p>
 
@@ -307,6 +348,10 @@ const PeerSpecialistManual = () => {
     title: 'Dashboard',
     icon: Monitor
   }, {
+    id: 'notifications',
+    title: 'Notifications',
+    icon: Bell
+  }, {
     id: 'chat-sessions',
     title: 'Chat Sessions',
     icon: MessageSquare
@@ -397,6 +442,21 @@ const PeerSpecialistManual = () => {
     title: 'How do phone call requests work?',
     section: 'communication',
     type: 'quick-action'
+  }, {
+    id: 'how-view-notifications',
+    title: 'How do I view my notifications?',
+    section: 'notifications',
+    type: 'quick-action'
+  }, {
+    id: 'how-enable-push-notifications',
+    title: 'How do I enable push notifications?',
+    section: 'notifications',
+    type: 'quick-action'
+  }, {
+    id: 'how-clear-notifications',
+    title: 'How do I clear notifications?',
+    section: 'notifications',
+    type: 'quick-action'
   },
   // FAQ Items
   {
@@ -412,6 +472,16 @@ const PeerSpecialistManual = () => {
   }, {
     id: 'notification-not-working',
     title: 'My notifications are not working',
+    section: 'troubleshooting',
+    type: 'faq'
+  }, {
+    id: 'push-notification-setup',
+    title: 'How do I set up push notifications?',
+    section: 'notifications',
+    type: 'faq'
+  }, {
+    id: 'notification-permissions',
+    title: 'Browser notification permissions not working',
     section: 'troubleshooting',
     type: 'faq'
   }, {
@@ -545,6 +615,7 @@ const PeerSpecialistManual = () => {
               {activeSection === 'overview' && <OverviewSection />}
               {activeSection === 'authentication' && <AuthenticationSection />}
               {activeSection === 'dashboard' && <DashboardSection />}
+              {activeSection === 'notifications' && <NotificationsSection />}
               {activeSection === 'chat-sessions' && <ChatSessionsSection />}
               {activeSection === 'calendar' && <CalendarSection />}
               {activeSection === 'training' && <TrainingSection />}
@@ -761,7 +832,8 @@ const DashboardSection = () => <Card>
         <h3 className="text-lg font-semibold mb-3">Dashboard Layout</h3>
         <p className="text-muted-foreground mb-4">
           The dashboard is your central command center, providing real-time information 
-          about your sessions, performance, and tasks.
+          about your sessions, performance, and tasks. The header includes a notification 
+          bell icon that displays unread notification counts.
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -851,6 +923,157 @@ const DashboardSection = () => <Card>
           while working on other tasks. The browser tab will show notifications 
           when new sessions arrive.
         </p>
+      </div>
+    </CardContent>
+  </Card>;
+
+// Notifications Section Component
+const NotificationsSection = () => <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Bell className="w-5 h-5" />
+        Notification System
+      </CardTitle>
+      <CardDescription>
+        Managing alerts and system notifications
+      </CardDescription>
+    </CardHeader>
+    <CardContent className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Notification Center</h3>
+        <p className="text-muted-foreground mb-4">
+          The notification system keeps you informed about important events, new sessions, 
+          and system updates through visual indicators and real-time alerts.
+        </p>
+        
+        <div className="border rounded-lg p-4">
+          <h4 className="font-medium mb-3 flex items-center gap-2">
+            <Bell className="w-4 h-4" />
+            Notification Bell Icon
+          </h4>
+          <ul className="text-sm text-muted-foreground space-y-2">
+            <li>• Located in the top-right corner of the header</li>
+            <li>• Red badge shows the number of unread notifications</li>
+            <li>• Click to open the notification panel</li>
+            <li>• Badge disappears when all notifications are read</li>
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Notification Types</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <MessageSquare className="w-4 h-4 text-blue-500" />
+              <h4 className="font-medium">Session Notifications</h4>
+            </div>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• New chat sessions waiting</li>
+              <li>• Session status changes</li>
+              <li>• User messages received</li>
+              <li>• Session completion confirmations</li>
+            </ul>
+          </div>
+          
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="w-4 h-4 text-green-500" />
+              <h4 className="font-medium">Appointment Notifications</h4>
+            </div>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Upcoming appointments</li>
+              <li>• Schedule changes</li>
+              <li>• Appointment confirmations</li>
+              <li>• Cancellation alerts</li>
+            </ul>
+          </div>
+          
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <GraduationCap className="w-4 h-4 text-purple-500" />
+              <h4 className="font-medium">Training Notifications</h4>
+            </div>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Training module assignments</li>
+              <li>• Completion reminders</li>
+              <li>• New training available</li>
+              <li>• Performance updates</li>
+            </ul>
+          </div>
+          
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="w-4 h-4 text-orange-500" />
+              <h4 className="font-medium">System Notifications</h4>
+            </div>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• System maintenance alerts</li>
+              <li>• Security updates</li>
+              <li>• Platform announcements</li>
+              <li>• Technical support messages</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Managing Notifications</h3>
+        <div className="space-y-4">
+          <div className="border rounded-lg p-4">
+            <h4 className="font-medium mb-2">Notification Panel Features</h4>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• View all notifications in chronological order</li>
+              <li>• Unread notifications are highlighted</li>
+              <li>• Click individual notifications to mark as read</li>
+              <li>• "Mark all as read" option available</li>
+              <li>• "Clear all" option to remove all notifications</li>
+              <li>• Automatic timestamps for each notification</li>
+            </ul>
+          </div>
+          
+          <div className="border rounded-lg p-4">
+            <h4 className="font-medium mb-2">Real-time Updates</h4>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li>• New notifications appear instantly</li>
+              <li>• Badge count updates automatically</li>
+              <li>• No page refresh required</li>
+              <li>• Persistent across browser sessions</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Push Notifications</h3>
+        <p className="text-muted-foreground mb-3">
+          Enable push notifications to receive alerts even when the portal is not open.
+        </p>
+        
+        <div className="border rounded-lg p-4">
+          <h4 className="font-medium mb-2">Setting Up Push Notifications</h4>
+          <ol className="text-sm text-muted-foreground space-y-2">
+            <li>1. Navigate to Settings → Notifications</li>
+            <li>2. Click "Enable Push Notifications"</li>
+            <li>3. Allow permission when prompted by your browser</li>
+            <li>4. Verify the setup with a test notification</li>
+            <li>5. Customize notification preferences as needed</li>
+          </ol>
+        </div>
+      </div>
+
+      <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+          <Bell className="w-4 h-4 inline mr-1" />
+          Notification Best Practices
+        </h4>
+        <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+          <li>• Check notifications regularly throughout your shift</li>
+          <li>• Enable push notifications for urgent session alerts</li>
+          <li>• Clear read notifications to maintain a clean interface</li>
+          <li>• Review notification settings to match your workflow</li>
+          <li>• Use browser notifications for critical alerts</li>
+        </ul>
       </div>
     </CardContent>
   </Card>;
