@@ -32,6 +32,9 @@ export class NotificationService {
    */
   public async sendNotification(payload: NotificationPayload): Promise<void> {
     try {
+      // Store notification in database first
+      await this.storeNotification(payload);
+      
       // Check if user is subscribed to push notifications
       const isPushSubscribed = await pushNotificationService.isSubscribed();
       
@@ -173,6 +176,37 @@ export class NotificationService {
     } catch (error) {
       logger.error('Failed to request notification permissions:', error);
       return false;
+    }
+  }
+
+  /**
+   * Store notification in database
+   */
+  private async storeNotification(payload: NotificationPayload): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await supabase
+        .from('notifications' as any)
+        .insert({
+          user_id: user.id,
+          title: payload.title,
+          body: payload.body,
+          data: payload.data || {},
+          notification_type: payload.data?.type || 'general'
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      logger.debug('Notification stored in database');
+    } catch (error) {
+      logger.error('Failed to store notification:', error);
+      // Don't throw - we still want to send the push notification even if storage fails
     }
   }
 }

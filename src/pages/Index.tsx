@@ -17,6 +17,7 @@ import { useUserData } from '@/hooks/useUserData';
 import { useAuth } from '@/hooks/useAuth';
 import { useBadgeNotifications } from '@/hooks/useBadgeNotifications';
 import { BadgeCelebrationModal } from '@/components/BadgeCelebrationModal';
+import { NotificationPanel } from '@/components/NotificationPanel';
 
 const Index = () => {
   // Add safety check to prevent hooks errors
@@ -174,6 +175,19 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <OfflineIndicator />
+      
+      {/* Header with notification panel - only show when authenticated */}
+      {isAuthenticated && user && (
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container flex h-14 items-center justify-between px-4">
+            <div className="flex items-center space-x-2">
+              <h1 className="font-bold text-lg">LEAP Recovery</h1>
+            </div>
+            <NotificationPanel />
+          </div>
+        </header>
+      )}
+      
       <div className="relative">
         {renderActivePage()}
       </div>
