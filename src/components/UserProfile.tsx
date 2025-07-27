@@ -375,10 +375,27 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
       <div className="p-4 pb-24">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-            <span className="font-oswald font-extralight tracking-tight">{t('profile.title').split(' ')[0]}</span><span className="font-fjalla font-extrabold italic">{t('profile.title').split(' ')[1]}</span>
-          </h1>
-          <p className="text-muted-foreground font-oswald">{t('profile.subtitle')}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
+                <span className="font-oswald font-extralight tracking-tight">{t('profile.title').split(' ')[0]}</span><span className="font-fjalla font-extrabold italic">{t('profile.title').split(' ')[1]}</span>
+              </h1>
+              <p className="text-muted-foreground font-oswald">{t('profile.subtitle')}</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentView('notification-center')}
+              className="relative"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <Badge variant="destructive" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs min-w-5 h-5 flex items-center justify-center">
+                  {unreadCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Sign Out Button */}
@@ -475,22 +492,6 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
       <Card className="bg-card p-6 border-0 shadow-none">
         <h3 className="font-fjalla font-bold text-card-foreground mb-4">{t('profile.settings')}</h3>
         <div className="space-y-3">
-          <Button 
-            onClick={() => setCurrentView('notification-center')}
-            variant="outline" 
-            className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source relative"
-          >
-            <Bell size={16} className="mr-2" />
-            {t('notifications.title') || 'Notifications'}
-            {unreadCount > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-              >
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </Badge>
-            )}
-          </Button>
           
           <Button 
             onClick={() => setCurrentView('edit')}
