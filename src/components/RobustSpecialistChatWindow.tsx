@@ -571,13 +571,36 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
 
       logger.debug('✅ Specialist: Content shared successfully');
       
+      // Track content usage
+      if (specialistId) {
+        try {
+          await supabase
+            .from('specialist_content_usage')
+            .insert({
+              specialist_id: specialistId,
+              content_id: content.id,
+              chat_session_id: session.id,
+              user_id: session.user_id,
+              content_category: content.category,
+              content_type: content.content_type,
+              context_metadata: {
+                shared_via: 'content_browser',
+                session_status: session.status
+              }
+            });
+        } catch (trackingError) {
+          logger.error('Failed to track content usage:', trackingError);
+          // Don't throw here - content was shared successfully
+        }
+      }
+      
       // Close the content browser after successful share
       setContentBrowserOpen(false);
     } catch (err) {
       logger.error('Failed to share content:', err);
       throw err; // Let the browser component handle the error
     }
-  }, [user, specialistId, session.id, session.status, claimSession]);
+  }, [user, specialistId, session.id, session.status, session.user_id, claimSession]);
 
   const getSessionAge = () => {
     const age = Date.now() - new Date(session.started_at).getTime();

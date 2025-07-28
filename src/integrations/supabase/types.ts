@@ -1274,6 +1274,67 @@ export type Database = {
           },
         ]
       }
+      specialist_content_usage: {
+        Row: {
+          chat_session_id: string | null
+          content_category: string
+          content_id: string
+          content_type: string
+          context_metadata: Json | null
+          created_at: string
+          id: string
+          shared_at: string
+          specialist_id: string
+          user_id: string
+        }
+        Insert: {
+          chat_session_id?: string | null
+          content_category: string
+          content_id: string
+          content_type: string
+          context_metadata?: Json | null
+          created_at?: string
+          id?: string
+          shared_at?: string
+          specialist_id: string
+          user_id: string
+        }
+        Update: {
+          chat_session_id?: string | null
+          content_category?: string
+          content_id?: string
+          content_type?: string
+          context_metadata?: Json | null
+          created_at?: string
+          id?: string
+          shared_at?: string
+          specialist_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialist_content_usage_chat_session_id_fkey"
+            columns: ["chat_session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_content_usage_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "foreman_content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_content_usage_specialist_id_fkey"
+            columns: ["specialist_id"]
+            isOneToOne: false
+            referencedRelation: "peer_specialists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specialist_content_views: {
         Row: {
           content_id: string
