@@ -197,14 +197,14 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
         // Prioritize activity over tool, only one item per day
         if (dayData.activity) {
           upcomingActivities.push({
-            title: dayData.activity,
+            title: t(`home.activities.${dayData.activity}`) || dayData.activity,
             timeLabel,
             day,
             type: 'activity'
           });
         } else if (dayData.tool) {
           upcomingActivities.push({
-            title: dayData.tool,
+            title: t(`home.activities.${dayData.tool}`) || dayData.tool,
             timeLabel,
             day,
             type: 'tool'
