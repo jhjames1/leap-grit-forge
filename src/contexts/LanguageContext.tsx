@@ -1075,6 +1075,7 @@ const spanishTranslations = {
       days: '{{count}} Días',
       week: '{{count}} Semana'
     },
+    completeCurrentDay: 'Completa tu día actual para ver las próximas actividades',
     foreman: {
       title: 'El Capataz',
       subtitle: 'Tu entrenador personal está aquí para ayudar',

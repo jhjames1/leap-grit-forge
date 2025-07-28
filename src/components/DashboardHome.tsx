@@ -191,8 +191,8 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
       
       if (dayData) { // Remove unlock check - show all upcoming activities
         const daysUntil = day - today; // Calculate relative to today
-        const timeLabel = daysUntil === 1 ? 'Tomorrow' : 
-                         `${daysUntil} days`;
+        const timeLabel = daysUntil === 1 ? t('home.time.tomorrow') : 
+                         t('home.time.days', { count: daysUntil });
         
         // Prioritize activity over tool, only one item per day
         if (dayData.activity) {
@@ -373,7 +373,7 @@ const DashboardHome = ({ onNavigate }: DashboardHomeProps) => {
             ) : (
               <div className="text-center py-2">
                 <span className="text-muted-foreground font-source text-sm italic">
-                  Complete your current day to see upcoming activities
+                  {t('home.completeCurrentDay')}
                 </span>
               </div>
             )}
