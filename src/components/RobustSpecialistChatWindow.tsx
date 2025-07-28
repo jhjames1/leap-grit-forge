@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Calendar, Phone, Video, User, X } from 'lucide-react';
+import { Send, Calendar, Phone, Video, User, X, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
@@ -13,6 +13,7 @@ import AppointmentProposalHandler from './AppointmentProposalHandler';
 import SpecialistProposalStatus from './SpecialistProposalStatus';
 import ChatAppointmentScheduler from './ChatAppointmentScheduler';
 import SessionInactivityWarning from './SessionInactivityWarning';
+import SpecialistContentBrowser from './SpecialistContentBrowser';
 import { format } from 'date-fns';
 
 interface AppointmentProposal {
@@ -51,6 +52,7 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [proposalStatuses, setProposalStatuses] = useState<Record<string, string>>({});
   const [inactivityWarning, setInactivityWarning] = useState<number>(0);
+  const [contentBrowserOpen, setContentBrowserOpen] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -514,6 +516,69 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
     }
   }, [user, sendMessage]);
 
+  // Handle content sharing
+  const handleContentShare = useCallback(async (content: any) => {
+    if (!user || !specialistId) return;
+
+    // Auto-claim waiting sessions
+    if (session.status === 'waiting') {
+      await claimSession();
+    }
+
+    try {
+      logger.debug('🚀 Specialist sharing content:', content.title);
+      
+      // Format the content for sharing
+      let shareMessage = `📚 **${content.title}**\n\n${content.content}`;
+      
+      if (content.author) {
+        shareMessage += `\n\n— ${content.author}`;
+      }
+
+      if (content.media_url && content.content_type === 'video') {
+        shareMessage += `\n\n🎥 ${content.media_url}`;
+      } else if (content.media_url && content.content_type === 'audio') {
+        shareMessage += `\n\n🔊 ${content.media_url}`;
+      } else if (content.media_url) {
+        shareMessage += `\n\n🔗 ${content.media_url}`;
+      }
+
+      const { data, error } = await supabase.rpc('send_message_atomic', {
+        p_session_id: session.id,
+        p_sender_id: user.id,
+        p_sender_type: 'specialist',
+        p_content: shareMessage,
+        p_message_type: 'text',
+        p_metadata: {
+          content_shared: true,
+          content_id: content.id,
+          content_type: content.content_type,
+          content_category: content.category
+        }
+      });
+
+      if (error) throw error;
+      
+      const result = data as {
+        success: boolean;
+        error_code?: string;
+        error_message?: string;
+      };
+
+      if (!result.success) {
+        throw new Error(result.error_message || 'Failed to share content');
+      }
+
+      logger.debug('✅ Specialist: Content shared successfully');
+      
+      // Close the content browser after successful share
+      setContentBrowserOpen(false);
+    } catch (err) {
+      logger.error('Failed to share content:', err);
+      throw err; // Let the browser component handle the error
+    }
+  }, [user, specialistId, session.id, session.status, claimSession]);
+
   const getSessionAge = () => {
     const age = Date.now() - new Date(session.started_at).getTime();
     const minutes = Math.floor(age / (1000 * 60));
@@ -744,6 +809,22 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               <Video className="w-4 h-4" />
               Video Call
             </Button>
+            <SpecialistContentBrowser
+              onContentShare={handleContentShare}
+              isOpen={contentBrowserOpen}
+              onOpenChange={setContentBrowserOpen}
+              triggerElement={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  disabled={!isInputEnabled}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Content Library
+                </Button>
+              }
+            />
           </div>
 
           {/* Message Input */}
