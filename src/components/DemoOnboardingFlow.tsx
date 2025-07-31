@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { CheckCircle2, Brain, Users, Target, Zap, TrendingUp, PenTool, Headphones, Goal, BarChart, Link, Sprout, CloudSun, Waves, Mountain, RotateCcw, Flame, Play } from 'lucide-react';
+import { CheckCircle2, Brain, Users, Target, Zap, TrendingUp, PenTool, Headphones, Goal, BarChart, Link, Sprout, CloudSun, Waves, Mountain, RotateCcw, Flame, Play, Calendar, Bot, Moon, Sun, Globe } from 'lucide-react';
 import SplashScreen from './SplashScreen';
 
 interface DemoOnboardingFlowProps {
@@ -340,39 +340,30 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
                         <p className="text-muted-foreground text-xs">Your journey continues...</p>
                       </div>
                       
-                      {/* Right column: Close button */}
+                      {/* Right column: Theme toggle, Language toggle, and Close button */}
                       <div className="flex flex-col items-end">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={onClose}
-                          className="mb-2 text-xs"
-                        >
-                          × Close
-                        </Button>
+                        <div className="flex items-center space-x-2 mb-2">
+                          {/* Theme Toggle */}
+                          <Button variant="ghost" size="sm" className="p-1">
+                            <Sun className="h-4 w-4" />
+                          </Button>
+                          {/* Language Toggle */}
+                          <Button variant="ghost" size="sm" className="p-1">
+                            <Globe className="h-4 w-4" />
+                          </Button>
+                          {/* Close button */}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={onClose}
+                            className="text-xs"
+                          >
+                            ×
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Demo Complete Message */}
-                  <Card className="bg-primary/10 border-primary/20 p-4 rounded-lg mb-4">
-                    <div className="text-center space-y-3">
-                      <CheckCircle2 className="text-primary mx-auto" size={24} />
-                      <h2 className="font-semibold text-lg text-card-foreground">
-                        Demo Complete!
-                      </h2>
-                      <p className="text-muted-foreground text-xs">
-                        This is what users see after onboarding. The actual app includes daily activities, peer chat, and progress tracking.
-                      </p>
-                      <Button 
-                        onClick={onClose}
-                        className="mt-3"
-                        size="sm"
-                      >
-                        Back to Demo
-                      </Button>
-                    </div>
-                  </Card>
 
                   {/* Sample Dashboard Cards */}
                   <div className="flex gap-2 mb-3">
@@ -420,6 +411,52 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
                       </div>
                     </div>
                   </Card>
+
+                  {/* The Foreman Card */}
+                  <Card className="relative bg-card rounded-lg mb-3 border-0 shadow-none transition-colors duration-300 overflow-hidden">
+                    {/* Background Image */}
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                      style={{
+                        backgroundImage: 'url(/lovable-uploads/c61510da-8bef-4d57-8fba-f87d453bd59e.png)'
+                      }}
+                    />
+                    
+                    {/* Dark Overlay */}
+                    <div className="absolute inset-0 bg-black/60" />
+                    
+                    {/* Content */}
+                    <div className="relative z-10 p-3">
+                      <div className="flex flex-col items-center text-center mb-3">
+                        <div>
+                          <h3 className="font-fjalla font-bold text-white text-lg tracking-wide">
+                            THE FOREMAN
+                          </h3>
+                          <p className="text-white/80 text-xs font-source">Get immediate support when you need it</p>
+                        </div>
+                      </div>
+                      <Button 
+                        className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold py-2 rounded-lg tracking-wide transition-colors duration-300 flex items-center justify-center gap-2 text-xs"
+                      >
+                        <Bot size={16} />
+                        TALK TO THE FOREMAN
+                      </Button>
+                    </div>
+                  </Card>
+
+                  {/* Calendar Card */}
+                  <div className="flex justify-center">
+                    <Card 
+                      className="bg-card p-3 rounded-lg cursor-pointer hover:shadow-md transition-all duration-300 border-0 shadow-none w-40"
+                    >
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className="bg-primary p-2 rounded-lg">
+                          <Calendar className="text-primary-foreground" size={16} />
+                        </div>
+                        <h3 className="font-fjalla font-bold text-card-foreground text-xs tracking-wide">CALENDAR</h3>
+                      </div>
+                    </Card>
+                  </div>
                 </div>
               </div>
             </div>
