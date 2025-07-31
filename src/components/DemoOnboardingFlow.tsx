@@ -97,7 +97,7 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
   useEffect(() => {
     if (currentStep === 0) {
       const timer = setTimeout(() => {
-        handleNext();
+        setCurrentStep(1);
       }, 3000);
       return () => clearTimeout(timer);
     }
