@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { CheckCircle2, Brain, Users, Target, Zap, TrendingUp, PenTool, Headphones, Goal, BarChart, Link, Sprout, CloudSun, Waves, Mountain, RotateCcw } from 'lucide-react';
+import SplashScreen from './SplashScreen';
 
 interface DemoOnboardingFlowProps {
   isVisible: boolean;
@@ -36,7 +37,7 @@ const supportOptions = [
 ];
 
 export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisible, onClose }) => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0); // Start with splash screen (step 0)
   const [focusAreas, setFocusAreas] = useState<string[]>([]);
   const [journeyStage, setJourneyStage] = useState('');
   const [supportStyle, setSupportStyle] = useState('');
@@ -45,6 +46,10 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
   const [isCompleting, setIsCompleting] = useState(false);
 
   if (!isVisible) return null;
+
+  const handleSplashComplete = () => {
+    setCurrentStep(1); // Move to first onboarding step
+  };
 
   const handleFocusToggle = (focusId: string) => {
     setFocusAreas(prev => 
@@ -61,7 +66,7 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
       setIsCompleting(true);
       setTimeout(() => {
         onClose();
-        setCurrentStep(1);
+        setCurrentStep(0); // Reset to splash screen
         setFocusAreas([]);
         setJourneyStage('');
         setSupportStyle('');
@@ -283,6 +288,15 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
         return null;
     }
   };
+
+  // Show splash screen first (step 0)
+  if (currentStep === 0) {
+    return (
+      <div className="fixed inset-0 z-50">
+        <SplashScreen onComplete={handleSplashComplete} />
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
