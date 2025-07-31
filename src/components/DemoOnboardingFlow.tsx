@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { CheckCircle2, Brain, Users, Target, Zap, TrendingUp, PenTool, Headphones, Goal, BarChart, Link, Sprout, CloudSun, Waves, Mountain, RotateCcw, Flame, Play, Calendar, Bot, Moon, Sun, Globe } from 'lucide-react';
 import SplashScreen from './SplashScreen';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DemoOnboardingFlowProps {
   isVisible: boolean;
@@ -44,6 +45,8 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
   const [firstName, setFirstName] = useState('');
   const [gender, setGender] = useState('');
   const [isCompleting, setIsCompleting] = useState(false);
+  
+  const { language, setLanguage } = useLanguage();
 
   if (!isVisible) return null;
 
@@ -343,14 +346,19 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
                       {/* Right column: Theme toggle, Language toggle, and Close button */}
                       <div className="flex flex-col items-end">
                         <div className="flex items-center space-x-2 mb-2">
-                          {/* Theme Toggle */}
-                          <Button variant="ghost" size="sm" className="p-1">
-                            <Sun className="h-4 w-4" />
-                          </Button>
-                          {/* Language Toggle */}
-                          <Button variant="ghost" size="sm" className="p-1">
-                            <Globe className="h-4 w-4" />
-                          </Button>
+                           {/* Theme Toggle */}
+                           <Button variant="ghost" size="sm" className="p-1">
+                             <Sun className="h-4 w-4" />
+                           </Button>
+                           {/* Language Toggle */}
+                           <Button 
+                             variant="ghost" 
+                             size="sm" 
+                             className="p-1" 
+                             onClick={() => setLanguage(language === 'en' ? 'es' : 'en')}
+                           >
+                             <Globe className="h-4 w-4" />
+                           </Button>
                           {/* Close button */}
                           <Button 
                             variant="ghost" 
@@ -444,19 +452,40 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
                     </div>
                   </Card>
 
-                  {/* Calendar Card */}
-                  <div className="flex justify-center">
-                    <Card 
-                      className="bg-card p-3 rounded-lg cursor-pointer hover:shadow-md transition-all duration-300 border-0 shadow-none w-40"
-                    >
-                      <div className="flex flex-col items-center space-y-2">
-                        <div className="bg-primary p-2 rounded-lg">
-                          <Calendar className="text-primary-foreground" size={16} />
-                        </div>
-                        <h3 className="font-fjalla font-bold text-card-foreground text-xs tracking-wide">CALENDAR</h3>
-                      </div>
-                    </Card>
-                  </div>
+                   {/* Coming Up This Week Card */}
+                   <Card className="bg-card p-3 rounded-lg mb-3 border-0 shadow-none transition-colors duration-300">
+                     <h3 className="font-fjalla font-bold text-card-foreground mb-2 tracking-wide text-xs">
+                       COMING UP THIS WEEK
+                     </h3>
+                     <div className="space-y-2">
+                       <div className="flex items-center justify-between">
+                         <span className="text-card-foreground text-xs">Weekend Recovery Strategies</span>
+                         <span className="text-muted-foreground text-xs">2 Days</span>
+                       </div>
+                       <div className="flex items-center justify-between">
+                         <span className="text-card-foreground text-xs">Peer Communication</span>
+                         <span className="text-muted-foreground text-xs">5 Days</span>
+                       </div>
+                       <div className="flex items-center justify-between">
+                         <span className="text-card-foreground text-xs">Week 1 Reflection</span>
+                         <span className="text-muted-foreground text-xs">1 Week</span>
+                       </div>
+                     </div>
+                   </Card>
+
+                   {/* Calendar Card */}
+                   <div className="flex justify-center">
+                     <Card 
+                       className="bg-card p-3 rounded-lg cursor-pointer hover:shadow-md transition-all duration-300 border-0 shadow-none w-40"
+                     >
+                       <div className="flex flex-col items-center space-y-2">
+                         <div className="bg-primary p-2 rounded-lg">
+                           <Calendar className="text-primary-foreground" size={16} />
+                         </div>
+                         <h3 className="font-fjalla font-bold text-card-foreground text-xs tracking-wide">CALENDAR</h3>
+                       </div>
+                     </Card>
+                   </div>
                 </div>
               </div>
             </div>
