@@ -215,21 +215,21 @@ const InteractiveDemo = () => {
       {/* Journey Steps */}
       <div className="grid gap-6">
         <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <Badge className="bg-blue-500">1</Badge>
-              Initial Assessment & Onboarding
-            </CardTitle>
+          <CardHeader className="relative">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Badge className="bg-blue-500">1</Badge>
+                Initial Assessment & Onboarding
+              </div>
+              <Button onClick={() => setShowOnboardingDemo(true)} variant="outline" size="sm">
+                Try Onboarding Demo
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
               New users complete a brief, confidential assessment to match them with appropriate resources and peer specialists.
             </p>
-            <div className="text-center">
-              <Button onClick={() => setShowOnboardingDemo(true)} variant="outline" className="mt-2">
-                Try Onboarding Demo
-              </Button>
-            </div>
             <div className="bg-white/80 rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="text-green-500" size={16} />
