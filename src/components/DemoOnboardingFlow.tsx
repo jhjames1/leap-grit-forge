@@ -286,8 +286,12 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
   // Show splash screen first (step 0)
   if (currentStep === 0) {
     return (
-      <div className="fixed inset-0 z-50">
-        <SplashScreen onComplete={handleSplashComplete} />
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-background min-h-screen flex items-center justify-center p-4 w-full max-w-md mx-auto rounded-lg">
+          <div className="w-full max-w-sm animate-fade-in">
+            <SplashScreen onComplete={handleSplashComplete} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -295,103 +299,108 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
   // Show demo home page (step 5)
   if (currentStep === 5) {
     return (
-      <div className="fixed inset-0 z-50 bg-background">
-        <div className="min-h-screen bg-background">
-          <div className="p-4 pb-24">
-            {/* Header */}
-            <div className="mb-6">
-              <div className="flex justify-between items-start mb-6">
-                {/* Left column: Title and welcome text */}
-                <div className="flex-1">
-                  <h1 className="text-5xl font-bold text-foreground mb-1 tracking-wide">
-                    <span className="font-oswald font-extralight tracking-tight">DAILY</span><span className="font-fjalla font-extrabold italic">LEAP</span>
-                  </h1>
-                  <div className="mt-8"></div>
-                  <p className="text-foreground font-oswald font-extralight tracking-wide mb-0">
-                    WELCOME, <span className="font-bold italic">{firstName ? firstName.toUpperCase() : 'DEMO USER'}</span>
-                  </p>
-                  <p className="text-muted-foreground text-sm">Your journey continues...</p>
-                </div>
-                
-                {/* Right column: Close button */}
-                <div className="flex flex-col items-end">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={onClose}
-                    className="mb-4"
-                  >
-                    × Close Demo
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Demo Complete Message */}
-            <Card className="bg-primary/10 border-primary/20 p-6 rounded-lg mb-4">
-              <div className="text-center space-y-4">
-                <CheckCircle2 className="text-primary mx-auto" size={32} />
-                <h2 className="font-semibold text-xl text-card-foreground">
-                  Demo Complete!
-                </h2>
-                <p className="text-muted-foreground">
-                  This is what users see after completing onboarding. The actual app includes personalized daily activities, peer chat, progress tracking, and more.
-                </p>
-                <Button 
-                  onClick={onClose}
-                  className="mt-4"
-                >
-                  Back to Demo Overview
-                </Button>
-              </div>
-            </Card>
-
-            {/* Sample Dashboard Cards */}
-            <div className="flex gap-4 mb-4">
-              <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[70%]">
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="bg-primary p-3 rounded-sm">
-                    <Target className="text-primary-foreground" size={20} />
-                  </div>
-                  <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                    TODAY'S MOTIVATION
-                  </h3>
-                </div>
-                <p className="text-card-foreground text-sm italic leading-tight">"Every step forward is progress, no matter how small."</p>
-              </Card>
-
-              <Card className="bg-card p-4 rounded-lg border-0 shadow-none transition-colors duration-300 w-[30%]">
-                <div className="text-center">
-                  <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide mb-2">
-                    STREAK
-                  </h3>
-                  <div className="flex items-center justify-center space-x-2 mb-1">
-                    <div className="bg-primary p-3 rounded-sm">
-                      <Flame className="text-primary-foreground" size={20} />
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-background min-h-screen flex items-center justify-center p-4 w-full max-w-md mx-auto rounded-lg">
+          <div className="w-full max-w-sm animate-fade-in">
+            <div className="bg-background rounded-xl overflow-hidden">
+              <div className="p-4 pb-24">
+                {/* Header */}
+                <div className="mb-6">
+                  <div className="flex justify-between items-start mb-6">
+                    {/* Left column: Title and welcome text */}
+                    <div className="flex-1">
+                      <h1 className="text-3xl font-bold text-foreground mb-1 tracking-wide">
+                        <span className="font-oswald font-extralight tracking-tight">DAILY</span><span className="font-fjalla font-extrabold italic">LEAP</span>
+                      </h1>
+                      <div className="mt-4"></div>
+                      <p className="text-foreground font-oswald font-extralight tracking-wide mb-0 text-sm">
+                        WELCOME, <span className="font-bold italic">{firstName ? firstName.toUpperCase() : 'DEMO USER'}</span>
+                      </p>
+                      <p className="text-muted-foreground text-xs">Your journey continues...</p>
                     </div>
-                    <div className="text-[28px] font-bold text-card-foreground">1</div>
+                    
+                    {/* Right column: Close button */}
+                    <div className="flex flex-col items-end">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={onClose}
+                        className="mb-2 text-xs"
+                      >
+                        × Close
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-muted-foreground text-xs lowercase italic">days</p>
                 </div>
-              </Card>
-            </div>
 
-            {/* Start Your Day Card */}
-            <Card className="bg-black/[7.5%] p-4 rounded-lg mb-4 border-0 shadow-none transition-colors duration-300">
-              <h3 className="font-fjalla font-bold text-card-foreground mb-2 tracking-wide">
-                START YOUR DAY
-              </h3>
-              <div className="flex items-center space-x-3">
-                <div className="bg-yellow-400 p-3 rounded-sm">
-                  <Play className="text-black" size={20} />
+                {/* Demo Complete Message */}
+                <Card className="bg-primary/10 border-primary/20 p-4 rounded-lg mb-4">
+                  <div className="text-center space-y-3">
+                    <CheckCircle2 className="text-primary mx-auto" size={24} />
+                    <h2 className="font-semibold text-lg text-card-foreground">
+                      Demo Complete!
+                    </h2>
+                    <p className="text-muted-foreground text-xs">
+                      This is what users see after onboarding. The actual app includes daily activities, peer chat, and progress tracking.
+                    </p>
+                    <Button 
+                      onClick={onClose}
+                      className="mt-3"
+                      size="sm"
+                    >
+                      Back to Demo
+                    </Button>
+                  </div>
+                </Card>
+
+                {/* Sample Dashboard Cards */}
+                <div className="flex gap-2 mb-3">
+                  <Card className="bg-card p-3 rounded-lg border-0 shadow-none transition-colors duration-300 w-[70%]">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="bg-primary p-2 rounded-sm">
+                        <Target className="text-primary-foreground" size={16} />
+                      </div>
+                      <h3 className="font-fjalla font-bold text-card-foreground text-xs uppercase tracking-wide">
+                        TODAY'S MOTIVATION
+                      </h3>
+                    </div>
+                    <p className="text-card-foreground text-xs italic leading-tight">"Every step forward is progress, no matter how small."</p>
+                  </Card>
+
+                  <Card className="bg-card p-3 rounded-lg border-0 shadow-none transition-colors duration-300 w-[30%]">
+                    <div className="text-center">
+                      <h3 className="font-fjalla font-bold text-card-foreground text-xs uppercase tracking-wide mb-1">
+                        STREAK
+                      </h3>
+                      <div className="flex items-center justify-center space-x-1 mb-1">
+                        <div className="bg-primary p-2 rounded-sm">
+                          <Flame className="text-primary-foreground" size={14} />
+                        </div>
+                        <div className="text-lg font-bold text-card-foreground">1</div>
+                      </div>
+                      <p className="text-muted-foreground text-xs lowercase italic">days</p>
+                    </div>
+                  </Card>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-card-foreground font-source text-sm">
-                    Day 1 - {focusAreas.length > 0 ? 'Building Your Foundation' : 'Welcome Journey'}
-                  </span>
-                </div>
+
+                {/* Start Your Day Card */}
+                <Card className="bg-black/[7.5%] p-3 rounded-lg mb-3 border-0 shadow-none transition-colors duration-300">
+                  <h3 className="font-fjalla font-bold text-card-foreground mb-2 tracking-wide text-xs">
+                    START YOUR DAY
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <div className="bg-yellow-400 p-2 rounded-sm">
+                      <Play className="text-black" size={16} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-card-foreground font-source text-xs">
+                        Day 1 - {focusAreas.length > 0 ? 'Building Your Foundation' : 'Welcome Journey'}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </div>
