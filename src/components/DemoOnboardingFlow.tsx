@@ -1,66 +1,100 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, Users, Target, Brain, Heart } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { CheckCircle2, Brain, Users, Target, Zap, TrendingUp, PenTool, Headphones, Goal, BarChart, Link, Sprout, CloudSun, Waves, Mountain, RotateCcw } from 'lucide-react';
 
 interface DemoOnboardingFlowProps {
   isVisible: boolean;
   onClose: () => void;
 }
 
-const focusAreas = [
-  { id: 'addiction', label: 'Addiction Recovery', icon: Brain, color: 'text-primary' },
-  { id: 'stress', label: 'Stress Management', icon: Heart, color: 'text-secondary' },
-  { id: 'workplace', label: 'Workplace Wellness', icon: Users, color: 'text-accent' },
-  { id: 'goals', label: 'Personal Goals', icon: Target, color: 'text-muted-foreground' }
+const focusOptions = [
+  { id: 'tough-moments', label: 'Navigating tough moments', icon: Brain },
+  { id: 'connections', label: 'Building meaningful connections', icon: Users },
+  { id: 'routines', label: 'Creating healthy routines', icon: Target },
+  { id: 'tools', label: 'Learning coping tools', icon: Zap },
+  { id: 'staying-track', label: 'Staying on track', icon: TrendingUp }
+];
+
+const stageOptions = [
+  { id: 'starting', label: 'Just starting my journey', icon: Sprout },
+  { id: 'few-weeks', label: 'A few weeks in', icon: CloudSun },
+  { id: 'few-months', label: 'A few months in', icon: Waves },
+  { id: 'steady', label: 'Steady for a while', icon: Mountain },
+  { id: 'starting-again', label: 'Starting again', icon: RotateCcw }
+];
+
+const supportOptions = [
+  { id: 'reflection', label: 'Self-reflection and journaling', icon: PenTool },
+  { id: 'audio', label: 'Audio content and meditation', icon: Headphones },
+  { id: 'goals', label: 'Goal setting and planning', icon: Goal },
+  { id: 'progress', label: 'Progress tracking', icon: BarChart },
+  { id: 'connection', label: 'Peer connection and support', icon: Link }
 ];
 
 export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisible, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [focusAreas, setFocusAreas] = useState<string[]>([]);
+  const [journeyStage, setJourneyStage] = useState('');
+  const [supportStyle, setSupportStyle] = useState('');
   const [firstName, setFirstName] = useState('');
+  const [gender, setGender] = useState('');
   const [isCompleting, setIsCompleting] = useState(false);
 
   if (!isVisible) return null;
 
-  const handleAreaToggle = (areaId: string) => {
-    setSelectedAreas(prev => 
-      prev.includes(areaId) 
-        ? prev.filter(id => id !== areaId)
-        : [...prev, areaId]
+  const handleFocusToggle = (focusId: string) => {
+    setFocusAreas(prev => 
+      prev.includes(focusId) 
+        ? prev.filter(id => id !== focusId)
+        : [...prev, focusId]
     );
   };
 
   const handleNext = () => {
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       setCurrentStep(prev => prev + 1);
     } else {
       setIsCompleting(true);
       setTimeout(() => {
         onClose();
         setCurrentStep(1);
-        setSelectedAreas([]);
+        setFocusAreas([]);
+        setJourneyStage('');
+        setSupportStyle('');
         setFirstName('');
+        setGender('');
         setIsCompleting(false);
       }, 2000);
     }
   };
 
   const canProceed = () => {
-    if (currentStep === 1) return firstName.length > 0;
-    if (currentStep === 2) return selectedAreas.length > 0;
-    return true;
+    switch (currentStep) {
+      case 1: return focusAreas.length > 0;
+      case 2: return journeyStage !== '';
+      case 3: return supportStyle !== '';
+      case 4: return true; // Name is optional
+      default: return false;
+    }
   };
 
   const renderStep = () => {
     if (isCompleting) {
       return (
         <div className="text-center space-y-4">
-          <CheckCircle2 className="w-16 h-16 text-primary mx-auto" />
-          <h3 className="text-xl font-semibold">Welcome to LEAP, {firstName}!</h3>
-          <p className="text-muted-foreground">Your personalized journey is being created...</p>
-          <Progress value={100} className="w-full" />
+          <div className="bg-primary p-2 rounded-lg mx-auto mb-4 w-fit">
+            <CheckCircle2 className="text-primary-foreground" size={24} />
+          </div>
+          <h2 className="font-semibold text-[20px] text-card-foreground mb-2">
+            Welcome to LEAP{firstName ? `, ${firstName}` : ''}!
+          </h2>
+          <p className="text-muted-foreground text-[16px]">
+            Your personalized journey is being created...
+          </p>
         </div>
       );
     }
@@ -68,73 +102,181 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Let's get started</h3>
-            <p className="text-muted-foreground">What should we call you?</p>
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="Enter your first name"
-              className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
+          <>
+            <h2 className="font-semibold text-[20px] text-card-foreground mb-3 text-center">
+              What would you like help with?
+            </h2>
+            <p className="text-muted-foreground text-[16px] mb-6 text-center">
+              Select all that apply
+            </p>
+            
+            <div className="space-y-3 mb-8">
+              {focusOptions.map(option => {
+                const Icon = option.icon;
+                const isSelected = focusAreas.includes(option.id);
+                
+                return (
+                  <Card
+                    key={option.id}
+                    onClick={() => handleFocusToggle(option.id)}
+                    className={`p-2 cursor-pointer transition-all duration-200 border rounded-lg ${
+                      isSelected 
+                        ? 'bg-primary/10 border-primary/20 shadow-sm' 
+                        : 'bg-card border-border hover:bg-accent hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-3 rounded-lg ${isSelected ? 'bg-primary' : 'bg-muted'}`}>
+                        <Icon 
+                          className={`${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`} 
+                          size={20} 
+                        />
+                      </div>
+                      <span className={`text-sm ${
+                        isSelected ? 'text-card-foreground' : 'text-muted-foreground'
+                      }`}>
+                        {option.label}
+                      </span>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </>
         );
 
       case 2:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">What areas would you like to focus on?</h3>
-            <p className="text-muted-foreground">Select all that apply</p>
-            <div className="grid grid-cols-2 gap-3">
-              {focusAreas.map((area) => (
-                <Card 
-                  key={area.id}
-                  className={`cursor-pointer transition-all hover:shadow-md ${
-                    selectedAreas.includes(area.id) ? 'ring-2 ring-primary bg-primary/5' : ''
-                  }`}
-                  onClick={() => handleAreaToggle(area.id)}
-                >
-                  <CardContent className="p-4 text-center">
-                    <area.icon className={`w-8 h-8 mx-auto mb-2 ${area.color}`} />
-                    <p className="text-sm font-medium">{area.label}</p>
-                  </CardContent>
-                </Card>
-              ))}
+          <>
+            <h2 className="font-semibold text-[20px] text-card-foreground mb-3 text-center">
+              Where are you in your journey?
+            </h2>
+            <p className="text-muted-foreground text-[16px] mb-6 text-center">
+              This helps us personalize your experience
+            </p>
+            
+            <div className="space-y-3 mb-8">
+              {stageOptions.map(option => {
+                const Icon = option.icon;
+                const isSelected = journeyStage === option.id;
+                
+                return (
+                  <Card
+                    key={option.id}
+                    onClick={() => setJourneyStage(option.id)}
+                    className={`p-2 cursor-pointer transition-all duration-200 border rounded-lg ${
+                      isSelected 
+                        ? 'bg-primary/10 border-primary/20 shadow-sm' 
+                        : 'bg-card border-border hover:bg-accent hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-3 rounded-lg ${isSelected ? 'bg-primary' : 'bg-muted'}`}>
+                        <Icon 
+                          className={`${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`} 
+                          size={20} 
+                        />
+                      </div>
+                      <span className={`text-sm ${
+                        isSelected ? 'text-card-foreground' : 'text-muted-foreground'
+                      }`}>
+                        {option.label}
+                      </span>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
-          </div>
+          </>
         );
 
       case 3:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Perfect! Here's your personalized plan</h3>
-            <div className="space-y-3">
-              <Card>
-                <CardContent className="p-4">
-                  <h4 className="font-medium">Your Focus Areas:</h4>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedAreas.map(areaId => {
-                      const area = focusAreas.find(a => a.id === areaId);
-                      return (
-                        <span key={areaId} className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">
-                          {area?.label}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <h4 className="font-medium">Your Peer Specialist:</h4>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Based on your preferences, we've matched you with Sarah, who specializes in {selectedAreas[0] === 'addiction' ? 'addiction recovery' : 'wellness coaching'}.
-                  </p>
-                </CardContent>
-              </Card>
+          <>
+            <h2 className="font-semibold text-[20px] text-card-foreground mb-3 text-center">
+              How do you like to be supported?
+            </h2>
+            <p className="text-muted-foreground text-[16px] mb-6 text-center">
+              Choose your preferred approach
+            </p>
+            
+            <div className="space-y-3 mb-8">
+              {supportOptions.map(option => {
+                const Icon = option.icon;
+                const isSelected = supportStyle === option.id;
+                
+                return (
+                  <Card
+                    key={option.id}
+                    onClick={() => setSupportStyle(option.id)}
+                    className={`p-2 cursor-pointer transition-all duration-200 border rounded-lg ${
+                      isSelected 
+                        ? 'bg-primary/10 border-primary/20 shadow-sm' 
+                        : 'bg-card border-border hover:bg-accent hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-3 rounded-lg ${isSelected ? 'bg-primary' : 'bg-muted'}`}>
+                        <Icon 
+                          className={`${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`} 
+                          size={20} 
+                        />
+                      </div>
+                      <span className={`text-sm ${
+                        isSelected ? 'text-card-foreground' : 'text-muted-foreground'
+                      }`}>
+                        {option.label}
+                      </span>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
-          </div>
+          </>
+        );
+
+      case 4:
+        return (
+          <>
+            <h2 className="font-semibold text-[20px] text-card-foreground mb-3 text-center">
+              Help us personalize your experience
+            </h2>
+            <p className="text-muted-foreground text-[16px] mb-6 text-center">
+              This information is optional
+            </p>
+            
+            <div className="space-y-6 mb-8">
+              <div>
+                <Input
+                  type="text"
+                  placeholder="What should we call you?"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full p-4 text-[16px] border border-border rounded-lg bg-background focus:border-primary focus:outline-none"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-card-foreground mb-3 block">
+                  Gender (Optional)
+                </Label>
+                <RadioGroup value={gender} onValueChange={setGender} className="flex justify-center space-x-8">
+                  <div className="flex flex-col items-center space-y-2">
+                    <RadioGroupItem value="male" id="male" />
+                    <Label htmlFor="male" className="text-sm cursor-pointer">Male</Label>
+                  </div>
+                  <div className="flex flex-col items-center space-y-2">
+                    <RadioGroupItem value="female" id="female" />
+                    <Label htmlFor="female" className="text-sm cursor-pointer">Female</Label>
+                  </div>
+                  <div className="flex flex-col items-center space-y-2">
+                    <RadioGroupItem value="other" id="other" />
+                    <Label htmlFor="other" className="text-sm cursor-pointer">Other</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
+          </>
         );
 
       default:
@@ -144,30 +286,31 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>LEAP Onboarding Demo</CardTitle>
+      <div className="bg-background min-h-screen flex items-center justify-center p-4 w-full max-w-md mx-auto rounded-lg">
+        <Card className="bg-card p-6 max-w-sm w-full rounded-xl shadow-sm border-0 animate-fade-in">
+          <div className="absolute top-4 right-4">
             <Button variant="ghost" size="sm" onClick={onClose}>×</Button>
           </div>
-          <CardDescription>
-            Step {currentStep} of 3
-          </CardDescription>
-          <Progress value={(currentStep / 3) * 100} className="w-full" />
-        </CardHeader>
-        <CardContent className="space-y-6">
+          
           {renderStep()}
+          
           {!isCompleting && (
-            <Button 
-              onClick={handleNext} 
+            <Button
+              onClick={handleNext}
               disabled={!canProceed()}
-              className="w-full"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 text-[16px] rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {currentStep === 3 ? 'Complete Setup' : 'Continue'}
+              {currentStep === 4 ? (
+                <>
+                  Let's <span className="font-fjalla italic">LEAP</span>
+                </>
+              ) : (
+                'Continue'
+              )}
             </Button>
           )}
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };
