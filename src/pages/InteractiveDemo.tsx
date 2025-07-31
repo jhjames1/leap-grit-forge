@@ -26,6 +26,8 @@ import DemoUserChat from '@/components/DemoUserChat';
 import DemoTrainingSimulation from '@/components/DemoTrainingSimulation';
 import SplashScreen from '@/components/SplashScreen';
 import { DemoConocoPortal } from '@/components/DemoConocoPortal';
+import { DemoOnboardingFlow } from '@/components/DemoOnboardingFlow';
+import { DemoDailyEngagement } from '@/components/DemoDailyEngagement';
 
 const InteractiveDemo = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -33,6 +35,8 @@ const InteractiveDemo = () => {
   const [userProgress, setUserProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showDemoChat, setShowDemoChat] = useState(false);
+  const [showOnboardingDemo, setShowOnboardingDemo] = useState(false);
+  const [showDailyEngagementDemo, setShowDailyEngagementDemo] = useState(false);
   const [showTrainingSimulation, setShowTrainingSimulation] = useState(false);
   
 
@@ -221,6 +225,11 @@ const InteractiveDemo = () => {
             <p className="text-muted-foreground mb-4">
               New users complete a brief, confidential assessment to match them with appropriate resources and peer specialists.
             </p>
+            <div className="text-center">
+              <Button onClick={() => setShowOnboardingDemo(true)} variant="outline" className="mt-2">
+                Try Onboarding Demo
+              </Button>
+            </div>
             <div className="bg-white/80 rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="text-green-500" size={16} />
@@ -249,6 +258,11 @@ const InteractiveDemo = () => {
             <p className="text-muted-foreground mb-4">
               Users access daily activities, tools, and support resources tailored to their recovery journey.
             </p>
+            <div className="text-center mb-4">
+              <Button onClick={() => setShowDailyEngagementDemo(true)} variant="outline">
+                Try Daily Tools Demo
+              </Button>
+            </div>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="bg-white/80 rounded-lg p-3 text-center">
                 <Calendar className="text-green-500 mx-auto mb-2" size={24} />
@@ -495,7 +509,17 @@ const InteractiveDemo = () => {
           <DemoConocoPortal onBack={() => setCurrentSection('landing')} />
         )}
 
-        {/* Training Simulation Modal */}
+        {/* Demo Modals */}
+        <DemoOnboardingFlow 
+          isVisible={showOnboardingDemo}
+          onClose={() => setShowOnboardingDemo(false)}
+        />
+        
+        <DemoDailyEngagement 
+          isVisible={showDailyEngagementDemo}
+          onClose={() => setShowDailyEngagementDemo(false)}
+        />
+
         <DemoTrainingSimulation 
           isVisible={showTrainingSimulation}
           onClose={() => setShowTrainingSimulation(false)}
