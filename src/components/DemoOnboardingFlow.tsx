@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { CheckCircle2, Brain, Users, Target, Zap, TrendingUp, PenTool, Headphones, Goal, BarChart, Link, Sprout, CloudSun, Waves, Mountain, RotateCcw, Flame, Play, Calendar, Bot, Moon, Sun, Globe } from 'lucide-react';
 import SplashScreen from './SplashScreen';
 import { useLanguage } from '@/contexts/LanguageContext';
-import BottomNavigation from '@/components/BottomNavigation';
 
 interface DemoOnboardingFlowProps {
   isVisible: boolean;
@@ -315,8 +314,6 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
 
   // Show demo home page (step 5)
   if (currentStep === 5) {
-    const [activeTab, setActiveTab] = useState('home');
-
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         {/* iPhone Mockup Frame */}
@@ -329,7 +326,7 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[154px] h-[32px] bg-black rounded-b-[16px] z-10"></div>
               
               {/* Content */}
-              <div className="h-full bg-background overflow-auto relative">
+              <div className="h-full bg-background overflow-auto">
                 <div className="pt-12 p-4 pb-24">
                   {/* Header */}
                   <div className="mb-6">
@@ -489,11 +486,6 @@ export const DemoOnboardingFlow: React.FC<DemoOnboardingFlowProps> = ({ isVisibl
                        </div>
                      </Card>
                    </div>
-                </div>
-
-                {/* Bottom Navigation */}
-                <div className="absolute bottom-0 left-0 right-0">
-                  <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
                 </div>
               </div>
             </div>
