@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 
 import Index from "./pages/Index";
 import AdminPortal from "./pages/AdminPortal";
+import AdminTrainingPortal from "./pages/AdminTrainingPortal";
 import PeerSpecialistPortal from "./pages/PeerSpecialistPortal";
 import SpecialistManual from "./pages/SpecialistManual";
 import ConocoPortal from "./pages/ConocoPortal";
@@ -39,6 +40,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/admin" element={<AdminPortal />} />
+                <Route path="/admin-training" element={<AdminTrainingPortal />} />
                 <Route 
                   path="/specialist" 
                   element={
