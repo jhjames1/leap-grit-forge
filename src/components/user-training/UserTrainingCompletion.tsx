@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { motion } from 'framer-motion';
 import { Trophy, Download, ExternalLink, Award, Star, CheckCircle } from 'lucide-react';
 
@@ -15,8 +17,14 @@ const UserTrainingCompletion = ({ score, onReturnToPortal }: UserTrainingComplet
   const passingScore = 19; // 76% pass rate for more thorough assessment
   const isPassed = score >= passingScore;
   const percentage = Math.round((score / totalQuestions) * 100);
+  const [participantName, setParticipantName] = useState('');
 
   const downloadCertificate = () => {
+    if (!participantName.trim()) {
+      alert('Please enter your name before downloading the certificate.');
+      return;
+    }
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -34,65 +42,88 @@ const UserTrainingCompletion = ({ score, onReturnToPortal }: UserTrainingComplet
     ctx.lineWidth = 4;
     ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
 
-    // Title
-    ctx.fillStyle = '#059669';
-    ctx.font = 'bold 36px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Certificate of Completion', canvas.width / 2, 100);
+    // Load and draw the Thriving United logo
+    const logo = new Image();
+    logo.onload = () => {
+      // Draw logo in top left
+      ctx.drawImage(logo, 40, 40, 80, 80);
+      
+      // Continue with text after logo loads
+      drawCertificateText();
+    };
+    logo.onerror = () => {
+      // If logo fails to load, just draw the text
+      drawCertificateText();
+    };
+    logo.src = '/lovable-uploads/5a09c9b4-51a6-4dce-9f67-dd8de1db52dd.png';
 
-    // Subtitle
-    ctx.fillStyle = '#374151';
-    ctx.font = '24px Arial';
-    ctx.fillText('LEAP Platform User Experience Training', canvas.width / 2, 140);
+    const drawCertificateText = () => {
+      // Title
+      ctx.fillStyle = '#059669';
+      ctx.font = 'bold 36px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Certificate of Completion', canvas.width / 2, 120);
 
-    // Name section
-    ctx.fillStyle = '#1f2937';
-    ctx.font = '20px Arial';
-    ctx.fillText('This certifies that', canvas.width / 2, 200);
+      // Subtitle
+      ctx.fillStyle = '#374151';
+      ctx.font = '24px Arial';
+      ctx.fillText('LEAP Platform User Experience Training', canvas.width / 2, 160);
 
-    ctx.fillStyle = '#059669';
-    ctx.font = 'bold 28px Arial';
-    ctx.fillText('Training Participant', canvas.width / 2, 240);
+      // Thriving United text
+      ctx.fillStyle = '#059669';
+      ctx.font = '18px Arial';
+      ctx.fillText('Thriving United', canvas.width / 2, 190);
 
-    // Achievement text
-    ctx.fillStyle = '#374151';
-    ctx.font = '18px Arial';
-    ctx.fillText('has successfully completed the LEAP Platform', canvas.width / 2, 300);
-    ctx.fillText('User Experience Training Program', canvas.width / 2, 330);
+      // Name section
+      ctx.fillStyle = '#1f2937';
+      ctx.font = '20px Arial';
+      ctx.fillText('This certifies that', canvas.width / 2, 240);
 
-    // Score
-    ctx.fillStyle = '#059669';
-    ctx.font = 'bold 20px Arial';
-    ctx.fillText(`Score: ${score}/${totalQuestions} (${percentage}%)`, canvas.width / 2, 380);
+      ctx.fillStyle = '#059669';
+      ctx.font = 'bold 28px Arial';
+      ctx.fillText(participantName.trim(), canvas.width / 2, 280);
 
-    // Date
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '16px Arial';
-    const date = new Date().toLocaleDateString();
-    ctx.fillText(`Date: ${date}`, canvas.width / 2, 420);
+      // Achievement text
+      ctx.fillStyle = '#374151';
+      ctx.font = '18px Arial';
+      ctx.fillText('has successfully completed the LEAP Platform', canvas.width / 2, 330);
+      ctx.fillText('User Experience Training Program', canvas.width / 2, 360);
 
-    // Certificate ID
-    const certId = Math.random().toString(36).substr(2, 9).toUpperCase();
-    ctx.fillText(`Certificate ID: ${certId}`, canvas.width / 2, 450);
+      // Score
+      ctx.fillStyle = '#059669';
+      ctx.font = 'bold 20px Arial';
+      ctx.fillText(`Score: ${score}/${totalQuestions} (${percentage}%)`, canvas.width / 2, 410);
 
-    // Signature line
-    ctx.fillStyle = '#374151';
-    ctx.font = '14px Arial';
-    ctx.fillText('LEAP Platform Training Program', canvas.width / 2, 520);
+      // Date
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '16px Arial';
+      const date = new Date().toLocaleDateString();
+      ctx.fillText(`Date: ${date}`, canvas.width / 2, 450);
 
-    // Download
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `leap-user-training-certificate-${date.replace(/\//g, '-')}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-    });
+      // Certificate ID
+      const certId = Math.random().toString(36).substr(2, 9).toUpperCase();
+      ctx.fillText(`Certificate ID: ${certId}`, canvas.width / 2, 480);
+
+      // Signature line
+      ctx.fillStyle = '#374151';
+      ctx.font = '14px Arial';
+      ctx.fillText('LEAP Platform Training Program', canvas.width / 2, 540);
+      ctx.fillText('Thriving United', canvas.width / 2, 560);
+
+      // Download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `leap-user-training-certificate-${participantName.replace(/\s+/g, '-').toLowerCase()}-${date.replace(/\//g, '-')}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
   };
 
   return (
@@ -189,6 +220,35 @@ const UserTrainingCompletion = ({ score, onReturnToPortal }: UserTrainingComplet
                   </Card>
                 </motion.div>
               </div>
+
+              {/* Name Input Section */}
+              {isPassed && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.05 }}
+                  className="mb-8"
+                >
+                  <Card className="p-6">
+                    <div className="max-w-md mx-auto">
+                      <Label htmlFor="participant-name" className="text-lg font-semibold mb-3 block text-center">
+                        Enter Your Name for Certificate
+                      </Label>
+                      <Input
+                        id="participant-name"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={participantName}
+                        onChange={(e) => setParticipantName(e.target.value)}
+                        className="text-center text-lg py-3"
+                      />
+                      <p className="text-sm text-muted-foreground mt-2 text-center">
+                        Your name will appear on the downloadable certificate
+                      </p>
+                    </div>
+                  </Card>
+                </motion.div>
+              )}
 
               {/* Certificate Section */}
               {isPassed && (
