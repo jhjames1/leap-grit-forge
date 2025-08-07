@@ -20,12 +20,6 @@ import { BadgeCelebrationModal } from '@/components/BadgeCelebrationModal';
 
 
 const Index = () => {
-  // Add safety check to prevent hooks errors
-  if (typeof React === 'undefined' || !React.useState) {
-    console.error('React context is not available');
-    return <div>Loading...</div>;
-  }
-
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
