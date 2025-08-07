@@ -347,7 +347,7 @@ const UserTrainingCompletion = ({ score, onReturnToPortal }: UserTrainingComplet
                     {isPassed ? (
                       <>
                         <p>✓ You're ready to support users on their recovery journey</p>
-                        <p>✓ Access the admin portal to start managing users and content</p>
+                        <p>✓ You're ready to move to the Peer Support Specialist LEAP Training Module</p>
                         <p>✓ Review the user experience guide for ongoing reference</p>
                       </>
                     ) : (
