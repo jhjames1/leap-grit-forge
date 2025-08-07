@@ -18,115 +18,86 @@ const UserWelcomeModule = ({ onComplete }: UserWelcomeModuleProps) => {
       content: (
         <div className="text-center space-y-6">
           <div className="mb-8">
-            <h2 className="text-4xl font-bold text-primary mb-4">Welcome to LEAP</h2>
+            <h2 className="text-5xl font-bold mb-4">
+              <span className="font-oswald font-extralight tracking-tight">DAILY</span>
+              <span className="font-fjalla font-extrabold italic">LEAP</span>
+            </h2>
             <p className="text-xl text-muted-foreground">
-              Your journey to recovery starts here
+              This is how users first see the LEAP app title
             </p>
           </div>
           
-          <div className="grid grid-cols-2 gap-6">
-            <Card className="p-6">
-              <Heart className="h-8 w-8 text-primary mx-auto mb-3" />
-              <h3 className="font-semibold mb-2">Compassionate Support</h3>
-              <p className="text-sm text-muted-foreground">
-                Connect with peers who understand your journey
-              </p>
-            </Card>
-            <Card className="p-6">
-              <Target className="h-8 w-8 text-primary mx-auto mb-3" />
-              <h3 className="font-semibold mb-2">Personalized Path</h3>
-              <p className="text-sm text-muted-foreground">
-                Tailored tools and exercises for your recovery
-              </p>
-            </Card>
-          </div>
-          
-          <div className="mt-6 p-4 bg-primary/10 rounded-lg">
+          <div className="p-4 bg-primary/10 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>This is what your users see first.</strong> Notice the welcoming tone and clear value proposition.
+              <strong>Training Note:</strong> Notice the distinctive typography - "DAILY" in light Oswald font and "LEAP" in bold italic Fjalla font. This branding appears throughout the app.
             </p>
           </div>
         </div>
       )
     },
     {
-      title: "Your Safe Space",
+      title: "App Authentication",
       content: (
         <div className="space-y-6">
           <div className="text-center">
-            <Shield className="h-16 w-16 text-primary mx-auto mb-4" />
-            <h2 className="text-3xl font-bold mb-4">Your Privacy Matters</h2>
+            <h2 className="text-3xl font-bold mb-4">User Sign In/Sign Up</h2>
             <p className="text-lg text-muted-foreground mb-6">
-              LEAP is a secure, confidential platform designed specifically for recovery support.
+              Users authenticate through Supabase before accessing any content
             </p>
           </div>
           
-          <div className="grid gap-4">
-            <div className="flex items-center gap-3 p-4 bg-card rounded-lg">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span>End-to-end encryption for all conversations</span>
+          <Card className="p-6 max-w-sm mx-auto">
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Email</label>
+                <div className="mt-1 p-3 border rounded-lg bg-background">
+                  user@example.com
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Password</label>
+                <div className="mt-1 p-3 border rounded-lg bg-background">
+                  ••••••••
+                </div>
+              </div>
+              <Button className="w-full bg-primary text-white font-bold py-3 rounded-xl">
+                Sign In
+              </Button>
             </div>
-            <div className="flex items-center gap-3 p-4 bg-card rounded-lg">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span>HIPAA-compliant data protection</span>
-            </div>
-            <div className="flex items-center gap-3 p-4 bg-card rounded-lg">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span>Only you control who sees your information</span>
-            </div>
-          </div>
+          </Card>
           
           <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>Training Note:</strong> Users need to feel safe before they'll engage. This security message builds trust.
+              <strong>Training Note:</strong> All user data is securely stored and users must authenticate to access their personal recovery journey.
             </p>
           </div>
         </div>
       )
     },
     {
-      title: "Meet Your Community",
+      title: "Splash Screen Experience",
       content: (
         <div className="space-y-6">
           <div className="text-center">
-            <Users className="h-16 w-16 text-primary mx-auto mb-4" />
-            <h2 className="text-3xl font-bold mb-4">You're Not Alone</h2>
+            <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-white text-2xl font-bold">L</span>
+            </div>
+            <h2 className="text-3xl font-bold mb-4">Loading Experience</h2>
             <p className="text-lg text-muted-foreground mb-6">
-              Connect with trained peer specialists and others on similar journeys.
+              Users see a brief splash screen while the app loads their data
             </p>
           </div>
           
-          <div className="space-y-4">
-            <Card className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                  PS
-                </div>
-                <div>
-                  <h4 className="font-semibold">Peer Specialists</h4>
-                  <p className="text-sm text-muted-foreground">Trained professionals with lived experience</p>
-                </div>
-                <Badge variant="secondary" className="ml-auto">Available 24/7</Badge>
-              </div>
-            </Card>
-            
-            <Card className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-white font-bold">
-                  PC
-                </div>
-                <div>
-                  <h4 className="font-semibold">Peer Community</h4>
-                  <p className="text-sm text-muted-foreground">Others walking the recovery path with you</p>
-                </div>
-                <Badge variant="outline">Join Groups</Badge>
-              </div>
-            </Card>
+          <div className="text-center space-y-4">
+            <div className="animate-pulse">
+              <div className="h-2 bg-primary rounded-full w-1/2 mx-auto"></div>
+            </div>
+            <p className="text-sm text-muted-foreground">Loading your journey...</p>
           </div>
           
           <div className="mt-6 p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
             <p className="text-sm text-green-700 dark:text-green-300">
-              <strong>Training Note:</strong> This is how users understand the support system available to them.
+              <strong>Training Note:</strong> The splash screen creates anticipation while the app loads personalized content and recovery data.
             </p>
           </div>
         </div>

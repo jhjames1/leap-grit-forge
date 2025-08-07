@@ -10,9 +10,9 @@ import { toast } from 'sonner';
 // Module components
 import UserWelcomeModule from '@/components/user-training/UserWelcomeModule';
 import OnboardingExperienceModule from '@/components/user-training/OnboardingExperienceModule';
+import DashboardHomeModule from '@/components/user-training/DashboardHomeModule';
 import RecoveryJourneyModule from '@/components/user-training/RecoveryJourneyModule';
 import PeerChatModule from '@/components/user-training/PeerChatModule';
-import DailyPromptsModule from '@/components/user-training/DailyPromptsModule';
 import ToolboxModule from '@/components/user-training/ToolboxModule';
 import UserTrainingQuiz from '@/components/user-training/UserTrainingQuiz';
 import UserTrainingCompletion from '@/components/user-training/UserTrainingCompletion';
@@ -36,24 +36,32 @@ const UserExperienceTrainingPortal = () => {
   const modules: Module[] = [
     {
       id: 'welcome',
-      title: 'Welcome to LEAP',
-      description: 'Experience the user welcome and first impressions',
+      title: 'Welcome & Authentication',
+      description: 'Experience how users first encounter LEAP - splash screen, sign-in, and initial welcome',
       duration: '3 min',
       completed: completedModules.has('welcome'),
       component: UserWelcomeModule
     },
     {
       id: 'onboarding',
-      title: 'User Onboarding Flow',
-      description: 'Walk through how new users get started and set up their profile',
+      title: 'Onboarding Flow',
+      description: 'Walk through the actual 4-step onboarding: focus areas, journey stage, support style, and personal info',
       duration: '4 min',
       completed: completedModules.has('onboarding'),
       component: OnboardingExperienceModule
     },
     {
+      id: 'dashboard',
+      title: 'Daily Dashboard',
+      description: 'See the main dashboard with motivation quotes, streak tracking, and daily journey access',
+      duration: '4 min',
+      completed: completedModules.has('dashboard'),
+      component: DashboardHomeModule
+    },
+    {
       id: 'recovery-journey',
-      title: 'Recovery Journey Experience',
-      description: 'See how users navigate their recovery calendar and milestones',
+      title: 'Recovery Journey',
+      description: 'Navigate the 90-day journey with daily activities, progress tracking, and unlocking system',
       duration: '4 min',
       completed: completedModules.has('recovery-journey'),
       component: RecoveryJourneyModule
@@ -61,23 +69,15 @@ const UserExperienceTrainingPortal = () => {
     {
       id: 'peer-chat',
       title: 'Peer Support & Chat',
-      description: 'Experience how users connect with peers and specialists',
+      description: 'Experience the peer support system, group chats, and specialist connections',
       duration: '3 min',
       completed: completedModules.has('peer-chat'),
       component: PeerChatModule
     },
     {
-      id: 'daily-prompts',
-      title: 'Daily Prompts & Exercises',
-      description: 'Try the interactive exercises and reflection prompts users receive',
-      duration: '4 min',
-      completed: completedModules.has('daily-prompts'),
-      component: DailyPromptsModule
-    },
-    {
       id: 'toolbox',
       title: 'Recovery Toolbox',
-      description: 'Explore coping tools, breathing exercises, and wisdom library',
+      description: 'Explore coping tools, breathing exercises, gratitude logs, and crisis support resources',
       duration: '3 min',
       completed: completedModules.has('toolbox'),
       component: ToolboxModule
