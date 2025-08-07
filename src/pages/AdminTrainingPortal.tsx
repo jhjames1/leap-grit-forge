@@ -156,30 +156,49 @@ const AdminTrainingPortal = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 p-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
-          <h1 className="text-4xl font-bold text-foreground mb-2">
-            LEAP Admin Training Portal
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Master the admin portal in 10-15 minutes with interactive training
-          </p>
-          
-          {/* Progress */}
-          <div className="mt-6 max-w-md mx-auto">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-muted-foreground">Training Progress</span>
-              <span className="text-sm font-medium">{completedModules.size}/{totalModules} modules</span>
-            </div>
-            <Progress value={progressPercentage} className="h-2" />
+    <div className="min-h-screen w-full bg-background flex flex-col">
+      {/* Header - matching AdminPortal */}
+      <div className="border-b bg-card">
+        <div className="flex h-16 items-center justify-between px-6">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-foreground">Admin Training Portal</h1>
+            <Badge variant="secondary" className="bg-primary/10 text-primary">
+              Training
+            </Badge>
           </div>
-        </motion.div>
+          
+          <div className="flex items-center gap-2">
+            <Button onClick={() => window.history.back()} variant="outline" size="sm">
+              Back
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 p-6 space-y-6">
+        {/* Welcome Card - matching AdminPortal style */}
+        <Card className="bg-gradient-to-r from-primary to-primary-glow text-primary-foreground">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Welcome to Admin Training!</h2>
+                <p className="text-primary-foreground/80">Master the LEAP admin portal in 10-15 minutes</p>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-primary-foreground/80">Progress</div>
+                <Badge variant="secondary" className="bg-white/20 text-white">
+                  {completedModules.size}/{totalModules} Complete
+                </Badge>
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="mt-4">
+              <Progress value={progressPercentage} className="h-2 bg-white/20" />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Training Modules Grid */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
