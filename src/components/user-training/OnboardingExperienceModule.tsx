@@ -251,42 +251,6 @@ const OnboardingExperienceModule = ({ onComplete }: OnboardingExperienceModulePr
           </div>
         </div>
       )
-    },
-    {
-      title: "Welcome to LEAP!",
-      content: (
-        <div className="text-center space-y-6">
-          <div className="mb-8">
-            <div className="bg-primary p-3 rounded-lg mx-auto mb-4 w-fit">
-              <Target className="text-primary-foreground" size={24} />
-            </div>
-            <h2 className="text-xl font-semibold mb-3">
-              You're all set{firstName ? `, ${firstName}` : ''}!
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              Your personalized recovery journey starts now
-            </p>
-          </div>
-          
-          {selectedFocus.length > 0 && (
-            <Card className="p-4 bg-primary/10">
-              <h3 className="text-sm font-semibold mb-3">Your LEAP Setup:</h3>
-              <div className="text-left space-y-2 text-sm">
-                <div><strong>Focus Areas:</strong> {selectedFocus.join(', ')}</div>
-                {selectedStage && <div><strong>Journey Stage:</strong> {selectedStage}</div>}
-                {selectedSupport && <div><strong>Support Style:</strong> {selectedSupport}</div>}
-                {firstName && <div><strong>Name:</strong> {firstName}</div>}
-              </div>
-            </Card>
-          )}
-          
-          <div className="mt-6 p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
-            <p className="text-sm text-green-700 dark:text-green-300">
-              <strong>Training Note:</strong> This completion screen shows users their choices and creates excitement for starting their journey.
-            </p>
-          </div>
-        </div>
-      )
     }
   ];
 
