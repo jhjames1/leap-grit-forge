@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import SplashScreen from '@/components/SplashScreen';
 import { AuthForm } from '@/components/AuthForm';
 import OnboardingFlow from '@/components/OnboardingFlow';
