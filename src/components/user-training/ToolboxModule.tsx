@@ -5,12 +5,26 @@ import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { ArrowRight, AlertTriangle, Wind, Heart, TrendingUp, Bot, Radar, FileText } from 'lucide-react';
 
+// Import functional tools
+import BreathingExercise from '@/components/BreathingExercise';
+import UrgeTracker from '@/components/UrgeTracker';
+import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
+import TriggerIdentifier from '@/components/TriggerIdentifier';
+import ThoughtPatternSorter from '@/components/ThoughtPatternSorter';
+
 interface ToolboxModuleProps {
   onComplete: () => void;
 }
 
 const ToolboxModule = ({ onComplete }: ToolboxModuleProps) => {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  
+  // Tool modal states
+  const [showBreathing, setShowBreathing] = useState(false);
+  const [showUrgeTracker, setShowUrgeTracker] = useState(false);
+  const [showGratitudeLog, setShowGratitudeLog] = useState(false);
+  const [showTriggerIdentifier, setShowTriggerIdentifier] = useState(false);
+  const [showThoughtPatternSorter, setShowThoughtPatternSorter] = useState(false);
 
   const mockStats = {
     toolsToday: 3,
@@ -83,6 +97,29 @@ const ToolboxModule = ({ onComplete }: ToolboxModuleProps) => {
 
   const handleToolClick = (toolId: string) => {
     setSelectedTool(selectedTool === toolId ? null : toolId);
+  };
+
+  const handleLaunchTool = (toolId: string) => {
+    switch (toolId) {
+      case 'panic':
+        alert('Emergency feature - In a real app, this would connect to crisis support resources and emergency helplines.');
+        break;
+      case 'foreman':
+        alert('The Foreman - In a real app, this would open the AI-powered mentor providing personalized guidance 24/7.');
+        break;
+      case 'breathing':
+        setShowBreathing(true);
+        break;
+      case 'urge':
+        setShowUrgeTracker(true);
+        break;
+      case 'gratitude':
+        setShowGratitudeLog(true);
+        break;
+      case 'trigger':
+        setShowTriggerIdentifier(true);
+        break;
+    }
   };
 
   const getToolDescription = (toolId: string) => {
@@ -196,7 +233,7 @@ const ToolboxModule = ({ onComplete }: ToolboxModuleProps) => {
                     <p className="text-sm text-foreground">
                       {getToolDescription(selectedTool)}
                     </p>
-                    <Button size="sm" className="mt-3">
+                    <Button size="sm" className="mt-3" onClick={() => handleLaunchTool(selectedTool)}>
                       Launch Tool
                     </Button>
                   </Card>
@@ -267,6 +304,44 @@ const ToolboxModule = ({ onComplete }: ToolboxModuleProps) => {
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
             </div>
+
+            {/* Functional Tool Modals */}
+            {showBreathing && (
+              <BreathingExercise 
+                onClose={() => setShowBreathing(false)} 
+                onCancel={() => setShowBreathing(false)}
+              />
+            )}
+
+            {showUrgeTracker && (
+              <UrgeTracker 
+                onClose={() => setShowUrgeTracker(false)} 
+                onCancel={() => setShowUrgeTracker(false)}
+                onNavigate={() => {}}
+              />
+            )}
+
+            {showGratitudeLog && (
+              <GratitudeLogEnhanced 
+                onClose={() => setShowGratitudeLog(false)}
+                onCancel={() => setShowGratitudeLog(false)}
+              />
+            )}
+
+            {showTriggerIdentifier && (
+              <TriggerIdentifier 
+                onClose={() => setShowTriggerIdentifier(false)}
+                onCancel={() => setShowTriggerIdentifier(false)}
+                onNavigate={() => {}}
+              />
+            )}
+
+            {showThoughtPatternSorter && (
+              <ThoughtPatternSorter 
+                onClose={() => setShowThoughtPatternSorter(false)}
+                onCancel={() => setShowThoughtPatternSorter(false)}
+              />
+            )}
           </div>
         </CardContent>
       </Card>
