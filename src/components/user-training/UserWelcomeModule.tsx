@@ -14,90 +14,99 @@ const UserWelcomeModule = ({ onComplete }: UserWelcomeModuleProps) => {
 
   const steps = [
     {
-      title: "Welcome to LEAP",
+      title: "LEAP Splash Screen",
       content: (
-        <div className="text-center space-y-6">
-          <div className="mb-8">
-            <h2 className="text-5xl font-bold mb-4">
-              <span className="font-oswald font-extralight tracking-tight">DAILY</span>
-              <span className="font-fjalla font-extrabold italic">LEAP</span>
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              This is how users first see the LEAP app title
-            </p>
+        <div className="space-y-6">
+          <div className="relative bg-cover bg-center h-64 rounded-lg overflow-hidden"
+               style={{
+                 backgroundImage: `linear-gradient(rgba(11, 20, 38, 0.4), rgba(11, 20, 38, 0.6)), url('/lovable-uploads/c61510da-8bef-4d57-8fba-f87d453bd59e.png')`
+               }}>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+              <h1 className="text-4xl font-bold mb-2">
+                <span className="font-fjalla font-extrabold italic">LEAP</span>
+              </h1>
+              <p className="text-sm font-oswald font-extralight tracking-wide mb-4">
+                Don't Tough It Out. Talk It Out.
+              </p>
+              <div className="w-12 h-12 mb-2">
+                <div className="w-full h-full bg-white/20 rounded-full animate-spin flex items-center justify-center">
+                  <div className="w-8 h-8 bg-white rounded-full"></div>
+                </div>
+              </div>
+              <p className="text-xs font-oswald tracking-wide">
+                Loading your tools...
+              </p>
+            </div>
           </div>
           
           <div className="p-4 bg-primary/10 rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Training Note:</strong> Notice the distinctive typography - "DAILY" in light Oswald font and "LEAP" in bold italic Fjalla font. This branding appears throughout the app.
+              <strong>Training Note:</strong> The splash screen features a background image with LEAP branding and a spinning loading animation. This creates an engaging first impression.
             </p>
           </div>
         </div>
       )
     },
     {
-      title: "App Authentication",
+      title: "Authentication Screen",
       content: (
         <div className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold mb-4">User Sign In/Sign Up</h2>
-            <p className="text-lg text-muted-foreground mb-6">
-              Users authenticate through Supabase before accessing any content
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold mb-2">Welcome to LEAP</h2>
+            <p className="text-muted-foreground">
+              Join your recovery journey with peer support
             </p>
           </div>
           
-          <Card className="p-6 max-w-sm mx-auto">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Email</label>
-                <div className="mt-1 p-3 border rounded-lg bg-background">
-                  user@example.com
+          <Card className="max-w-md mx-auto">
+            <CardContent className="p-6">
+              {/* Tabs simulation */}
+              <div className="flex bg-muted rounded-lg p-1 mb-6">
+                <div className="flex-1 text-center py-2 bg-background rounded-md text-sm font-medium">
+                  Sign In
+                </div>
+                <div className="flex-1 text-center py-2 text-sm text-muted-foreground">
+                  Sign Up
                 </div>
               </div>
-              <div>
-                <label className="text-sm font-medium">Password</label>
-                <div className="mt-1 p-3 border rounded-lg bg-background">
-                  ••••••••
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium block mb-2">Email</label>
+                  <div className="p-3 border rounded-md bg-background text-muted-foreground">
+                    Enter your email
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium block mb-2">Password</label>
+                  <div className="p-3 border rounded-md bg-background text-muted-foreground">
+                    Enter your password
+                  </div>
+                </div>
+                <Button className="w-full">
+                  Sign In
+                </Button>
+                <div className="text-center">
+                  <button className="text-sm text-primary hover:underline">
+                    Forgot your password?
+                  </button>
                 </div>
               </div>
-              <Button className="w-full bg-primary text-white font-bold py-3 rounded-xl">
-                Sign In
-              </Button>
-            </div>
+            </CardContent>
           </Card>
           
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>Training Note:</strong> All user data is securely stored and users must authenticate to access their personal recovery journey.
-            </p>
-          </div>
-        </div>
-      )
-    },
-    {
-      title: "Splash Screen Experience",
-      content: (
-        <div className="space-y-6">
           <div className="text-center">
-            <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-2xl font-bold">L</span>
-            </div>
-            <h2 className="text-3xl font-bold mb-4">Loading Experience</h2>
-            <p className="text-lg text-muted-foreground mb-6">
-              Users see a brief splash screen while the app loads their data
+            <p className="text-sm text-muted-foreground mb-3">
+              Want to see LEAP in action?
             </p>
+            <Button variant="outline" className="flex items-center gap-2 mx-auto">
+              Try Interactive Demo
+            </Button>
           </div>
           
-          <div className="text-center space-y-4">
-            <div className="animate-pulse">
-              <div className="h-2 bg-primary rounded-full w-1/2 mx-auto"></div>
-            </div>
-            <p className="text-sm text-muted-foreground">Loading your journey...</p>
-          </div>
-          
-          <div className="mt-6 p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
-            <p className="text-sm text-green-700 dark:text-green-300">
-              <strong>Training Note:</strong> The splash screen creates anticipation while the app loads personalized content and recovery data.
+          <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              <strong>Training Note:</strong> The real auth screen has tabs for Sign In/Sign Up, includes a first name field for signup, and offers a demo option for exploring the app.
             </p>
           </div>
         </div>
