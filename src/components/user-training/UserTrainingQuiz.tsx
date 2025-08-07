@@ -267,6 +267,66 @@ const UserTrainingQuiz = ({ onComplete }: UserTrainingQuizProps) => {
       ],
       correctAnswer: 1,
       explanation: "LEAP is a supportive tool designed to assist users in their recovery journey, not a requirement or obligation."
+    },
+    {
+      id: 21,
+      question: "In the Recovery Toolbox, what should users do when they feel an urge or craving?",
+      options: [
+        "Close the app and try to distract themselves",
+        "Use the Urge Tracker tool to log and work through the feeling",
+        "Immediately call a specialist",
+        "Wait for the feeling to pass"
+      ],
+      correctAnswer: 1,
+      explanation: "The Urge Tracker tool helps users log their feelings and provides guided steps to work through urges safely."
+    },
+    {
+      id: 22,
+      question: "How is the Recovery Strength Meter calculated?",
+      options: [
+        "Only by specialist assessments",
+        "Based on app usage time only",
+        "Through daily check-ins, tool usage, and engagement patterns",
+        "By comparing to other users"
+      ],
+      correctAnswer: 2,
+      explanation: "The strength meter uses multiple data points including daily check-ins, tool usage, and engagement to provide a comprehensive view of progress."
+    },
+    {
+      id: 23,
+      question: "What's the difference between Foreman Chat and Peer Specialist Chat?",
+      options: [
+        "There is no difference",
+        "Foreman is AI-powered for immediate support, Peer Specialists are real people",
+        "Foreman is only for emergencies",
+        "Peer Specialists only work during business hours"
+      ],
+      correctAnswer: 1,
+      explanation: "Foreman provides 24/7 AI-powered support for immediate help, while Peer Specialists are trained humans available during scheduled hours."
+    },
+    {
+      id: 24,
+      question: "In the Recovery Journey Calendar, how can users best track their daily progress?",
+      options: [
+        "Only mark major milestones",
+        "Skip days when they don't feel good",
+        "Complete daily check-ins and rate their day",
+        "Wait for specialists to update it"
+      ],
+      correctAnswer: 2,
+      explanation: "Daily check-ins and rating allow users to actively track their progress and help the app provide better personalized support."
+    },
+    {
+      id: 25,
+      question: "When should users request a phone call with a specialist?",
+      options: [
+        "For any question about the app",
+        "Only during a crisis situation",
+        "When they need more personal support or have complex concerns",
+        "Never, chat is always sufficient"
+      ],
+      correctAnswer: 2,
+      explanation: "Phone calls are valuable for more personal discussions, complex situations, or when users need deeper support beyond text chat."
     }
   ];
 

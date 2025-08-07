@@ -11,8 +11,8 @@ interface UserTrainingCompletionProps {
 }
 
 const UserTrainingCompletion = ({ score, onReturnToPortal }: UserTrainingCompletionProps) => {
-  const totalQuestions = 20;
-  const passingScore = 15;
+  const totalQuestions = 25;
+  const passingScore = 19; // 76% pass rate for more thorough assessment
   const isPassed = score >= passingScore;
   const percentage = Math.round((score / totalQuestions) * 100);
 
@@ -293,7 +293,7 @@ const UserTrainingCompletion = ({ score, onReturnToPortal }: UserTrainingComplet
                     ) : (
                       <>
                         <p>• Review the training modules to strengthen your understanding</p>
-                        <p>• Retake the quiz when you feel ready (passing score: {passingScore}/20)</p>
+                        <p>• Retake the quiz when you feel ready (passing score: {passingScore}/25)</p>
                         <p>• Focus on understanding the user journey and support principles</p>
                       </>
                     )}
