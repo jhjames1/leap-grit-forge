@@ -16,6 +16,85 @@ const UserTrainingCompletion = ({ score, onReturnToPortal }: UserTrainingComplet
   const isPassed = score >= passingScore;
   const percentage = Math.round((score / totalQuestions) * 100);
 
+  const downloadCertificate = () => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size
+    canvas.width = 800;
+    canvas.height = 600;
+
+    // Background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Border
+    ctx.strokeStyle = '#059669';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+    // Title
+    ctx.fillStyle = '#059669';
+    ctx.font = 'bold 36px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Certificate of Completion', canvas.width / 2, 100);
+
+    // Subtitle
+    ctx.fillStyle = '#374151';
+    ctx.font = '24px Arial';
+    ctx.fillText('LEAP Platform User Experience Training', canvas.width / 2, 140);
+
+    // Name section
+    ctx.fillStyle = '#1f2937';
+    ctx.font = '20px Arial';
+    ctx.fillText('This certifies that', canvas.width / 2, 200);
+
+    ctx.fillStyle = '#059669';
+    ctx.font = 'bold 28px Arial';
+    ctx.fillText('Training Participant', canvas.width / 2, 240);
+
+    // Achievement text
+    ctx.fillStyle = '#374151';
+    ctx.font = '18px Arial';
+    ctx.fillText('has successfully completed the LEAP Platform', canvas.width / 2, 300);
+    ctx.fillText('User Experience Training Program', canvas.width / 2, 330);
+
+    // Score
+    ctx.fillStyle = '#059669';
+    ctx.font = 'bold 20px Arial';
+    ctx.fillText(`Score: ${score}/${totalQuestions} (${percentage}%)`, canvas.width / 2, 380);
+
+    // Date
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '16px Arial';
+    const date = new Date().toLocaleDateString();
+    ctx.fillText(`Date: ${date}`, canvas.width / 2, 420);
+
+    // Certificate ID
+    const certId = Math.random().toString(36).substr(2, 9).toUpperCase();
+    ctx.fillText(`Certificate ID: ${certId}`, canvas.width / 2, 450);
+
+    // Signature line
+    ctx.fillStyle = '#374151';
+    ctx.font = '14px Arial';
+    ctx.fillText('LEAP Platform Training Program', canvas.width / 2, 520);
+
+    // Download
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `leap-user-training-certificate-${date.replace(/\//g, '-')}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-6">
       <motion.div
@@ -166,7 +245,11 @@ const UserTrainingCompletion = ({ score, onReturnToPortal }: UserTrainingComplet
               >
                 {isPassed && (
                   <>
-                    <Button size="lg" className="bg-green-600 hover:bg-green-700">
+                    <Button 
+                      size="lg" 
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={downloadCertificate}
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Download Certificate
                     </Button>
