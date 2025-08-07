@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowLeft, Flame, Target, Trophy, Calendar, Play, TrendingUp, Clock } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Flame, Target, Trophy, Calendar, Play, TrendingUp, Clock, Bot } from 'lucide-react';
 
 interface DashboardHomeModuleProps {
   onComplete: () => void;
@@ -260,6 +260,62 @@ const DashboardHomeModule = ({ onComplete }: DashboardHomeModuleProps) => {
           <div className="p-4 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
             <p className="text-sm text-orange-700 dark:text-orange-300">
               <strong>Training Note:</strong> Shows 3 random upcoming activities from the next week to give users something to look forward to and maintain engagement.
+            </p>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Functional Foreman in Dashboard",
+      content: (
+        <div className="space-y-6">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-semibold mb-3">Working Foreman Integration</h2>
+            <p className="text-muted-foreground text-sm">
+              The Foreman actually functions directly from the HOME dashboard
+            </p>
+          </div>
+          
+          <Card className="relative bg-card rounded-lg border-0 shadow-none overflow-hidden">
+            <div className="absolute inset-0 bg-cover bg-center"
+                 style={{
+                   backgroundImage: 'url(/lovable-uploads/c61510da-8bef-4d57-8fba-f87d453bd59e.png)'
+                 }}
+            />
+            <div className="absolute inset-0 bg-black/60" />
+            <div className="relative z-10 p-4">
+              <div className="flex flex-col items-center text-center mb-4">
+                <h3 className="font-fjalla font-bold text-white text-2xl tracking-wide">
+                  THE FOREMAN
+                </h3>
+                <p className="text-white/80 text-sm font-source">
+                  Your 24/7 recovery companion
+                </p>
+              </div>
+              
+              {/* Mini functional chat window */}
+              <div className="bg-white/10 backdrop-blur rounded-lg p-3 mb-3 max-h-32 overflow-y-auto">
+                <div className="text-white text-xs mb-2">
+                  <strong>Foreman:</strong> Hey there! I noticed you're on a 7-day streak. How are you feeling today?
+                </div>
+                <div className="text-white/80 text-xs">
+                  <strong>You:</strong> Actually struggling a bit today...
+                </div>
+                <div className="text-white text-xs mt-2">
+                  <strong>Foreman:</strong> I hear you. Let's work through this. Want to try a quick breathing exercise?
+                </div>
+              </div>
+              
+              <Button className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold py-3 rounded-lg tracking-wide transition-colors duration-300 flex items-center justify-center gap-2">
+                <Bot size={20} />
+                CONTINUE CHAT
+              </Button>
+            </div>
+          </Card>
+          
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg">
+            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+              <strong>Training Note:</strong> The Foreman actually works from this dashboard card - users can have real conversations and get immediate support without leaving the HOME screen.
             </p>
           </div>
         </div>
