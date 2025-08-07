@@ -55,7 +55,7 @@ const UserTrainingCompletion = ({ score, onReturnToPortal }: UserTrainingComplet
       // If logo fails to load, just draw the text
       drawCertificateText();
     };
-    logo.src = '/lovable-uploads/5a09c9b4-51a6-4dce-9f67-dd8de1db52dd.png';
+    logo.src = '/lovable-uploads/9aaed05c-7f5d-40c6-9e4c-e2ea107ce354.png';
 
     const drawCertificateText = () => {
       // Title
