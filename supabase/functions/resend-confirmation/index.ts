@@ -58,7 +58,7 @@ serve(async (req) => {
         type: 'invite',
         email: email,
         options: {
-          redirectTo: `${req.headers.get('origin') || 'http://localhost:3000'}/confirm`
+          redirectTo: `https://14369a47-4567-40f2-9446-0ad02aed19d0.lovableproject.com/confirm`
         }
       })
 
@@ -105,7 +105,7 @@ serve(async (req) => {
       type: 'signup',
       email: email,
       options: {
-        redirectTo: `${req.headers.get('origin') || 'http://localhost:3000'}/confirm`
+        redirectTo: `https://14369a47-4567-40f2-9446-0ad02aed19d0.lovableproject.com/confirm`
       }
     })
 

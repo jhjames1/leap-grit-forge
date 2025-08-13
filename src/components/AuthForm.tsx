@@ -40,7 +40,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
     setSuccess(null);
 
     try {
-      const redirectUrl = `${window.location.origin}/confirm`;
+      const redirectUrl = `https://14369a47-4567-40f2-9446-0ad02aed19d0.lovableproject.com/confirm`;
       
       const { error } = await supabase.auth.signUp({
         email: signUpData.email,
