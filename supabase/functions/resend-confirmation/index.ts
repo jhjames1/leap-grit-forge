@@ -51,10 +51,39 @@ serve(async (req) => {
     const user = users.users.find(u => u.email === email)
     
     if (!user) {
-      throw new Error('User not found')
+      console.log('User not found in system, creating new invitation link for:', email)
+      
+      // User doesn't exist, create a new signup invitation link
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'invite',
+        email: email,
+        options: {
+          redirectTo: `${req.headers.get('origin') || 'http://localhost:3000'}/confirm`
+        }
+      })
+
+      if (linkError) {
+        console.error('Error generating invite link:', linkError)
+        throw new Error(`Failed to generate invite link: ${linkError.message}`)
+      }
+
+      console.log('Invite link generated for new user:', email)
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Invitation email sent to ${email} (new user)`,
+          isNewUser: true,
+          inviteLink: linkData.properties?.action_link
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      )
     }
 
-    console.log('Found user:', user.id, 'Email confirmed:', user.email_confirmed_at)
+    console.log('Found existing user:', user.id, 'Email confirmed:', user.email_confirmed_at)
 
     // Check if email is already confirmed
     if (user.email_confirmed_at) {
@@ -71,12 +100,12 @@ serve(async (req) => {
       )
     }
 
-    // Generate and send new confirmation email
-    const { error: resendError } = await supabaseAdmin.auth.admin.generateLink({
+    // Generate and send new confirmation email for existing unconfirmed user
+    const { data: linkData, error: resendError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'signup',
       email: email,
       options: {
-        redirectTo: `${Deno.env.get('SUPABASE_URL')?.replace('https://', 'https://localhost:3000')}/confirm`
+        redirectTo: `${req.headers.get('origin') || 'http://localhost:3000'}/confirm`
       }
     })
 
