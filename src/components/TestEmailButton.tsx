@@ -13,6 +13,7 @@ export function TestEmailButton() {
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const handleResendConfirmation = async () => {
+    alert('Button clicked! Check console for details.');
     console.log('TestEmailButton: Starting resend confirmation process');
     setLoading(true);
     setResult(null);
