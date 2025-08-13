@@ -39,30 +39,32 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <LanguageProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/admin" element={<AdminPortal />} />
-        <Route path="/admin-training" element={<AdminTrainingPortal />} />
-        <Route path="/user-experience-training" element={<UserExperienceTrainingPortal />} />
-                <Route 
-                  path="/specialist" 
-                  element={
-                    <ErrorBoundary>
-                      <PeerSpecialistPortal />
-                    </ErrorBoundary>
-                  } 
-                />
-                <Route path="/specialist-manual" element={<SpecialistManual />} />
-                <Route path="/reset-password" element={<PasswordReset />} />
-                <Route path="/confirm" element={<EmailConfirmation />} />
-                <Route path="/test-confirm" element={<TestConfirmationScreen />} />
-                <Route path="/conoco" element={<ConocoPortal />} />
-                <Route path="/demo" element={<InteractiveDemo />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+            <SafeToastProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/admin" element={<AdminPortal />} />
+          <Route path="/admin-training" element={<AdminTrainingPortal />} />
+          <Route path="/user-experience-training" element={<UserExperienceTrainingPortal />} />
+                  <Route 
+                    path="/specialist" 
+                    element={
+                      <ErrorBoundary>
+                        <PeerSpecialistPortal />
+                      </ErrorBoundary>
+                    } 
+                  />
+                  <Route path="/specialist-manual" element={<SpecialistManual />} />
+                  <Route path="/reset-password" element={<PasswordReset />} />
+                  <Route path="/confirm" element={<EmailConfirmation />} />
+                  <Route path="/test-confirm" element={<TestConfirmationScreen />} />
+                  <Route path="/conoco" element={<ConocoPortal />} />
+                  <Route path="/demo" element={<InteractiveDemo />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
               </BrowserRouter>
-            </LanguageProvider>
+            </SafeToastProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
