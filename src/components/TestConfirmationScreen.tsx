@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, XCircle, Mail } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 export function TestConfirmationScreen() {
   const [view, setView] = useState<'loading' | 'success' | 'error'>('loading');
@@ -49,7 +49,7 @@ export function TestConfirmationScreen() {
               You will be redirected to the app in a few seconds...
             </p>
             <div className="space-y-2">
-              <Button className="w-full">
+              <Button className="w-full" onClick={() => window.location.href = '/'}>
                 Go to App
               </Button>
               <div className="flex gap-2">
@@ -82,7 +82,7 @@ export function TestConfirmationScreen() {
             </AlertDescription>
           </Alert>
           <div className="space-y-3">
-            <Button className="w-full">
+            <Button className="w-full" onClick={() => window.location.href = '/'}>
               Back to Login
             </Button>
             <div className="flex gap-2">
