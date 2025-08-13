@@ -156,6 +156,52 @@ serve(async (req) => {
       specialist: createdSpecialistAppointments
     });
 
+    // Send Outlook calendar invites for each appointment
+    try {
+      // Get specialist and user details for calendar invite
+      const { data: specialist, error: specialistError } = await supabase
+        .from('peer_specialists')
+        .select('first_name, last_name, email')
+        .eq('id', proposal.specialist_id)
+        .single();
+
+      const { data: user, error: userError } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('user_id', proposal.user_id)
+        .single();
+
+      // Get user email from auth.users
+      const { data: { user: authUser }, error: authError } = await supabase.auth.admin.getUserById(proposal.user_id);
+
+      if (!specialistError && !userError && !authError && specialist && user && authUser) {
+        const specialistName = `${specialist.first_name} ${specialist.last_name}`;
+        const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User';
+        
+        for (const apt of appointments) {
+          // Send calendar invite via edge function
+          await supabase.functions.invoke('send-outlook-calendar', {
+            body: {
+              specialistEmail: specialist.email,
+              userEmail: authUser.email,
+              title: apt.title,
+              description: apt.description,
+              startDateTime: apt.appointment_date.toISOString(),
+              endDateTime: apt.appointment_end.toISOString(),
+              specialistName,
+              userName
+            }
+          });
+        }
+        console.log('[create-appointments] Calendar invites sent successfully');
+      } else {
+        console.warn('[create-appointments] Could not send calendar invites - missing user/specialist data');
+      }
+    } catch (calendarError) {
+      console.error('[create-appointments] Calendar invite error (non-blocking):', calendarError);
+      // Don't fail the appointment creation if calendar invite fails
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
