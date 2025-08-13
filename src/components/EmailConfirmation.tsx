@@ -156,7 +156,7 @@ export function EmailConfirmation() {
             </Alert>
           )}
           <div className="space-y-3">
-            <Button onClick={() => navigate('/auth')} className="w-full">
+            <Button onClick={() => navigate('/')} className="w-full">
               Back to Login
             </Button>
             <p className="text-sm text-muted-foreground text-center">
