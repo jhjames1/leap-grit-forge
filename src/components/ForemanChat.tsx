@@ -31,8 +31,10 @@ import { supabase } from '@/integrations/supabase/client';
 import BreathingExercise from '@/components/BreathingExercise';
 import UrgeTracker from '@/components/UrgeTracker';
 import GratitudeLogEnhanced from '@/components/GratitudeLogEnhanced';
+import AppointmentSchedulingPrompt from '@/components/AppointmentSchedulingPrompt';
 import { ConversationMemoryManager } from '@/utils/conversationMemory';
 import { convertToYouTubeEmbedUrl, isYouTubeUrl } from '@/utils/youtubeUtils';
+import { useSessionTiming } from '@/hooks/useSessionTiming';
 
 interface ForemanChatProps {
   onBack: () => void;
@@ -87,6 +89,17 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
     conversationTurn: 0,
     userMessages: [],
     invalidInputCount: 0
+  });
+  
+  // Session timing and appointment prompting
+  const [showAppointmentPrompt, setShowAppointmentPrompt] = useState(false);
+  const { sessionDurationMinutes } = useSessionTiming({
+    onFifteenMinuteMark: () => {
+      // Only show prompt if we have substantial conversation
+      if (messages.length > 3) {
+        setShowAppointmentPrompt(true);
+      }
+    }
   });
   
   // Tool modal states
@@ -354,6 +367,20 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle appointment scheduling navigation
+  const handleScheduleAppointment = () => {
+    if (onNavigate) {
+      onNavigate('peer-selection');
+      setShowAppointmentPrompt(false);
+    } else {
+      console.log("Navigation to peer chat requested but no onNavigate handler available");
+    }
+  };
+
+  const handleDismissAppointmentPrompt = () => {
+    setShowAppointmentPrompt(false);
+  };
 
   // Save conversation memory when component unmounts or user leaves
   useEffect(() => {
@@ -1012,6 +1039,19 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
             )}
           </div>
         ))}
+
+        {/* Appointment scheduling prompt */}
+        {showAppointmentPrompt && (
+          <div className="flex justify-start">
+            <div className="max-w-[85%]">
+              <AppointmentSchedulingPrompt
+                onScheduleAppointment={handleScheduleAppointment}
+                onDismiss={handleDismissAppointmentPrompt}
+                sessionDurationMinutes={sessionDurationMinutes}
+              />
+            </div>
+          </div>
+        )}
 
         <div ref={messagesEndRef} />
       </div>
