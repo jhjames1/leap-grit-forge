@@ -16,6 +16,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PasswordReset } from "./components/PasswordReset";
 import { EmailConfirmation } from "./components/EmailConfirmation";
 import { TestConfirmationScreen } from "./components/TestConfirmationScreen";
+import { SafeToastProvider } from "./components/SafeToastProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,7 +39,8 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <LanguageProvider>
-            <BrowserRouter>
+            <SafeToastProvider>
+              <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/admin" element={<AdminPortal />} />
@@ -60,7 +62,8 @@ function App() {
                 <Route path="/demo" element={<InteractiveDemo />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
+              </BrowserRouter>
+            </SafeToastProvider>
           </LanguageProvider>
         </ThemeProvider>
       </QueryClientProvider>
