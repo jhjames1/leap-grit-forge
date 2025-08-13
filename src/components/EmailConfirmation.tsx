@@ -34,6 +34,8 @@ export function EmailConfirmation() {
           code: !!code,
           all_params: Object.fromEntries(searchParams.entries())
         });
+        
+        console.log('Full URL:', window.location.href);
 
         // Handle different auth flows
         if (token_hash && type === 'signup') {
