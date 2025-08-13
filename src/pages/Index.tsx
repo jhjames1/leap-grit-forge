@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import SplashScreen from '@/components/SplashScreen';
 import { AuthForm } from '@/components/AuthForm';
+import { TestEmailButton } from '@/components/TestEmailButton';
 import OnboardingFlow from '@/components/OnboardingFlow';
 import BottomNavigation from '@/components/BottomNavigation';
 import DashboardHome from '@/components/DashboardHome';
@@ -132,7 +133,18 @@ const Index = () => {
 
   if (!isAuthenticated) {
     console.log('Showing auth form');
-    return <AuthForm onAuthSuccess={handleAuthSuccess} />;
+    return (
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <AuthForm onAuthSuccess={handleAuthSuccess} />
+          
+          {/* Test Email Button for Development */}
+          <div className="flex justify-center">
+            <TestEmailButton />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (showOnboarding) {

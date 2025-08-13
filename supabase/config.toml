@@ -1,5 +1,8 @@
 project_id = "xefypnmvsikrdxzepgqf"
 
+[functions.resend-confirmation]
+verify_jwt = true
+
 [functions.foreman-chat]
 verify_jwt = false
 
