@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { Users, Map, Link, Heart, Compass } from 'lucide-react';
 import { TrainingModule } from '../InteractiveTrainingModule';
 

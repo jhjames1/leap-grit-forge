@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { Users, Target, CheckCircle, ArrowUp, Scale } from 'lucide-react';
 import { TrainingModule } from '../InteractiveTrainingModule';
 

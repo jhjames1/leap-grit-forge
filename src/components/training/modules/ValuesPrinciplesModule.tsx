@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { Heart, Star, Compass, Users, Award } from 'lucide-react';
 import { TrainingModule } from '../InteractiveTrainingModule';
 
