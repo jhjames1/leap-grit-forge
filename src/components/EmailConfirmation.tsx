@@ -19,14 +19,26 @@ export function EmailConfirmation() {
       try {
         setLoading(true);
         
-        // Get tokens from URL parameters
+        // Get all possible parameters from URL
         const token_hash = searchParams.get('token_hash');
+        const access_token = searchParams.get('access_token');
+        const refresh_token = searchParams.get('refresh_token');
         const type = searchParams.get('type');
+        const code = searchParams.get('code');
         
-        console.log('Email confirmation attempt:', { token_hash: !!token_hash, type });
+        // Log all parameters for debugging
+        console.log('URL parameters:', {
+          token_hash: !!token_hash,
+          access_token: !!access_token,
+          refresh_token: !!refresh_token,
+          type,
+          code: !!code,
+          all_params: Object.fromEntries(searchParams.entries())
+        });
 
-        if (type === 'signup' && token_hash) {
-          // Handle email confirmation for signup
+        // Handle different auth flows
+        if (token_hash && type === 'signup') {
+          // Handle email confirmation for signup using token_hash
           const { data, error } = await supabase.auth.verifyOtp({
             token_hash,
             type: 'email'
@@ -44,10 +56,30 @@ export function EmailConfirmation() {
               navigate('/');
             }, 3000);
           }
+        } else if (access_token && refresh_token) {
+          // Handle session from tokens (newer Supabase format)
+          const { data, error } = await supabase.auth.setSession({
+            access_token,
+            refresh_token
+          });
+
+          if (error) {
+            console.error('Session setup error:', error);
+            setError(error.message || 'Failed to confirm email. The link may have expired.');
+          } else if (data.session) {
+            console.log('Session established successfully:', data);
+            setSuccess(true);
+            
+            // Wait a bit then redirect to home
+            setTimeout(() => {
+              navigate('/');
+            }, 3000);
+          }
         } else if (type === 'recovery') {
           // Handle password recovery - redirect to password reset
           navigate(`/reset-password?${searchParams.toString()}`);
         } else {
+          console.log('No valid confirmation parameters found');
           setError('Invalid confirmation link or missing parameters.');
         }
       } catch (err) {
