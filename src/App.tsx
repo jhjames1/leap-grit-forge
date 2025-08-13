@@ -39,8 +39,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <LanguageProvider>
-            <SafeToastProvider>
-              <BrowserRouter>
+            <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/admin" element={<AdminPortal />} />
@@ -63,8 +62,7 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </BrowserRouter>
-            </SafeToastProvider>
-          </LanguageProvider>
+            </LanguageProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
