@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PasswordReset } from "./components/PasswordReset";
 import { EmailConfirmation } from "./components/EmailConfirmation";
+import { TestConfirmationScreen } from "./components/TestConfirmationScreen";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,6 +55,7 @@ function App() {
                 <Route path="/specialist-manual" element={<SpecialistManual />} />
                 <Route path="/reset-password" element={<PasswordReset />} />
                 <Route path="/confirm" element={<EmailConfirmation />} />
+                <Route path="/test-confirm" element={<TestConfirmationScreen />} />
                 <Route path="/conoco" element={<ConocoPortal />} />
                 <Route path="/demo" element={<InteractiveDemo />} />
                 <Route path="*" element={<NotFound />} />
