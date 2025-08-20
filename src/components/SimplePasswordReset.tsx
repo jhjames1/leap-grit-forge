@@ -27,12 +27,9 @@ export function SimplePasswordReset({ onBack }: SimplePasswordResetProps) {
     setError(null);
 
     try {
-      // Send OTP using phone number format but with email
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email,
-        options: {
-          shouldCreateUser: false,
-        }
+      // Use resetPasswordForEmail to send a verification code
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password?type=recovery`
       });
 
       if (error) {
