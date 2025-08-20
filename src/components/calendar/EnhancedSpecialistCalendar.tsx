@@ -1,8 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar, momentLocalizer, View } from 'react-big-calendar';
+import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import './calendar.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +17,9 @@ import ScheduleManagementModal from './ScheduleManagementModal';
 import { format } from 'date-fns';
 
 const localizer = momentLocalizer(moment);
+
+// Create the drag and drop enabled calendar
+const DragAndDropCalendar = withDragAndDrop(Calendar);
 
 interface CalendarEvent {
   id: string;
@@ -167,6 +172,49 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
     // Handle event selection for editing
   };
 
+  const handleEventResize = async ({ event, start, end }: { event: CalendarEvent, start: Date, end: Date }) => {
+    console.log('🔄 Event resize:', { event, start, end });
+    
+    // Only allow resizing of appointments
+    if (event.type !== 'appointment') {
+      toast({
+        title: "Cannot resize this event",
+        description: "Only scheduled appointments can be resized",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Update the appointment in the database
+      const { error } = await supabase
+        .from('specialist_appointments')
+        .update({
+          scheduled_start: start.toISOString(),
+          scheduled_end: end.toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', event.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Appointment Updated",
+        description: "The appointment time has been updated successfully",
+      });
+
+      // Refresh events to show the updated time
+      loadCalendarData();
+    } catch (error: any) {
+      console.error('Error resizing appointment:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update appointment time",
+        variant: "destructive"
+      });
+    }
+  };
+
   const formats = {
     timeGutterFormat: (date: Date) => format(date, 'h a'),
     eventTimeRangeFormat: ({ start, end }: { start: Date; end: Date }) => 
@@ -247,7 +295,7 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
       <Card>
         <CardContent className="p-0">
           <div style={{ height: '600px' }}>
-            <Calendar
+            <DragAndDropCalendar
               localizer={localizer}
               events={events}
               startAccessor="start"
@@ -258,7 +306,9 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
               onNavigate={setCurrentDate}
               onSelectSlot={handleSelectSlot}
               onSelectEvent={handleSelectEvent}
+              onEventResize={handleEventResize}
               selectable
+              resizable
               eventPropGetter={eventStyleGetter}
               formats={formats}
               min={minTime}
