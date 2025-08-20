@@ -18,21 +18,54 @@ export function PasswordReset() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
-    // Check if we have the necessary tokens from the URL
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    const type = searchParams.get('type');
+    const handlePasswordReset = async () => {
+      // Check for different token formats
+      const accessToken = searchParams.get('access_token');
+      const refreshToken = searchParams.get('refresh_token');
+      const tokenHash = searchParams.get('token_hash');
+      const type = searchParams.get('type');
 
-    if (type === 'recovery' && accessToken && refreshToken) {
-      // Set the session with the tokens from the URL
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
+      console.log('Password reset URL parameters:', {
+        accessToken: !!accessToken,
+        refreshToken: !!refreshToken,
+        tokenHash: !!tokenHash,
+        type,
+        allParams: Object.fromEntries(searchParams.entries())
       });
-    } else {
-      // If we don't have the right parameters, redirect to login
-      navigate('/auth');
-    }
+
+      if (type === 'recovery') {
+        if (accessToken && refreshToken) {
+          // Handle newer token format
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (error) {
+            console.error('Session setup error:', error);
+            setError('Invalid or expired reset link. Please request a new password reset.');
+          }
+        } else if (tokenHash) {
+          // Handle older token_hash format
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'recovery'
+          });
+          
+          if (error) {
+            console.error('Token verification error:', error);
+            setError('Invalid or expired reset link. Please request a new password reset.');
+          }
+        } else {
+          setError('Invalid reset link format. Please request a new password reset.');
+        }
+      } else {
+        // If we don't have the right parameters, redirect to login
+        navigate('/');
+      }
+    };
+
+    handlePasswordReset();
   }, [searchParams, navigate]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
