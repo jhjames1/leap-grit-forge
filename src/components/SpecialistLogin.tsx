@@ -147,10 +147,32 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
           </div>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-2">
           <p className="text-steel-light text-xs">
             For verified peer specialists only. Use your specialist account credentials.
           </p>
+          <button
+            type="button"
+            onClick={() => {
+              const email = credentials.email || prompt('Enter your email address:');
+              if (email) {
+                supabase.auth.resetPasswordForEmail(email, {
+                  redirectTo: `${window.location.origin}/reset-password`
+                }).then(({ error }) => {
+                  if (error) {
+                    setError('Failed to send reset email: ' + error.message);
+                  } else {
+                    setError('');
+                    alert('Password reset instructions sent to your email.');
+                  }
+                });
+              }
+            }}
+            className="text-construction hover:text-construction-dark text-xs underline"
+            disabled={isLoading}
+          >
+            Forgot your password?
+          </button>
         </div>
       </Card>
     </div>
