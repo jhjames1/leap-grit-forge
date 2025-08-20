@@ -232,6 +232,16 @@ const PeerChat = ({
           </div>
           
           <div className="flex space-x-2">
+            {session && session.status !== 'ended' && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => endSession('manual')} 
+                className="border-red-500 text-red-600 hover:bg-red-50"
+              >
+                End Chat
+              </Button>
+            )}
             <Button size="sm" variant="outline" onClick={handleStartNewChat} className="border-primary text-gray-950 bg-yellow-400 hover:bg-yellow-300">
               <Plus size={16} className="mr-1" />
               New Chat
