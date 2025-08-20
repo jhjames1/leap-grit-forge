@@ -21,6 +21,8 @@ import ChatHistory from './ChatHistory';
 import SpecialistTrainingDashboard from './SpecialistTrainingDashboard';
 import { SpecialistSidebar } from './SpecialistSidebar';
 import { SpecialistSidebarToast } from './SpecialistSidebarToast';
+import { WaitingSessionCard } from './WaitingSessionCard';
+import { SessionSlot } from './SessionSlot';
 import { useProposalNotifications } from '@/hooks/useProposalNotifications';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
@@ -46,7 +48,8 @@ const PeerSpecialistDashboard = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   
-  const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
+  // Changed from single selectedSession to array of up to 3 active sessions
+  const [activeSessions, setActiveSessions] = useState<(ChatSession | null)[]>([null, null, null]);
   const [specialistId, setSpecialistId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState('sessions');
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
@@ -64,15 +67,16 @@ const PeerSpecialistDashboard = () => {
   // Use proposal notifications to trigger session refresh when proposals are accepted
   const { hasNewResponses, clearNewResponses } = useProposalNotifications(specialistId || '');
 
-  // Keep refs synchronized with state
-  const selectedSessionRef = useRef<ChatSession | null>(null);
+  // Keep refs synchronized with state - now tracking active sessions array
+  const activeSessionsRef = useRef<(ChatSession | null)[]>([null, null, null]);
   useEffect(() => {
-    selectedSessionRef.current = selectedSession;
-  }, [selectedSession]);
+    activeSessionsRef.current = activeSessions;
+  }, [activeSessions]);
 
   // Calculate session metrics
-  const activeSessions = sessions.filter(s => s.status === 'active' && s.specialist_id === specialistId).length;
-  const waitingSessions = sessions.filter(s => s.status === 'waiting' && !s.specialist_id).length;
+  const activeSessionCount = activeSessions.filter(s => s !== null).length;
+  const waitingSessionsList = sessions.filter(s => s.status === 'waiting' && !s.specialist_id);
+  const availableSlots = activeSessions.map(s => s === null);
 
   // Load completed sessions count for today
   const loadTodayStats = useCallback(async () => {
@@ -210,23 +214,123 @@ const PeerSpecialistDashboard = () => {
     }
   }, [hasNewResponses, refreshSessions, clearNewResponses]);
 
-  // Enhanced session update handler with improved timeout handling
+  // Session claiming logic for multi-session support
+  const claimSessionToSlot = useCallback(async (sessionId: string, slotIndex: number) => {
+    if (activeSessions[slotIndex] !== null) {
+      toast({
+        title: "Slot Occupied",
+        description: `Slot ${slotIndex + 1} is already occupied. Please choose an available slot.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Claim the session using the existing claim function
+      const { data, error } = await supabase.rpc('claim_chat_session', {
+        p_session_id: sessionId,
+        p_specialist_user_id: user?.id
+      });
+
+      if (error) throw error;
+
+      if ((data as any).success) {
+        const session = (data as any).session;
+        setActiveSessions(prev => {
+          const newSessions = [...prev];
+          newSessions[slotIndex] = session;
+          return newSessions;
+        });
+
+        toast({
+          title: "Session Claimed",
+          description: `Session #${session.session_number} claimed to Slot ${slotIndex + 1}.`
+        });
+
+        // Refresh sessions to update the waiting list
+        refreshSessions();
+      } else {
+        throw new Error((data as any).error || 'Failed to claim session');
+      }
+    } catch (error) {
+      logger.error('Error claiming session to slot:', error);
+      toast({
+        title: "Error",
+        description: "Failed to claim session. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [activeSessions, user?.id, toast, refreshSessions]);
+
+  // End session from specific slot
+  const endSessionFromSlot = useCallback(async (sessionId: string, slotIndex: number) => {
+    try {
+      // End the session using the existing function
+      const { data, error } = await supabase.rpc('end_chat_session_atomic', {
+        p_session_id: sessionId,
+        p_user_id: user?.id,
+        p_end_reason: 'manual'
+      });
+
+      if (error) throw error;
+
+      if ((data as any).success) {
+        // Remove session from the slot
+        setActiveSessions(prev => {
+          const newSessions = [...prev];
+          newSessions[slotIndex] = null;
+          return newSessions;
+        });
+
+        setShowEndChatMessage(true);
+        toast({
+          title: "Session Ended",
+          description: `Session from Slot ${slotIndex + 1} has been ended.`
+        });
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+          setShowEndChatMessage(false);
+        }, 3000);
+
+        // Refresh sessions and stats
+        refreshSessions();
+        loadTodayStats();
+      } else {
+        throw new Error((data as any).error_message || 'Failed to end session');
+      }
+    } catch (error) {
+      logger.error('Error ending session from slot:', error);
+      toast({
+        title: "Error",
+        description: "Failed to end session. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [user?.id, toast, refreshSessions, loadTodayStats]);
+
+  // Enhanced session update handler for multi-session support
   const handleSessionUpdate = useCallback((updatedSession: ChatSession) => {
     logger.debug('Session update received:', {
       sessionId: updatedSession.id,
       status: updatedSession.status,
-      endReason: updatedSession.end_reason,
-      isSelectedSession: selectedSessionRef.current?.id === updatedSession.id
+      endReason: updatedSession.end_reason
     });
 
-    // Update selected session if it matches
-    setSelectedSession(prevSelected => {
-      if (prevSelected && prevSelected.id === updatedSession.id) {
-        const mergedSession = { ...prevSelected, ...updatedSession };
-        logger.debug('Updated selected session:', mergedSession);
-        return mergedSession;
+    // Update session in active sessions if it exists in any slot
+    setActiveSessions(prev => {
+      const newSessions = [...prev];
+      const slotIndex = newSessions.findIndex(s => s?.id === updatedSession.id);
+      
+      if (slotIndex !== -1) {
+        if (updatedSession.status === 'ended') {
+          newSessions[slotIndex] = null;
+        } else {
+          newSessions[slotIndex] = { ...newSessions[slotIndex]!, ...updatedSession };
+        }
       }
-      return prevSelected;
+      
+      return newSessions;
     });
 
     // Handle different session status changes
@@ -236,52 +340,14 @@ const PeerSpecialistDashboard = () => {
         description: `Session #${updatedSession.session_number} is now active.`
       });
     } else if (updatedSession.status === 'ended') {
-      const isSelectedSession = selectedSessionRef.current?.id === updatedSession.id;
       const isTimeout = updatedSession.end_reason === 'auto_timeout' || updatedSession.end_reason === 'inactivity_timeout';
       
-      if (isSelectedSession) {
-        if (isTimeout) {
-          // For timeout sessions, show specific notification and delay close
-          toast({
-            title: "Session Timed Out",
-            description: `Session #${updatedSession.session_number} has been automatically ended due to inactivity.`,
-            variant: "destructive"
-          });
-          
-          // Delay closing to allow specialist to see the notification
-          setTimeout(() => {
-            setSelectedSession(null);
-            setShowEndChatMessage(true);
-            
-            // Auto-hide popup after 4 seconds for timeout
-            setTimeout(() => {
-              setShowEndChatMessage(false);
-            }, 4000);
-          }, 2000); // 2 second delay before closing chat window
-        } else {
-          // For manual end, close immediately
-          setSelectedSession(null);
-          setShowEndChatMessage(true);
-          
-          toast({
-            title: "Session Ended",
-            description: `Session #${updatedSession.session_number} has been ended.`
-          });
-
-          // Auto-hide after 3 seconds for manual end
-          setTimeout(() => {
-            setShowEndChatMessage(false);
-          }, 3000);
-        }
-      } else {
-        // Session ended but not currently selected - just show notification
-        if (isTimeout) {
-          toast({
-            title: "Session Timed Out",
-            description: `Session #${updatedSession.session_number} timed out due to inactivity.`,
-            variant: "destructive"
-          });
-        }
+      if (isTimeout) {
+        toast({
+          title: "Session Timed Out",
+          description: `Session #${updatedSession.session_number} has been automatically ended due to inactivity.`,
+          variant: "destructive"
+        });
       }
 
       // Refresh sessions list to remove ended session after a delay
@@ -291,12 +357,12 @@ const PeerSpecialistDashboard = () => {
           isTimeout
         });
         refreshSessions();
-      }, isTimeout ? 5000 : 3000); // Longer delay for timeout to allow user to see what happened
+      }, isTimeout ? 5000 : 3000);
 
       // Refresh today's stats when a session ends
       loadTodayStats();
     }
-  }, [toast, loadTodayStats]);
+  }, [toast, loadTodayStats, refreshSessions]);
 
   // Enhanced refresh handler
   const handleRefresh = useCallback(async () => {
@@ -309,19 +375,39 @@ const PeerSpecialistDashboard = () => {
     });
   }, [refreshSessions, loadTodayStats, toast]);
 
-  // Session selection with better error handling
-  const handleSessionSelect = useCallback((session: ChatSession) => {
-    logger.debug('Selecting session:', session.id);
-    setSelectedSession(session);
-  }, []);
+  // Update specialist status based on active session count
+  useEffect(() => {
+    const updateSpecialistStatus = async () => {
+      if (!specialistId) return;
 
-  // Enhanced session close handler
-  const handleSessionClose = useCallback(() => {
-    logger.debug('Closing selected session');
-    setSelectedSession(null);
-    // Refresh sessions to get latest state
-    refreshSessions();
-  }, [refreshSessions]);
+      const currentActiveCount = activeSessionCount;
+      let newStatus = 'online';
+      let statusMessage = 'Available';
+
+      if (currentActiveCount >= 3) {
+        newStatus = 'busy';
+        statusMessage = 'All slots occupied';
+      } else if (currentActiveCount > 0) {
+        newStatus = 'online';
+        statusMessage = `Handling ${currentActiveCount}/3 sessions`;
+      }
+
+      try {
+        await supabase
+          .from('specialist_status')
+          .upsert({
+            specialist_id: specialistId,
+            status: newStatus,
+            status_message: statusMessage,
+            updated_at: new Date().toISOString()
+          });
+      } catch (error) {
+        logger.error('Error updating specialist status:', error);
+      }
+    };
+
+    updateSpecialistStatus();
+  }, [activeSessionCount, specialistId]);
 
   const handleLogout = async () => {
     try {
@@ -411,11 +497,11 @@ const PeerSpecialistDashboard = () => {
 
   // Get appropriate card background class based on chat states
   const getActiveChatsCardClass = () => {
-    return activeSessions > 0 ? 'bg-chat-active' : '';
+    return activeSessionCount > 0 ? 'bg-chat-active' : '';
   };
 
   const getWaitingChatsCardClass = () => {
-    if (waitingSessions === 0) return '';
+    if (waitingSessionsList.length === 0) return '';
     if (hasUrgentWaitingSessions()) return 'bg-chat-urgent';
     return 'bg-chat-waiting';
   };
@@ -462,8 +548,8 @@ const PeerSpecialistDashboard = () => {
           onOpenPerformance={() => setShowPerformanceModal(true)}
           onOpenActivity={() => setShowActivityModal(true)}
           onOpenSettings={() => setShowSettingsModal(true)}
-          activeSessions={activeSessions}
-          waitingSessions={waitingSessions}
+          activeSessions={activeSessionCount}
+          waitingSessions={waitingSessionsList.length}
         />
 
         <div className="flex-1 flex flex-col min-h-screen">
@@ -513,7 +599,7 @@ const PeerSpecialistDashboard = () => {
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-sm font-medium text-muted-foreground">Active Chats</p>
-                              <p className="text-2xl font-bold text-chat-active-foreground">{activeSessions}</p>
+                              <p className="text-2xl font-bold text-chat-active-foreground">{activeSessionCount}</p>
                             </div>
                             <MessageSquare className="h-8 w-8 text-chat-active-foreground" />
                           </div>
@@ -533,7 +619,7 @@ const PeerSpecialistDashboard = () => {
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-sm font-medium text-muted-foreground">Waiting Chats</p>
-                              <p className="text-2xl font-bold text-chat-waiting-foreground">{waitingSessions}</p>
+                              <p className="text-2xl font-bold text-chat-waiting-foreground">{waitingSessionsList.length}</p>
                               {hasUrgentWaitingSessions() && (
                                 <p className="text-xs text-chat-urgent-foreground font-medium mt-1">
                                   Longest wait: {Math.floor(getWaitTimeSeconds(getLongestWaitingSession()!) / 60)}m {getWaitTimeSeconds(getLongestWaitingSession()!) % 60}s
@@ -591,164 +677,62 @@ const PeerSpecialistDashboard = () => {
                   </Tooltip>
                 </div>
 
-                {/* Chat Sessions Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* Left Column - Chat Sessions */}
-                  <Card className="min-h-[600px]">
-                    <CardHeader className="p-4 border-b">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">Chat Sessions</CardTitle>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={realtimeStatus === 'connected' ? 'default' : 'secondary'} className={realtimeStatus === 'connected' ? 'bg-green-600' : ''}>
-                            {realtimeStatus === 'connected' ? 'Connected' : realtimeStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
-                          </Badge>
-                          {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
-                        </div>
+                {/* Waiting Sessions - Horizontal Row */}
+                <Card>
+                  <CardHeader className="p-4 border-b">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Waiting Sessions</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={realtimeStatus === 'connected' ? 'default' : 'secondary'} className={realtimeStatus === 'connected' ? 'bg-green-600' : ''}>
+                          {realtimeStatus === 'connected' ? 'Connected' : realtimeStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}
+                        </Badge>
+                        {isLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
                       </div>
-                    </CardHeader>
-                    <CardContent className="p-0 flex-1">
-                      <ScrollArea className="h-[550px]">
-                        <div className="p-3 space-y-2">
-                          {sessions.length === 0 ? (
-                            <Card className="p-4">
-                              <div className="text-center text-muted-foreground">
-                                <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
-                                <p className="text-xs">No active sessions</p>
-                                <p className="text-xs mt-1">Waiting sessions will appear here</p>
-                              </div>
-                            </Card>
-                          ) : (
-                            sessions.map(session => {
-                              const isTimeout = session.end_reason === 'auto_timeout' || session.end_reason === 'inactivity_timeout';
-                              return (
-                                <Card
-                                  key={session.id}
-                                  className={`cursor-pointer transition-all hover:shadow-md ${
-                                    selectedSession?.id === session.id ? 'ring-2 ring-primary' : ''
-                                  } ${session.status === 'ended' && isTimeout ? 'bg-destructive/5 border-destructive/20' : ''}`}
-                                  onClick={() => setSelectedSession(session)}
-                                >
-                                  <CardContent className="p-3">
-                                    <div className="flex items-start justify-between mb-1">
-                                      <div className="flex-1">
-                                         <div className="flex items-center gap-2 mb-1">
-                                           <Tooltip>
-                                             <TooltipTrigger asChild>
-                                               <Badge
-                                                 variant={
-                                                   session.status === 'waiting' 
-                                                     ? 'secondary' 
-                                                     : session.status === 'active' 
-                                                       ? 'default' 
-                                                       : isTimeout 
-                                                         ? 'destructive'
-                                                         : 'outline'
-                                                 }
-                                                 className={
-                                                   session.status === 'waiting' 
-                                                     ? 'bg-yellow-100 text-yellow-800' 
-                                                     : session.status === 'active' 
-                                                       ? 'bg-green-100 text-green-800' 
-                                                       : isTimeout
-                                                         ? 'bg-red-100 text-red-800'
-                                                         : ''
-                                                 }
-                                               >
-                                                 {session.status === 'waiting' 
-                                                   ? 'Waiting' 
-                                                   : session.status === 'active' 
-                                                     ? 'Active' 
-                                                     : isTimeout 
-                                                       ? 'Timed Out'
-                                                       : 'Ended'
-                                                 }
-                                               </Badge>
-                                             </TooltipTrigger>
-                                             <TooltipContent>
-                                               <p>
-                                                 {session.status === 'waiting' && 'User is waiting for a specialist to join'}
-                                                 {session.status === 'active' && 'You are currently chatting with this user'}
-                                                 {session.status === 'ended' && isTimeout && 'Session ended automatically due to inactivity'}
-                                                 {session.status === 'ended' && !isTimeout && 'Session was manually ended'}
-                                               </p>
-                                             </TooltipContent>
-                                           </Tooltip>
-                                          <span className="text-sm font-medium">#{session.session_number}</span>
-                                          {isTimeout && (
-                                            <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                                              Auto-ended
-                                            </Badge>
-                                          )}
-                                        </div>
-                                        
-                                        <p className="font-medium text-sm">
-                                          {session.user_first_name && session.user_last_name
-                                            ? `${session.user_first_name} ${session.user_last_name.charAt(0)}.`
-                                            : 'Anonymous User'}
-                                        </p>
-                                        
-                                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                          <div className="flex items-center gap-1">
-                                            <Clock className="w-3 h-3" />
-                                            {format(new Date(session.started_at), 'h:mm a')}
-                                          </div>
-                                          {session.status === 'ended' && session.ended_at && (
-                                            <div className="flex items-center gap-1">
-                                              <CheckCircle className="w-3 h-3" />
-                                              Ended {format(new Date(session.ended_at), 'h:mm a')}
-                                              {isTimeout && <span className="text-orange-600 ml-1">(Timeout)</span>}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    
-                                    {session.status === 'waiting' && (
-                                      <Button
-                                        size="sm"
-                                        className="w-full mt-1 h-7 text-xs"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedSession(session);
-                                        }}
-                                      >
-                                        Join Session
-                                      </Button>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                              );
-                            })
-                          )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {waitingSessionsList.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-8">
+                        <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No users waiting for support</p>
+                      </div>
+                    ) : (
+                      <ScrollArea className="w-full">
+                        <div className="flex gap-4 pb-2">
+                          {waitingSessionsList.map(session => (
+                            <WaitingSessionCard
+                              key={session.id}
+                              session={session}
+                              onClaimToSlot={(slotIndex) => claimSessionToSlot(session.id, slotIndex)}
+                              availableSlots={availableSlots}
+                            />
+                          ))}
                         </div>
+                        
                       </ScrollArea>
-                    </CardContent>
-                  </Card>
+                    )}
+                  </CardContent>
+                </Card>
 
-                  {/* Right Column - Active Chat Session */}
-                  <Card className="min-h-[600px]">
-                    <CardHeader className="p-4 border-b">
-                      <CardTitle className="text-lg">Active Chat Session</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0 flex-1">
-                      {selectedSession ? (
-                        <RobustSpecialistChatWindow
-                          session={selectedSession}
-                          onClose={() => setSelectedSession(null)}
+                {/* Active Sessions - 3-Column Grid */}
+                <Card>
+                  <CardHeader className="p-4 border-b">
+                    <CardTitle className="text-lg">Active Chat Sessions ({activeSessionCount}/3)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[600px]">
+                      {[0, 1, 2].map(slotIndex => (
+                        <SessionSlot
+                          key={slotIndex}
+                          session={activeSessions[slotIndex]}
+                          slotIndex={slotIndex}
+                          onEndSession={(sessionId) => endSessionFromSlot(sessionId, slotIndex)}
                           onSessionUpdate={handleSessionUpdate}
                         />
-                      ) : (
-                        <div className="flex-1 flex items-center justify-center h-[550px] bg-muted/20">
-                          <div className="text-center text-muted-foreground">
-                            <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                            <h3 className="text-base font-medium mb-1">No Session Selected</h3>
-                            <p className="text-sm">Select a session to start chatting</p>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </>
             )}
 
