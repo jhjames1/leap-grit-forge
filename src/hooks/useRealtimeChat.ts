@@ -161,9 +161,62 @@ export const useRealtimeChat = ({ sessionId, onMessage, onSessionUpdate }: UseRe
 
   // Force reconnect function
   const forceReconnect = useCallback(() => {
-    logger.debug('🔄 Force reconnecting realtime subscriptions');
+    logger.debug('🔄 PEER CLIENT: Force reconnecting realtime subscriptions from useRealtimeChat');
+    console.log('🔄 PEER CLIENT: Force reconnect button clicked');
+    
+    // First clean up existing subscriptions
+    subscriptionIds.current.forEach(id => {
+      try {
+        const subscription = (realtimeService as any).subscriptions.get(id);
+        if (subscription) {
+          realtimeService.unsubscribe(id, handleNewMessage);
+          realtimeService.unsubscribe(id, handleSessionUpdate);
+        }
+      } catch (error) {
+        logger.warn('Error cleaning up subscription during reconnect', error);
+      }
+    });
+    subscriptionIds.current = [];
+    
+    // Force reconnect the entire realtime service
     realtimeService.reconnectAll();
-  }, []);
+    
+    // Re-establish subscriptions for current session if we have one
+    if (sessionId) {
+      setTimeout(() => {
+        logger.debug('🔄 PEER CLIENT: Re-establishing subscriptions after reconnect');
+        
+        // Subscribe to messages
+        const messageSubscriptionId = realtimeService.subscribe(
+          `chat-messages-${sessionId}`,
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chat_messages',
+            filter: `session_id=eq.${sessionId}`
+          },
+          handleNewMessage
+        );
+
+        // Subscribe to session updates
+        const sessionSubscriptionId = realtimeService.subscribe(
+          `chat-session-${sessionId}`,
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'chat_sessions',
+            filter: `id=eq.${sessionId}`
+          },
+          handleSessionUpdate
+        );
+
+        subscriptionIds.current = [messageSubscriptionId, sessionSubscriptionId];
+        logger.debug('🔄 PEER CLIENT: Subscriptions re-established after reconnect');
+      }, 1000);
+    }
+  }, [sessionId, handleNewMessage, handleSessionUpdate]);
 
   return {
     isConnected,
