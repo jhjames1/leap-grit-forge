@@ -261,3 +261,83 @@
     padding: 1px 4px;
   }
 }
+
+/* Drag and Drop Resize Handle Styles */
+.calendar-container .rbc-addons-dnd .rbc-addons-dnd-resize-ns-anchor {
+  width: 100% !important;
+  height: 6px !important;
+  background: transparent !important;
+  cursor: ns-resize !important;
+  z-index: 10 !important;
+}
+
+.calendar-container .rbc-addons-dnd .rbc-addons-dnd-resize-ns-anchor:hover {
+  background: hsl(var(--primary)) !important;
+  opacity: 0.8 !important;
+  height: 8px !important;
+}
+
+.calendar-container .rbc-addons-dnd .rbc-addons-dnd-resize-anchor-top {
+  top: -3px !important;
+  border-top: 3px solid transparent !important;
+}
+
+.calendar-container .rbc-addons-dnd .rbc-addons-dnd-resize-anchor-top:hover {
+  border-top: 4px solid hsl(var(--primary)) !important;
+}
+
+.calendar-container .rbc-addons-dnd .rbc-addons-dnd-resize-anchor-bottom {
+  bottom: -3px !important;
+  border-bottom: 3px solid transparent !important;
+}
+
+.calendar-container .rbc-addons-dnd .rbc-addons-dnd-resize-anchor-bottom:hover {
+  border-bottom: 4px solid hsl(var(--primary)) !important;
+}
+
+/* Make the entire event show resize cursors when hovering near edges */
+.calendar-container .rbc-event:hover {
+  opacity: 0.9 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  position: relative !important;
+}
+
+/* Add visual indicators for resize areas */
+.calendar-container .rbc-event:hover::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: hsl(var(--primary) / 0.3);
+  cursor: ns-resize;
+  z-index: 10;
+}
+
+.calendar-container .rbc-event:hover::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: hsl(var(--primary) / 0.3);
+  cursor: ns-resize;
+  z-index: 10;
+}
+
+/* Enhanced resize handles specifically for appointments */
+.calendar-container .rbc-event[class*="appointment"]:hover {
+  border: 2px solid hsl(var(--primary)) !important;
+}
+
+/* Make resize cursor more prominent */
+.calendar-container .rbc-addons-dnd-resizable {
+  position: relative !important;
+}
+
+.calendar-container .rbc-addons-dnd-resizable:hover .rbc-addons-dnd-resize-ns-anchor {
+  background: linear-gradient(90deg, transparent 30%, hsl(var(--primary)) 30%, hsl(var(--primary)) 70%, transparent 70%) !important;
+  height: 8px !important;
+}

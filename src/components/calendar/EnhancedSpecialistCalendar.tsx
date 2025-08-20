@@ -294,7 +294,7 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
       {/* Calendar */}
       <Card>
         <CardContent className="p-0">
-          <div style={{ height: '600px' }}>
+          <div className="calendar-container" style={{ height: '600px' }}>
             <DragAndDropCalendar
               localizer={localizer}
               events={events}
