@@ -149,9 +149,16 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
     });
 
     try {
-      // Create appointment proposal
-      const startDateTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${selectedTime}`);
+      // Create appointment proposal with Central Time conversion
+      // Convert selected time from Central to UTC for storage
+      const centralDateTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${selectedTime}`);
+      // Assuming Central Time is UTC-6 (CST) or UTC-5 (CDT), add 6 hours to get UTC
+      const utcDateTime = new Date(centralDateTime.getTime() + (6 * 60 * 60 * 1000));
+      
       console.log('Creating appointment proposal...', {
+        selectedLocalTime: selectedTime,
+        centralDateTime: centralDateTime.toISOString(),
+        utcDateTime: utcDateTime.toISOString(),
         specialist_id: specialistId,
         user_id: userId,
         chat_session_id: chatSessionId,
@@ -176,7 +183,7 @@ const ChatAppointmentScheduler: React.FC<ChatAppointmentSchedulerProps> = ({
           title: title.trim(),
           description: description.trim() || null,
           start_date: format(selectedDate, 'yyyy-MM-dd'),
-          start_time: selectedTime,
+          start_time: selectedTime, // Store the original Central Time
           duration,
           frequency: isRecurring ? frequency : 'once',
           occurrences: isRecurring ? occurrences : 1,

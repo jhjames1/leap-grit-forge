@@ -25,8 +25,10 @@ const PeerChat = ({
   const [message, setMessage] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
   const [inactivityWarning, setInactivityWarning] = useState<number>(0);
+  const [waitingTimePrompts, setWaitingTimePrompts] = useState<Set<number>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inactivityTimerRef = useRef<NodeJS.Timeout>();
+  const waitingTimerRef = useRef<NodeJS.Timeout>();
   const {
     user
   } = useAuth();
@@ -84,6 +86,53 @@ const PeerChat = ({
       behavior: 'smooth'
     });
   }, [messages]);
+
+  // Monitor waiting time and send automatic prompts
+  useEffect(() => {
+    if (!session || session.status !== 'waiting') {
+      setWaitingTimePrompts(new Set());
+      if (waitingTimerRef.current) {
+        clearTimeout(waitingTimerRef.current);
+      }
+      return;
+    }
+
+    const checkWaitingTime = () => {
+      const waitingTime = Date.now() - new Date(session.started_at).getTime();
+      const waitingMinutes = Math.floor(waitingTime / (1000 * 60));
+
+      // Send 3-minute prompt
+      if (waitingMinutes >= 3 && !waitingTimePrompts.has(3)) {
+        sendMessage({
+          content: "Our Peer Support Specialists are deep in it right now. Would you like to schedule an appointment instead?",
+          sender_type: 'user',
+          message_type: 'system'
+        });
+        setWaitingTimePrompts(prev => new Set(prev).add(3));
+      }
+
+      // Send 5-minute prompt
+      if (waitingMinutes >= 5 && !waitingTimePrompts.has(5)) {
+        sendMessage({
+          content: "We hate to see you waiting. Why don't we schedule an appointment.",
+          sender_type: 'user',
+          message_type: 'system'
+        });
+        setWaitingTimePrompts(prev => new Set(prev).add(5));
+      }
+    };
+
+    // Check immediately and then every 30 seconds
+    checkWaitingTime();
+    const interval = setInterval(checkWaitingTime, 30000);
+    
+    return () => {
+      clearInterval(interval);
+      if (waitingTimerRef.current) {
+        clearTimeout(waitingTimerRef.current);
+      }
+    };
+  }, [session, sendMessage, waitingTimePrompts]);
 
   // Monitor session inactivity
   useEffect(() => {
