@@ -626,6 +626,33 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_codes: {
+        Row: {
+          code: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          used: boolean
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          used?: boolean
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          used?: boolean
+        }
+        Relationships: []
+      }
       peer_checkins: {
         Row: {
           completed_at: string | null
@@ -1106,6 +1133,7 @@ export type Database = {
           meeting_url: string | null
           notes: string | null
           reminder_sent: boolean | null
+          scheduled_appointment_id: string | null
           scheduled_end: string
           scheduled_start: string
           specialist_id: string
@@ -1125,6 +1153,7 @@ export type Database = {
           meeting_url?: string | null
           notes?: string | null
           reminder_sent?: boolean | null
+          scheduled_appointment_id?: string | null
           scheduled_end: string
           scheduled_start: string
           specialist_id: string
@@ -1144,6 +1173,7 @@ export type Database = {
           meeting_url?: string | null
           notes?: string | null
           reminder_sent?: boolean | null
+          scheduled_appointment_id?: string | null
           scheduled_end?: string
           scheduled_start?: string
           specialist_id?: string
@@ -1157,6 +1187,13 @@ export type Database = {
             columns: ["appointment_type_id"]
             isOneToOne: false
             referencedRelation: "appointment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_appointments_scheduled_appointment_id_fkey"
+            columns: ["scheduled_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_appointments"
             referencedColumns: ["id"]
           },
           {

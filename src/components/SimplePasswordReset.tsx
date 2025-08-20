@@ -27,13 +27,17 @@ export function SimplePasswordReset({ onBack }: SimplePasswordResetProps) {
     setError(null);
 
     try {
-      // Use resetPasswordForEmail to send a verification code
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password?type=recovery`
+      const { data, error } = await supabase.functions.invoke('custom-password-reset', {
+        body: {
+          action: 'send_code',
+          email: email
+        }
       });
 
       if (error) {
         setError(error.message);
+      } else if (data.error) {
+        setError(data.error);
       } else {
         setStep('otp');
       }
@@ -50,14 +54,18 @@ export function SimplePasswordReset({ onBack }: SimplePasswordResetProps) {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token: otp,
-        type: 'email'
+      const { data, error } = await supabase.functions.invoke('custom-password-reset', {
+        body: {
+          action: 'verify_code',
+          email: email,
+          code: otp
+        }
       });
 
       if (error) {
         setError(error.message);
+      } else if (data.error) {
+        setError(data.error);
       } else {
         setStep('password');
       }
@@ -86,12 +94,19 @@ export function SimplePasswordReset({ onBack }: SimplePasswordResetProps) {
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
+      const { data, error } = await supabase.functions.invoke('custom-password-reset', {
+        body: {
+          action: 'reset_password',
+          email: email,
+          code: otp,
+          newPassword: password
+        }
       });
 
       if (error) {
         setError(error.message);
+      } else if (data.error) {
+        setError(data.error);
       } else {
         setSuccess(true);
         setTimeout(() => {
