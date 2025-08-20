@@ -19,23 +19,35 @@ export function PasswordReset() {
 
   useEffect(() => {
     const handlePasswordReset = async () => {
+      // Log the full URL for debugging
+      console.log('Full password reset URL:', window.location.href);
+      
       // Check for different token formats
       const accessToken = searchParams.get('access_token');
       const refreshToken = searchParams.get('refresh_token');
       const tokenHash = searchParams.get('token_hash');
       const type = searchParams.get('type');
+      const code = searchParams.get('code');
 
       console.log('Password reset URL parameters:', {
         accessToken: !!accessToken,
         refreshToken: !!refreshToken,
         tokenHash: !!tokenHash,
         type,
+        code: !!code,
         allParams: Object.fromEntries(searchParams.entries())
       });
+
+      // Show detailed error if no valid tokens found
+      if (!accessToken && !refreshToken && !tokenHash && !code) {
+        setError(`Invalid reset link. No valid tokens found. URL: ${window.location.href}`);
+        return;
+      }
 
       if (type === 'recovery') {
         if (accessToken && refreshToken) {
           // Handle newer token format
+          console.log('Using access_token/refresh_token format');
           const { error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
@@ -43,10 +55,13 @@ export function PasswordReset() {
           
           if (error) {
             console.error('Session setup error:', error);
-            setError('Invalid or expired reset link. Please request a new password reset.');
+            setError(`Session setup failed: ${error.message}. Please request a new password reset.`);
+          } else {
+            console.log('Session setup successful');
           }
         } else if (tokenHash) {
           // Handle older token_hash format
+          console.log('Using token_hash format');
           const { error } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
             type: 'recovery'
@@ -54,14 +69,29 @@ export function PasswordReset() {
           
           if (error) {
             console.error('Token verification error:', error);
-            setError('Invalid or expired reset link. Please request a new password reset.');
+            setError(`Token verification failed: ${error.message}. Please request a new password reset.`);
+          } else {
+            console.log('Token verification successful');
+          }
+        } else if (code) {
+          // Handle code format (alternative approach)
+          console.log('Using code format');
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: code,
+            type: 'recovery'
+          });
+          
+          if (error) {
+            console.error('Code verification error:', error);
+            setError(`Code verification failed: ${error.message}. Please request a new password reset.`);
+          } else {
+            console.log('Code verification successful');
           }
         } else {
-          setError('Invalid reset link format. Please request a new password reset.');
+          setError(`Invalid reset link format. Missing required tokens. Type: ${type}`);
         }
       } else {
-        // If we don't have the right parameters, redirect to login
-        navigate('/');
+        setError(`Invalid link type: ${type}. Expected 'recovery'.`);
       }
     };
 
