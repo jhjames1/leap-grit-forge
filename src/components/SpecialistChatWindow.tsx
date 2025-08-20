@@ -277,7 +277,36 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           table: 'appointment_proposals',
           filter: `chat_session_id=eq.${session.id}`
         },
-        () => {
+        (payload) => {
+          logger.debug('Appointment proposal updated in real-time:', payload);
+          const updatedProposal = payload.new as AppointmentProposal;
+          
+          // Update proposal state immediately
+          if (payload.eventType === 'DELETE') {
+            setSessionProposal(null);
+          } else {
+            setSessionProposal(updatedProposal);
+          }
+          
+          // Show visual feedback for proposal status changes
+          if (payload.eventType === 'UPDATE' && updatedProposal) {
+            if (updatedProposal.status === 'accepted') {
+              toast({
+                title: "Proposal Accepted! ✅",
+                description: `The user accepted your appointment proposal for ${updatedProposal.title}`,
+                duration: 5000,
+              });
+            } else if (updatedProposal.status === 'rejected') {
+              toast({
+                title: "Proposal Rejected",
+                description: `The user declined your appointment proposal for ${updatedProposal.title}`,
+                variant: "destructive",
+                duration: 5000,
+              });
+            }
+          }
+          
+          // Also reload to ensure consistency
           loadSessionProposal();
         }
       )
