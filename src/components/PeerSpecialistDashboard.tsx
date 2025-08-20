@@ -1,32 +1,48 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useSpecialistSessions } from '@/hooks/useSpecialistSessions';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { RefreshCw, MessageSquare, BarChart3, UserCircle, Activity, Clock, CheckCircle, User, History, TrendingUp, LogOut, GraduationCap, Calendar } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import RobustSpecialistChatWindow from './RobustSpecialistChatWindow';
-import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
-import SpecialistPerformanceMetrics from './SpecialistPerformanceMetrics';
-import SpecialistSettings from './SpecialistSettings';
-import PeerPerformanceDashboard from './PeerPerformanceDashboard';
-import SpecialistActivityLog from './SpecialistActivityLog';
-import SpecialistStatusIndicator from './SpecialistStatusIndicator';
-import ChatHistory from './ChatHistory';
-import SpecialistTrainingDashboard from './SpecialistTrainingDashboard';
-import { SpecialistSidebar } from './SpecialistSidebar';
-import { SpecialistSidebarToast } from './SpecialistSidebarToast';
-import { WaitingSessionCard } from './WaitingSessionCard';
-import { SessionSlot } from './SessionSlot';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { 
+  MessageSquare, 
+  Calendar, 
+  Clock, 
+  User, 
+  Timer, 
+  BarChart3,
+  Activity,
+  Settings,
+  LogOut,
+  History,
+  GraduationCap,
+  RefreshCw
+} from 'lucide-react';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from '@/components/ui/tooltip';
+import { useAuth } from '@/hooks/useAuth';
+import { useSpecialistSessions } from '@/hooks/useSpecialistSessions';
 import { useProposalNotifications } from '@/hooks/useProposalNotifications';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
-import { format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
+import { WaitingSessionCard } from './WaitingSessionCard';
+import { SessionSlot } from './SessionSlot';
+import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
+import SpecialistTrainingDashboard from './SpecialistTrainingDashboard';
+import SpecialistPerformanceMetrics from './SpecialistPerformanceMetrics';
+import SpecialistActivityLog from './SpecialistActivityLog';
+import SpecialistSettings from './SpecialistSettings';
+import ChatHistory from './ChatHistory';
+import SpecialistStatusIndicator from './SpecialistStatusIndicator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import PeerPerformanceDashboard from './PeerPerformanceDashboard';
+import { CheckCircle, TrendingUp } from 'lucide-react';
 
 interface ChatSession {
   id: string;
@@ -56,22 +72,16 @@ const PeerSpecialistDashboard = () => {
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
-  const [showEndChatMessage, setShowEndChatMessage] = useState(false);
   const [completedToday, setCompletedToday] = useState(0);
   const [avgResponseTime, setAvgResponseTime] = useState<number | null>(null);
   const [specialistProfile, setSpecialistProfile] = useState<any>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Use the new specialist sessions hook
   const { sessions, isLoading, error, realtimeStatus, refreshSessions } = useSpecialistSessions(specialistId);
   
   // Use proposal notifications to trigger session refresh when proposals are accepted
   const { hasNewResponses, clearNewResponses } = useProposalNotifications(specialistId || '');
-
-  // Keep refs synchronized with state - now tracking active sessions array
-  const activeSessionsRef = useRef<(ChatSession | null)[]>([null, null, null]);
-  useEffect(() => {
-    activeSessionsRef.current = activeSessions;
-  }, [activeSessions]);
 
   // Calculate session metrics
   const activeSessionCount = activeSessions.filter(s => s !== null).length;
@@ -245,11 +255,6 @@ const PeerSpecialistDashboard = () => {
           return newSessions;
         });
 
-        toast({
-          title: "Session Claimed",
-          description: `Session #${session.session_number} claimed to Slot ${nextAvailableSlot + 1}.`
-        });
-
         // Refresh sessions to update the waiting list
         refreshSessions();
       } else {
@@ -285,16 +290,10 @@ const PeerSpecialistDashboard = () => {
           return newSessions;
         });
 
-        setShowEndChatMessage(true);
         toast({
           title: "Session Ended",
           description: `Session from Slot ${slotIndex + 1} has been ended.`
         });
-
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
-          setShowEndChatMessage(false);
-        }, 3000);
 
         // Refresh sessions and stats
         refreshSessions();
@@ -336,13 +335,8 @@ const PeerSpecialistDashboard = () => {
       return newSessions;
     });
 
-    // Handle different session status changes
-    if (updatedSession.status === 'active') {
-      toast({
-        title: "Session Activated",
-        description: `Session #${updatedSession.session_number} is now active.`
-      });
-    } else if (updatedSession.status === 'ended') {
+    // Handle different session status changes without the activation popup
+    if (updatedSession.status === 'ended') {
       const isTimeout = updatedSession.end_reason === 'auto_timeout' || updatedSession.end_reason === 'inactivity_timeout';
       
       if (isTimeout) {
@@ -369,6 +363,7 @@ const PeerSpecialistDashboard = () => {
 
   // Enhanced refresh handler
   const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
     logger.debug('Manual refresh triggered');
     await refreshSessions();
     await loadTodayStats();
@@ -376,6 +371,7 @@ const PeerSpecialistDashboard = () => {
       title: "Refreshed",
       description: "Session list has been updated."
     });
+    setRefreshing(false);
   }, [refreshSessions, loadTodayStats, toast]);
 
   // Update specialist status based on active session count
@@ -427,45 +423,6 @@ const PeerSpecialistDashboard = () => {
         variant: "destructive"
       });
     }
-  };
-
-  const getSessionStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-500';
-      case 'waiting':
-        return 'bg-yellow-500';
-      case 'ended':
-        return 'bg-gray-400';
-      default:
-        return 'bg-gray-400';
-    }
-  };
-
-  const getSessionStatusText = (session: ChatSession) => {
-    if (session.status === 'waiting') {
-      return 'Available';
-    }
-    return session.status;
-  };
-
-  const formatSessionName = (session: ChatSession) => {
-    let name = `Session #${session.session_number}`;
-    if (session.user_first_name) {
-      const lastInitial = session.user_last_name ? ` ${session.user_last_name.charAt(0)}.` : '';
-      name += ` - ${session.user_first_name}${lastInitial}`;
-    }
-    return name;
-  };
-
-  const getSessionAge = (session: ChatSession) => {
-    const age = Date.now() - new Date(session.started_at).getTime();
-    const minutes = Math.floor(age / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
-    if (hours > 0) {
-      return `${hours}h ${minutes % 60}m ago`;
-    }
-    return minutes < 1 ? 'just now' : `${minutes}m ago`;
   };
 
   const formatResponseTime = (seconds: number | null) => {
@@ -541,38 +498,73 @@ const PeerSpecialistDashboard = () => {
 
   return (
     <TooltipProvider>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-        <SpecialistSidebar
-          activeSection={activeSection}
-          onSectionChange={setActiveSection}
-          onLogout={handleLogout}
-          onOpenChatHistory={() => setShowChatHistory(true)}
-          onOpenPerformance={() => setShowPerformanceModal(true)}
-          onOpenActivity={() => setShowActivityModal(true)}
-          onOpenSettings={() => setShowSettingsModal(true)}
-          activeSessions={activeSessionCount}
-          waitingSessions={waitingSessionsList.length}
-        />
-
-        <div className="flex-1 flex flex-col min-h-screen">
-          {/* Header */}
-          <div className="border-b bg-card h-16 flex items-center px-6">
-            <SidebarTrigger className="mr-4" />
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-foreground">
-                {activeSection === 'sessions' && 'Chat Sessions'}
-                {activeSection === 'calendar' && 'Calendar'}
-                {activeSection === 'training' && 'Training Dashboard'}
-              </h1>
-              {specialistId && <SpecialistStatusIndicator specialistId={specialistId} />}
+      <div className="min-h-screen flex flex-col w-full">
+        {/* Header with tabs */}
+        <div className="border-b bg-card">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <h1 className="text-2xl font-bold text-foreground">
+                  Peer Support Dashboard
+                </h1>
+                {specialistId && <SpecialistStatusIndicator specialistId={specialistId} />}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowChatHistory(true)}>
+                  <History className="h-4 w-4 mr-2" />
+                  History
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowPerformanceModal(true)}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Performance
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowActivityModal(true)}>
+                  <Activity className="h-4 w-4 mr-2" />
+                  Activity
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowSettingsModal(true)}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+                <Button variant="destructive" size="sm" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
             </div>
-          </div>
+            
+            <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="sessions" className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Chat Sessions
+                  {(activeSessionCount > 0 || waitingSessionsList.length > 0) && (
+                    <Badge variant="secondary" className="ml-1">
+                      {activeSessionCount + waitingSessionsList.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="calendar" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Calendar
+                </TabsTrigger>
+                <TabsTrigger value="training" className="flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4" />
+                  Training
+                </TabsTrigger>
+              </TabsList>
 
-          {/* Main Content */}
-          <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-            {activeSection === 'sessions' && (
-              <>
+              {/* Tab Content */}
+              <TabsContent value="sessions" className="mt-4 space-y-4">
                 {/* Welcome Message */}
                 {specialistProfile && (
                   <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
@@ -592,7 +584,7 @@ const PeerSpecialistDashboard = () => {
                   </Card>
                 )}
 
-                 {/* Metric Cards */}
+                {/* Metric Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Active Chats Card */}
                   <Tooltip>
@@ -702,7 +694,7 @@ const PeerSpecialistDashboard = () => {
                     ) : (
                       <ScrollArea className="w-full">
                         <div className="flex gap-4 pb-2">
-                           {waitingSessionsList.map(session => (
+                          {waitingSessionsList.map(session => (
                             <WaitingSessionCard
                               key={session.id}
                               session={session}
@@ -711,7 +703,6 @@ const PeerSpecialistDashboard = () => {
                             />
                           ))}
                         </div>
-                        
                       </ScrollArea>
                     )}
                   </CardContent>
@@ -736,66 +727,47 @@ const PeerSpecialistDashboard = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </>
-            )}
+              </TabsContent>
 
-            {activeSection === 'calendar' && (
-              <Card className="w-full">
-                <CardHeader className="p-4 border-b">
-                  <CardTitle className="text-lg">Schedule & Calendar</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4">
-                  {specialistId && <EnhancedSpecialistCalendar specialistId={specialistId} />}
-                </CardContent>
-              </Card>
-            )}
+              <TabsContent value="calendar" className="mt-4">
+                {specialistId && (
+                  <EnhancedSpecialistCalendar specialistId={specialistId} />
+                )}
+              </TabsContent>
 
-            {activeSection === 'training' && specialistId && (
-              <SpecialistTrainingDashboard specialistId={specialistId} />
-            )}
+              <TabsContent value="training" className="mt-4">
+                {specialistId && (
+                  <SpecialistTrainingDashboard specialistId={specialistId} />
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
 
-        {/* Performance Modal */}
+        {/* Modals */}
         <Dialog open={showPerformanceModal} onOpenChange={setShowPerformanceModal}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Performance Metrics</DialogTitle>
             </DialogHeader>
-            <div className="space-y-6">
-              {specialistId && <SpecialistPerformanceMetrics specialistId={specialistId} />}
-              <PeerPerformanceDashboard onRefresh={handleRefresh} />
-            </div>
+            {specialistId && <SpecialistPerformanceMetrics specialistId={specialistId} />}
           </DialogContent>
         </Dialog>
 
-        {/* Activity Modal */}
-        <Dialog open={showActivityModal} onOpenChange={setShowActivityModal}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Activity Log</DialogTitle>
-            </DialogHeader>
-            {specialistId && <SpecialistActivityLog isOpen={true} onClose={() => setShowActivityModal(false)} specialistId={specialistId} />}
-          </DialogContent>
-        </Dialog>
-
-        {/* Settings Modal */}
-        {specialistProfile && (
-          <SpecialistSettings 
-            isOpen={showSettingsModal} 
-            onClose={() => setShowSettingsModal(false)} 
-            specialist={specialistProfile} 
-            onUpdateSpecialist={(updatedSpecialist) => {
-              logger.debug('Specialist profile updated in settings:', updatedSpecialist);
-              setSpecialistProfile(updatedSpecialist);
-              // Refresh data to ensure UI is synchronized
-              loadTodayStats();
-              toast({
-                title: "Profile Updated",
-                description: "Your specialist profile has been updated successfully."
-              });
-            }}
-          />
+        {specialistId && (
+          <>
+            <SpecialistActivityLog
+              isOpen={showActivityModal}
+              onClose={() => setShowActivityModal(false)}
+              specialistId={specialistId}
+            />
+            <SpecialistSettings
+              isOpen={showSettingsModal}
+              onClose={() => setShowSettingsModal(false)}
+              specialist={specialistProfile}
+              onUpdateSpecialist={setSpecialistProfile}
+            />
+          </>
         )}
 
         {/* Chat History Modal */}
@@ -806,37 +778,7 @@ const PeerSpecialistDashboard = () => {
             specialistId={specialistId}
           />
         )}
-
-        {/* End Chat Message Popup */}
-        {showEndChatMessage && (
-          <div className="fixed top-4 right-4 z-50">
-            <Card className="bg-card border shadow-lg max-w-sm">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground mb-1">Chat Ended</p>
-                    <p className="text-xs text-muted-foreground">
-                      This chat has ended and has been moved to the chat history.
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 ml-2"
-                    onClick={() => setShowEndChatMessage(false)}
-                  >
-                    ×
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-        
-        {/* Specialist Sidebar Toast Notifications */}
-        <SpecialistSidebarToast />
-        </div>
-      </SidebarProvider>
+      </div>
     </TooltipProvider>
   );
 };
