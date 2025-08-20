@@ -143,7 +143,16 @@ export function SpecialistSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="mt-auto p-4">
+        {/* Notification Area */}
+        <SidebarGroup className="mt-auto mb-4">
+          <SidebarGroupContent>
+            <div id="specialist-notifications" className="px-4 space-y-2">
+              {/* Notifications will be rendered here */}
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <div className="p-4">
           <Button
             onClick={onLogout}
             variant="outline"

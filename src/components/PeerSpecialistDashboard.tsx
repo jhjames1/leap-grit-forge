@@ -20,6 +20,7 @@ import SpecialistStatusIndicator from './SpecialistStatusIndicator';
 import ChatHistory from './ChatHistory';
 import SpecialistTrainingDashboard from './SpecialistTrainingDashboard';
 import { SpecialistSidebar } from './SpecialistSidebar';
+import { SpecialistSidebarToast } from './SpecialistSidebarToast';
 import { useProposalNotifications } from '@/hooks/useProposalNotifications';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
@@ -842,6 +843,9 @@ const PeerSpecialistDashboard = () => {
             </Card>
           </div>
         )}
+        
+        {/* Specialist Sidebar Toast Notifications */}
+        <SpecialistSidebarToast />
         </div>
       </SidebarProvider>
     </TooltipProvider>
