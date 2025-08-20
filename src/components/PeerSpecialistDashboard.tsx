@@ -420,7 +420,7 @@ const PeerSpecialistDashboard = () => {
     return 'bg-chat-waiting';
   };
 
-  // Generate motivational message based on specialist's experience and specialties
+  // Generate stable motivational message based on specialist's ID to prevent constant changes
   const getMotivationalMessage = () => {
     if (!specialistProfile) return "Welcome to the Peer Support Specialist Dashboard";
     
@@ -433,8 +433,10 @@ const PeerSpecialistDashboard = () => {
       "Thank you for being a beacon of hope in someone's recovery journey."
     ];
     
-    const randomIndex = Math.floor(Math.random() * messages.length);
-    return messages[randomIndex];
+    // Use specialist ID to generate a stable "random" index that doesn't change on re-renders
+    const stableIndex = specialistProfile.id ? 
+      specialistProfile.id.charCodeAt(0) % messages.length : 0;
+    return messages[stableIndex];
   };
 
   // Handle errors from the hook
