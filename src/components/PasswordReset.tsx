@@ -19,84 +19,58 @@ export function PasswordReset() {
 
   useEffect(() => {
     const handlePasswordReset = async () => {
-      // Log the full URL for debugging
-      console.log('Full password reset URL:', window.location.href);
+      console.log('Password reset component loaded');
+      console.log('Current URL:', window.location.href);
       
-      // Check for different token formats
+      // Check for tokens in URL
       const accessToken = searchParams.get('access_token');
       const refreshToken = searchParams.get('refresh_token');
       const tokenHash = searchParams.get('token_hash');
       const type = searchParams.get('type');
-      const code = searchParams.get('code');
 
-      console.log('Password reset URL parameters:', {
+      console.log('URL parameters:', {
         accessToken: !!accessToken,
         refreshToken: !!refreshToken,
         tokenHash: !!tokenHash,
-        type,
-        code: !!code,
-        allParams: Object.fromEntries(searchParams.entries())
+        type
       });
 
-      // Show detailed error if no valid tokens found
-      if (!accessToken && !refreshToken && !tokenHash && !code) {
-        setError(`Invalid reset link. No valid tokens found. URL: ${window.location.href}`);
-        return;
-      }
-
-      if (type === 'recovery') {
-        if (accessToken && refreshToken) {
-          // Handle newer token format
-          console.log('Using access_token/refresh_token format');
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
+      // Only proceed if we have valid reset tokens
+      if (type === 'recovery' || accessToken || tokenHash) {
+        try {
+          let sessionError = null;
           
-          if (error) {
-            console.error('Session setup error:', error);
-            setError(`Session setup failed: ${error.message}. Please request a new password reset.`);
-          } else {
-            console.log('Session setup successful');
+          if (accessToken && refreshToken) {
+            console.log('Setting session with tokens');
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            sessionError = error;
+          } else if (tokenHash) {
+            console.log('Verifying OTP with token hash');
+            const { error } = await supabase.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: 'recovery'
+            });
+            sessionError = error;
           }
-        } else if (tokenHash) {
-          // Handle older token_hash format
-          console.log('Using token_hash format');
-          const { error } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: 'recovery'
-          });
           
-          if (error) {
-            console.error('Token verification error:', error);
-            setError(`Token verification failed: ${error.message}. Please request a new password reset.`);
+          if (sessionError) {
+            console.error('Authentication error:', sessionError);
+            setError('Invalid or expired reset link. Please request a new password reset.');
           } else {
-            console.log('Token verification successful');
+            console.log('Authentication successful - ready to update password');
           }
-        } else if (code) {
-          // Handle code format (alternative approach)
-          console.log('Using code format');
-          const { error } = await supabase.auth.verifyOtp({
-            token_hash: code,
-            type: 'recovery'
-          });
-          
-          if (error) {
-            console.error('Code verification error:', error);
-            setError(`Code verification failed: ${error.message}. Please request a new password reset.`);
-          } else {
-            console.log('Code verification successful');
-          }
-        } else {
-          setError(`Invalid reset link format. Missing required tokens. Type: ${type}`);
+        } catch (err) {
+          console.error('Unexpected error:', err);
+          setError('An error occurred. Please try requesting a new password reset.');
         }
-      } else {
-        setError(`Invalid link type: ${type}. Expected 'recovery'.`);
       }
     };
 
     handlePasswordReset();
-  }, [searchParams, navigate]);
+  }, [searchParams]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();

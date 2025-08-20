@@ -77,8 +77,40 @@ export function EmailConfirmation() {
             }, 3000);
           }
         } else if (type === 'recovery') {
-          // Handle password recovery - redirect to password reset
-          navigate(`/reset-password?${searchParams.toString()}`);
+          // Handle password recovery - stay on this page but redirect after verification
+          console.log('Password recovery detected, verifying tokens...');
+          
+          if (token_hash) {
+            const { error } = await supabase.auth.verifyOtp({
+              token_hash,
+              type: 'recovery'
+            });
+            
+            if (error) {
+              console.error('Password recovery verification error:', error);
+              setError('Invalid or expired password reset link. Please request a new one.');
+            } else {
+              console.log('Password recovery verification successful');
+              // Redirect to password reset page without URL parameters
+              navigate('/reset-password');
+            }
+          } else if (access_token && refresh_token) {
+            const { error } = await supabase.auth.setSession({
+              access_token,
+              refresh_token
+            });
+            
+            if (error) {
+              console.error('Password recovery session error:', error);
+              setError('Invalid or expired password reset link. Please request a new one.');
+            } else {
+              console.log('Password recovery session established');
+              // Redirect to password reset page without URL parameters  
+              navigate('/reset-password');
+            }
+          } else {
+            setError('Invalid password reset link format.');
+          }
         } else {
           console.log('No valid confirmation parameters found');
           setError('Invalid confirmation link or missing parameters.');
