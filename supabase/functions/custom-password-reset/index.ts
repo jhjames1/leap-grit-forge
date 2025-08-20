@@ -72,7 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         // Send email
         const emailResult = await resend.emails.send({
-          from: "LEAP Support <noreply@resend.dev>",
+          from: "LEAP Support <onboarding@resend.dev>",
           to: [email],
           subject: "Your Password Reset Code",
           html: `
