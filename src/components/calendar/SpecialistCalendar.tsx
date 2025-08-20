@@ -438,6 +438,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
       const appointmentId = event.id.replace('appointment-', '');
       
       // Update the appointment in the database
+      // The database trigger will automatically sync with scheduled_appointments
       const { error } = await supabase
         .from('specialist_appointments')
         .update({
@@ -451,7 +452,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
 
       toast({
         title: "Appointment Updated",
-        description: "The appointment time has been successfully updated",
+        description: "The appointment time has been automatically synchronized with the user's calendar",
       });
 
       // Refresh events to show the updated time

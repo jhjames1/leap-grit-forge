@@ -183,16 +183,15 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
       }
 
       if (response === 'accepted') {
-        // Call unified appointment creation function
-        const { error: functionError } = await supabase.functions.invoke('create-appointments', {
+        // Call synchronization function to create linked appointments
+        const { error: functionError } = await supabase.functions.invoke('sync-appointment-creation', {
           body: { 
-            proposalId: proposalData.id,
-            isRecurring: isRecurringProposal
+            proposalId: proposalData.id
           }
         });
 
         if (functionError) {
-          console.error('Error creating appointments:', functionError);
+          console.error('Error creating synchronized appointments:', functionError);
           throw functionError;
         }
 

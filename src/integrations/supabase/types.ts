@@ -1106,6 +1106,7 @@ export type Database = {
           meeting_url: string | null
           notes: string | null
           reminder_sent: boolean | null
+          scheduled_appointment_id: string | null
           scheduled_end: string
           scheduled_start: string
           specialist_id: string
@@ -1125,6 +1126,7 @@ export type Database = {
           meeting_url?: string | null
           notes?: string | null
           reminder_sent?: boolean | null
+          scheduled_appointment_id?: string | null
           scheduled_end: string
           scheduled_start: string
           specialist_id: string
@@ -1144,6 +1146,7 @@ export type Database = {
           meeting_url?: string | null
           notes?: string | null
           reminder_sent?: boolean | null
+          scheduled_appointment_id?: string | null
           scheduled_end?: string
           scheduled_start?: string
           specialist_id?: string
@@ -1157,6 +1160,13 @@ export type Database = {
             columns: ["appointment_type_id"]
             isOneToOne: false
             referencedRelation: "appointment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_appointments_scheduled_appointment_id_fkey"
+            columns: ["scheduled_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_appointments"
             referencedColumns: ["id"]
           },
           {
