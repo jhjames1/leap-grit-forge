@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Users, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { SimplePasswordReset } from './SimplePasswordReset';
 
 interface SpecialistLoginProps {
   onLogin: () => void;
@@ -19,6 +20,7 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +65,16 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
       setIsLoading(false);
     }
   };
+
+  if (showPasswordReset) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <SimplePasswordReset 
+          onBack={() => setShowPasswordReset(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -153,21 +165,7 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
           </p>
           <button
             type="button"
-            onClick={() => {
-              const email = credentials.email || prompt('Enter your email address:');
-              if (email) {
-                supabase.auth.resetPasswordForEmail(email, {
-                  redirectTo: `${window.location.origin}/reset-password`
-                }).then(({ error }) => {
-                  if (error) {
-                    setError('Failed to send reset email: ' + error.message);
-                  } else {
-                    setError('');
-                    alert('Password reset instructions sent to your email.');
-                  }
-                });
-              }
-            }}
+            onClick={() => setShowPasswordReset(true)}
             className="text-construction hover:text-construction-dark text-xs underline"
             disabled={isLoading}
           >
