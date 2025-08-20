@@ -34,14 +34,28 @@ const PeerSpecialistPortal = () => {
       const refreshToken = urlParams.get('refresh_token');
       const type = urlParams.get('type');
 
+      console.log('Password reset URL params:', { 
+        type, 
+        hasAccessToken: !!accessToken, 
+        hasRefreshToken: !!refreshToken,
+        fullUrl: window.location.href 
+      });
+
       if (type === 'recovery' && accessToken && refreshToken) {
         try {
-          const { error } = await supabase.auth.setSession({
+          console.log('Attempting to set session with recovery tokens...');
+          
+          const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
 
-          if (error) throw error;
+          if (error) {
+            console.error('Session set error:', error);
+            throw error;
+          }
+
+          console.log('Session set successfully:', data);
 
           // Clear URL parameters
           window.history.replaceState({}, document.title, window.location.pathname);
@@ -57,7 +71,7 @@ const PeerSpecialistPortal = () => {
           console.error('Password reset error:', error);
           toast({
             title: "Password Reset Error",
-            description: error.message || "Failed to process password reset",
+            description: `${error.message || "Failed to process password reset"}. Please request a new password reset.`,
             variant: "destructive"
           });
         }
