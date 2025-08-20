@@ -92,7 +92,7 @@ const RecurringAppointmentScheduler = ({
           sender_id: currentUser.id,
           sender_type: 'specialist',
           message_type: 'system',
-          content: `🗓️ **Recurring Appointment Proposal**\n\n**${formData.title}**\n\n${formData.description}\n\n📅 **Schedule:** ${formData.frequency} starting ${formData.startDate} at ${formData.startTime}\n⏱️ **Duration:** ${formData.duration} minutes\n🔄 **Occurrences:** ${formData.occurrences} sessions\n\n*Please respond with "accept" or "reject" to this proposal. It expires in 7 days.*`,
+          content: `🗓️ **Recurring Appointment Proposal**\n\n**${formData.title}**\n\n${formData.description}\n\n📅 **Schedule:** ${formData.frequency} starting ${formData.startDate} at ${formData.startTime}\n⏱️ **Duration:** ${formData.duration} minutes\n🔄 **Occurrences:** ${formData.occurrences} sessions\n\n*Please respond with "accept" or "reject" to this proposal. It expires in 5 minutes.*`,
           metadata: { 
             proposal_id: proposal.id,
             action_type: 'recurring_appointment_proposal',

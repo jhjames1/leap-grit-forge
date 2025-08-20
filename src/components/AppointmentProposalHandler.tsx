@@ -144,12 +144,12 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
   useEffect(() => {
     const checkExpiration = () => {
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // Assuming 7 days from now
+      const expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // Assuming 5 minutes from now
       setExpired(isPast(expiresAt));
     };
 
     checkExpiration();
-    const interval = setInterval(checkExpiration, 60000); // Check every minute
+    const interval = setInterval(checkExpiration, 10000); // Check every 10 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -283,7 +283,7 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
           {!responded && !expired && (
             <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
               <Timer className="w-3 h-3 mr-1" />
-              Expires in 7 days
+              Expires in 5 minutes
             </Badge>
           )}
         </div>
@@ -339,7 +339,7 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
                     <li>• You can reschedule if needed</li>
                   </>
                 )}
-                <li>• This proposal expires in 7 days</li>
+                <li>• This proposal expires in 5 minutes</li>
                 <li>• Appointments will appear in both your calendar and the specialist's calendar</li>
               </ul>
             </div>
