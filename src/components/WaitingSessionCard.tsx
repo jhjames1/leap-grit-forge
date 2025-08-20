@@ -20,11 +20,11 @@ interface ChatSession {
 
 interface WaitingSessionCardProps {
   session: ChatSession;
-  onClaimToSlot: (slotIndex: number) => void;
-  availableSlots: boolean[];
+  onClaim: () => void;
+  hasAvailableSlots: boolean;
 }
 
-export const WaitingSessionCard = ({ session, onClaimToSlot, availableSlots }: WaitingSessionCardProps) => {
+export const WaitingSessionCard = ({ session, onClaim, hasAvailableSlots }: WaitingSessionCardProps) => {
   const waitTime = session.started_at ? 
     Math.floor((Date.now() - new Date(session.started_at).getTime()) / (1000 * 60)) : 0;
 
@@ -41,10 +41,6 @@ export const WaitingSessionCard = ({ session, onClaimToSlot, availableSlots }: W
     }
     return `User #${session.session_number}`;
   };
-
-  const availableSlotIndexes = availableSlots
-    .map((available, index) => available ? index : -1)
-    .filter(index => index !== -1);
 
   return (
     <Card className="min-w-[280px] max-w-[280px] flex-shrink-0 border-l-4 border-l-orange-500">
@@ -65,30 +61,15 @@ export const WaitingSessionCard = ({ session, onClaimToSlot, availableSlots }: W
         </div>
         
         <div className="space-y-1">
-          {availableSlotIndexes.length > 0 ? (
-            <div className="flex gap-1">
-              {availableSlotIndexes.map(slotIndex => (
-                <Button
-                  key={slotIndex}
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs flex-1"
-                  onClick={() => onClaimToSlot(slotIndex)}
-                >
-                  Claim to Slot {slotIndex + 1}
-                </Button>
-              ))}
-            </div>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs w-full"
-              disabled
-            >
-              All Slots Occupied
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs w-full"
+            onClick={onClaim}
+            disabled={!hasAvailableSlots}
+          >
+            {hasAvailableSlots ? 'Claim Session' : 'All Slots Occupied'}
+          </Button>
         </div>
       </CardContent>
     </Card>

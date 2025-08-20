@@ -214,12 +214,15 @@ const PeerSpecialistDashboard = () => {
     }
   }, [hasNewResponses, refreshSessions, clearNewResponses]);
 
-  // Session claiming logic for multi-session support
-  const claimSessionToSlot = useCallback(async (sessionId: string, slotIndex: number) => {
-    if (activeSessions[slotIndex] !== null) {
+  // Session claiming logic - automatically assigns to next available slot
+  const claimSession = useCallback(async (sessionId: string) => {
+    // Find the next available slot
+    const nextAvailableSlot = activeSessions.findIndex(session => session === null);
+    
+    if (nextAvailableSlot === -1) {
       toast({
-        title: "Slot Occupied",
-        description: `Slot ${slotIndex + 1} is already occupied. Please choose an available slot.`,
+        title: "All Slots Occupied",
+        description: "All session slots are currently occupied. Please end a session first.",
         variant: "destructive"
       });
       return;
@@ -238,13 +241,13 @@ const PeerSpecialistDashboard = () => {
         const session = (data as any).session;
         setActiveSessions(prev => {
           const newSessions = [...prev];
-          newSessions[slotIndex] = session;
+          newSessions[nextAvailableSlot] = session;
           return newSessions;
         });
 
         toast({
           title: "Session Claimed",
-          description: `Session #${session.session_number} claimed to Slot ${slotIndex + 1}.`
+          description: `Session #${session.session_number} claimed to Slot ${nextAvailableSlot + 1}.`
         });
 
         // Refresh sessions to update the waiting list
@@ -253,7 +256,7 @@ const PeerSpecialistDashboard = () => {
         throw new Error((data as any).error || 'Failed to claim session');
       }
     } catch (error) {
-      logger.error('Error claiming session to slot:', error);
+      logger.error('Error claiming session:', error);
       toast({
         title: "Error",
         description: "Failed to claim session. Please try again.",
@@ -699,12 +702,12 @@ const PeerSpecialistDashboard = () => {
                     ) : (
                       <ScrollArea className="w-full">
                         <div className="flex gap-4 pb-2">
-                          {waitingSessionsList.map(session => (
+                           {waitingSessionsList.map(session => (
                             <WaitingSessionCard
                               key={session.id}
                               session={session}
-                              onClaimToSlot={(slotIndex) => claimSessionToSlot(session.id, slotIndex)}
-                              availableSlots={availableSlots}
+                              onClaim={() => claimSession(session.id)}
+                              hasAvailableSlots={availableSlots.some(available => available)}
                             />
                           ))}
                         </div>
