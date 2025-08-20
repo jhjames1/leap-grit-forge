@@ -464,7 +464,7 @@ const PeerChat = ({
       {/* Quick Actions */}
       {session && !isSessionEnded && <div className="px-4 py-2">
           <div className="flex space-x-2 overflow-x-auto">
-            <Button size="sm" onClick={() => handleQuickAction('need-support')} className="font-fjalla whitespace-nowrap font-light text-zinc-50 bg-zinc-600 hover:bg-zinc-500">
+            <Button size="sm" onClick={() => handleQuickAction('need-support')} className="font-fjalla whitespace-nowrap font-light text-zinc-50 bg-zinc-600 hover:bg-zinc-500 text-xs">
               NEED SUPPORT
             </Button>
             <Button size="sm" onClick={() => handleQuickAction('feeling-triggered')} className="bg-secondary text-secondary-foreground font-fjalla whitespace-nowrap hover:bg-secondary/90 font-light">
