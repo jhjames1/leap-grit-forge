@@ -1,8 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { corsHeaders } from "../_shared/cors.ts";
+import { toZonedTime } from "https://esm.sh/date-fns-tz@3.2.0";
+import { format } from "https://esm.sh/date-fns@3.6.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const CST_TIMEZONE = 'America/Chicago';
 
 interface CalendarEvent {
   specialistEmail: string;
@@ -36,7 +39,13 @@ serve(async (req) => {
 
     console.log(`[send-outlook-calendar] Creating calendar invite for ${specialistEmail}`);
 
-    // Create iCal format string for Outlook compatibility
+    // Convert UTC times to CST for display
+    const startDateUTC = new Date(startDateTime);
+    const endDateUTC = new Date(endDateTime);
+    const startDateCST = toZonedTime(startDateUTC, CST_TIMEZONE);
+    const endDateCST = toZonedTime(endDateUTC, CST_TIMEZONE);
+
+    // Create iCal format string for Outlook compatibility (keep in UTC for calendar standards)
     const formatDateTime = (dateTime: string) => {
       return new Date(dateTime).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
     };
@@ -77,9 +86,9 @@ serve(async (req) => {
           <h2 style="color: #2563eb;">New Appointment Scheduled</h2>
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #334155;">${title}</h3>
-            <p><strong>Date:</strong> ${new Date(startDateTime).toLocaleDateString()}</p>
-            <p><strong>Time:</strong> ${new Date(startDateTime).toLocaleTimeString()} - ${new Date(endDateTime).toLocaleTimeString()}</p>
-            <p><strong>Duration:</strong> ${Math.round((new Date(endDateTime).getTime() - new Date(startDateTime).getTime()) / (1000 * 60))} minutes</p>
+            <p><strong>Date:</strong> ${format(startDateCST, 'MMMM dd, yyyy')}</p>
+            <p><strong>Time:</strong> ${format(startDateCST, 'h:mm a')} - ${format(endDateCST, 'h:mm a')} CST</p>
+            <p><strong>Duration:</strong> ${Math.round((endDateUTC.getTime() - startDateUTC.getTime()) / (1000 * 60))} minutes</p>
             <p><strong>With:</strong> ${userName} (${userEmail})</p>
             ${description ? `<p><strong>Description:</strong> ${description}</p>` : ''}
           </div>
@@ -96,7 +105,7 @@ serve(async (req) => {
       attachments: [
         {
           filename: 'appointment.ics',
-          content: Buffer.from(icalContent).toString('base64'),
+          content: btoa(icalContent),
           contentType: 'text/calendar; charset=utf-8; method=REQUEST'
         }
       ]
