@@ -173,7 +173,7 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
               type="button"
               variant="ghost"
               onClick={() => setShowPasswordReset(true)}
-              className="w-full text-steel-light hover:text-construction text-sm"
+              className="w-full text-steel-light hover:text-construction text-sm border border-steel-dark/30 bg-steel-dark/20"
               disabled={isLoading}
             >
               Forgot Password?
