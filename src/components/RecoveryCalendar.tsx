@@ -36,7 +36,7 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
   const { user } = useAuth();
   const { t } = useLanguage();
 
-  // Load user appointments with real-time updates
+  // Load user appointments
   useEffect(() => {
     const loadAppointments = async () => {
       if (!user) return;
@@ -65,28 +65,6 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
     };
 
     loadAppointments();
-
-    // Set up real-time subscription for appointment changes
-    const channel = supabase
-      .channel('scheduled_appointments_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'scheduled_appointments',
-          filter: `user_id=eq.${user?.id}`
-        },
-        (payload) => {
-          console.log('📅 Real-time appointment update:', payload);
-          loadAppointments(); // Reload appointments when changes occur
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [user, currentDate]);
 
   // Force refresh when journey progress changes

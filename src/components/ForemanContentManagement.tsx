@@ -77,7 +77,7 @@ const ForemanContentManagement = () => {
     author: '',
     mood_targeting: [] as string[],
     recovery_stage: [] as string[],
-    trigger_keywords: [] as string[] | string,
+    trigger_keywords: [] as string[],
     priority: 5,
     is_active: true
   });
@@ -433,7 +433,8 @@ const ForemanContentManagement = () => {
                   id="trigger_keywords"
                   value={Array.isArray(formData.trigger_keywords) ? formData.trigger_keywords.join(', ') : formData.trigger_keywords}
                   onChange={(e) => {
-                    setFormData({...formData, trigger_keywords: e.target.value});
+                    const keywords = e.target.value.split(',').map(k => k.trim()).filter(k => k);
+                    setFormData({...formData, trigger_keywords: keywords});
                   }}
                   placeholder="motivation, help, crisis, anniversary..."
                 />

@@ -9,11 +9,9 @@ import { Loader2 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { logger } from '@/utils/logger';
 import PasswordChangePrompt from '@/components/PasswordChangePrompt';
-import { useToast } from '@/hooks/use-toast';
 
 const PeerSpecialistPortal = () => {
   const { user, loading } = useAuth();
-  const { toast } = useToast();
   const [isVerifiedSpecialist, setIsVerifiedSpecialist] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasChecked, setHasChecked] = useState(false);
@@ -25,61 +23,6 @@ const PeerSpecialistPortal = () => {
   // Use refs to prevent unnecessary re-renders and track operation state
   const isCheckingRef = useRef(false);
   const mountedRef = useRef(true);
-
-  // Handle password reset callback
-  useEffect(() => {
-    const handlePasswordReset = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const accessToken = urlParams.get('access_token');
-      const refreshToken = urlParams.get('refresh_token');
-      const type = urlParams.get('type');
-
-      console.log('Password reset URL params:', { 
-        type, 
-        hasAccessToken: !!accessToken, 
-        hasRefreshToken: !!refreshToken,
-        fullUrl: window.location.href 
-      });
-
-      if (type === 'recovery' && accessToken && refreshToken) {
-        try {
-          console.log('Attempting to set session with recovery tokens...');
-          
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
-
-          if (error) {
-            console.error('Session set error:', error);
-            throw error;
-          }
-
-          console.log('Session set successfully:', data);
-
-          // Clear URL parameters
-          window.history.replaceState({}, document.title, window.location.pathname);
-          
-          toast({
-            title: "Password Reset Successful",
-            description: "You can now set a new password. Please use the password change prompt below.",
-          });
-
-          // Force password change for security
-          setMustChangePassword(true);
-        } catch (error: any) {
-          console.error('Password reset error:', error);
-          toast({
-            title: "Password Reset Error",
-            description: `${error.message || "Failed to process password reset"}. Please request a new password reset.`,
-            variant: "destructive"
-          });
-        }
-      }
-    };
-
-    handlePasswordReset();
-  }, [toast]);
 
   // ALL useCallback hooks must be defined at the top level, unconditionally
   const checkSpecialistStatus = useCallback(async () => {

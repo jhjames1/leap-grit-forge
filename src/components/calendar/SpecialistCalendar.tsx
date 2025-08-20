@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Calendar, dateFnsLocalizer, Views, View } from 'react-big-calendar';
-import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import { format, parse, startOfWeek, getDay, addHours, isSameDay, startOfDay, endOfDay, addDays, addWeeks } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
 import { DndProvider } from 'react-dnd';
@@ -14,7 +13,6 @@ import { CalendarIcon, Clock, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ScheduleManagementModal from './ScheduleManagementModal';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import './calendar.css';
 
 const locales = {
@@ -28,9 +26,6 @@ const localizer = dateFnsLocalizer({
   getDay,
   locales,
 });
-
-// Create the drag and drop enabled calendar
-const DragAndDropCalendar = withDragAndDrop(Calendar);
 
 interface CalendarEvent {
   id: string;
@@ -419,54 +414,6 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
     };
   }, [specialistId, fetchEvents]);
 
-  // Handle event resize
-  const onEventResize = useCallback(async ({ event, start, end }: { event: CalendarEvent, start: Date, end: Date }) => {
-    console.log('🔄 Event resize:', { event, start, end });
-    
-    // Only allow resizing of appointments (not availability blocks or recurring patterns)
-    if (event.resource.type !== 'appointment') {
-      toast({
-        title: "Cannot resize this event",
-        description: "Only scheduled appointments can be resized",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      // Extract appointment ID from event ID
-      const appointmentId = event.id.replace('appointment-', '');
-      
-      // Update the appointment in the database
-      // The database trigger will automatically sync with scheduled_appointments
-      const { error } = await supabase
-        .from('specialist_appointments')
-        .update({
-          scheduled_start: start.toISOString(),
-          scheduled_end: end.toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', appointmentId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Appointment Updated",
-        description: "The appointment time has been automatically synchronized with the user's calendar",
-      });
-
-      // Refresh events to show the updated time
-      fetchEvents();
-    } catch (error: any) {
-      console.error('Error resizing appointment:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update appointment time",
-        variant: "destructive"
-      });
-    }
-  }, [toast, fetchEvents]);
-
   // Enhanced event style getter with dynamic color coding
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const baseStyle = {
@@ -617,7 +564,7 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
               </div>
               
               <div className="calendar-container" style={{ height: '600px' }}>
-                <DragAndDropCalendar
+                <Calendar
                   localizer={localizer}
                   events={events}
                   startAccessor="start"
@@ -631,8 +578,6 @@ export default function SpecialistCalendar({ specialistId }: SpecialistCalendarP
                   views={[Views.MONTH, Views.WEEK, Views.DAY]}
                   step={30}
                   showMultiDayTimes
-                  resizable
-                  onEventResize={onEventResize}
                   components={{
                     toolbar: (props) => (
                       <div className="flex items-center justify-between mb-4 p-2 bg-muted rounded">

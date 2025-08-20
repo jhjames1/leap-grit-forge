@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Users, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface SpecialistLoginProps {
   onLogin: () => void;
@@ -20,10 +19,6 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [isResetting, setIsResetting] = useState(false);
-  const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,15 +47,9 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
         .eq('user_id', data.user.id)
         .eq('is_active', true)
         .eq('is_verified', true)
-        .maybeSingle();
+        .single();
 
-      if (specialistError) {
-        console.error('Database error checking specialist:', specialistError);
-        await supabase.auth.signOut();
-        throw new Error('Database error. Please try again.');
-      }
-
-      if (!specialistData) {
+      if (specialistError || !specialistData) {
         // Sign out the user if they're not a verified specialist
         await supabase.auth.signOut();
         throw new Error('Access denied. Verified peer specialist account required.');
@@ -72,36 +61,6 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
       setError(error.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handlePasswordReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsResetting(true);
-    
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/specialist`,
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Password Reset Email Sent",
-        description: "Check your email for password reset instructions."
-      });
-      
-      setShowPasswordReset(false);
-      setResetEmail('');
-    } catch (error: any) {
-      console.error('Password reset error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send password reset email",
-        variant: "destructive"
-      });
-    } finally {
-      setIsResetting(false);
     }
   };
 
@@ -175,21 +134,6 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
             >
               {isLoading ? 'Authenticating...' : 'Access Portal'}
             </Button>
-            
-            {/* FORGOT PASSWORD BUTTON - ALWAYS VISIBLE - DO NOT REMOVE */}
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowPasswordReset(true);
-              }}
-              className="w-full border border-construction text-construction hover:bg-construction/10 font-medium py-2 px-4 rounded transition-colors"
-              disabled={isLoading}
-            >
-              Forgot Password?
-            </button>
-            
             <Button 
               type="button"
               variant="outline"
@@ -202,53 +146,6 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
             </Button>
           </div>
         </form>
-
-        {/* Password Reset Modal */}
-        {showPasswordReset && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <Card className="bg-midnight border-steel-dark p-6 max-w-sm w-full">
-              <h3 className="font-oswald font-bold text-white text-xl mb-4">Reset Password</h3>
-              <form onSubmit={handlePasswordReset} className="space-y-4">
-                <div>
-                  <Label htmlFor="reset-email" className="text-white font-oswald font-medium">
-                    Specialist Email
-                  </Label>
-                  <Input
-                    id="reset-email"
-                    type="email"
-                    value={resetEmail}
-                    onChange={(e) => setResetEmail(e.target.value)}
-                    className="bg-steel-dark border-steel text-white placeholder:text-steel-light mt-1"
-                    placeholder="Enter your specialist email"
-                    required
-                    disabled={isResetting}
-                  />
-                </div>
-                <div className="flex space-x-2">
-                  <Button 
-                    type="submit"
-                    className="flex-1 bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold"
-                    disabled={isResetting}
-                  >
-                    {isResetting ? 'Sending...' : 'Send Reset Email'}
-                  </Button>
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowPasswordReset(false);
-                      setResetEmail('');
-                    }}
-                    className="flex-1 border-steel text-steel-light hover:bg-steel/10"
-                    disabled={isResetting}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </Card>
-          </div>
-        )}
 
         <div className="mt-6 text-center">
           <p className="text-steel-light text-xs">

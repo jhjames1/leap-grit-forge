@@ -200,11 +200,8 @@ const AdminManagement = () => {
 
   const handleResetPassword = async (admin: Admin) => {
     try {
-      // Generate a secure temporary password (12 chars with uppercase, lowercase, numbers)
-      const tempPassword = Array.from({length: 12}, () => {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-        return chars.charAt(Math.floor(Math.random() * chars.length));
-      }).join('');
+      // Generate a secure temporary password
+      const tempPassword = Math.random().toString(36).slice(-12).toUpperCase();
       
       const { data, error } = await supabase.functions.invoke('admin-management', {
         body: {
@@ -218,29 +215,16 @@ const AdminManagement = () => {
 
       if (error) throw error;
 
-      // Show a more prominent dialog with the password
-      alert(`PASSWORD RESET SUCCESSFUL
-      
-Admin: ${admin.email}
-Temporary Password: ${tempPassword}
-
-⚠️ IMPORTANT:
-• Copy this password immediately
-• The admin must change this password on first login
-• This password will not be shown again
-
-Save this information securely!`);
-
       toast({
         title: "Password Reset Successfully",
-        description: `Temporary password generated for ${admin.email}`,
+        description: `New temporary password: ${tempPassword}`,
       });
 
     } catch (error) {
       console.error('Error resetting password:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to reset password",
+        description: "Failed to reset password",
         variant: "destructive",
       });
     }
