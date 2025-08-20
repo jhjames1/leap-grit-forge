@@ -332,7 +332,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     };
   };
 
-  const handleReconnection = () => {
+  const handleReconnection = async () => {
     if (reconnectAttempts >= maxReconnectAttempts) {
       logger.error('Max reconnection attempts reached');
       return;
@@ -341,57 +341,33 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
     logger.debug(`Attempting reconnection in ${backoffDelay}ms (attempt ${reconnectAttempts + 1})`);
     
-    reconnectTimeoutRef.current = setTimeout(() => {
+    reconnectTimeoutRef.current = setTimeout(async () => {
       setReconnectAttempts(prev => prev + 1);
+      
+      // Refresh session data during automatic reconnection
+      try {
+        const { data: sessionData, error } = await supabase
+          .from('chat_sessions')
+          .select('*')
+          .eq('id', session.id)
+          .single();
+
+        if (error) throw error;
+
+        if (sessionData) {
+          setCurrentSession(sessionData as ChatSession);
+          onSessionUpdate?.(sessionData as ChatSession);
+        }
+        
+        // Reload messages and proposals
+        await loadMessages();
+        await loadSessionProposal();
+      } catch (err) {
+        logger.error('Error refreshing session data during reconnection:', err);
+      }
+      
       setupRealTimeSubscription();
     }, backoffDelay);
-  };
-
-  const forceReconnect = async () => {
-    logger.debug('Force reconnecting chat session and real-time connection');
-    
-    // Clear any pending reconnection attempts
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-    
-    // Reset reconnection attempts
-    setReconnectAttempts(0);
-    
-    // Refresh session data from database
-    try {
-      const { data: sessionData, error } = await supabase
-        .from('chat_sessions')
-        .select('*, profiles:user_id(first_name, last_name)')
-        .eq('id', session.id)
-        .single();
-
-      if (error) throw error;
-
-      if (sessionData) {
-        const updatedSession = {
-          ...sessionData,
-          user_first_name: sessionData.profiles?.first_name,
-          user_last_name: sessionData.profiles?.last_name
-        };
-        setCurrentSession(updatedSession);
-        onSessionUpdate?.(updatedSession);
-      }
-    } catch (err) {
-      logger.error('Error refreshing session data:', err);
-    }
-    
-    // Reload messages and proposals
-    await loadMessages();
-    await loadSessionProposal();
-    
-    // Re-establish real-time connection
-    setupRealTimeSubscription();
-    
-    toast({
-      title: "Connection Refreshed",
-      description: "Chat session and real-time connection have been refreshed",
-    });
   };
 
   const processMessageQueue = async () => {
@@ -913,24 +889,13 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
 
       {connectionStatus === 'disconnected' && (
         <div className="bg-orange-500/10 border-b border-orange-500/20 p-3">
-          <div className="flex items-center justify-center space-x-4">
-            <div className="flex items-center space-x-2 text-orange-600 text-sm">
-              <AlertCircle size={16} />
-              <span>Connection issue - Messages may be delayed</span>
-              {reconnectAttempts > 0 && (
-                <span>(Retry {reconnectAttempts}/{maxReconnectAttempts})</span>
-              )}
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={forceReconnect}
-              className="text-orange-600 border-orange-600/30 hover:bg-orange-600/10 h-7"
-            >
-              <RefreshCw size={14} className="mr-1" />
-              Reconnect
-            </Button>
-          </div>
+          <p className="text-orange-600 text-sm text-center flex items-center justify-center space-x-2">
+            <AlertCircle size={16} />
+            <span>Connection issue - Messages may be delayed</span>
+            {reconnectAttempts > 0 && (
+              <span>(Retry {reconnectAttempts}/{maxReconnectAttempts})</span>
+            )}
+          </p>
         </div>
       )}
 
