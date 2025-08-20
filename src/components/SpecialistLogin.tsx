@@ -169,15 +169,18 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
             >
               {isLoading ? 'Authenticating...' : 'Access Portal'}
             </Button>
+            
+            {/* PERMANENT FORGOT PASSWORD BUTTON - DO NOT REMOVE */}
             <Button 
               type="button"
               variant="outline"
               onClick={() => setShowPasswordReset(true)}
-              className="w-full border-construction/50 text-construction hover:bg-construction/10 text-sm"
+              className="w-full border-construction/50 text-construction hover:bg-construction/10 text-sm font-medium"
               disabled={isLoading}
             >
               Forgot Password?
             </Button>
+            
             <Button 
               type="button"
               variant="outline"
