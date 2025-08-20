@@ -250,14 +250,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           const updatedSession = payload.new as ChatSession;
           setCurrentSession(updatedSession);
           
-          // Show success toast for session activation
-          if (updatedSession.status === 'active' && currentSession.status === 'waiting') {
-            toast({
-              title: "Session Activated",
-              description: "You are now connected to the user.",
-              duration: 3000,
-            });
-          }
+          // Session activation handled without notification
           
           // Handle session ended
           if (updatedSession.status === 'ended' && currentSession.status !== 'ended') {
