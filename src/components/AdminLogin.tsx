@@ -21,6 +21,9 @@ const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -68,6 +71,36 @@ const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
       setError(error.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsResetting(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/admin`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your email for password reset instructions."
+      });
+      
+      setShowPasswordReset(false);
+      setResetEmail('');
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send password reset email",
+        variant: "destructive"
+      });
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -143,6 +176,15 @@ const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
             </Button>
             <Button 
               type="button"
+              variant="ghost"
+              onClick={() => setShowPasswordReset(true)}
+              className="w-full text-steel-light hover:text-construction text-sm"
+              disabled={isLoading}
+            >
+              Forgot Password?
+            </Button>
+            <Button 
+              type="button"
               variant="outline"
               onClick={onBack}
               className="w-full border-steel text-steel-light hover:bg-steel/10"
@@ -152,6 +194,53 @@ const AdminLogin = ({ onLogin, onBack }: AdminLoginProps) => {
             </Button>
           </div>
         </form>
+
+        {/* Password Reset Modal */}
+        {showPasswordReset && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <Card className="bg-midnight border-steel-dark p-6 max-w-sm w-full">
+              <h3 className="font-oswald font-bold text-white text-xl mb-4">Reset Password</h3>
+              <form onSubmit={handlePasswordReset} className="space-y-4">
+                <div>
+                  <Label htmlFor="reset-email" className="text-white font-oswald font-medium">
+                    Admin Email
+                  </Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="bg-steel-dark border-steel text-white placeholder:text-steel-light mt-1"
+                    placeholder="Enter your admin email"
+                    required
+                    disabled={isResetting}
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button 
+                    type="submit"
+                    className="flex-1 bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold"
+                    disabled={isResetting}
+                  >
+                    {isResetting ? 'Sending...' : 'Send Reset Email'}
+                  </Button>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowPasswordReset(false);
+                      setResetEmail('');
+                    }}
+                    className="flex-1 border-steel text-steel-light hover:bg-steel/10"
+                    disabled={isResetting}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
 
         <div className="mt-6 text-center">
           <p className="text-steel-light text-xs">
