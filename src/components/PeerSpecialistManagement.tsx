@@ -376,6 +376,385 @@ const PeerSpecialistManagement = () => {
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>;
   }
-  return;
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Peer Specialist Management</h1>
+          <p className="text-muted-foreground">Manage and invite peer specialists</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={resetForm}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Invite New Specialist
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {editingSpecialist ? 'Edit Specialist' : 'Invite New Specialist'}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={editingSpecialist ? handleEditSpecialist : handleInviteSpecialist} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="first_name">First Name *</Label>
+                  <Input
+                    id="first_name"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="last_name">Last Name *</Label>
+                  <Input
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+              
+              {!editingSpecialist && (
+                <div>
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    required
+                  />
+                </div>
+              )}
+              
+              <div>
+                <Label htmlFor="phone_number">Phone Number</Label>
+                <Input
+                  id="phone_number"
+                  value={formData.phone_number}
+                  onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="years_experience">Years of Experience</Label>
+                <Input
+                  id="years_experience"
+                  type="number"
+                  min="0"
+                  value={formData.years_experience}
+                  onChange={(e) => setFormData({...formData, years_experience: parseInt(e.target.value) || 0})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  value={formData.bio}
+                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                  rows={3}
+                />
+              </div>
+              
+              <div>
+                <Label>Specialties</Label>
+                <div className="flex gap-2 mb-2">
+                  <Input
+                    value={newSpecialty}
+                    onChange={(e) => setNewSpecialty(e.target.value)}
+                    placeholder="Add specialty"
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialty())}
+                  />
+                  <Button type="button" onClick={addSpecialty} size="sm">Add</Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {formData.specialties.map((specialty, index) => (
+                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                      {specialty}
+                      <X 
+                        className="h-3 w-3 cursor-pointer" 
+                        onClick={() => removeSpecialty(specialty)}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isInviting}>
+                  {isInviting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {editingSpecialist ? 'Update' : 'Invite'} Specialist
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Search */}
+      <div className="flex items-center gap-2">
+        <Search className="h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search specialists..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Specialists</p>
+                <p className="text-2xl font-bold">{specialists.length}</p>
+              </div>
+              <Users className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Active Specialists</p>
+                <p className="text-2xl font-bold">{activeSpecialists.length}</p>
+              </div>
+              <UserCheck className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Verified Specialists</p>
+                <p className="text-2xl font-bold">{specialists.filter(s => s.is_verified).length}</p>
+              </div>
+              <Check className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Specialists List */}
+      <Tabs defaultValue="active" className="w-full">
+        <TabsList>
+          <TabsTrigger value="active">Active ({activeSpecialists.length})</TabsTrigger>
+          <TabsTrigger value="removed">Removed ({removedSpecialists.length})</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="active">
+          <div className="grid gap-4">
+            {activeSpecialists.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Active Specialists</h3>
+                  <p className="text-muted-foreground">Invite your first specialist to get started.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              activeSpecialists.map((specialist) => (
+                <Card key={specialist.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold">
+                            {specialist.first_name} {specialist.last_name}
+                          </h3>
+                          <div className="flex gap-2">
+                            {specialist.is_verified ? (
+                              <Badge variant="default">
+                                <Check className="h-3 w-3 mr-1" />
+                                Verified
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Unverified
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <p className="text-sm text-muted-foreground mb-2">{specialist.email}</p>
+                        
+                        {specialist.bio && (
+                          <p className="text-sm mb-3">{specialist.bio}</p>
+                        )}
+                        
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {specialist.specialties?.map((specialty, index) => (
+                            <Badge key={index} variant="outline">{specialty}</Badge>
+                          ))}
+                        </div>
+                        
+                        <p className="text-sm text-muted-foreground">
+                          {specialist.years_experience} years experience
+                        </p>
+                      </div>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(specialist)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleVerifySpecialist(specialist.id)}>
+                            {specialist.is_verified ? (
+                              <>
+                                <X className="h-4 w-4 mr-2" />
+                                Unverify
+                              </>
+                            ) : (
+                              <>
+                                <Check className="h-4 w-4 mr-2" />
+                                Verify
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleResetPassword(specialist.id)}>
+                            <Key className="h-4 w-4 mr-2" />
+                            Reset Password
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <UserX className="h-4 w-4 mr-2" />
+                                Deactivate
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Deactivate Specialist</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to deactivate {specialist.first_name} {specialist.last_name}? 
+                                  They will lose access to the system but their data will be preserved.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => handleSoftDeleteSpecialist(specialist.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Deactivate
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="removed">
+          <div className="grid gap-4">
+            {removedSpecialists.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <UserX className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Removed Specialists</h3>
+                  <p className="text-muted-foreground">No specialists have been removed.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              removedSpecialists.map((specialist) => (
+                <Card key={specialist.id} className="opacity-60">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold">
+                            {specialist.first_name} {specialist.last_name}
+                          </h3>
+                          <Badge variant="destructive">Removed</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{specialist.email}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReactivateSpecialist(specialist.id)}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Reactivate
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Credentials Dialog */}
+      <Dialog open={credentialsDialog.isOpen} onOpenChange={(open) => setCredentialsDialog({...credentialsDialog, isOpen: open})}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Specialist Credentials</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>New credentials have been generated for {credentialsDialog.specialistName}:</p>
+            
+            <div className="bg-muted p-4 rounded-lg space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Email:</span>
+                <div className="flex items-center gap-2">
+                  <code className="bg-background px-2 py-1 rounded">{credentialsDialog.email}</code>
+                  <Button size="sm" variant="outline" onClick={() => copyToClipboard(credentialsDialog.email)}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Password:</span>
+                <div className="flex items-center gap-2">
+                  <code className="bg-background px-2 py-1 rounded">{credentialsDialog.password}</code>
+                  <Button size="sm" variant="outline" onClick={() => copyToClipboard(credentialsDialog.password)}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Please save these credentials securely. The specialist will need to change their password on first login.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 };
 export default PeerSpecialistManagement;
