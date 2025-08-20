@@ -52,9 +52,15 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
         .eq('user_id', data.user.id)
         .eq('is_active', true)
         .eq('is_verified', true)
-        .single();
+        .maybeSingle();
 
-      if (specialistError || !specialistData) {
+      if (specialistError) {
+        console.error('Database error checking specialist:', specialistError);
+        await supabase.auth.signOut();
+        throw new Error('Database error. Please try again.');
+      }
+
+      if (!specialistData) {
         // Sign out the user if they're not a verified specialist
         await supabase.auth.signOut();
         throw new Error('Access denied. Verified peer specialist account required.');
