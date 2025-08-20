@@ -98,7 +98,8 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
           filter: `specialist_id=eq.${specialistId}`
         },
         (payload) => {
-          console.log('Proposal update:', payload);
+          console.log('📬 PROPOSAL MGMT: Proposal update received:', payload);
+          console.log('📬 PROPOSAL MGMT: Old status:', (payload.old as any)?.status, 'New status:', (payload.new as any)?.status);
           fetchProposals();
           
           // Show notification for status changes

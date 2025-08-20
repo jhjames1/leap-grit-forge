@@ -247,7 +247,10 @@ const PeerChat = ({
             <p className={`text-sm ${realtimeConnected ? 'text-green-600' : 'text-orange-600'}`}>
               {realtimeConnected ? <>✅ Real-time connected - Messages appear instantly</> : <>⚠️ Real-time disconnected - Messages may be delayed</>}
             </p>
-            {!realtimeConnected && <Button size="sm" variant="outline" onClick={forceReconnect} className="border-orange-500 text-orange-600 hover:bg-orange-50">
+            {!realtimeConnected && <Button size="sm" variant="outline" onClick={() => {
+                console.log('🔄 PEER CLIENT: Reconnect button clicked');
+                forceReconnect();
+              }} className="border-orange-500 text-orange-600 hover:bg-orange-50">
                 <RefreshCw size={14} className="mr-1" />
                 Reconnect
               </Button>}
