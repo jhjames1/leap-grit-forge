@@ -41,7 +41,9 @@ const PeerChat = ({
     onConnectionChange: (state) => {
       console.log('🫀 PEER CLIENT: Connection state changed:', state);
       if (!state.isSupabaseConnected && state.reconnectAttempts > 3) {
-        console.log('🔄 PEER CLIENT: Multiple reconnect attempts, refreshing page recommended');
+        console.log('🔄 PEER CLIENT: Multiple reconnect attempts, triggering session refresh');
+        // Trigger enhanced reconnection that refreshes session data
+        forceChatReconnect();
       }
     }
   });
