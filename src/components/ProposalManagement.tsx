@@ -45,7 +45,7 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
           .select(`
             *,
             appointment_types(name, color),
-            chat_sessions!inner(status)
+            chat_sessions(status)
           `)
           .eq('specialist_id', specialistId)
           .in('status', ['pending', 'accepted', 'rejected', 'withdrawn'])
