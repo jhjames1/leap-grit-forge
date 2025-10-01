@@ -1,8 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { LanguageProvider } from "@/contexts/LanguageContext";
-import { ThemeProvider } from "next-themes";
-
 import Index from "./pages/Index";
 import AdminPortal from "./pages/AdminPortal";
 import AdminTrainingPortal from "./pages/AdminTrainingPortal";
@@ -17,58 +13,40 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PasswordReset } from "./components/PasswordReset";
 import { EmailConfirmation } from "./components/EmailConfirmation";
 import { TestConfirmationScreen } from "./components/TestConfirmationScreen";
-import { SafeToastProvider } from "./components/SafeToastProvider";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: (failureCount, error) => {
-        // Don't retry on auth errors
-        if (error?.message?.includes('JWT') || error?.message?.includes('auth')) {
-          return false;
-        }
-        return failureCount < 3;
-      },
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-  },
-});
+import { AppLayout } from "./components/AppLayout";
 
 function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <LanguageProvider>
-            <SafeToastProvider>
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/admin" element={<AdminPortal />} />
-                  <Route path="/admin-training" element={<AdminTrainingPortal />} />
-                  <Route path="/user-experience-training" element={<UserExperienceTrainingPortal />} />
-                  <Route 
-                    path="/specialist" 
-                    element={
-                      <ErrorBoundary>
-                        <PeerSpecialistPortal />
-                      </ErrorBoundary>
-                    } 
-                  />
-                  <Route path="/specialist-manual" element={<SpecialistManual />} />
-                  <Route path="/reset-password" element={<PasswordReset />} />
-                  <Route path="/confirm" element={<EmailConfirmation />} />
-                  <Route path="/test-confirm" element={<TestConfirmationScreen />} />
-                  <Route path="/conoco" element={<ConocoPortal />} />
-                  <Route path="/demo" element={<InteractiveDemo />} />
-                  <Route path="/journeys-guide" element={<PrintableJourneysGuide />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </SafeToastProvider>
-          </LanguageProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Printable page - standalone without providers */}
+          <Route path="/journeys-guide" element={<PrintableJourneysGuide />} />
+          
+          {/* All other routes with full provider tree */}
+          <Route path="/" element={<AppLayout><Index /></AppLayout>} />
+          <Route path="/admin" element={<AppLayout><AdminPortal /></AppLayout>} />
+          <Route path="/admin-training" element={<AppLayout><AdminTrainingPortal /></AppLayout>} />
+          <Route path="/user-experience-training" element={<AppLayout><UserExperienceTrainingPortal /></AppLayout>} />
+          <Route 
+            path="/specialist" 
+            element={
+              <AppLayout>
+                <ErrorBoundary>
+                  <PeerSpecialistPortal />
+                </ErrorBoundary>
+              </AppLayout>
+            } 
+          />
+          <Route path="/specialist-manual" element={<AppLayout><SpecialistManual /></AppLayout>} />
+          <Route path="/reset-password" element={<AppLayout><PasswordReset /></AppLayout>} />
+          <Route path="/confirm" element={<AppLayout><EmailConfirmation /></AppLayout>} />
+          <Route path="/test-confirm" element={<AppLayout><TestConfirmationScreen /></AppLayout>} />
+          <Route path="/conoco" element={<AppLayout><ConocoPortal /></AppLayout>} />
+          <Route path="/demo" element={<AppLayout><InteractiveDemo /></AppLayout>} />
+          <Route path="*" element={<AppLayout><NotFound /></AppLayout>} />
+        </Routes>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }
