@@ -26,6 +26,8 @@ export default defineConfig(({ mode }) => ({
     include: [
       'react', 
       'react-dom',
+      'react/jsx-runtime',
+      'next-themes',
       '@radix-ui/react-toast',
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu',
@@ -34,5 +36,10 @@ export default defineConfig(({ mode }) => ({
       '@radix-ui/react-popover',
       'sonner',
     ],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+    },
   },
 }));
