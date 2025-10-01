@@ -11,6 +11,7 @@ import PeerSpecialistPortal from "./pages/PeerSpecialistPortal";
 import SpecialistManual from "./pages/SpecialistManual";
 import ConocoPortal from "./pages/ConocoPortal";
 import InteractiveDemo from "./pages/InteractiveDemo";
+import PrintableJourneysGuide from "./pages/PrintableJourneysGuide";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PasswordReset } from "./components/PasswordReset";
@@ -60,6 +61,7 @@ function App() {
                   <Route path="/test-confirm" element={<TestConfirmationScreen />} />
                   <Route path="/conoco" element={<ConocoPortal />} />
                   <Route path="/demo" element={<InteractiveDemo />} />
+                  <Route path="/journeys-guide" element={<PrintableJourneysGuide />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
