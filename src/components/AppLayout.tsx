@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "next-themes";
