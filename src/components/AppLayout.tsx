@@ -1,8 +1,8 @@
+import React, { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "next-themes";
 import { SafeToastProvider } from "./SafeToastProvider";
-import { ReactNode } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
