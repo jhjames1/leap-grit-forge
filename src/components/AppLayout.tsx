@@ -26,11 +26,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <LanguageProvider>
-          <SafeToastProvider>
-            {children}
-          </SafeToastProvider>
-        </LanguageProvider>
+        <SafeToastProvider>
+          {children}
+        </SafeToastProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
