@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useRealtimeChat } from './useRealtimeChat';
@@ -33,8 +33,8 @@ export function useChatSession(specialistId?: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Use the new realtime hook
-  const { isConnected: realtimeConnected, forceReconnect } = useRealtimeChat({
+  // Use the new realtime hook with enhanced reconnection
+  const { isConnected: realtimeConnected, forceReconnect: forceRealtimeReconnect } = useRealtimeChat({
     sessionId: session?.id || null,
     onMessage: (newMessage) => {
       console.log('✅ PEER CLIENT: New message received instantly via useRealtimeChat:', newMessage.content);
@@ -392,6 +392,39 @@ export function useChatSession(specialistId?: string) {
     setError(null);
     return await startSession(true);
   };
+
+  // Enhanced force reconnect that refreshes all session data
+  const forceReconnect = useCallback(async () => {
+    console.log('🔄 PEER CLIENT: Force reconnecting and refreshing all session data');
+    
+    // Refresh session data from database
+    if (session) {
+      try {
+        const { data: sessionData, error } = await supabase
+          .from('chat_sessions')
+          .select('*')
+          .eq('id', session.id)
+          .single();
+
+        if (error) throw error;
+
+        if (sessionData) {
+          setSession(sessionData as ChatSession);
+          console.log('✅ PEER CLIENT: Session data refreshed during reconnection');
+        }
+        
+        // Reload messages to catch any missed during disconnection
+        await loadMessages(session.id);
+        console.log('✅ PEER CLIENT: Messages reloaded during reconnection');
+        
+      } catch (err) {
+        console.error('❌ PEER CLIENT: Error refreshing session data during reconnection:', err);
+      }
+    }
+    
+    // Force reconnect the real-time connection
+    forceRealtimeReconnect();
+  }, [session, forceRealtimeReconnect]);
 
   return {
     session,
