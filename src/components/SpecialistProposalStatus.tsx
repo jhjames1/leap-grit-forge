@@ -116,7 +116,7 @@ const SpecialistProposalStatus: React.FC<SpecialistProposalStatusProps> = ({
           <div className="bg-blue-50 p-3 rounded-lg">
             <p className="text-sm text-blue-800">
               💡 <strong>Status:</strong> Your proposal has been sent to the client. 
-              They have 5 minutes to respond before it expires.
+              They have 7 days to respond before it expires.
             </p>
           </div>
         )}

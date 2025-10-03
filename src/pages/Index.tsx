@@ -21,15 +21,12 @@ import { BadgeCelebrationModal } from '@/components/BadgeCelebrationModal';
 
 
 const Index = () => {
-  console.log('INDEX COMPONENT LOADING - START');
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
   const [currentPage, setCurrentPage] = useState('home');
   
-  console.log('INDEX COMPONENT - About to call useAuth');
   const { user, loading, signOut, isAuthenticated, isNewSignUp } = useAuth();
-  console.log('INDEX COMPONENT - useAuth returned:', { loading, isAuthenticated });
   const { updateUserData } = useUserData();
   const { newBadges, showCelebration, markBadgesAsSeen } = useBadgeNotifications();
 

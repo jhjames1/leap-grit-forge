@@ -804,30 +804,33 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
           <div className="flex gap-2 p-3 border-b border-border">
             <Button
               variant="outline"
-              size="icon"
+              size="sm"
               onClick={() => setShowScheduler(true)}
+              className="gap-2"
               disabled={!isInputEnabled}
-              title="Schedule Meeting"
             >
               <Calendar className="w-4 h-4" />
+              Schedule Meeting
             </Button>
             <Button
               variant="outline"
-              size="icon"
+              size="sm"
               onClick={() => {/* Handle phone call */}}
+              className="gap-2"
               disabled={!isInputEnabled}
-              title="Phone Call"
             >
               <Phone className="w-4 h-4" />
+              Phone Call
             </Button>
             <Button
               variant="outline"
-              size="icon"
+              size="sm"
               onClick={() => {/* Handle video call */}}
+              className="gap-2"
               disabled={!isInputEnabled}
-              title="Video Call"
             >
               <Video className="w-4 h-4" />
+              Video Call
             </Button>
             <SpecialistContentBrowser
               onContentShare={handleContentShare}
@@ -836,11 +839,12 @@ const RobustSpecialistChatWindow: React.FC<RobustSpecialistChatWindowProps> = ({
               triggerElement={
                 <Button
                   variant="outline"
-                  size="icon"
+                  size="sm"
+                  className="gap-2"
                   disabled={!isInputEnabled}
-                  title="Content Library"
                 >
                   <BookOpen className="w-4 h-4" />
+                  Content Library
                 </Button>
               }
             />

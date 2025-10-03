@@ -8,11 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Calendar as CalendarIcon, Settings, Clock, Users, Plus, Edit } from 'lucide-react';
+import { Calendar as CalendarIcon, Settings, Clock, Users, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ScheduleManagementModal from './ScheduleManagementModal';
-import AppointmentEditDialog from './AppointmentEditDialog';
 import { format } from 'date-fns';
 
 const localizer = momentLocalizer(moment);
@@ -35,8 +34,6 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
   const [currentView, setCurrentView] = useState<View>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -165,37 +162,9 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
     // Handle slot selection for creating new appointments or blocking time
   };
 
-  const handleSelectEvent = async (event: CalendarEvent) => {
+  const handleSelectEvent = (event: CalendarEvent) => {
     console.log('Selected event:', event);
-    
-    // Only handle appointment events for editing
-    if (event.type === 'appointment') {
-      try {
-        // Fetch the full appointment data including related data
-        const { data: appointment, error } = await supabase
-          .from('specialist_appointments')
-          .select(`
-            *,
-            appointment_types(name, color, default_duration)
-          `)
-          .eq('id', event.id)
-          .single();
-
-        if (error) throw error;
-
-        if (appointment) {
-          setSelectedAppointment(appointment);
-          setShowEditModal(true);
-        }
-      } catch (error) {
-        console.error('Error fetching appointment details:', error);
-        toast({
-          title: "Error",
-          description: "Could not load appointment details.",
-          variant: "destructive"
-        });
-      }
-    }
+    // Handle event selection for editing
   };
 
   const formats = {
@@ -249,10 +218,6 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 bg-red-500 rounded"></div>
               <span>Blocked</span>
-            </div>
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Edit className="w-3 h-3" />
-              <span>Click appointments to edit</span>
             </div>
           </div>
 
@@ -406,21 +371,6 @@ const EnhancedSpecialistCalendar = ({ specialistId }: EnhancedSpecialistCalendar
           </CardContent>
         </Card>
       </div>
-
-      {/* Appointment Edit Dialog */}
-      <AppointmentEditDialog
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedAppointment(null);
-        }}
-        appointment={selectedAppointment}
-        onUpdated={() => {
-          loadCalendarData();
-          setShowEditModal(false);
-          setSelectedAppointment(null);
-        }}
-      />
     </div>
   );
 };

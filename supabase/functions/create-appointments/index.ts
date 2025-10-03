@@ -2,14 +2,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { toZonedTime, fromZonedTime } from "https://esm.sh/date-fns-tz@3.2.0";
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
-
-const CST_TIMEZONE = 'America/Chicago';
 
 interface CreateAppointmentsRequest {
   proposalId: string;
@@ -54,56 +51,46 @@ serve(async (req) => {
     const appointments = [];
     
     if (isRecurring) {
-      // Calculate recurring appointment dates in CST
-      const startDateStr = `${proposal.start_date}T${proposal.start_time}`;
-      const startDateCST = toZonedTime(new Date(startDateStr), CST_TIMEZONE);
+      // Calculate recurring appointment dates
+      const startDate = new Date(`${proposal.start_date}T${proposal.start_time}`);
       
       for (let i = 0; i < proposal.occurrences; i++) {
-        const appointmentDateCST = new Date(startDateCST);
+        const appointmentDate = new Date(startDate);
         
         // Calculate the date based on frequency
         switch (proposal.frequency) {
           case 'weekly':
-            appointmentDateCST.setDate(startDateCST.getDate() + (i * 7));
+            appointmentDate.setDate(startDate.getDate() + (i * 7));
             break;
           case 'biweekly':
-            appointmentDateCST.setDate(startDateCST.getDate() + (i * 14));
+            appointmentDate.setDate(startDate.getDate() + (i * 14));
             break;
           case 'monthly':
-            appointmentDateCST.setMonth(startDateCST.getMonth() + i);
+            appointmentDate.setMonth(startDate.getMonth() + i);
             break;
           default:
             throw new Error(`Invalid frequency: ${proposal.frequency}`);
         }
 
-        const appointmentEndCST = new Date(appointmentDateCST);
-        appointmentEndCST.setMinutes(appointmentEndCST.getMinutes() + proposal.duration);
-
-        // Convert CST times to UTC for database storage
-        const appointmentDateUTC = fromZonedTime(appointmentDateCST, CST_TIMEZONE);
-        const appointmentEndUTC = fromZonedTime(appointmentEndCST, CST_TIMEZONE);
+        const appointmentEnd = new Date(appointmentDate);
+        appointmentEnd.setMinutes(appointmentEnd.getMinutes() + proposal.duration);
 
         appointments.push({
-          appointment_date: appointmentDateUTC,
-          appointment_end: appointmentEndUTC,
+          appointment_date: appointmentDate,
+          appointment_end: appointmentEnd,
           title: proposal.title,
           description: proposal.description || `Recurring appointment: ${proposal.title}`
         });
       }
     } else {
-      // Single appointment in CST
-      const startDateStr = `${proposal.start_date}T${proposal.start_time}`;
-      const appointmentDateCST = toZonedTime(new Date(startDateStr), CST_TIMEZONE);
-      const appointmentEndCST = new Date(appointmentDateCST);
-      appointmentEndCST.setMinutes(appointmentEndCST.getMinutes() + proposal.duration);
-
-      // Convert CST times to UTC for database storage
-      const appointmentDateUTC = fromZonedTime(appointmentDateCST, CST_TIMEZONE);
-      const appointmentEndUTC = fromZonedTime(appointmentEndCST, CST_TIMEZONE);
+      // Single appointment
+      const appointmentDate = new Date(`${proposal.start_date}T${proposal.start_time}`);
+      const appointmentEnd = new Date(appointmentDate);
+      appointmentEnd.setMinutes(appointmentEnd.getMinutes() + proposal.duration);
 
       appointments.push({
-        appointment_date: appointmentDateUTC,
-        appointment_end: appointmentEndUTC,
+        appointment_date: appointmentDate,
+        appointment_end: appointmentEnd,
         title: proposal.title,
         description: proposal.description || `Single appointment: ${proposal.title}`
       });

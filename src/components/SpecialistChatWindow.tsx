@@ -250,7 +250,14 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           const updatedSession = payload.new as ChatSession;
           setCurrentSession(updatedSession);
           
-          // Session activation handled without notification
+          // Show success toast for session activation
+          if (updatedSession.status === 'active' && currentSession.status === 'waiting') {
+            toast({
+              title: "Session Activated",
+              description: "You are now connected to the user.",
+              duration: 3000,
+            });
+          }
           
           // Handle session ended
           if (updatedSession.status === 'ended' && currentSession.status !== 'ended') {
@@ -270,36 +277,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
           table: 'appointment_proposals',
           filter: `chat_session_id=eq.${session.id}`
         },
-        (payload) => {
-          logger.debug('Appointment proposal updated in real-time:', payload);
-          const updatedProposal = payload.new as AppointmentProposal;
-          
-          // Update proposal state immediately
-          if (payload.eventType === 'DELETE') {
-            setSessionProposal(null);
-          } else {
-            setSessionProposal(updatedProposal);
-          }
-          
-          // Show visual feedback for proposal status changes
-          if (payload.eventType === 'UPDATE' && updatedProposal) {
-            if (updatedProposal.status === 'accepted') {
-              toast({
-                title: "Proposal Accepted! ✅",
-                description: `The user accepted your appointment proposal for ${updatedProposal.title}`,
-                duration: 5000,
-              });
-            } else if (updatedProposal.status === 'rejected') {
-              toast({
-                title: "Proposal Rejected",
-                description: `The user declined your appointment proposal for ${updatedProposal.title}`,
-                variant: "destructive",
-                duration: 5000,
-              });
-            }
-          }
-          
-          // Also reload to ensure consistency
+        () => {
           loadSessionProposal();
         }
       )
@@ -325,7 +303,7 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     };
   };
 
-  const handleReconnection = async () => {
+  const handleReconnection = () => {
     if (reconnectAttempts >= maxReconnectAttempts) {
       logger.error('Max reconnection attempts reached');
       return;
@@ -334,31 +312,8 @@ const SpecialistChatWindow: React.FC<SpecialistChatWindowProps> = ({
     const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
     logger.debug(`Attempting reconnection in ${backoffDelay}ms (attempt ${reconnectAttempts + 1})`);
     
-    reconnectTimeoutRef.current = setTimeout(async () => {
+    reconnectTimeoutRef.current = setTimeout(() => {
       setReconnectAttempts(prev => prev + 1);
-      
-      // Refresh session data during automatic reconnection
-      try {
-        const { data: sessionData, error } = await supabase
-          .from('chat_sessions')
-          .select('*')
-          .eq('id', session.id)
-          .single();
-
-        if (error) throw error;
-
-        if (sessionData) {
-          setCurrentSession(sessionData as ChatSession);
-          onSessionUpdate?.(sessionData as ChatSession);
-        }
-        
-        // Reload messages and proposals
-        await loadMessages();
-        await loadSessionProposal();
-      } catch (err) {
-        logger.error('Error refreshing session data during reconnection:', err);
-      }
-      
       setupRealTimeSubscription();
     }, backoffDelay);
   };

@@ -805,7 +805,7 @@ const ForemanChat: React.FC<ForemanChatProps> = ({ onBack, onNavigate }) => {
       case 'gratitude':
         return { icon: Heart, label: 'Gratitude Log', variant: 'outline' as const };
       case 'peer':
-        return { icon: Users, label: 'Peer Chat', variant: 'default' as const };
+        return { icon: Users, label: 'Talk to Peer', variant: 'default' as const };
       case 'calendar':
         return { icon: Calendar, label: 'Recovery Calendar', variant: 'outline' as const };
       case 'journey':

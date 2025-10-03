@@ -12,7 +12,6 @@ import { PeerSpecialist } from '@/hooks/usePeerSpecialists';
 import { useChatSession } from '@/hooks/useChatSession';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeSpecialistStatus } from '@/hooks/useRealtimeSpecialistStatus';
-import { useConnectionHeartbeat } from '@/hooks/useConnectionHeartbeat';
 import { sessionCleanup } from '@/utils/sessionCleanup';
 interface PeerChatProps {
   onBack?: () => void;
@@ -25,30 +24,14 @@ const PeerChat = ({
   const [message, setMessage] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
   const [inactivityWarning, setInactivityWarning] = useState<number>(0);
-  const [waitingTimePrompts, setWaitingTimePrompts] = useState<Set<number>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inactivityTimerRef = useRef<NodeJS.Timeout>();
-  const waitingTimerRef = useRef<NodeJS.Timeout>();
   const {
     user
   } = useAuth();
   
   // Get real-time status for selected specialist
   const { getStatusDisplay } = useRealtimeSpecialistStatus(selectedPeer?.id);
-  
-  // Connection monitoring with automatic reconnection
-  const { connectionState, forceReconnect: forceHeartbeatReconnect, isHealthy } = useConnectionHeartbeat({
-    heartbeatInterval: 15000, // Check every 15 seconds for chat
-    maxReconnectAttempts: 15,
-    onConnectionChange: (state) => {
-      console.log('🫀 PEER CLIENT: Connection state changed:', state);
-      if (!state.isSupabaseConnected && state.reconnectAttempts > 3) {
-        console.log('🔄 PEER CLIENT: Multiple reconnect attempts, triggering session refresh');
-        // Trigger enhanced reconnection that refreshes session data
-        forceChatReconnect();
-      }
-    }
-  });
   
   const {
     session,
@@ -61,7 +44,7 @@ const PeerChat = ({
     endSession,
     refreshSession,
     startFreshSession,
-    forceReconnect: forceChatReconnect,
+    forceReconnect,
     isSessionStale
   } = useChatSession(selectedPeer?.id);
   const handleSelectPeer = async (peer: PeerSpecialist) => {
@@ -86,53 +69,6 @@ const PeerChat = ({
       behavior: 'smooth'
     });
   }, [messages]);
-
-  // Monitor waiting time and send automatic prompts
-  useEffect(() => {
-    if (!session || session.status !== 'waiting') {
-      setWaitingTimePrompts(new Set());
-      if (waitingTimerRef.current) {
-        clearTimeout(waitingTimerRef.current);
-      }
-      return;
-    }
-
-    const checkWaitingTime = () => {
-      const waitingTime = Date.now() - new Date(session.started_at).getTime();
-      const waitingMinutes = Math.floor(waitingTime / (1000 * 60));
-
-      // Send 3-minute prompt
-      if (waitingMinutes >= 3 && !waitingTimePrompts.has(3)) {
-        sendMessage({
-          content: "Our Peer Support Specialists are deep in it right now. Would you like to schedule an appointment instead?",
-          sender_type: 'user',
-          message_type: 'system'
-        });
-        setWaitingTimePrompts(prev => new Set(prev).add(3));
-      }
-
-      // Send 5-minute prompt
-      if (waitingMinutes >= 5 && !waitingTimePrompts.has(5)) {
-        sendMessage({
-          content: "We hate to see you waiting. Why don't we schedule an appointment.",
-          sender_type: 'user',
-          message_type: 'system'
-        });
-        setWaitingTimePrompts(prev => new Set(prev).add(5));
-      }
-    };
-
-    // Check immediately and then every 30 seconds
-    checkWaitingTime();
-    const interval = setInterval(checkWaitingTime, 30000);
-    
-    return () => {
-      clearInterval(interval);
-      if (waitingTimerRef.current) {
-        clearTimeout(waitingTimerRef.current);
-      }
-    };
-  }, [session, sendMessage, waitingTimePrompts]);
 
   // Monitor session inactivity
   useEffect(() => {
@@ -241,20 +177,8 @@ const PeerChat = ({
   }
   const isSessionEnded = session && session.status === 'ended';
   const isWaitingAndStale = session && session.status === 'waiting' && isSessionStale;
-  const realtimeConnected = connectionStatus === 'connected' && isHealthy;
+  const realtimeConnected = connectionStatus === 'connected';
   const hasFailedMessages = false; // Simplified - no complex optimistic handling
-  const showConnectionWarning = !isHealthy || !realtimeConnected;
-
-  // Combined force reconnect function
-  const handleForceReconnect = async () => {
-    console.log('🔄 PEER CLIENT: Combined force reconnect triggered');
-    try {
-      await forceHeartbeatReconnect();
-      await forceChatReconnect();
-    } catch (error) {
-      console.error('🔄 PEER CLIENT: Reconnect failed:', error);
-    }
-  };
 
   return <div className="flex flex-col h-screen bg-background pb-24">
       {/* Header */}
@@ -281,16 +205,6 @@ const PeerChat = ({
           </div>
           
           <div className="flex space-x-2">
-            {session && session.status !== 'ended' && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => endSession('manual')} 
-                className="border-red-500 text-red-600 hover:bg-red-50"
-              >
-                End Chat
-              </Button>
-            )}
             <Button size="sm" variant="outline" onClick={handleStartNewChat} className="border-primary text-gray-950 bg-yellow-400 hover:bg-yellow-300">
               <Plus size={16} className="mr-1" />
               New Chat
@@ -330,29 +244,15 @@ const PeerChat = ({
       {/* Real-time Connection Status */}
       {session && !isSessionEnded && <div className={`border-b p-3 ${realtimeConnected ? 'bg-green-500/10 border-green-500/20' : 'bg-orange-500/10 border-orange-500/20'}`}>
           <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1">
-              <p className={`text-sm ${realtimeConnected ? 'text-green-600' : 'text-orange-600'}`}>
-                {realtimeConnected ? <>✅ Real-time connected - Messages appear instantly</> : <>⚠️ Connection issues - Messages may be delayed</>}
-              </p>
-              {!isHealthy && (
-                <p className="text-xs text-orange-500">
-                  Heartbeat: {connectionState.lastHeartbeat ? 
-                    `Last: ${connectionState.lastHeartbeat.toLocaleTimeString()}` : 
-                    'Never'} | 
-                  Attempts: {connectionState.reconnectAttempts}
-                  {connectionState.autoReconnecting && ' | Reconnecting...'}
-                </p>
-              )}
-            </div>
-            {showConnectionWarning && <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={handleForceReconnect}
-                disabled={connectionState.autoReconnecting}
-                className="border-orange-500 text-orange-600 hover:bg-orange-50"
-              >
+            <p className={`text-sm ${realtimeConnected ? 'text-green-600' : 'text-orange-600'}`}>
+              {realtimeConnected ? <>✅ Real-time connected - Messages appear instantly</> : <>⚠️ Real-time disconnected - Messages may be delayed</>}
+            </p>
+            {!realtimeConnected && <Button size="sm" variant="outline" onClick={() => {
+                console.log('🔄 PEER CLIENT: Reconnect button clicked');
+                forceReconnect();
+              }} className="border-orange-500 text-orange-600 hover:bg-orange-50">
                 <RefreshCw size={14} className="mr-1" />
-                {connectionState.autoReconnecting ? 'Reconnecting...' : 'Reconnect'}
+                Reconnect
               </Button>}
           </div>
         </div>}
@@ -407,9 +307,6 @@ const PeerChat = ({
             <div>Status: {session?.status || 'None'}</div>
             <div>RT: {realtimeConnected ? 'ON' : 'OFF'}</div>
             <div>Conn: {connectionStatus}</div>
-            <div>Health: {isHealthy ? 'GOOD' : 'BAD'}</div>
-            <div>Online: {connectionState.isOnline ? 'Y' : 'N'}</div>
-            <div>Supabase: {connectionState.isSupabaseConnected ? 'Y' : 'N'}</div>
             <div>Failed: {hasFailedMessages ? 'YES' : 'NO'}</div>
             {session?.last_activity && <div>Inactive: {sessionCleanup.getTimeUntilInactive(session)}s</div>}
           </div>}
@@ -464,7 +361,7 @@ const PeerChat = ({
       {/* Quick Actions */}
       {session && !isSessionEnded && <div className="px-4 py-2">
           <div className="flex space-x-2 overflow-x-auto">
-            <Button size="sm" onClick={() => handleQuickAction('need-support')} className="font-fjalla whitespace-nowrap font-light text-zinc-50 bg-zinc-600 hover:bg-zinc-500 text-xs">
+            <Button size="sm" onClick={() => handleQuickAction('need-support')} className="font-fjalla whitespace-nowrap font-light text-zinc-50 bg-zinc-600 hover:bg-zinc-500">
               NEED SUPPORT
             </Button>
             <Button size="sm" onClick={() => handleQuickAction('feeling-triggered')} className="bg-secondary text-secondary-foreground font-fjalla whitespace-nowrap hover:bg-secondary/90 font-light">
