@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React from 'react';
 import { AlertTriangle, Shield, Phone, Heart, Activity } from 'lucide-react';
 import { TrainingModule } from '../InteractiveTrainingModule';
 

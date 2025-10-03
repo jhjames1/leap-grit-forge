@@ -40,22 +40,18 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
 
   const fetchProposals = async () => {
     try {
-      console.log('📋 FETCHING: Loading proposals for specialist:', specialistId);
-      
-      const { data, error } = await supabase
-        .from('appointment_proposals')
-        .select(`
-          *,
-          appointment_types(name, color),
-          chat_sessions(status)
-        `)
-        .eq('specialist_id', specialistId)
-        .in('status', ['pending', 'accepted', 'rejected', 'withdrawn'])
-        .order('proposed_at', { ascending: false });
+        const { data, error } = await supabase
+          .from('appointment_proposals')
+          .select(`
+            *,
+            appointment_types(name, color),
+            chat_sessions!inner(status)
+          `)
+          .eq('specialist_id', specialistId)
+          .in('status', ['pending', 'accepted', 'rejected', 'withdrawn'])
+          .order('proposed_at', { ascending: false });
 
       if (error) throw error;
-
-      console.log('📋 FETCHED: Raw proposals data:', data);
 
       // Fetch user profiles separately
       const userIds = (data || []).map(p => p.user_id);
@@ -74,7 +70,6 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
         };
       });
 
-      console.log('📋 PROCESSED: Proposals with user info:', proposalsWithUserInfo);
       setProposals(proposalsWithUserInfo);
     } catch (error) {
       console.error('Error fetching proposals:', error);
@@ -103,8 +98,7 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
           filter: `specialist_id=eq.${specialistId}`
         },
         (payload) => {
-          console.log('📬 PROPOSAL MGMT: Proposal update received:', payload);
-          console.log('📬 PROPOSAL MGMT: Old status:', (payload.old as any)?.status, 'New status:', (payload.new as any)?.status);
+          console.log('Proposal update:', payload);
           fetchProposals();
           
           // Show notification for status changes
@@ -191,39 +185,17 @@ const ProposalManagement: React.FC<ProposalManagementProps> = ({ specialistId })
   };
 
   // Only show pending proposals from active chat sessions
-  const pendingProposals = proposals.filter(p => {
-    const isPending = p.status === 'pending';
-    const notExpired = !isPast(new Date(p.expires_at));
-    const hasActiveSession = p.chat_sessions?.status && ['waiting', 'active'].includes(p.chat_sessions.status);
-    
-    console.log('📋 PROPOSAL FILTER: Proposal', p.id, {
-      status: p.status,
-      isPending,
-      notExpired,
-      hasActiveSession,
-      chatSessionStatus: p.chat_sessions?.status,
-      willShowAsPending: isPending && notExpired && hasActiveSession
-    });
-    
-    return isPending && notExpired && hasActiveSession;
-  });
-  
-  // Show all non-pending proposals regardless of chat session status
-  const respondedProposals = proposals.filter(p => {
-    const isNotPending = p.status !== 'pending';
-    const isExpired = isPast(new Date(p.expires_at));
-    const hasInactiveSession = p.chat_sessions?.status && !['waiting', 'active'].includes(p.chat_sessions.status);
-    
-    console.log('📋 PROPOSAL FILTER: Proposal', p.id, 'for responded section:', {
-      status: p.status,
-      isNotPending,
-      isExpired,
-      hasInactiveSession,
-      willShowAsResponded: isNotPending || isExpired || hasInactiveSession
-    });
-    
-    return isNotPending || isExpired || hasInactiveSession;
-  });
+  const pendingProposals = proposals.filter(p => 
+    p.status === 'pending' && 
+    !isPast(new Date(p.expires_at)) &&
+    p.chat_sessions?.status && 
+    ['waiting', 'active'].includes(p.chat_sessions.status)
+  );
+  const respondedProposals = proposals.filter(p => 
+    p.status !== 'pending' || 
+    isPast(new Date(p.expires_at)) ||
+    (p.chat_sessions?.status && !['waiting', 'active'].includes(p.chat_sessions.status))
+  );
 
   if (loading) {
     return (

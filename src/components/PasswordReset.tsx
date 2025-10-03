@@ -18,59 +18,22 @@ export function PasswordReset() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
-    const handlePasswordReset = async () => {
-      console.log('Password reset component loaded');
-      console.log('Current URL:', window.location.href);
-      
-      // Check for tokens in URL
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
-      const tokenHash = searchParams.get('token_hash');
-      const type = searchParams.get('type');
+    // Check if we have the necessary tokens from the URL
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
+    const type = searchParams.get('type');
 
-      console.log('URL parameters:', {
-        accessToken: !!accessToken,
-        refreshToken: !!refreshToken,
-        tokenHash: !!tokenHash,
-        type
+    if (type === 'recovery' && accessToken && refreshToken) {
+      // Set the session with the tokens from the URL
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
       });
-
-      // Only proceed if we have valid reset tokens
-      if (type === 'recovery' || accessToken || tokenHash) {
-        try {
-          let sessionError = null;
-          
-          if (accessToken && refreshToken) {
-            console.log('Setting session with tokens');
-            const { error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            });
-            sessionError = error;
-          } else if (tokenHash) {
-            console.log('Verifying OTP with token hash');
-            const { error } = await supabase.auth.verifyOtp({
-              token_hash: tokenHash,
-              type: 'recovery'
-            });
-            sessionError = error;
-          }
-          
-          if (sessionError) {
-            console.error('Authentication error:', sessionError);
-            setError('Invalid or expired reset link. Please request a new password reset.');
-          } else {
-            console.log('Authentication successful - ready to update password');
-          }
-        } catch (err) {
-          console.error('Unexpected error:', err);
-          setError('An error occurred. Please try requesting a new password reset.');
-        }
-      }
-    };
-
-    handlePasswordReset();
-  }, [searchParams]);
+    } else {
+      // If we don't have the right parameters, redirect to login
+      navigate('/auth');
+    }
+  }, [searchParams, navigate]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();

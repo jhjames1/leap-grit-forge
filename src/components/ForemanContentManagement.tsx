@@ -432,10 +432,7 @@ const ForemanContentManagement = () => {
                 <Input
                   id="trigger_keywords"
                   value={Array.isArray(formData.trigger_keywords) ? formData.trigger_keywords.join(', ') : formData.trigger_keywords}
-                  onChange={(e) => {
-                    const keywords = e.target.value.split(',').map(k => k.trim()).filter(k => k);
-                    setFormData({...formData, trigger_keywords: keywords});
-                  }}
+                  onChange={(e) => setFormData({...formData, trigger_keywords: e.target.value.split(',').map(k => k.trim()).filter(k => k)})}
                   placeholder="motivation, help, crisis, anniversary..."
                 />
               </div>

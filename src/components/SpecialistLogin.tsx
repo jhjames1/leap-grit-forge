@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Users, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { SimplePasswordReset } from './SimplePasswordReset';
 
 interface SpecialistLoginProps {
   onLogin: () => void;
@@ -20,7 +19,6 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,16 +63,6 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
       setIsLoading(false);
     }
   };
-
-  if (showPasswordReset) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <SimplePasswordReset 
-          onBack={() => setShowPasswordReset(false)}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -159,18 +147,10 @@ const SpecialistLogin = ({ onLogin, onBack }: SpecialistLoginProps) => {
           </div>
         </form>
 
-        <div className="mt-6 text-center space-y-2">
+        <div className="mt-6 text-center">
           <p className="text-steel-light text-xs">
             For verified peer specialists only. Use your specialist account credentials.
           </p>
-          <button
-            type="button"
-            onClick={() => setShowPasswordReset(true)}
-            className="text-construction hover:text-construction-dark text-xs underline"
-            disabled={isLoading}
-          >
-            Forgot your password?
-          </button>
         </div>
       </Card>
     </div>

@@ -1,3 +1,4 @@
+import React from 'react';
 import PeerSpecialistManual from '@/components/PeerSpecialistManual';
 
 const SpecialistManual = () => {

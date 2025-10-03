@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
+  // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -626,33 +626,6 @@ export type Database = {
         }
         Relationships: []
       }
-      password_reset_codes: {
-        Row: {
-          code: string
-          created_at: string
-          email: string
-          expires_at: string
-          id: string
-          used: boolean
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          email: string
-          expires_at?: string
-          id?: string
-          used?: boolean
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          email?: string
-          expires_at?: string
-          id?: string
-          used?: boolean
-        }
-        Relationships: []
-      }
       peer_checkins: {
         Row: {
           completed_at: string | null
@@ -1133,7 +1106,6 @@ export type Database = {
           meeting_url: string | null
           notes: string | null
           reminder_sent: boolean | null
-          scheduled_appointment_id: string | null
           scheduled_end: string
           scheduled_start: string
           specialist_id: string
@@ -1153,7 +1125,6 @@ export type Database = {
           meeting_url?: string | null
           notes?: string | null
           reminder_sent?: boolean | null
-          scheduled_appointment_id?: string | null
           scheduled_end: string
           scheduled_start: string
           specialist_id: string
@@ -1173,7 +1144,6 @@ export type Database = {
           meeting_url?: string | null
           notes?: string | null
           reminder_sent?: boolean | null
-          scheduled_appointment_id?: string | null
           scheduled_end?: string
           scheduled_start?: string
           specialist_id?: string
@@ -1187,13 +1157,6 @@ export type Database = {
             columns: ["appointment_type_id"]
             isOneToOne: false
             referencedRelation: "appointment_types"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "specialist_appointments_scheduled_appointment_id_fkey"
-            columns: ["scheduled_appointment_id"]
-            isOneToOne: false
-            referencedRelation: "scheduled_appointments"
             referencedColumns: ["id"]
           },
           {
@@ -2206,18 +2169,18 @@ export type Database = {
       }
       check_message_duplicate: {
         Args: {
-          p_content: string
-          p_sender_id: string
           p_session_id: string
+          p_sender_id: string
+          p_content: string
           p_time_window_seconds?: number
         }
         Returns: boolean
       }
       check_specialist_availability: {
         Args: {
-          p_end_time: string
           p_specialist_id: string
           p_start_time: string
+          p_end_time: string
         }
         Returns: boolean
       }
@@ -2232,22 +2195,22 @@ export type Database = {
       end_chat_session: {
         Args: {
           p_session_id: string
-          p_specialist_id: string
           p_user_id: string
+          p_specialist_id: string
         }
         Returns: Json
       }
       end_chat_session_atomic: {
-        Args: { p_end_reason?: string; p_session_id: string; p_user_id: string }
+        Args: { p_session_id: string; p_user_id: string; p_end_reason?: string }
         Returns: Database["public"]["CompositeTypes"]["chat_operation_result"]
       }
       find_user_by_email: {
         Args: { user_email: string }
         Returns: {
-          created_at: string
-          email: string
-          is_admin: boolean
           user_id: string
+          email: string
+          created_at: string
+          is_admin: boolean
         }[]
       }
       generate_invitation_token: {
@@ -2261,10 +2224,10 @@ export type Database = {
       get_admin_users: {
         Args: Record<PropertyKey, never>
         Returns: {
-          created_at: string
-          email: string
-          role_created_at: string
           user_id: string
+          email: string
+          created_at: string
+          role_created_at: string
         }[]
       }
       get_session_with_messages: {
@@ -2278,9 +2241,9 @@ export type Database = {
       get_users_for_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
-          created_at: string
-          email: string
           id: string
+          email: string
+          created_at: string
         }[]
       }
       is_admin: {
@@ -2289,18 +2252,18 @@ export type Database = {
       }
       log_login_attempt: {
         Args: {
-          p_ip_address: unknown
-          p_location_data?: Json
-          p_login_status?: string
-          p_user_agent: string
           p_user_id: string
+          p_ip_address: unknown
+          p_user_agent: string
+          p_login_status?: string
+          p_location_data?: Json
         }
         Returns: string
       }
       permanently_delete_specialist: {
         Args:
-          | { admin_user_id: string; specialist_id: string }
           | { specialist_id: string }
+          | { specialist_id: string; admin_user_id: string }
         Returns: Json
       }
       remove_admin_role: {
@@ -2313,12 +2276,12 @@ export type Database = {
       }
       send_message_atomic: {
         Args: {
+          p_session_id: string
+          p_sender_id: string
+          p_sender_type: string
           p_content: string
           p_message_type?: string
           p_metadata?: Json
-          p_sender_id: string
-          p_sender_type: string
-          p_session_id: string
         }
         Returns: Database["public"]["CompositeTypes"]["chat_operation_result"]
       }

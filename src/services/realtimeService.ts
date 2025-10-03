@@ -169,40 +169,9 @@ class RealtimeService {
 
   // Force reconnect all subscriptions
   reconnectAll() {
-    logger.debug('🔄 Force reconnecting all subscriptions', { 
-      totalSubscriptions: this.subscriptions.size 
-    });
-    
     for (const subscription of this.subscriptions.values()) {
-      logger.debug(`🔄 Reconnecting subscription: ${subscription.id}`);
-      
-      // Clean up the old channel first
-      try {
-        realtimeSupabase.removeChannel(subscription.channel);
-      } catch (error) {
-        logger.warn('Error removing old channel during reconnect', error);
-      }
-      
-      // Create a new channel
-      subscription.channel = realtimeSupabase.channel(subscription.id, {
-        config: {
-          broadcast: { self: false },
-          presence: { key: 'user' }
-        }
-      });
-      
-      // Reset the subscription state
       subscription.isActive = false;
       this.reconnectAttempts.set(subscription.id, 0);
-      
-      // Re-setup all event listeners
-      for (const [eventKey, handlers] of subscription.handlers) {
-        const [eventType, eventConfigStr] = eventKey.split('-', 2);
-        const eventConfig = JSON.parse(eventConfigStr);
-        this.setupEventListener(subscription, eventType, eventConfig, eventKey);
-      }
-      
-      // Activate the subscription
       this.activateSubscription(subscription);
     }
   }

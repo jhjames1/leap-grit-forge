@@ -18,28 +18,14 @@ export function EmailConfirmation() {
       try {
         setLoading(true);
         
-        // Get all possible parameters from URL
+        // Get tokens from URL parameters
         const token_hash = searchParams.get('token_hash');
-        const access_token = searchParams.get('access_token');
-        const refresh_token = searchParams.get('refresh_token');
         const type = searchParams.get('type');
-        const code = searchParams.get('code');
         
-        // Log all parameters for debugging
-        console.log('URL parameters:', {
-          token_hash: !!token_hash,
-          access_token: !!access_token,
-          refresh_token: !!refresh_token,
-          type,
-          code: !!code,
-          all_params: Object.fromEntries(searchParams.entries())
-        });
-        
-        console.log('Full URL:', window.location.href);
+        console.log('Email confirmation attempt:', { token_hash: !!token_hash, type });
 
-        // Handle different auth flows
-        if (token_hash && type === 'signup') {
-          // Handle email confirmation for signup using token_hash
+        if (type === 'signup' && token_hash) {
+          // Handle email confirmation for signup
           const { data, error } = await supabase.auth.verifyOtp({
             token_hash,
             type: 'email'
@@ -57,62 +43,10 @@ export function EmailConfirmation() {
               navigate('/');
             }, 3000);
           }
-        } else if (access_token && refresh_token) {
-          // Handle session from tokens (newer Supabase format)
-          const { data, error } = await supabase.auth.setSession({
-            access_token,
-            refresh_token
-          });
-
-          if (error) {
-            console.error('Session setup error:', error);
-            setError(error.message || 'Failed to confirm email. The link may have expired.');
-          } else if (data.session) {
-            console.log('Session established successfully:', data);
-            setSuccess(true);
-            
-            // Wait a bit then redirect to home
-            setTimeout(() => {
-              navigate('/');
-            }, 3000);
-          }
         } else if (type === 'recovery') {
-          // Handle password recovery - stay on this page but redirect after verification
-          console.log('Password recovery detected, verifying tokens...');
-          
-          if (token_hash) {
-            const { error } = await supabase.auth.verifyOtp({
-              token_hash,
-              type: 'recovery'
-            });
-            
-            if (error) {
-              console.error('Password recovery verification error:', error);
-              setError('Invalid or expired password reset link. Please request a new one.');
-            } else {
-              console.log('Password recovery verification successful');
-              // Redirect to password reset page without URL parameters
-              navigate('/reset-password');
-            }
-          } else if (access_token && refresh_token) {
-            const { error } = await supabase.auth.setSession({
-              access_token,
-              refresh_token
-            });
-            
-            if (error) {
-              console.error('Password recovery session error:', error);
-              setError('Invalid or expired password reset link. Please request a new one.');
-            } else {
-              console.log('Password recovery session established');
-              // Redirect to password reset page without URL parameters  
-              navigate('/reset-password');
-            }
-          } else {
-            setError('Invalid password reset link format.');
-          }
+          // Handle password recovery - redirect to password reset
+          navigate(`/reset-password?${searchParams.toString()}`);
         } else {
-          console.log('No valid confirmation parameters found');
           setError('Invalid confirmation link or missing parameters.');
         }
       } catch (err) {
@@ -189,7 +123,7 @@ export function EmailConfirmation() {
             </Alert>
           )}
           <div className="space-y-3">
-            <Button onClick={() => navigate('/')} className="w-full">
+            <Button onClick={() => navigate('/auth')} className="w-full">
               Back to Login
             </Button>
             <p className="text-sm text-muted-foreground text-center">

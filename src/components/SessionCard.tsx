@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, CheckCircle, ChevronRight, User } from 'lucide-react';
 import { format } from 'date-fns';

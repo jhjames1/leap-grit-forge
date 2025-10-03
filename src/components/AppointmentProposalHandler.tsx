@@ -168,8 +168,6 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
     setLoading(true);
     
     try {
-      console.log('🔄 PROPOSAL: Updating proposal status to:', response, 'for ID:', proposalData.id);
-      
       // Update the proposal status
       const { error: updateError } = await supabase
         .from('appointment_proposals')
@@ -183,8 +181,6 @@ const AppointmentProposalHandler: React.FC<AppointmentProposalHandlerProps> = ({
         console.error('Error updating proposal:', updateError);
         throw updateError;
       }
-
-      console.log('✅ PROPOSAL: Successfully updated proposal status to:', response);
 
       if (response === 'accepted') {
         // Call unified appointment creation function
