@@ -17,32 +17,10 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Force single React instance
-      "react": path.resolve(__dirname, "./node_modules/react"),
-      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
     dedupe: ['react', 'react-dom'],
   },
   optimizeDeps: {
-    force: true,
-    include: [
-      'react', 
-      'react-dom',
-      'react/jsx-runtime',
-      'next-themes',
-      '@tanstack/react-query',
-      '@radix-ui/react-toast',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-select',
-      '@radix-ui/react-tabs',
-      '@radix-ui/react-popover',
-      'sonner',
-    ],
-  },
-  build: {
-    commonjsOptions: {
-      include: [/node_modules/],
-    },
+    exclude: ['react', 'react-dom'],
   },
 }));
