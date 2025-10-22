@@ -79,11 +79,13 @@ export class PushNotificationService {
       }
 
       // Subscribe to push notifications
+      const vapidKey = this.urlBase64ToUint8Array(
+        'BEl62iUYgUivxIkv69yViEuiBIa40HI80NM-TnQV4aDOcdJZQVgQXs0xkZ_8eLQJSRXagjR1Bp5Y1lxVGMlXYNw'
+      );
+      
       this.subscription = await this.registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: this.urlBase64ToUint8Array(
-          'BEl62iUYgUivxIkv69yViEuiBIa40HI80NM-TnQV4aDOcdJZQVgQXs0xkZ_8eLQJSRXagjR1Bp5Y1lxVGMlXYNw'
-        )
+        applicationServerKey: vapidKey.buffer as ArrayBuffer
       });
 
       // Save subscription to database
