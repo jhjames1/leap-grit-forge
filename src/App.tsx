@@ -11,6 +11,7 @@ import UserExperienceTrainingPortal from "./pages/UserExperienceTrainingPortal";
 import PeerSpecialistPortal from "./pages/PeerSpecialistPortal";
 import SpecialistManual from "./pages/SpecialistManual";
 import ConocoPortal from "./pages/ConocoPortal";
+import EmployerPortal from "./pages/EmployerPortal";
 import InteractiveDemo from "./pages/InteractiveDemo";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -56,6 +57,7 @@ function App() {
                 <Route path="/reset-password" element={<PasswordReset />} />
                 <Route path="/confirm" element={<EmailConfirmation />} />
                 <Route path="/conoco" element={<ConocoPortal />} />
+                <Route path="/employer" element={<EmployerPortal />} />
                 <Route path="/demo" element={<InteractiveDemo />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

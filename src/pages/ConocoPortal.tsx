@@ -10,6 +10,7 @@ import { ConocoFeatureUsage } from '@/components/conoco/ConocoFeatureUsage';
 import { ConocoSentimentTrend } from '@/components/conoco/ConocoSentimentTrend';
 import { ConocoThemeHeatmap } from '@/components/conoco/ConocoThemeHeatmap';
 import { ConocoAlertsPanel } from '@/components/conoco/ConocoAlertsPanel';
+import EmployerAnalyticsDashboard from '@/components/EmployerAnalyticsDashboard';
 
 import ConocoLogin from '@/components/conoco/ConocoLogin';
 
@@ -132,6 +133,9 @@ export default function ConocoPortal() {
             <TabsTrigger value="alerts" className="h-12 px-0 border-b-2 border-transparent data-[state=active]:border-red-600 data-[state=active]:bg-transparent rounded-none">
               Alerts
             </TabsTrigger>
+            <TabsTrigger value="analytics" className="h-12 px-0 border-b-2 border-transparent data-[state=active]:border-red-600 data-[state=active]:bg-transparent rounded-none">
+              EAP Analytics
+            </TabsTrigger>
             <TabsTrigger value="settings" className="h-12 px-0 border-b-2 border-transparent data-[state=active]:border-red-600 data-[state=active]:bg-transparent rounded-none">
               Settings
             </TabsTrigger>
@@ -226,6 +230,13 @@ export default function ConocoPortal() {
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-800 font-oswald">Alerts & Notifications</h2>
               <ConocoAlertsPanel />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-0">
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-gray-800 font-oswald">EAP Analytics</h2>
+              <EmployerAnalyticsDashboard orgId="conocophillips" orgName="ConocoPhillips" />
             </div>
           </TabsContent>
 

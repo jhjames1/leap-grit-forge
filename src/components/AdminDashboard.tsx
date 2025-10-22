@@ -20,6 +20,7 @@ import MotivationalContentManagement from './MotivationalContentManagement';
 import ForemanContentManagement from './ForemanContentManagement';
 import AdminManagement from './AdminManagement';
 import UserManagement from './UserManagement';
+import EmployerAnalyticsDashboard from './EmployerAnalyticsDashboard';
 import { exportSpecialistData } from '@/utils/exportUtils';
 interface AdminDashboardProps {
   onBack: () => void;
@@ -318,6 +319,10 @@ const AdminDashboard = ({
             <TabsTrigger value="security" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200 px-6 py-2 border data-[state=active]:border-primary">
               <Shield className="mr-2 h-4 w-4" />
               Security
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200 px-6 py-2 border data-[state=active]:border-primary">
+              <BarChart3 className="mr-2 h-4 w-4" />
+              EAP Analytics
             </TabsTrigger>
           </TabsList>
 
@@ -669,6 +674,16 @@ const AdminDashboard = ({
 
           <TabsContent value="security">
             <SecurityAuditPanel />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">EAP Analytics</h2>
+                <p className="text-muted-foreground">HIPAA-compliant employer insights and program effectiveness metrics</p>
+              </div>
+              <EmployerAnalyticsDashboard orgId="leap-platform" orgName="LEAP Platform" />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
