@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -626,6 +626,33 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_codes: {
+        Row: {
+          code: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          used: boolean
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          used?: boolean
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          used?: boolean
+        }
+        Relationships: []
+      }
       peer_checkins: {
         Row: {
           completed_at: string | null
@@ -1106,6 +1133,7 @@ export type Database = {
           meeting_url: string | null
           notes: string | null
           reminder_sent: boolean | null
+          scheduled_appointment_id: string | null
           scheduled_end: string
           scheduled_start: string
           specialist_id: string
@@ -1125,6 +1153,7 @@ export type Database = {
           meeting_url?: string | null
           notes?: string | null
           reminder_sent?: boolean | null
+          scheduled_appointment_id?: string | null
           scheduled_end: string
           scheduled_start: string
           specialist_id: string
@@ -1144,6 +1173,7 @@ export type Database = {
           meeting_url?: string | null
           notes?: string | null
           reminder_sent?: boolean | null
+          scheduled_appointment_id?: string | null
           scheduled_end?: string
           scheduled_start?: string
           specialist_id?: string
@@ -1157,6 +1187,13 @@ export type Database = {
             columns: ["appointment_type_id"]
             isOneToOne: false
             referencedRelation: "appointment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specialist_appointments_scheduled_appointment_id_fkey"
+            columns: ["scheduled_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_appointments"
             referencedColumns: ["id"]
           },
           {
@@ -2163,24 +2200,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      add_admin_role: {
-        Args: { target_user_id: string }
-        Returns: Json
-      }
+      add_admin_role: { Args: { target_user_id: string }; Returns: Json }
       check_message_duplicate: {
         Args: {
-          p_session_id: string
-          p_sender_id: string
           p_content: string
+          p_sender_id: string
+          p_session_id: string
           p_time_window_seconds?: number
         }
         Returns: boolean
       }
       check_specialist_availability: {
         Args: {
+          p_end_time: string
           p_specialist_id: string
           p_start_time: string
-          p_end_time: string
         }
         Returns: boolean
       }
@@ -2188,46 +2222,43 @@ export type Database = {
         Args: { p_session_id: string; p_specialist_user_id: string }
         Returns: Json
       }
-      debug_auth_context: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      debug_auth_context: { Args: never; Returns: Json }
       end_chat_session: {
         Args: {
           p_session_id: string
-          p_user_id: string
           p_specialist_id: string
+          p_user_id: string
         }
         Returns: Json
       }
       end_chat_session_atomic: {
-        Args: { p_session_id: string; p_user_id: string; p_end_reason?: string }
+        Args: { p_end_reason?: string; p_session_id: string; p_user_id: string }
         Returns: Database["public"]["CompositeTypes"]["chat_operation_result"]
+        SetofOptions: {
+          from: "*"
+          to: "chat_operation_result"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       find_user_by_email: {
         Args: { user_email: string }
         Returns: {
-          user_id: string
-          email: string
           created_at: string
+          email: string
           is_admin: boolean
+          user_id: string
         }[]
       }
-      generate_invitation_token: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_temporary_password: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_invitation_token: { Args: never; Returns: string }
+      generate_temporary_password: { Args: never; Returns: string }
       get_admin_users: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          user_id: string
-          email: string
           created_at: string
+          email: string
           role_created_at: string
+          user_id: string
         }[]
       }
       get_session_with_messages: {
@@ -2239,70 +2270,73 @@ export type Database = {
         Returns: Json
       }
       get_users_for_admin: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
-          id: string
-          email: string
           created_at: string
+          email: string
+          id: string
         }[]
       }
-      is_admin: {
-        Args: { _user_id?: string }
-        Returns: boolean
-      }
+      is_admin: { Args: { _user_id?: string }; Returns: boolean }
       log_login_attempt: {
         Args: {
-          p_user_id: string
           p_ip_address: unknown
-          p_user_agent: string
-          p_login_status?: string
           p_location_data?: Json
+          p_login_status?: string
+          p_user_agent: string
+          p_user_id: string
         }
         Returns: string
       }
-      permanently_delete_specialist: {
-        Args:
-          | { specialist_id: string }
-          | { specialist_id: string; admin_user_id: string }
-        Returns: Json
-      }
-      remove_admin_role: {
-        Args: { target_user_id: string }
-        Returns: Json
-      }
+      permanently_delete_specialist:
+        | {
+            Args: { admin_user_id: string; specialist_id: string }
+            Returns: Json
+          }
+        | { Args: { specialist_id: string }; Returns: Json }
+      remove_admin_role: { Args: { target_user_id: string }; Returns: Json }
       request_admin_password_reset: {
         Args: { target_email: string }
         Returns: Json
       }
       send_message_atomic: {
         Args: {
-          p_session_id: string
-          p_sender_id: string
-          p_sender_type: string
           p_content: string
           p_message_type?: string
           p_metadata?: Json
+          p_sender_id: string
+          p_sender_type: string
+          p_session_id: string
         }
         Returns: Database["public"]["CompositeTypes"]["chat_operation_result"]
+        SetofOptions: {
+          from: "*"
+          to: "chat_operation_result"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       set_user_type: {
         Args: { target_user_id: string }
         Returns: Database["public"]["Enums"]["user_type"]
       }
-      soft_delete_specialist: {
-        Args: { specialist_id: string }
-        Returns: Json
-      }
+      soft_delete_specialist: { Args: { specialist_id: string }; Returns: Json }
       start_chat_session_atomic: {
         Args: { p_user_id: string }
         Returns: Database["public"]["CompositeTypes"]["chat_operation_result"]
+        SetofOptions: {
+          from: "*"
+          to: "chat_operation_result"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       sync_working_hours_to_schedules: {
         Args: { p_specialist_id: string; p_working_hours: Json }
         Returns: undefined
       }
       update_specialist_status_from_calendar_schedule: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: undefined
       }
     }
