@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,7 @@ interface AuthFormProps {
 }
 
 export function AuthForm({ onAuthSuccess }: AuthFormProps) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -240,7 +242,7 @@ export function AuthForm({ onAuthSuccess }: AuthFormProps) {
         </p>
         <Button 
           variant="outline" 
-          onClick={() => window.location.href = '/demo'}
+          onClick={() => navigate('/demo')}
           className="flex items-center gap-2 mx-auto"
         >
           <Play size={16} />
