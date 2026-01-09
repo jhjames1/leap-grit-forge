@@ -2289,11 +2289,11 @@ export type Database = {
         Returns: string
       }
       permanently_delete_specialist:
+        | { Args: { specialist_id: string }; Returns: Json }
         | {
             Args: { admin_user_id: string; specialist_id: string }
             Returns: Json
           }
-        | { Args: { specialist_id: string }; Returns: Json }
       remove_admin_role: { Args: { target_user_id: string }; Returns: Json }
       request_admin_password_reset: {
         Args: { target_email: string }
