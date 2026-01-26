@@ -95,18 +95,38 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
     );
   };
 
-  // Get journey day from calendar date
+  // Get journey day from calendar date using actual completion dates
   const getJourneyDayFromDate = (date: Date): number | null => {
-    const completedDays = userData?.journeyProgress?.completedDays || [];
-    const maxCompletedDay = completedDays.length > 0 ? Math.max(...completedDays) : 0;
-    const today = new Date();
+    const completionDates = userData?.journeyProgress?.completionDates || {};
     
-    let journeyStartDate = new Date(today);
-    if (maxCompletedDay > 0) {
-      journeyStartDate.setDate(today.getDate() - maxCompletedDay + 1);
+    // Find the earliest completion date to determine journey start
+    let journeyStartDate: Date | null = null;
+    
+    // Get Day 1 completion date if available
+    if (completionDates[1]) {
+      journeyStartDate = new Date(completionDates[1]);
+      journeyStartDate.setHours(0, 0, 0, 0);
+    } else {
+      // Fallback: find earliest completion date
+      const allDates = Object.entries(completionDates)
+        .map(([day, dateStr]) => ({ day: parseInt(day), date: new Date(dateStr as string) }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      if (allDates.length > 0) {
+        const earliest = allDates[0];
+        journeyStartDate = new Date(earliest.date);
+        journeyStartDate.setHours(0, 0, 0, 0);
+        // Adjust for which day was completed
+        journeyStartDate.setDate(journeyStartDate.getDate() - (earliest.day - 1));
+      }
     }
     
-    const daysDiff = Math.floor((date.getTime() - journeyStartDate.getTime()) / (24 * 60 * 60 * 1000));
+    if (!journeyStartDate) return null;
+    
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    const daysDiff = Math.floor((targetDate.getTime() - journeyStartDate.getTime()) / (24 * 60 * 60 * 1000));
     const journeyDay = daysDiff + 1;
     
     return journeyDay >= 1 && journeyDay <= 90 ? journeyDay : null;
