@@ -80,6 +80,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // CRITICAL: Never cache Vite dev/preview dependency bundles.
+  // If these get cached, the app can end up with mismatched React / ReactDOM chunks
+  // which manifests as "Invalid hook call" / `useState` dispatcher null.
+  // (Seen in errors pointing at /node_modules/.vite/deps/*)
+  const url = new URL(event.request.url);
+  if (url.pathname.includes('/node_modules/.vite/deps/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(cachedResponse => {
