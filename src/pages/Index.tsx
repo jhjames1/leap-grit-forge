@@ -179,11 +179,10 @@ const Index = () => {
   const showBottomNav = !['about', 'calendar', 'foreman'].includes(currentPage);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <OfflineIndicator />
       
-      
-      <div className="relative">
+      <div className={`relative flex-1 ${showBottomNav ? 'pb-20' : ''} overflow-y-auto`}>
         {renderActivePage()}
       </div>
       {showBottomNav && (

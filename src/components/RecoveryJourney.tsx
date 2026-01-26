@@ -476,8 +476,8 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   const progress = (completedDays.length / totalDays) * 100;
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5]">
-      <div className="p-4 pb-24">
+    <div className="min-h-screen bg-[#F5F5F5] overflow-y-auto">
+      <div className="p-4 pb-32">
         {/* Testing Mode Controls - Only show in development */}
         {import.meta.env.DEV && (
           <TestingModeControls
