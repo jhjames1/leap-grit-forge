@@ -164,60 +164,62 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
   }, [isAudioPlaying, audioProgress, audioDuration, currentAudioActivity]);
 
   const openToolActivity = (toolName: string, activityKey: string) => {
+    // Show immediate feedback and then complete the activity
+    const completeActivityWithFeedback = (title: string, description: string) => {
+      toast({
+        title,
+        description,
+      });
+      
+      // Mark complete immediately after showing toast
+      // Using requestAnimationFrame ensures state updates are processed
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          markActivityComplete(activityKey);
+        }, 500);
+      });
+    };
+    
     switch (toolName) {
       case 'Trigger Identification':
         if (activityKey === 'trigger_tool') {
           setShowTriggerIdentifier(true);
         } else {
-          toast({
-            title: "Activity Started",
-            description: "Complete this trigger identification exercise.",
-          });
-          // Simulate completion after 3 seconds
-          setTimeout(() => {
-            markActivityComplete(activityKey);
-          }, 3000);
+          completeActivityWithFeedback(
+            "Activity Started",
+            "Complete this trigger identification exercise."
+          );
         }
         break;
       case 'Breathing Exercise':
-        toast({
-          title: "Breathing Exercise Started",
-          description: "Take deep breaths and focus on your recovery journey.",
-        });
-        // Simulate completion after 3 seconds
-        setTimeout(() => {
-          markActivityComplete(activityKey);
-        }, 3000);
+        completeActivityWithFeedback(
+          "Breathing Exercise Started",
+          "Take deep breaths and focus on your recovery journey."
+        );
         break;
       case 'Urge Tracker':
-        toast({
-          title: "Urge Tracker Opened",
-          description: "Track your urges and cravings to identify patterns.",
-        });
-        // Simulate completion after 3 seconds
-        setTimeout(() => {
-          markActivityComplete(activityKey);
-        }, 3000);
+        completeActivityWithFeedback(
+          "Urge Tracker Opened",
+          "Track your urges and cravings to identify patterns."
+        );
         break;
       case 'Peer Support':
-        toast({
-          title: "Connecting with Peers",
-          description: "Reach out to your support network for encouragement.",
-        });
-        // Simulate completion after 3 seconds
-        setTimeout(() => {
-          markActivityComplete(activityKey);
-        }, 3000);
+        completeActivityWithFeedback(
+          "Connecting with Peers",
+          "Reach out to your support network for encouragement."
+        );
+        break;
+      case 'Gratitude Log':
+        completeActivityWithFeedback(
+          "Gratitude Practice",
+          "Reflect on what you're grateful for today."
+        );
         break;
       default:
-        toast({
-          title: "Activity Started",
-          description: "Complete this recovery tool activity.",
-        });
-        // Simulate completion after 3 seconds
-        setTimeout(() => {
-          markActivityComplete(activityKey);
-        }, 3000);
+        completeActivityWithFeedback(
+          "Activity Started",
+          "Complete this recovery tool activity."
+        );
     }
   };
 
@@ -530,8 +532,11 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
             
             {!isCompleted ? (
               <Button 
-                onClick={() => markActivityComplete(activity.key)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-source w-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  markActivityComplete(activity.key);
+                }}
+                className="bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground font-source w-full py-4 min-h-[48px] touch-manipulation"
               >
                 {t('common.continue')}
               </Button>
@@ -557,10 +562,13 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
             
             {!isCompleted ? (
               <Button 
-                onClick={() => openToolActivity(dayData.tool, activity.key)}
-                className="bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold py-3 rounded-lg w-full flex items-center justify-center gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openToolActivity(dayData.tool, activity.key);
+                }}
+                className="bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black font-source font-bold py-4 min-h-[48px] rounded-lg w-full flex items-center justify-center gap-2 touch-manipulation"
               >
-                <Play size={16} />
+                <Play size={18} />
                 {activity.title === 'Mindful Breathing' ? 'START BREATHING' : `START ${activity.title.toUpperCase()}`}
               </Button>
             ) : (
@@ -594,13 +602,19 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
               
               {!isCompleted && (
                 <Button 
-                  onClick={() => {
-                    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Find the textarea within this card specifically
+                    const card = e.currentTarget.closest('.space-y-3');
+                    const textarea = card?.querySelector('textarea') as HTMLTextAreaElement;
                     if (textarea?.value.trim()) {
                       markActivityComplete(activity.key, textarea.value);
+                    } else {
+                      // Allow completion even without input for better UX
+                      markActivityComplete(activity.key, '');
                     }
                   }}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-source w-full"
+                  className="bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground font-source w-full py-4 min-h-[48px] touch-manipulation"
                 >
                   {t('common.continue')}
                 </Button>
@@ -634,8 +648,11 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
             
             {!isCompleted ? (
               <Button 
-                onClick={() => markActivityComplete(activity.key)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-source w-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  markActivityComplete(activity.key);
+                }}
+                className="bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground font-source w-full py-4 min-h-[48px] touch-manipulation"
               >
                 {t('common.continue')}
               </Button>
@@ -669,8 +686,11 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
             
             {!isCompleted ? (
               <Button 
-                onClick={() => openToolActivity('Trigger Identification', 'trigger_tool')}
-                className="bg-yellow-400 hover:bg-yellow-500 text-black font-source font-bold w-full"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openToolActivity('Trigger Identification', 'trigger_tool');
+                }}
+                className="bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black font-source font-bold w-full py-4 min-h-[48px] touch-manipulation"
               >
                 Open Trigger Tool
               </Button>
