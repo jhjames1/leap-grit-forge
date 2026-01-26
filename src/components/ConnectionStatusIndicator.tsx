@@ -3,10 +3,16 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Wifi, WifiOff, AlertCircle } from 'lucide-react';
-import type { ConnectionStatus } from '@/hooks/useRobustRealtimeConnection';
+import type { ConnectionStatus } from '@/types/chat';
+
+// Extended connection status with additional fields from legacy implementation
+interface ExtendedConnectionStatus extends ConnectionStatus {
+  retryCount?: number;
+  quality?: 'good' | 'fair' | 'poor' | 'unknown';
+}
 
 interface ConnectionStatusIndicatorProps {
-  connectionStatus: ConnectionStatus;
+  connectionStatus: ExtendedConnectionStatus;
   onReconnect: () => void;
   compact?: boolean;
 }

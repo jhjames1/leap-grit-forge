@@ -10,7 +10,7 @@ import { RefreshCw, MessageSquare, BarChart3, UserCircle, Activity, Clock, Check
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import RobustSpecialistChatWindow from './RobustSpecialistChatWindow';
+import SpecialistChatWindowRefactored from './SpecialistChatWindowRefactored';
 import EnhancedSpecialistCalendar from './calendar/EnhancedSpecialistCalendar';
 import SpecialistPerformanceMetrics from './SpecialistPerformanceMetrics';
 import SpecialistSettings from './SpecialistSettings';
@@ -729,7 +729,7 @@ const PeerSpecialistDashboard = () => {
                     </CardHeader>
                     <CardContent className="p-0 flex-1">
                       {selectedSession ? (
-                        <RobustSpecialistChatWindow
+                        <SpecialistChatWindowRefactored
                           session={selectedSession}
                           onClose={() => setSelectedSession(null)}
                           onSessionUpdate={handleSessionUpdate}
