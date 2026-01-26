@@ -95,67 +95,51 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
     );
   };
 
-  // Get journey day from calendar date using actual completion dates
-  const getJourneyDayFromDate = (date: Date): number | null => {
+  // Get journey day that was completed on a specific calendar date
+  const getJourneyDayCompletedOnDate = (date: Date): number | null => {
     const completionDates = userData?.journeyProgress?.completionDates || {};
-    
-    // Find the earliest completion date to determine journey start
-    let journeyStartDate: Date | null = null;
-    
-    // Get Day 1 completion date if available
-    if (completionDates[1]) {
-      journeyStartDate = new Date(completionDates[1]);
-      journeyStartDate.setHours(0, 0, 0, 0);
-    } else {
-      // Fallback: find earliest completion date
-      const allDates = Object.entries(completionDates)
-        .map(([day, dateStr]) => ({ day: parseInt(day), date: new Date(dateStr as string) }))
-        .sort((a, b) => a.date.getTime() - b.date.getTime());
-      
-      if (allDates.length > 0) {
-        const earliest = allDates[0];
-        journeyStartDate = new Date(earliest.date);
-        journeyStartDate.setHours(0, 0, 0, 0);
-        // Adjust for which day was completed
-        journeyStartDate.setDate(journeyStartDate.getDate() - (earliest.day - 1));
-      }
-    }
-    
-    if (!journeyStartDate) return null;
-    
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
     
-    const daysDiff = Math.floor((targetDate.getTime() - journeyStartDate.getTime()) / (24 * 60 * 60 * 1000));
-    const journeyDay = daysDiff + 1;
+    // Find which journey day was completed on this calendar date
+    for (const [dayStr, dateStr] of Object.entries(completionDates)) {
+      const completionDate = new Date(dateStr as string);
+      completionDate.setHours(0, 0, 0, 0);
+      
+      if (completionDate.getTime() === targetDate.getTime()) {
+        return parseInt(dayStr);
+      }
+    }
     
-    return journeyDay >= 1 && journeyDay <= 90 ? journeyDay : null;
+    return null;
   };
 
   const getDayStatus = (date: Date): 'completed' | 'missed' | 'today' | 'future' | 'appointment' => {
     const dateAppointments = getAppointmentsForDate(date);
-    const completedDays = userData?.journeyProgress?.completedDays || [];
-    const journeyDay = getJourneyDayFromDate(date);
+    const completedJourneyDay = getJourneyDayCompletedOnDate(date);
     
     // Check for appointments first
     if (dateAppointments.length > 0) {
       return 'appointment';
     }
     
+    // Check if a journey day was completed on this date
+    if (completedJourneyDay !== null) {
+      return 'completed';
+    }
+    
     if (isToday(date)) {
-      return journeyDay && completedDays.includes(journeyDay) ? 'completed' : 'today';
+      return 'today';
     }
     
     if (date > new Date()) return 'future';
     
-    if (!journeyDay) return 'missed';
-    
-    return completedDays.includes(journeyDay) ? 'completed' : 'missed';
+    // Past dates with no completion are just neutral (not "missed" since journey isn't daily)
+    return 'future'; // Use 'future' styling for neutral past dates without completions
   };
 
   const handleDayClick = (date: Date) => {
-    const journeyDay = getJourneyDayFromDate(date);
-    const completedDays = userData?.journeyProgress?.completedDays || [];
+    const completedJourneyDay = getJourneyDayCompletedOnDate(date);
     const dateAppointments = getAppointmentsForDate(date);
     
     // Show appointment details if there are appointments
@@ -164,8 +148,8 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
       setShowAppointmentDetails(true);
     }
     // Show completed day details
-    else if (journeyDay && completedDays.includes(journeyDay)) {
-      setSelectedCompletedDay(journeyDay);
+    else if (completedJourneyDay !== null) {
+      setSelectedCompletedDay(completedJourneyDay);
       setShowDayDetails(true);
     }
   };
