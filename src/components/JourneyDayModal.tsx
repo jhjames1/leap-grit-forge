@@ -329,19 +329,15 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
   const allActivitiesComplete = completedActivities >= activities.length;
   const dayProgress = (completedActivities / activities.length) * 100;
 
-  // Auto-complete day when all activities are done
+  // Auto-trigger completion UI feedback when all activities are done
+  // Note: Actual day completion is handled by the Complete Day button or parent callback
   useEffect(() => {
-    if (allActivitiesComplete && !userData?.journeyProgress?.completedDays?.includes(day)) {
-      markDayComplete(day);
-      
-      // Call the parent onComplete callback and refresh
-      setTimeout(() => {
-        onComplete();
-        // Trigger a data refresh to update UI
-        window.dispatchEvent(new CustomEvent('journeyDataChanged'));
-      }, 500);
+    if (allActivitiesComplete && !isCompleted) {
+      // Just show a toast to encourage the user to click Complete Day
+      // The actual completion logic is handled by handleCompleteDay
+      logger.debug('All activities complete, awaiting user to click Complete Day button', { day });
     }
-  }, [allActivitiesComplete, day, userData?.journeyProgress?.completedDays, markDayComplete, onComplete]);
+  }, [allActivitiesComplete, isCompleted, day]);
 
   const renderActivity = (activity: any, index: number) => {
     const isActive = index <= currentActivityIndex;
@@ -837,71 +833,41 @@ const JourneyDayModal = ({ day, dayData, isCompleted, onClose, onComplete, onNav
       return;
     }
     
+    // Check if day is already completed
+    const currentProgress = userData?.journeyProgress || { completedDays: [] };
+    if (currentProgress.completedDays.includes(day)) {
+      logger.debug('Day already completed', { day });
+      toast({
+        title: "Day Already Completed",
+        description: "This day has already been marked as complete.",
+      });
+      onComplete();
+      return;
+    }
+    
     try {
-      // Log the completion
+      // Log the completion activity
       logActivity(`Completed Day ${day}: ${dayData.title}`, `All activities completed for ${dayData.tool}`, 'journey');
       logger.debug('Activity logged successfully');
       
-      // Update journey progress with better error handling
-      const currentProgress = userData?.journeyProgress || {
-        completedDays: [],
-        currentWeek: 1,
-        badges: [],
-        completionDates: {}
-      };
-      
-      // Check if day is already completed
-      if (currentProgress.completedDays.includes(day)) {
-        logger.debug('Day already completed', { day });
-        toast({
-          title: "Day Already Completed",
-          description: "This day has already been marked as complete.",
-        });
-        onComplete();
-        return;
-      }
-      
-      const updatedProgress = {
-        ...currentProgress,
-        completedDays: [...currentProgress.completedDays, day].sort((a, b) => a - b),
-        completionDates: {
-          ...currentProgress.completionDates,
-          [day]: new Date().toISOString()
-        }
-      };
-
-      logger.debug('Updating journey progress', { 
-        previousCompletedDays: currentProgress.completedDays,
-        newCompletedDays: updatedProgress.completedDays
-      });
-      
-      // Update user data and ensure it's saved
-      updateUserData({ journeyProgress: updatedProgress });
-      
-      // Wait a moment for the update to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      logger.debug('Journey progress updated successfully');
-      
-      // Show success toast
+      // Show success toast immediately for user feedback
       toast({
         title: `Day ${day} Complete!`,
         description: "Great job! Your progress has been saved.",
       });
       
-      // Call completion callback with a slight delay to ensure state sync
+      // Let parent handle the actual data persistence via onComplete callback
+      // This ensures single source of truth for day completion
+      logger.debug('Calling onComplete callback to persist day completion');
+      onComplete();
+      
+      // Navigate to home after a delay
       setTimeout(() => {
-        logger.debug('Calling onComplete callback');
-        onComplete();
-        
-        // Navigate to home after another delay
-        setTimeout(() => {
-          if (onNavigateToHome) {
-            logger.debug('Navigating to home');
-            onNavigateToHome();
-          }
-        }, 500);
-      }, 200);
+        if (onNavigateToHome) {
+          logger.debug('Navigating to home');
+          onNavigateToHome();
+        }
+      }, 500);
       
     } catch (error) {
       logger.error('Error completing day', error);
