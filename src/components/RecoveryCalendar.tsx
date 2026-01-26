@@ -114,9 +114,35 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
     return null;
   };
 
+  // Get the journey start date (earliest completion)
+  const getJourneyStartDate = (): Date | null => {
+    const completionDates = userData?.journeyProgress?.completionDates || {};
+    
+    if (Object.keys(completionDates).length === 0) return null;
+    
+    // Find the earliest completion date
+    const allDates = Object.values(completionDates)
+      .map(dateStr => new Date(dateStr as string))
+      .sort((a, b) => a.getTime() - b.getTime());
+    
+    if (allDates.length > 0) {
+      const earliest = new Date(allDates[0]);
+      earliest.setHours(0, 0, 0, 0);
+      return earliest;
+    }
+    
+    return null;
+  };
+
   const getDayStatus = (date: Date): 'completed' | 'missed' | 'today' | 'future' | 'appointment' => {
     const dateAppointments = getAppointmentsForDate(date);
     const completedJourneyDay = getJourneyDayCompletedOnDate(date);
+    const journeyStartDate = getJourneyStartDate();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
     
     // Check for appointments first
     if (dateAppointments.length > 0) {
@@ -128,14 +154,24 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
       return 'completed';
     }
     
-    if (isToday(date)) {
+    // Future dates
+    if (targetDate > today) {
+      return 'future';
+    }
+    
+    // Today without completion
+    if (targetDate.getTime() === today.getTime()) {
       return 'today';
     }
     
-    if (date > new Date()) return 'future';
+    // Past dates: check if journey had started
+    if (journeyStartDate && targetDate >= journeyStartDate) {
+      // Journey was active on this date, so it's a missed day
+      return 'missed';
+    }
     
-    // Past dates with no completion are just neutral (not "missed" since journey isn't daily)
-    return 'future'; // Use 'future' styling for neutral past dates without completions
+    // Before journey started - neutral
+    return 'future';
   };
 
   const handleDayClick = (date: Date) => {
