@@ -32,7 +32,7 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
   const [phaseModifier, setPhaseModifier] = useState<any>(null);
   const [showWeek1Collection, setShowWeek1Collection] = useState(false);
   const [week1CollectionDay, setWeek1CollectionDay] = useState<number | null>(null);
-  const { userData, logActivity, currentUser, updateUserData, setUserData, refreshUserData } = useUserData();
+  const { userData, logActivity, currentUser, updateUserData, setUserData, refreshUserData, markDayComplete } = useUserData();
   const { toast } = useToast();
   const { t } = useLanguage();
   const totalDays = 90;
@@ -343,7 +343,7 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
     }
   };
 
-  const handleCompleteDay = (day: number) => {
+  const handleCompleteDay = async (day: number) => {
     logger.debug('Recovery journey day completion handler', { 
       day, 
       completedDaysCount: completedDays.length,
@@ -353,6 +353,9 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
     
     // Close the modal
     setSelectedDay(null);
+    
+    // Actually mark the day as complete (saves to local storage and Supabase)
+    await markDayComplete(day);
     
     // Force immediate refresh of user data from storage
     refreshUserData();
