@@ -342,13 +342,13 @@ const PeerSpecialistDashboard = () => {
   const getSessionStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-500';
+        return 'bg-chat-active';
       case 'waiting':
-        return 'bg-yellow-500';
+        return 'bg-chat-waiting';
       case 'ended':
-        return 'bg-gray-400';
+        return 'bg-muted';
       default:
-        return 'bg-gray-400';
+        return 'bg-muted';
     }
   };
 
@@ -555,9 +555,9 @@ const PeerSpecialistDashboard = () => {
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-sm font-medium text-muted-foreground">Completed Today</p>
-                              <p className="text-2xl font-bold text-blue-600">{completedToday}</p>
+                              <p className="text-2xl font-bold text-primary">{completedToday}</p>
                             </div>
-                            <CheckCircle className="h-8 w-8 text-blue-600" />
+                            <CheckCircle className="h-8 w-8 text-primary" />
                           </div>
                         </CardContent>
                       </Card>
@@ -575,9 +575,9 @@ const PeerSpecialistDashboard = () => {
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-sm font-medium text-muted-foreground">Ave. Response Time Today</p>
-                              <p className="text-2xl font-bold text-purple-600">{formatResponseTime(avgResponseTime)}</p>
+                              <p className="text-2xl font-bold text-accent-foreground">{formatResponseTime(avgResponseTime)}</p>
                             </div>
-                            <TrendingUp className="h-8 w-8 text-purple-600" />
+                            <TrendingUp className="h-8 w-8 text-accent-foreground" />
                           </div>
                         </CardContent>
                       </Card>

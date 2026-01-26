@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.phone-request-cleanup]
 verify_jwt = false
+
+[functions.conoco-auth]
+verify_jwt = false
+
+[functions.admin-management]
+verify_jwt = true

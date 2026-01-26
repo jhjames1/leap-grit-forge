@@ -5,13 +5,35 @@ import DOMPurify from 'dompurify';
 
 // Security configuration
 const SALT_ROUNDS = 12;
-// Use environment variable or generate secure key in production
-const ENCRYPTION_KEY = typeof window !== 'undefined' ? 
-  (window.crypto?.getRandomValues ? 
-    Array.from(window.crypto.getRandomValues(new Uint8Array(32)))
-      .map(b => b.toString(16).padStart(2, '0')).join('') 
-    : 'fallback-key-please-set-environment-variable'
-  ) : 'server-side-fallback-key';
+
+// Use a consistent encryption key derived from a stable source
+// In production, this should come from environment variables via an edge function
+const getEncryptionKey = (): string => {
+  const storedKey = localStorage.getItem('_app_encryption_key');
+  if (storedKey) {
+    return storedKey;
+  }
+  
+  // Generate and store a new key only once per device
+  if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
+    const newKey = Array.from(window.crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    localStorage.setItem('_app_encryption_key', newKey);
+    return newKey;
+  }
+  
+  // Fallback for environments without crypto
+  return 'fallback-key-for-non-crypto-env';
+};
+
+// Lazy initialize the encryption key
+let ENCRYPTION_KEY: string | null = null;
+const getKey = (): string => {
+  if (!ENCRYPTION_KEY) {
+    ENCRYPTION_KEY = getEncryptionKey();
+  }
+  return ENCRYPTION_KEY;
+};
 
 // Password hashing utilities
 export const hashPassword = async (password: string): Promise<string> => {
@@ -24,12 +46,12 @@ export const verifyPassword = async (password: string, hash: string): Promise<bo
 
 // Data encryption utilities
 export const encryptData = (data: string): string => {
-  return CryptoJS.AES.encrypt(data, ENCRYPTION_KEY).toString();
+  return CryptoJS.AES.encrypt(data, getKey()).toString();
 };
 
 export const decryptData = (encryptedData: string): string => {
   try {
-    const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY);
+    const bytes = CryptoJS.AES.decrypt(encryptedData, getKey());
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
     
     // If decryption results in empty string, it likely failed
@@ -72,7 +94,7 @@ export const sanitizeInput = (input: string): string => {
 
 // Validation utilities
 export const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
@@ -158,35 +180,8 @@ export const clearSession = (): void => {
   localStorage.removeItem('currentUser');
 };
 
-// Rate limiting for login attempts
-export const checkRateLimit = (identifier: string): { allowed: boolean; timeLeft?: number } => {
-  const rateLimitKey = `rate_limit_${identifier}`;
-  const attempts = JSON.parse(localStorage.getItem(rateLimitKey) || '[]');
-  const now = Date.now();
-  const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxAttempts = 5;
-  
-  // Filter attempts within the time window
-  const recentAttempts = attempts.filter((time: number) => now - time < windowMs);
-  
-  if (recentAttempts.length >= maxAttempts) {
-    const oldestAttempt = Math.min(...recentAttempts);
-    const timeLeft = windowMs - (now - oldestAttempt);
-    return { allowed: false, timeLeft };
-  }
-  
-  return { allowed: true };
-};
-
-export const recordAttempt = (identifier: string): void => {
-  const rateLimitKey = `rate_limit_${identifier}`;
-  const attempts = JSON.parse(localStorage.getItem(rateLimitKey) || '[]');
-  attempts.push(Date.now());
-  localStorage.setItem(rateLimitKey, JSON.stringify(attempts));
-};
-
-// Security logging
-export const logSecurityEvent = (event: string, details?: any): void => {
+// Security logging - stored server-side via edge function in production
+export const logSecurityEvent = (event: string, details?: Record<string, unknown>): void => {
   const logEntry = {
     timestamp: new Date().toISOString(),
     event,
@@ -195,6 +190,13 @@ export const logSecurityEvent = (event: string, details?: any): void => {
     url: window.location.href
   };
   
+  // Log to console in development
+  if (process.env.NODE_ENV === 'development') {
+    logger.debug('Security event:', logEntry);
+  }
+  
+  // In production, security events should be logged server-side
+  // This is just a local backup for debugging
   const logs = JSON.parse(localStorage.getItem('security_logs') || '[]');
   logs.push(logEntry);
   

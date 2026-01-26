@@ -224,21 +224,21 @@ const AdminDashboard = ({
   const getRiskColor = (risk: string) => {
     switch (risk) {
       case 'high':
-        return 'bg-red-500';
+        return 'bg-destructive';
       case 'medium':
-        return 'bg-yellow-500';
+        return 'bg-warning';
       default:
-        return 'bg-green-500';
+        return 'bg-chat-active';
     }
   };
   const getRiskBadge = (risk: string) => {
     switch (risk) {
       case 'high':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
+        return 'bg-destructive/20 text-destructive border-destructive/30';
       case 'medium':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+        return 'bg-warning/20 text-warning-foreground border-warning/30';
       default:
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
+        return 'bg-chat-active/20 text-chat-active-foreground border-chat-active/30';
     }
   };
   return <div className="min-h-screen w-full bg-background flex flex-col">
@@ -281,8 +281,8 @@ const AdminDashboard = ({
               </div>
               <div className="text-right">
                 <div className="text-sm text-primary-foreground/80">Live Updates</div>
-                <Badge variant="secondary" className="bg-white/20 text-white">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                <Badge variant="secondary" className="bg-primary-foreground/20 text-primary-foreground">
+                  <div className="w-2 h-2 bg-chat-active rounded-full mr-2 animate-pulse"></div>
                   Active
                 </Badge>
               </div>
@@ -433,7 +433,7 @@ const AdminDashboard = ({
                         <div className="mt-3 space-y-1">
                           {onlineSpecialists.slice(0, 3).map((specialist) => (
                             <div key={specialist.id} className="flex items-center gap-2 text-sm">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <div className="w-2 h-2 bg-chat-active rounded-full"></div>
                               <span className="text-muted-foreground">
                                 {specialist.first_name} {specialist.last_name}
                               </span>
@@ -489,8 +489,8 @@ const AdminDashboard = ({
                       <CardTitle className="flex items-center gap-2">
                         <BarChart3 className="w-5 h-5" />
                         Domain Engagement
-                        <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
-                          <div className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
+                        <Badge variant="secondary" className="bg-chat-active/20 text-chat-active-foreground border-chat-active/30">
+                          <div className="w-2 h-2 bg-chat-active rounded-full mr-1 animate-pulse"></div>
                           LIVE
                         </Badge>
                       </CardTitle>
@@ -548,8 +548,8 @@ const AdminDashboard = ({
                       <CardTitle className="flex items-center gap-2">
                         <Target className="w-5 h-5" />
                         User Risk Assessment
-                        <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
-                          <div className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
+                        <Badge variant="secondary" className="bg-chat-active/20 text-chat-active-foreground border-chat-active/30">
+                          <div className="w-2 h-2 bg-chat-active rounded-full mr-1 animate-pulse"></div>
                           LIVE
                         </Badge>
                       </CardTitle>
@@ -590,19 +590,19 @@ const AdminDashboard = ({
                           <div className="mt-4 p-3 bg-primary/10 rounded-lg">
                             <div className="grid grid-cols-3 gap-3 text-center">
                               <div>
-                                <div className="text-lg font-bold text-red-500">
+                                <div className="text-lg font-bold text-destructive">
                                   {userRiskData.filter(u => u.risk === 'high').length}
                                 </div>
                                 <div className="text-xs text-muted-foreground">High Risk</div>
                               </div>
                               <div>
-                                <div className="text-lg font-bold text-yellow-500">
+                                <div className="text-lg font-bold text-warning-foreground">
                                   {userRiskData.filter(u => u.risk === 'medium').length}
                                 </div>
                                 <div className="text-xs text-muted-foreground">Medium Risk</div>
                               </div>
                               <div>
-                                <div className="text-lg font-bold text-green-500">
+                                <div className="text-lg font-bold text-chat-active-foreground">
                                   {userRiskData.filter(u => u.risk === 'low').length}
                                 </div>
                                 <div className="text-xs text-muted-foreground">Low Risk</div>
