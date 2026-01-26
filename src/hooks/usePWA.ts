@@ -29,6 +29,28 @@ export const usePWA = (): PWAState => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // In dev/preview, a Service Worker can cache Vite's module chunks and serve stale React
+    // which leads to "Invalid hook call" / `useState` dispatcher being null.
+    // So we proactively unregister SW + clear SW caches in DEV.
+    if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+      (async () => {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+
+          const cacheNames = await caches.keys();
+          await Promise.all(
+            cacheNames
+              .filter((name) => name.startsWith('leap-'))
+              .map((name) => caches.delete(name))
+          );
+        } catch (e) {
+          // Non-fatal; dev should still run without SW.
+          console.warn('LEAP PWA: Failed to cleanup service worker in DEV', e);
+        }
+      })();
+    }
+
     // Check if app is already installed
     const checkInstalled = () => {
       const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
@@ -108,7 +130,8 @@ export const usePWA = (): PWAState => {
     window.addEventListener('offline', handleOffline);
 
     // Service worker registration and message handling
-    if ('serviceWorker' in navigator) {
+    // IMPORTANT: never register SW in DEV (prevents stale cached Vite chunks)
+    if (!import.meta.env.DEV && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
         .then(registration => {
           console.log('LEAP PWA: Service Worker registered:', registration);
