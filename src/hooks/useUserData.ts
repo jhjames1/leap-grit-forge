@@ -502,16 +502,27 @@ export const useUserData = () => {
   };
 
   const markDayComplete = async (day: number) => {
-    if (!userData) return;
-
-    const updatedCompletedDays = [...userData.journeyProgress?.completedDays || []];
-    const completionDates = { ...userData.journeyProgress?.completionDates || {} };
-
-    // Add day to completed days if not already there
-    if (!updatedCompletedDays.includes(day)) {
-      updatedCompletedDays.push(day);
-      completionDates[day] = new Date().toISOString();
+    if (!userData || !currentUser) {
+      logger.error('markDayComplete called without userData or currentUser', { 
+        hasUserData: !!userData, 
+        hasCurrentUser: !!currentUser,
+        day 
+      });
+      return;
     }
+
+    // Check if already completed to prevent duplicate updates
+    const existingCompletedDays = userData.journeyProgress?.completedDays || [];
+    if (existingCompletedDays.includes(day)) {
+      logger.debug('Day already marked as complete, skipping', { day });
+      return;
+    }
+
+    const updatedCompletedDays = [...existingCompletedDays, day].sort((a, b) => a - b);
+    const completionDates = { 
+      ...(userData.journeyProgress?.completionDates || {}),
+      [day]: new Date().toISOString()
+    };
 
     const updatedJourneyProgress = {
       ...userData.journeyProgress,
@@ -522,33 +533,45 @@ export const useUserData = () => {
 
     const updatedUserData = {
       ...userData,
-      journeyProgress: updatedJourneyProgress
+      journeyProgress: updatedJourneyProgress,
+      lastAccess: Date.now()
     };
 
+    logger.debug('markDayComplete updating data', { 
+      day, 
+      previousCompletedDays: existingCompletedDays,
+      newCompletedDays: updatedCompletedDays 
+    });
+
+    // Update state first for immediate UI feedback
     setUserData(updatedUserData);
+    
+    // Then persist to storage
     SecureStorage.setUserData(currentUser, updatedUserData);
 
     // Sync to Supabase if authenticated
     if (isAuthenticated && currentUser) {
-      await SupabaseUserService.upsertJourneyProgress({
-        user_id: currentUser,
-        current_day: Math.max(userData.journeyProgress?.currentWeek || 1, day + 1),
-        completed_days: updatedCompletedDays,
-        completion_dates: completionDates,
-        journey_stage: userData.journeyStage || 'foundation',
-        focus_areas: userData.focusAreas || [],
-        support_style: userData.supportStyle,
-        journey_responses: userData.journeyResponses || {},
-        daily_stats: userData.dailyStats || {}
-      });
-      
-      // Force refresh after successful sync
-      setTimeout(() => {
-        refreshUserData();
-      }, 100);
+      try {
+        await SupabaseUserService.upsertJourneyProgress({
+          user_id: currentUser,
+          current_day: Math.max(day + 1, updatedCompletedDays.length + 1),
+          completed_days: updatedCompletedDays,
+          completion_dates: completionDates,
+          journey_stage: userData.journeyStage || 'foundation',
+          focus_areas: userData.focusAreas || [],
+          support_style: userData.supportStyle,
+          journey_responses: userData.journeyResponses || {},
+          daily_stats: userData.dailyStats || {}
+        });
+        logger.debug('Supabase sync successful for day completion', { day });
+      } catch (error) {
+        logger.error('Failed to sync day completion to Supabase', { day, error });
+        // Don't throw - local storage is already updated
+      }
     }
 
     logActivity(`completed_day_${day}`, `Day ${day} completed`, 'journey');
+    logger.debug('Day marked as complete successfully', { day, completedDays: updatedCompletedDays });
   };
 
   const logout = () => {
