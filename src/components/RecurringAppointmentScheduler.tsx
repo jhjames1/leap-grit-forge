@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Clock, Repeat } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useChatSession } from '@/hooks/useChatSession';
 
 interface RecurringAppointmentSchedulerProps {
   specialistId: string;
@@ -34,7 +33,6 @@ const RecurringAppointmentScheduler = ({
     occurrences: '4'
   });
   const { toast } = useToast();
-  const { sendMessage } = useChatSession(specialistId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

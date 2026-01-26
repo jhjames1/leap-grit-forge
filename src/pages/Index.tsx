@@ -7,7 +7,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import DashboardHome from '@/components/DashboardHome';
 import RecoveryJourney from '@/components/RecoveryJourney';
 import Toolbox from '@/components/Toolbox';
-import PeerChat from '@/components/PeerChat';
+import PeerChatRefactored from '@/components/PeerChatRefactored';
 import UserProfile from '@/components/UserProfile';
 import About from '@/components/About';
 import RecoveryCalendar from '@/components/RecoveryCalendar';
@@ -161,7 +161,7 @@ const Index = () => {
       case 'toolbox':
         return <Toolbox onNavigate={handleNavigation} />;
       case 'chat':
-        return <PeerChat onBack={handleBackToHome} />;
+        return <PeerChatRefactored onBack={handleBackToHome} />;
       case 'profile':
         return <UserProfile onNavigate={handleNavigation} />;
       case 'about':
