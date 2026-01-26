@@ -3,7 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Building2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ConocoLoginProps {
   onLogin: () => void;
@@ -25,17 +26,35 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
     setError('');
     
     try {
-      // Simple username/password check
-      if (credentials.username === 'admin' && credentials.password === 'adminadmin') {
-        // Store auth state in localStorage
+      // Call the edge function for authentication
+      const { data, error: authError } = await supabase.functions.invoke('conoco-auth', {
+        body: { 
+          username: credentials.username, 
+          password: credentials.password 
+        }
+      });
+
+      if (authError) {
+        throw new Error(authError.message || 'Authentication failed');
+      }
+
+      if (data?.success) {
+        // Store auth state securely
         localStorage.setItem('conoco-auth', 'true');
+        if (data.token) {
+          localStorage.setItem('conoco-token', data.token);
+        }
+        if (data.expiresAt) {
+          localStorage.setItem('conoco-expires', data.expiresAt);
+        }
         onLogin();
       } else {
-        throw new Error('Invalid credentials. Please check your username and password.');
+        throw new Error(data?.error || 'Invalid credentials. Please check your username and password.');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Conoco login error:', error);
-      setError(error.message || 'Login failed. Please check your credentials.');
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please check your credentials.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -51,15 +70,15 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
         />
       </div>
       
-      <Card className="bg-black/25 border-steel-dark p-8 max-w-sm w-full">
+      <Card className="bg-card/50 border-border p-8 max-w-sm w-full">
         <div className="text-center mb-6">
-          <h2 className="font-oswald font-bold text-white text-2xl mb-2">Conoco Phillips</h2>
-          <p className="text-steel-light text-sm">LEAP Dashboard Access</p>
+          <h2 className="font-oswald font-bold text-foreground text-2xl mb-2">Conoco Phillips</h2>
+          <p className="text-muted-foreground text-sm">LEAP Dashboard Access</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <Label htmlFor="username" className="text-white font-oswald font-medium">
+            <Label htmlFor="username" className="text-foreground font-oswald font-medium">
               Username
             </Label>
             <Input
@@ -67,7 +86,7 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
               type="text"
               value={credentials.username}
               onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
-              className="bg-steel-dark border-steel text-white placeholder:text-steel-light mt-1"
+              className="bg-muted border-border text-foreground placeholder:text-muted-foreground mt-1"
               placeholder="Enter username"
               required
               disabled={isLoading}
@@ -75,7 +94,7 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
           </div>
 
           <div>
-            <Label htmlFor="password" className="text-white font-oswald font-medium">
+            <Label htmlFor="password" className="text-foreground font-oswald font-medium">
               Password
             </Label>
             <div className="relative mt-1">
@@ -84,7 +103,7 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
                 type={showPassword ? 'text' : 'password'}
                 value={credentials.password}
                 onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
-                className="bg-steel-dark border-steel text-white placeholder:text-steel-light pr-10"
+                className="bg-muted border-border text-foreground placeholder:text-muted-foreground pr-10"
                 placeholder="Enter password"
                 required
                 disabled={isLoading}
@@ -93,7 +112,7 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-0 top-0 h-full px-3 text-steel-light hover:text-construction"
+                className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-primary"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
               >
@@ -103,7 +122,7 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
           </div>
 
           {error && (
-            <div className="text-red-400 text-sm text-center bg-red-500/10 border border-red-500/20 rounded p-2">
+            <div className="text-destructive text-sm text-center bg-destructive/10 border border-destructive/20 rounded p-2">
               {error}
             </div>
           )}
@@ -111,7 +130,7 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
           <div className="space-y-3 pt-2">
             <Button 
               type="submit"
-              className="w-full bg-construction hover:bg-construction-dark text-midnight font-oswald font-semibold"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-oswald font-semibold"
               disabled={isLoading}
             >
               {isLoading ? 'Authenticating...' : 'Access Dashboard'}
@@ -120,7 +139,7 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
               type="button"
               variant="outline"
               onClick={onBack}
-              className="w-full border-steel text-steel-light hover:bg-steel/10"
+              className="w-full border-border text-muted-foreground hover:bg-muted"
               disabled={isLoading}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -130,10 +149,10 @@ const ConocoLogin = ({ onLogin, onBack }: ConocoLoginProps) => {
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-steel-light text-xs">
+          <p className="text-muted-foreground text-xs">
             For authorized company administrators only.
           </p>
-          <p className="text-steel-light text-xs mt-1">
+          <p className="text-muted-foreground text-xs mt-1">
             Demo credentials: admin / adminadmin
           </p>
         </div>
