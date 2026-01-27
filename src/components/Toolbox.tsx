@@ -20,6 +20,7 @@ import TriggerIdentifier from '@/components/TriggerIdentifier';
 import ThoughtPatternSorter from '@/components/ThoughtPatternSorter';
 import RecoveryPlanViewer from '@/components/RecoveryPlanViewer';
 import { useUserData } from '@/hooks/useUserData';
+import { calculateCurrentJourneyDay } from '@/utils/journeyCalculation';
 import { useAIJourney } from '@/hooks/useAIJourney';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { trackingManager } from '@/utils/trackingManager';
@@ -352,7 +353,9 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
 
   // Use real-time stats when available, fallback to calculated values
   const liveToolsToday = realTimeStats?.toolsUsedToday ?? getTodayToolsCount();
-  const liveDayStreak = realTimeStats?.currentStreak ?? calculateDayStreak();
+  // Use journey completed days as single source of truth for streak
+  const totalCompletedDays = userData?.journeyProgress?.completedDays?.length || 0;
+  const liveDayStreak = totalCompletedDays;
   const liveTotalSessions = userData?.toolboxStats?.totalSessions || 0;
 
   return (
