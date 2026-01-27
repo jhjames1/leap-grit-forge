@@ -283,6 +283,8 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const handleBreathingComplete = () => {
     setShowBreathing(false);
     logActivity('Completed SteadySteel', 'Finished breathing exercise');
+    // Track in real-time manager for Tools Today counter
+    trackingManager.logActivity('Completed SteadySteel', 'tool', 'Finished breathing exercise');
     if (userData) {
       updateToolboxStats({
         totalSessions: userData.toolboxStats.totalSessions + 1
@@ -298,6 +300,8 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const handleUrgeTracked = () => {
     setShowUrgeTracker(false);
     logActivity('Completed Redline Recovery', 'Tracked and redirected urge');
+    // Track in real-time manager for Tools Today counter
+    trackingManager.logActivity('Completed Redline Recovery', 'tool', 'Tracked and redirected urge');
     if (userData) {
       updateToolboxStats({
         urgesThisWeek: userData.toolboxStats.urgesThisWeek + 1,
@@ -314,6 +318,8 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const handleGratitudeComplete = () => {
     setShowGratitudeLog(false);
     logActivity('Completed Gratitude Log', 'Added gratitude entry');
+    // Track in real-time manager for Tools Today counter
+    trackingManager.logActivity('Completed Gratitude Log', 'tool', 'Added gratitude entry');
     if (userData) {
       updateToolboxStats({
         totalSessions: userData.toolboxStats.totalSessions + 1
@@ -329,6 +335,8 @@ const Toolbox = ({ onNavigate }: ToolboxProps) => {
   const handleTriggerIdentifierComplete = () => {
     setShowTriggerIdentifier(false);
     logActivity('Completed Trigger Identifier', 'Mapped personal triggers to coping strategies');
+    // Track in real-time manager for Tools Today counter
+    trackingManager.logActivity('Completed Trigger Identifier', 'tool', 'Mapped personal triggers to coping strategies');
     if (userData) {
       updateToolboxStats({
         totalSessions: userData.toolboxStats.totalSessions + 1
