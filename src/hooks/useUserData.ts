@@ -252,6 +252,8 @@ export const useUserData = () => {
         // Load data from Supabase
         const supabaseData = await loadSupabaseUserData(username);
         if (supabaseData) {
+          // CRITICAL: Sync to SecureStorage so trackingManager can access it
+          SecureStorage.setUserData(username, supabaseData);
           setUserData(supabaseData);
           logSecurityEvent('user_data_accessed', { username });
           return;
