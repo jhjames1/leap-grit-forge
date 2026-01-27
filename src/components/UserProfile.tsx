@@ -151,8 +151,9 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
     return toolMap[toolName] || toolName;
   };
   
-  // Use real-time stats when available, fallback to userData
-  const liveRecoveryStreak = realTimeStats?.currentStreak ?? userData?.toolboxStats?.streak ?? 0;
+  // Use journey completed days as single source of truth for streak
+  const totalCompletedDays = userData?.journeyProgress?.completedDays?.length || 0;
+  const liveRecoveryStreak = totalCompletedDays;
   const liveTotalToolsUsed = realTimeStats?.totalToolsUsed ?? userData?.toolboxStats?.totalSessions ?? 0;
   const liveActionsToday = realTimeStats?.actionsToday ?? 0;
   const liveUrgesTracked = realTimeStats?.urgesTracked ?? userData?.toolboxStats?.urgesThisWeek ?? 0;
