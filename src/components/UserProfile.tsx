@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { User, Edit, Bell, Calendar, Phone, BookOpen, LogOut, Shield, UserCheck, Check, Trash2, MoreVertical } from 'lucide-react';
+import { User, Edit, Bell, Calendar, Phone, BookOpen, LogOut, Shield, UserCheck, Check, Trash2, MoreVertical, FileText } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useUserData } from '@/hooks/useUserData';
@@ -24,6 +25,7 @@ interface UserProfileProps {
 }
 
 const UserProfile = ({ onNavigate }: UserProfileProps) => {
+  const navigate = useNavigate();
   const { t, language } = useLanguage();
   const [currentView, setCurrentView] = useState<'profile' | 'edit' | 'notifications' | 'saved-wisdom' | 'notification-center'>('profile');
   const [realTimeStats, setRealTimeStats] = useState<any>(null);
@@ -560,7 +562,7 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
           <div className="grid grid-cols-1 gap-4">
             {earnedBadges.map((badge, index) => (
               <div key={index} className="flex items-start space-x-3 p-4 bg-muted/20 rounded-lg">
-                <div className="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 bg-construction rounded-lg flex items-center justify-center flex-shrink-0">
                   <span className="text-lg">{badge.icon}</span>
                 </div>
                 <div className="flex-1">
@@ -612,6 +614,14 @@ const UserProfile = ({ onNavigate }: UserProfileProps) => {
             Saved Wisdom
           </Button>
           <Button 
+            onClick={() => navigate('/documentation')}
+            variant="outline" 
+            className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
+          >
+            <FileText size={16} className="mr-2" />
+            Download Manual
+          </Button>
+          <Button
             variant="outline" 
             className="w-full border-border text-card-foreground hover:bg-accent justify-start font-source"
           >
