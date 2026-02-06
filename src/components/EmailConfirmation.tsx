@@ -8,61 +8,94 @@ import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 type ConfirmationState = 'loading' | 'success' | 'error';
 
+const VERIFY_TIMEOUT_MS = 8000;
+
 export function EmailConfirmation() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [state, setState] = useState<ConfirmationState>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleEmailConfirmation = useCallback(async () => {
-    try {
-      const token_hash = searchParams.get('token_hash');
-      const type = searchParams.get('type');
+  const runVerification = useCallback(async () => {
+    setState('loading');
+    setErrorMessage(null);
 
-      console.log('Email confirmation attempt:', { token_hash: !!token_hash, type });
+    const type = searchParams.get('type');
 
-      // Handle password recovery - redirect immediately
-      if (type === 'recovery') {
-        navigate(`/reset-password?${searchParams.toString()}`);
+    if (type === 'recovery') {
+      navigate(`/reset-password?${searchParams.toString()}`);
+      return;
+    }
+
+    // Support Supabase PKCE confirmation links (?code=...)
+    const code = searchParams.get('code');
+    if (code) {
+      try {
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Confirmation timed out. Please retry.')), VERIFY_TIMEOUT_MS)
+        );
+
+        await Promise.race([
+          supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+            if (error) throw error;
+          }),
+          timeout,
+        ]);
+
+        setState('success');
+        setTimeout(() => navigate('/'), 1500);
+        return;
+      } catch (err) {
+        console.error('PKCE confirmation error:', err);
+        setErrorMessage(err instanceof Error ? err.message : 'Failed to confirm. Please retry.');
+        setState('error');
         return;
       }
+    }
 
-      if (type === 'signup' && token_hash) {
-        const { data, error } = await supabase.auth.verifyOtp({
-          token_hash,
-          type: 'email'
-        });
+    const token_hash = searchParams.get('token_hash');
 
-        if (error) {
-          console.error('Email verification error:', error);
-          setErrorMessage(error.message || 'Failed to confirm email. The link may have expired.');
-          setState('error');
-        } else if (data) {
-          console.log('Email verification successful:', data);
-          setState('success');
-          // Redirect after short delay
-          setTimeout(() => navigate('/'), 3000);
-        }
-      } else {
-        setErrorMessage('Invalid confirmation link or missing parameters.');
+    console.log('Email confirmation attempt:', { token_hash: !!token_hash, type, hasCode: !!code });
+
+    if (type === 'signup' && token_hash) {
+      try {
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Verification is taking too long. Please retry.')), VERIFY_TIMEOUT_MS)
+        );
+
+        await Promise.race([
+          supabase.auth.verifyOtp({ token_hash, type: 'email' }).then(({ error }) => {
+            if (error) throw error;
+          }),
+          timeout,
+        ]);
+
+        setState('success');
+        setTimeout(() => navigate('/'), 3000);
+      } catch (err) {
+        console.error('Email verification error:', err);
+        setErrorMessage(
+          err instanceof Error
+            ? err.message
+            : 'Failed to confirm email. The link may have expired.'
+        );
         setState('error');
       }
-    } catch (err) {
-      console.error('Unexpected error during email confirmation:', err);
-      setErrorMessage('An unexpected error occurred during email confirmation.');
-      setState('error');
-    }
-  }, [searchParams, navigate]);
 
-  // Defer verification to after initial render to avoid blocking page load
+      return;
+    }
+
+    setErrorMessage('Invalid confirmation link or missing parameters.');
+    setState('error');
+  }, [navigate, searchParams]);
+
   useEffect(() => {
-    // Use requestIdleCallback or setTimeout to defer the async work
     const timeoutId = setTimeout(() => {
-      handleEmailConfirmation();
+      runVerification();
     }, 0);
 
     return () => clearTimeout(timeoutId);
-  }, [handleEmailConfirmation]);
+  }, [runVerification]);
 
   if (state === 'loading') {
     return (
@@ -121,17 +154,18 @@ export function EmailConfirmation() {
         <CardContent>
           {errorMessage && (
             <Alert className="mb-4 border-destructive">
-              <AlertDescription className="text-destructive">
-                {errorMessage}
-              </AlertDescription>
+              <AlertDescription className="text-destructive">{errorMessage}</AlertDescription>
             </Alert>
           )}
           <div className="space-y-3">
-            <Button onClick={() => navigate('/auth')} className="w-full">
+            <Button onClick={runVerification} className="w-full">
+              Retry Confirmation
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/auth')} className="w-full">
               Back to Login
             </Button>
             <p className="text-sm text-muted-foreground text-center">
-              If you continue to have issues, try signing up again or contact support.
+              If you keep seeing timeouts, your email may still be confirmed—try going back to login and signing in.
             </p>
           </div>
         </CardContent>
