@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -6,61 +6,65 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
+type ConfirmationState = 'loading' | 'success' | 'error';
+
 export function EmailConfirmation() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [state, setState] = useState<ConfirmationState>('loading');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleEmailConfirmation = async () => {
-      try {
-        setLoading(true);
-        
-        // Get tokens from URL parameters
-        const token_hash = searchParams.get('token_hash');
-        const type = searchParams.get('type');
-        
-        console.log('Email confirmation attempt:', { token_hash: !!token_hash, type });
+  const handleEmailConfirmation = useCallback(async () => {
+    try {
+      const token_hash = searchParams.get('token_hash');
+      const type = searchParams.get('type');
 
-        if (type === 'signup' && token_hash) {
-          // Handle email confirmation for signup
-          const { data, error } = await supabase.auth.verifyOtp({
-            token_hash,
-            type: 'email'
-          });
+      console.log('Email confirmation attempt:', { token_hash: !!token_hash, type });
 
-          if (error) {
-            console.error('Email verification error:', error);
-            setError(error.message || 'Failed to confirm email. The link may have expired.');
-          } else if (data) {
-            console.log('Email verification successful:', data);
-            setSuccess(true);
-            
-            // Wait a bit then redirect to home
-            setTimeout(() => {
-              navigate('/');
-            }, 3000);
-          }
-        } else if (type === 'recovery') {
-          // Handle password recovery - redirect to password reset
-          navigate(`/reset-password?${searchParams.toString()}`);
-        } else {
-          setError('Invalid confirmation link or missing parameters.');
-        }
-      } catch (err) {
-        console.error('Unexpected error during email confirmation:', err);
-        setError('An unexpected error occurred during email confirmation.');
-      } finally {
-        setLoading(false);
+      // Handle password recovery - redirect immediately
+      if (type === 'recovery') {
+        navigate(`/reset-password?${searchParams.toString()}`);
+        return;
       }
-    };
 
-    handleEmailConfirmation();
+      if (type === 'signup' && token_hash) {
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash,
+          type: 'email'
+        });
+
+        if (error) {
+          console.error('Email verification error:', error);
+          setErrorMessage(error.message || 'Failed to confirm email. The link may have expired.');
+          setState('error');
+        } else if (data) {
+          console.log('Email verification successful:', data);
+          setState('success');
+          // Redirect after short delay
+          setTimeout(() => navigate('/'), 3000);
+        }
+      } else {
+        setErrorMessage('Invalid confirmation link or missing parameters.');
+        setState('error');
+      }
+    } catch (err) {
+      console.error('Unexpected error during email confirmation:', err);
+      setErrorMessage('An unexpected error occurred during email confirmation.');
+      setState('error');
+    }
   }, [searchParams, navigate]);
 
-  if (loading) {
+  // Defer verification to after initial render to avoid blocking page load
+  useEffect(() => {
+    // Use requestIdleCallback or setTimeout to defer the async work
+    const timeoutId = setTimeout(() => {
+      handleEmailConfirmation();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [handleEmailConfirmation]);
+
+  if (state === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
@@ -76,7 +80,7 @@ export function EmailConfirmation() {
     );
   }
 
-  if (success) {
+  if (state === 'success') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
@@ -115,10 +119,10 @@ export function EmailConfirmation() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
+          {errorMessage && (
             <Alert className="mb-4 border-destructive">
               <AlertDescription className="text-destructive">
-                {error}
+                {errorMessage}
               </AlertDescription>
             </Alert>
           )}
