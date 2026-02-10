@@ -243,7 +243,7 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
 
   // Helper functions to parse user data for specific days
   const getActivitiesForDay = (day: number): Array<{title: string, activity: string, tool: string, completionDate: string}> => {
-    const journeyData = require('../data/journeyData.json');
+    const journeyData = journeyDataJson;
     const coreJourney = journeyData.coreJourneys[0];
     const dayData = coreJourney.days.find((d: any) => d.day === day);
     
