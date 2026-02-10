@@ -535,74 +535,98 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
-            {/* Activity Summary */}
-            <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Flame className="h-4 w-4 text-emerald-600" />
-                <span className="font-semibold text-emerald-800">Journey Activities Completed</span>
-              </div>
-               <div className="space-y-3">
-                 {selectedCompletedDay && getActivitiesForDay(selectedCompletedDay).map((activityData, index) => (
-                   <div key={index} className="bg-white p-3 rounded border border-emerald-100">
-                     <div className="flex items-center gap-2 mb-2">
-                       <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                       <span className="text-sm font-medium text-emerald-800">{activityData.title}</span>
-                     </div>
-                     <p className="text-sm text-emerald-700 mb-2">{activityData.activity}</p>
-                     <div className="flex items-center gap-4 text-xs text-emerald-600">
-                       <span>Tool: {activityData.tool}</span>
-                       <span>Completed: {activityData.completionDate}</span>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-            </div>
+          {selectedCompletedDay && (() => {
+            const activities = getActivitiesForDay(selectedCompletedDay);
+            const responses = getJournalingResponsesForDay(selectedCompletedDay);
+            const tools = getToolsUsedForDay(selectedCompletedDay);
+            const completionDate = userData?.journeyProgress?.completionDates?.[selectedCompletedDay];
+            const hasNoContent = activities.length === 0 && responses.length === 0 && tools.length === 0;
 
-            {/* Journaling Responses */}
-            {selectedCompletedDay && getJournalingResponsesForDay(selectedCompletedDay).length > 0 && (
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <Target className="h-4 w-4 text-blue-600" />
-                  <span className="font-semibold text-blue-800">Your Reflections</span>
-                </div>
-                <div className="space-y-3">
-                  {getJournalingResponsesForDay(selectedCompletedDay).map((response, index) => (
-                    <div key={index} className="bg-white p-3 rounded border border-blue-100">
-                      <p className="font-medium text-blue-800 text-sm mb-1">{response.title}</p>
-                      <p className="text-blue-700 text-sm italic">"{response.content}"</p>
+            return (
+              <div className="space-y-4">
+                {/* Completion timestamp */}
+                {completionDate && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>Completed on {format(new Date(completionDate as string), 'MMMM d, yyyy \'at\' h:mm a')}</span>
+                  </div>
+                )}
+
+                {/* Activity Summary */}
+                <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Flame className="h-4 w-4 text-emerald-600" />
+                    <span className="font-semibold text-emerald-800">Journey Activity</span>
+                  </div>
+                  {activities.length > 0 ? (
+                    <div className="space-y-3">
+                      {activities.map((activityData, index) => (
+                        <div key={index} className="bg-white p-3 rounded border border-emerald-100">
+                          <h4 className="text-sm font-bold text-emerald-900 mb-1">{activityData.title}</h4>
+                          <p className="text-sm text-emerald-700 mb-2">{activityData.activity}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-medium">
+                              {activityData.tool}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <p className="text-sm text-emerald-600 italic">Day completed without specific activity data recorded.</p>
+                  )}
+                </div>
+
+                {/* Journaling Responses */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="h-4 w-4 text-blue-600" />
+                    <span className="font-semibold text-blue-800">Your Reflections</span>
+                  </div>
+                  {responses.length > 0 ? (
+                    <div className="space-y-3">
+                      {responses.map((response, index) => (
+                        <div key={index} className="bg-white p-3 rounded border border-blue-100">
+                          <p className="font-medium text-blue-800 text-xs uppercase tracking-wide mb-1">{response.title}</p>
+                          <p className="text-blue-700 text-sm italic">"{response.content}"</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-blue-600 italic">No reflections were recorded for this day.</p>
+                  )}
+                </div>
+
+                {/* Tools Used */}
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="h-4 w-4 text-purple-600" />
+                    <span className="font-semibold text-purple-800">Recovery Tools Used</span>
+                  </div>
+                  {tools.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {tools.map((tool, index) => (
+                        <span key={index} className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
+                          {tool}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-purple-600 italic">No specific recovery tools were logged.</p>
+                  )}
+                </div>
+
+                <div className="text-center">
+                  <Button 
+                    onClick={() => setShowDayDetails(false)} 
+                    className="w-full"
+                  >
+                    Close
+                  </Button>
                 </div>
               </div>
-            )}
-
-            {/* Tools Used */}
-            {selectedCompletedDay && getToolsUsedForDay(selectedCompletedDay).length > 0 && (
-              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <Target className="h-4 w-4 text-purple-600" />
-                  <span className="font-semibold text-purple-800">Recovery Tools Used</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {getToolsUsedForDay(selectedCompletedDay).map((tool, index) => (
-                    <span key={index} className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-medium">
-                      {tool}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="text-center">
-              <Button 
-                onClick={() => setShowDayDetails(false)} 
-                className="w-full"
-              >
-                Close
-              </Button>
-            </div>
-          </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
