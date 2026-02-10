@@ -1,181 +1,72 @@
 
+# Option C: Enhanced Recovery Calendar + Journey History Tab
 
-# Complete LEAP PWA Documentation (Including Code Documentation)
+This plan enhances both the Recovery Calendar and the Recovery Journey screens to give users a comprehensive view of their 90-day journey history.
 
-## Overview
+## Part 1: Enhanced Recovery Calendar (Day Detail Popup)
 
-This plan expands the documentation system to include both **user-facing documentation** AND **code/technical documentation** in a single downloadable file. This will be a comprehensive reference covering everything from how to use the app to how the code is structured.
+Currently, tapping a completed day on the calendar shows basic activity info. We will enrich this dialog to include:
 
-## Documentation Structure
+- **Day title and completion date/time**
+- **Activity summary** (what the day's activity was, which tool was used)
+- **User's journaling responses** (reflections, gratitude entries, trigger identifications -- the actual text they wrote)
+- **Tools used** (badges for each recovery tool engaged that day)
+- **Mood/wellness data** if available from daily stats
 
-The downloadable PDF/HTML will contain these major sections:
+The existing helper functions (`getActivitiesForDay`, `getJournalingResponsesForDay`, `getToolsUsedForDay`) already extract this data. The enhancement focuses on richer presentation and adding mood/wellness data from `user_daily_stats`.
 
----
+## Part 2: Journey History Tab in Recovery Journey
 
-### Part 1: User Guide
-For everyday app users:
-- Getting Started & Onboarding
-- Dashboard Overview
-- Recovery Journey (90-day program)
-- Toolbox Features (Breathing, Urge Tracker, Gratitude, Triggers, etc.)
-- The Foreman AI Coach
-- Peer Chat Support
-- Profile & Settings
-- PWA Installation
+Add a "History" tab to the Recovery Journey screen so users can toggle between:
 
----
+- **Progress** (current view -- upcoming days, progress bar)
+- **History** (scrollable timeline of all completed days)
 
-### Part 2: Peer Specialist Training Manual
-For peer support specialists:
-- Portal Access & Authentication
-- Dashboard Navigation
-- Chat Session Management
-- Calendar & Scheduling
-- Communication Tools
-- Performance Metrics
-- Training Modules
+The History tab will display:
+
+- A reverse-chronological list of completed days
+- Each entry shows: day number, title, completion date, activity performed, tool used, and a preview of any journaling responses
+- Tapping an entry expands it to show full details (responses, tools, mood data)
+- A summary header showing total completed days, current streak, and completion rate
 
 ---
 
-### Part 3: Admin/Employer Portal Guide
-For administrators:
-- User Management
-- Specialist Management
-- Analytics Dashboard
-- Content Management
+## Technical Details
 
----
+### Files Modified
 
-### Part 4: Code Documentation (NEW)
+1. **`src/components/RecoveryCalendar.tsx`**
+   - Enhance the "Completed Day Details" dialog (lines 526-607) with:
+     - Better visual hierarchy and more detailed activity info
+     - Mood/wellness data section pulled from `userData.dailyStats` or journey responses
+     - Empty-state messaging when no reflections were recorded
 
-#### 4.1 Architecture Overview
-- Technology stack (React, Vite, TypeScript, Tailwind, Supabase)
-- Project folder structure
-- Data flow diagram
-- Authentication flow
+2. **`src/components/RecoveryJourney.tsx`**
+   - Add `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent` from the existing UI components
+   - Wrap the current content in a "Progress" tab
+   - Add a "History" tab containing a new `JourneyHistoryTimeline` component
+   - Import `ScrollArea` for the scrollable history list
 
-#### 4.2 Hooks Reference
-Documentation for all 30+ custom hooks:
+3. **`src/components/JourneyHistoryTimeline.tsx`** (new file)
+   - Receives `userData` as a prop
+   - Reads `completedDays`, `completionDates`, and `journeyResponses` from userData
+   - Loads journey day metadata from `journeyData.json` for titles/activities
+   - Renders a scrollable, reverse-chronological list of completed days
+   - Each item is expandable (accordion or collapsible) to show full journaling responses and tools used
+   - Includes a summary stats header (days completed, completion %, streak)
 
-| Hook | Purpose |
-|------|---------|
-| `useAuth` | User authentication state |
-| `useUserData` | User profile and progress data |
-| `useBadgeNotifications` | Badge earned celebrations |
-| `useRecoveryStrength` | Recovery streak calculations |
-| `useSpecialistSessions` | Chat session management |
-| `useSpecialistCalendar` | Appointment scheduling |
-| `useChatOperations` | Real-time messaging |
-| `useRealtimeSpecialistStatus` | Presence broadcasting |
-| ... and more |
+### Data Sources (no new DB tables needed)
 
-#### 4.3 Services Reference
-Documentation for all services:
+All data already exists in:
+- `userData.journeyProgress.completedDays` -- which days are done
+- `userData.journeyProgress.completionDates` -- when each day was completed
+- `userData.journeyResponses` -- all text responses keyed by `day_X_activityType`
+- `journeyData.json` -- static day metadata (titles, activities, tools)
 
-| Service | Purpose |
-|---------|---------|
-| `adminAnalyticsService` | Admin dashboard metrics |
-| `employerAnalyticsService` | Employer portal analytics |
-| `notificationService` | Push notification delivery |
-| `realtimeService` | WebSocket subscriptions |
-| `supabaseUserService` | User CRUD operations |
-
-#### 4.4 Utilities Reference
-Documentation for all utility modules:
-
-| Utility | Purpose |
-|---------|---------|
-| `trackingManager` | Activity logging and stats |
-| `secureStorage` | Encrypted local storage |
-| `security` | Password validation, sanitization |
-| `badgeUtils` | Badge calculation logic |
-| `recoveryStrength` | Streak algorithms |
-| `pdfGenerator` | Recovery plan PDFs |
-| `calendarAvailability` | Schedule management |
-
-#### 4.5 Edge Functions (API Endpoints)
-Documentation for all 20+ Supabase Edge Functions:
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `foreman-chat` | POST | AI coach responses |
-| `create-appointments` | POST | Schedule appointments |
-| `create-recurring-appointments` | POST | Recurring schedule |
-| `send-specialist-invitation` | POST | Invite specialists |
-| `admin-management` | POST | Admin operations |
-| `user-management` | POST | User CRUD |
-| `compute-peer-metrics` | POST | Performance stats |
-| ... and more |
-
-#### 4.6 Database Schema
-- Tables and relationships
-- Row Level Security (RLS) policies
-- Key indexes
-- Data flow between tables
-
-#### 4.7 Component Architecture
-- Page components (`/pages`)
-- Feature components (`/components`)
-- UI components (`/components/ui`)
-- Context providers
-
----
-
-### Part 5: Existing Technical Documents (Included)
-- Security Implementation Guide (from `docs/security-implementation.md`)
-- EAP Analytics Gap Analysis (from `docs/EAP_ANALYTICS_GAP_ANALYSIS.md`)
-- Employer Analytics Operations Guide (from `docs/EMPLOYER_ANALYTICS_OPERATIONS_GUIDE.md`)
-- Specialist Portal Flow (from `docs/specialist-portal-flow.md`)
-
----
-
-### Part 6: Appendices
-- Glossary of terms
-- Troubleshooting guide
-- Browser compatibility
-- Environment variables
-- Deployment checklist
-
----
-
-## Implementation Details
-
-### Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/pages/Documentation.tsx` | Documentation viewer page with download button |
-| `src/utils/completeDocumentationGenerator.ts` | Generates full documentation content |
-| `src/data/codeDocumentation.ts` | Code documentation data (hooks, services, APIs) |
-
-### Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/App.tsx` | Add `/documentation` route |
-| `src/components/UserProfile.tsx` | Add "Download Manual" link |
-
-### Download Approach
-- Use browser's `window.print()` with print-optimized CSS
-- Alternative: Generate HTML file for offline viewing
-- Professional formatting with table of contents
-- Estimated length: 80-120 pages
-
-### Code Documentation Generation
-The generator will:
-1. Read existing docs from `/docs` folder
-2. Include pre-written hook/service/utility descriptions
-3. Pull edge function names and purposes
-4. Format everything in a consistent, readable style
-5. Add version number and generation timestamp
-
----
-
-## Technical Notes
-
-- All documentation generated client-side (no server required)
-- Works offline after first load
-- Print-friendly styling with page breaks
-- Includes diagrams using ASCII art for compatibility
-- Mobile-responsive documentation viewer
-
+### UI Components Used (all existing)
+- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`
+- `ScrollArea`
+- `Card`
+- `Collapsible` (for expandable history entries)
+- `Badge` (for tool tags)
+- Lucide icons (`CheckCircle2`, `ChevronDown`, `FileText`, `Flame`)
