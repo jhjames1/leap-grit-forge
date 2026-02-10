@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { trackingManager } from '@/utils/trackingManager';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay } from 'date-fns';
+import journeyDataJson from '@/data/journeyData.json';
 
 interface RecoveryCalendarProps {
   onNavigate?: (page: string) => void;
