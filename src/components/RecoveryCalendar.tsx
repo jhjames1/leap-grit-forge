@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { trackingManager } from '@/utils/trackingManager';
 import { supabase } from '@/integrations/supabase/client';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay } from 'date-fns';
+import journeyDataJson from '@/data/journeyData.json';
 
 interface RecoveryCalendarProps {
   onNavigate?: (page: string) => void;
@@ -242,7 +243,7 @@ const RecoveryCalendar = ({ onNavigate }: RecoveryCalendarProps) => {
 
   // Helper functions to parse user data for specific days
   const getActivitiesForDay = (day: number): Array<{title: string, activity: string, tool: string, completionDate: string}> => {
-    const journeyData = require('../data/journeyData.json');
+    const journeyData = journeyDataJson;
     const coreJourney = journeyData.coreJourneys[0];
     const dayData = coreJourney.days.find((d: any) => d.day === day);
     
