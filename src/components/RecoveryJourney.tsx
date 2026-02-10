@@ -7,7 +7,9 @@ import { useUserData } from '@/hooks/useUserData';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import JourneyDayModal from './JourneyDayModal';
+import JourneyHistoryTimeline from './JourneyHistoryTimeline';
 import Week1DataCollection from './Week1DataCollection';
 import { TestingModeControls } from './TestingModeControls';
 import { useAIJourney } from '@/hooks/useAIJourney';
@@ -497,146 +499,153 @@ const RecoveryJourney = ({ onNavigateToHome }: RecoveryJourneyProps = {}) => {
           <p className="text-muted-foreground font-oswald">{t('journey.subtitle')}</p>
         </div>
 
-      {/* Overall Progress Card */}
-      <Card className="bg-card border-0 p-6 rounded-xl mb-6 shadow-sm">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-primary p-2 rounded-lg">
-            <Target className="text-primary-foreground" size={20} />
-          </div>
-          <div>
-            <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">{t('journey.overallProgress').toUpperCase()}</h3>
-            <p className="text-muted-foreground text-[16px]">
-              {completedDays.length} {t('common.of')} {totalDays} {t('journey.daysCompleted')}
-            </p>
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{t('journey.journeyProgress')}</span>
-            <span className="text-primary font-bold text-lg">{Math.round(progress)}%</span>
-          </div>
-          <Progress value={progress} className="h-3 bg-muted">
-            <div 
-              className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </Progress>
-        </div>
-      </Card>
+        <Tabs defaultValue="progress" className="mb-6">
+          <TabsList className="w-full mb-4">
+            <TabsTrigger value="progress" className="flex-1 font-fjalla uppercase tracking-wide">Progress</TabsTrigger>
+            <TabsTrigger value="history" className="flex-1 font-fjalla uppercase tracking-wide">History</TabsTrigger>
+          </TabsList>
 
-      {/* Next 3 Days Display */}
-      {currentWeekData.days.length > 0 && (
-        <Card className="bg-card p-6 rounded-xl mb-6 border-0 shadow-sm">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="bg-primary p-2 rounded-lg">
-                <Trophy className="text-primary-foreground" size={20} />
+          <TabsContent value="progress">
+            {/* Overall Progress Card */}
+            <Card className="bg-card border-0 p-6 rounded-xl mb-6 shadow-sm">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="bg-primary p-2 rounded-lg">
+                  <Target className="text-primary-foreground" size={20} />
+                </div>
+                <div>
+                  <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">{t('journey.overallProgress').toUpperCase()}</h3>
+                  <p className="text-muted-foreground text-[16px]">
+                    {completedDays.length} {t('common.of')} {totalDays} {t('journey.daysCompleted')}
+                  </p>
+                </div>
               </div>
-              <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
-                {currentWeekData.title.toUpperCase()}
-              </h3>
-            </div>
-          </div>
-          
-          {/* Days List */}
-          <div className="space-y-3">
-            {currentWeekData.days.map((dayModule: any) => {
-              const status = getDayStatusForDay(dayModule.day);
-              const isCompleted = status === 'completed';
-              const isUnlocked = status === 'unlocked' || isCompleted;
-              const buttonText = getButtonText(dayModule.day, status);
               
-              return (
-                <Card
-                  key={dayModule.day}
-                  onClick={() => isUnlocked && handleDayClick(dayModule.day)}
-                  className={`p-4 transition-all duration-200 border rounded-lg ${
-                    isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'
-                  } ${
-                    isCompleted
-                      ? 'bg-primary/10 border-primary/20 shadow-sm'
-                      : isUnlocked
-                        ? 'bg-card hover:bg-accent border-border shadow-sm'
-                        : 'bg-muted opacity-60 border-border'
-                  }`}
-                >
-                  <div className="flex items-center space-x-4">
-                    {/* Status Icon */}
-                    <div className={`p-2 rounded-lg flex-shrink-0 transition-all duration-200 ${
-                      isCompleted
-                        ? 'bg-primary'
-                        : isUnlocked
-                          ? 'bg-primary'
-                          : 'bg-muted'
-                    }`}>
-                      {isCompleted ? (
-                        <CheckCircle2 className="text-primary-foreground" size={20} />
-                      ) : isUnlocked ? (
-                        <Play className="text-primary-foreground" size={20} />
-                      ) : (
-                        <Lock className="text-muted-foreground" size={20} />
-                      )}
-                    </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{t('journey.journeyProgress')}</span>
+                  <span className="text-primary font-bold text-lg">{Math.round(progress)}%</span>
+                </div>
+                <Progress value={progress} className="h-3 bg-muted">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </Progress>
+              </div>
+            </Card>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="font-fjalla font-bold text-primary text-sm">
-                          {t('common.day').toUpperCase()} {dayModule.day}
-                        </span>
-                        <span className="text-muted-foreground text-xs">•</span>
-                        <span className="text-muted-foreground text-xs font-source uppercase tracking-wide">
-                          {dayModule.tool || 'RECOVERY TOOL'}
-                        </span>
-                      </div>
-                      
-                      <h3 className={`font-medium text-[16px] mb-1 ${
-                        isUnlocked ? 'text-card-foreground' : 'text-muted-foreground'
-                      }`}>
-                        {dayModule.title}
-                      </h3>
-                      
-                      <p className={`text-sm mb-2 ${
-                        isUnlocked ? 'text-muted-foreground' : 'text-muted-foreground/70'
-                      }`}>
-                        {dayModule.keyMessage}
-                      </p>
-                      
-                      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                        <Clock size={12} className="text-primary" />
-                        <span>{dayModule.duration}</span>
-                      </div>
+            {/* Next 3 Days Display */}
+            {currentWeekData.days.length > 0 && (
+              <Card className="bg-card p-6 rounded-xl mb-6 border-0 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-primary p-2 rounded-lg">
+                      <Trophy className="text-primary-foreground" size={20} />
                     </div>
-
-                    {/* Action Button */}
-                    <Button 
-                      className={`font-fjalla font-semibold px-4 py-2 rounded-lg transition-all duration-200 ${
-                        !isUnlocked
-                          ? 'bg-muted text-muted-foreground cursor-not-allowed border border-muted'
-                          : isCompleted 
-                            ? 'border-primary text-primary hover:bg-primary/10 bg-transparent border'
-                            : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg'
-                      }`}
-                      disabled={!isUnlocked}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (isUnlocked) {
-                          handleDayClick(dayModule.day);
-                        }
-                      }}
-                    >
-                      {buttonText}
-                    </Button>
+                    <h3 className="font-fjalla font-bold text-card-foreground text-base uppercase tracking-wide">
+                      {currentWeekData.title.toUpperCase()}
+                    </h3>
                   </div>
-                </Card>
-              );
-            })}
-          </div>
-        </Card>
-      )}
+                </div>
+                
+                <div className="space-y-3">
+                  {currentWeekData.days.map((dayModule: any) => {
+                    const status = getDayStatusForDay(dayModule.day);
+                    const isCompleted = status === 'completed';
+                    const isUnlocked = status === 'unlocked' || isCompleted;
+                    const buttonText = getButtonText(dayModule.day, status);
+                    
+                    return (
+                      <Card
+                        key={dayModule.day}
+                        onClick={() => isUnlocked && handleDayClick(dayModule.day)}
+                        className={`p-4 transition-all duration-200 border rounded-lg ${
+                          isUnlocked ? 'cursor-pointer' : 'cursor-not-allowed'
+                        } ${
+                          isCompleted
+                            ? 'bg-primary/10 border-primary/20 shadow-sm'
+                            : isUnlocked
+                              ? 'bg-card hover:bg-accent border-border shadow-sm'
+                              : 'bg-muted opacity-60 border-border'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className={`p-2 rounded-lg flex-shrink-0 transition-all duration-200 ${
+                            isCompleted
+                              ? 'bg-primary'
+                              : isUnlocked
+                                ? 'bg-primary'
+                                : 'bg-muted'
+                          }`}>
+                            {isCompleted ? (
+                              <CheckCircle2 className="text-primary-foreground" size={20} />
+                            ) : isUnlocked ? (
+                              <Play className="text-primary-foreground" size={20} />
+                            ) : (
+                              <Lock className="text-muted-foreground" size={20} />
+                            )}
+                          </div>
 
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="font-fjalla font-bold text-primary text-sm">
+                                {t('common.day').toUpperCase()} {dayModule.day}
+                              </span>
+                              <span className="text-muted-foreground text-xs">•</span>
+                              <span className="text-muted-foreground text-xs font-source uppercase tracking-wide">
+                                {dayModule.tool || 'RECOVERY TOOL'}
+                              </span>
+                            </div>
+                            
+                            <h3 className={`font-medium text-[16px] mb-1 ${
+                              isUnlocked ? 'text-card-foreground' : 'text-muted-foreground'
+                            }`}>
+                              {dayModule.title}
+                            </h3>
+                            
+                            <p className={`text-sm mb-2 ${
+                              isUnlocked ? 'text-muted-foreground' : 'text-muted-foreground/70'
+                            }`}>
+                              {dayModule.keyMessage}
+                            </p>
+                            
+                            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                              <Clock size={12} className="text-primary" />
+                              <span>{dayModule.duration}</span>
+                            </div>
+                          </div>
+
+                          <Button 
+                            className={`font-fjalla font-semibold px-4 py-2 rounded-lg transition-all duration-200 ${
+                              !isUnlocked
+                                ? 'bg-muted text-muted-foreground cursor-not-allowed border border-muted'
+                                : isCompleted 
+                                  ? 'border-primary text-primary hover:bg-primary/10 bg-transparent border'
+                                  : 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg'
+                            }`}
+                            disabled={!isUnlocked}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (isUnlocked) {
+                                handleDayClick(dayModule.day);
+                              }
+                            }}
+                          >
+                            {buttonText}
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="history">
+            <JourneyHistoryTimeline userData={userData} />
+          </TabsContent>
+        </Tabs>
 
       {/* Day Modal */}
       {selectedDay && allJourneyDays[selectedDay - 1] && (
