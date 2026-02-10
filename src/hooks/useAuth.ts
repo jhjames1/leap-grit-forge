@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
+import { useSingleSession } from './useSingleSession';
 
 interface AuthContextType {
   user: User | null;
@@ -16,6 +17,14 @@ export function useAuth(): AuthContextType {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isNewSignUp, setIsNewSignUp] = useState(false);
+
+  const baseSignOut = useCallback(async () => {
+    setIsNewSignUp(false);
+    await supabase.auth.signOut();
+  }, []);
+
+  // Single-session enforcement
+  const { signOutWithCleanup } = useSingleSession(session, baseSignOut);
 
   useEffect(() => {
     let mounted = true;
@@ -60,7 +69,6 @@ export function useAuth(): AuthContextType {
             setIsNewSignUp(true);
           } else if (event === 'SIGNED_IN') {
             // Check if user was created very recently (within last 2 minutes)
-            // This handles email confirmation flows where SIGNED_UP becomes SIGNED_IN
             const userCreatedAt = session?.user?.created_at;
             const isVeryNewUser = userCreatedAt && 
               (Date.now() - new Date(userCreatedAt).getTime()) < 2 * 60 * 1000;
@@ -73,11 +81,9 @@ export function useAuth(): AuthContextType {
               setIsNewSignUp(false);
             }
           } else {
-            // For other events (TOKEN_REFRESHED, etc.), don't change sign-up status
             console.log('Auth event:', event, '- maintaining current sign-up status');
           }
           
-          // Only set loading to false after we've handled the auth change
           if (loading) {
             setLoading(false);
           }
@@ -91,17 +97,12 @@ export function useAuth(): AuthContextType {
     };
   }, [loading]);
 
-  const signOut = async () => {
-    setIsNewSignUp(false); // Reset sign-up status on sign out
-    await supabase.auth.signOut();
-  };
-
   return {
     user,
     session,
     loading,
     isAuthenticated: !!session?.user,
     isNewSignUp,
-    signOut
+    signOut: signOutWithCleanup
   };
 }
